@@ -1,0 +1,10 @@
+{
+  "name": "fourcount",
+  "private": true,
+  "workspaces": [
+    "apps/*"
+  ],
+  "scripts": {
+    "mobile": "bun run --cwd apps/mobile start"
+  }
+}

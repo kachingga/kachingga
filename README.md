@@ -49,20 +49,20 @@ El agente explica cómo se llegó a cada saldo, desglosando los gastos que lo co
 
 ## Instalación
 
-> El proyecto de Expo todavía no está inicializado. Estos pasos van a funcionar una vez que lo esté.
+Requiere [Bun](https://bun.sh). El repo es un monorepo: la app mobile está en `apps/mobile`.
 
 ```bash
 git clone https://github.com/romanprs03/fourcount.git
 cd fourcount
-npm install
-npx expo start
+bun install
+bun run mobile
 ```
 
 ## Roadmap
 
 - [x] Definir stack mobile (React Native con Expo)
 - [x] Definir backend y base de datos (TypeScript con Hono y Bun, PostgreSQL)
-- [ ] Inicializar el proyecto de Expo
+- [x] Inicializar el proyecto de Expo
 - [ ] Inicializar el backend
 - [ ] Modelo de datos (grupos, participantes, gastos, divisiones)
 - [ ] CRUD de grupos y gastos
