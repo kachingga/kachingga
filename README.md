@@ -37,29 +37,33 @@ El agente explica cómo se llegó a cada saldo, desglosando los gastos que lo co
 
 ## Stack
 
-> A definir.
+> Stack inicial, puede cambiar a medida que avance el proyecto.
 
-| Capa | Opciones en evaluación |
-|------|------------------------|
-| Mobile | React Native (Expo) / Flutter |
-| Backend | Node.js / Spring Boot / BaaS (Supabase, Firebase) |
+| Capa | Tecnología |
+|------|------------|
+| Mobile | React Native (Expo) |
+| Backend | TypeScript con Hono y Bun |
 | Base de datos | PostgreSQL |
 | Agente | API de LLM con tool calling sobre los datos del grupo |
 | Pagos | SDK / API de Mercado Pago |
 
 ## Instalación
 
-> Pendiente hasta definir el stack.
+> El proyecto de Expo todavía no está inicializado. Estos pasos van a funcionar una vez que lo esté.
 
 ```bash
-git clone https://github.com/romanprs03/<repo>.git
-cd <repo>
-# pasos de instalación
+git clone https://github.com/romanprs03/fourcount.git
+cd fourcount
+npm install
+npx expo start
 ```
 
 ## Roadmap
 
-- [ ] Definir stack
+- [x] Definir stack mobile (React Native con Expo)
+- [x] Definir backend y base de datos (TypeScript con Hono y Bun, PostgreSQL)
+- [ ] Inicializar el proyecto de Expo
+- [ ] Inicializar el backend
 - [ ] Modelo de datos (grupos, participantes, gastos, divisiones)
 - [ ] CRUD de grupos y gastos
 - [ ] Cálculo de saldos y transferencias mínimas
