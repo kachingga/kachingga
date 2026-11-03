@@ -35,7 +35,7 @@ const fixGroup = {
 describe('ExpenseForm (new expense)', () => {
   it('shows loading state while group loads', () => {
     renderWithApi(<ExpenseForm />, { 'groups.get': neverResolves });
-    expect(screen.getByText('Cargando…')).toBeInTheDocument();
+    expect(screen.getByRole('status', { name: 'Cargando' })).toBeInTheDocument();
   });
 
   it('shows the form once group loads', async () => {

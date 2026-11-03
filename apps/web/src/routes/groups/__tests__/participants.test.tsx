@@ -43,7 +43,7 @@ const fixGroup = {
 describe('Participants', () => {
   it('shows loading state', () => {
     renderWithApi(<Participants />, { 'groups.get': neverResolves });
-    expect(screen.getByText('Cargando…')).toBeInTheDocument();
+    expect(screen.getByRole('status', { name: 'Cargando' })).toBeInTheDocument();
   });
 
   it('shows participants list', async () => {

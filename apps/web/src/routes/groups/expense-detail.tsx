@@ -1,6 +1,7 @@
 import { Link, useNavigate, useParams } from 'react-router';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
+import { Spinner } from '@/components/spinner';
 import { useTRPC } from '@/lib/trpc';
 import { categoryLabels, formatCents, formatDate } from '@/lib/format';
 
@@ -23,13 +24,13 @@ export function ExpenseDetail() {
   );
 
   if (expense.isPending) {
-    return <p className="p-6 text-center text-neutral-400">Cargando…</p>;
+    return <Spinner fullScreen />;
   }
   if (expense.isError) {
     return (
       <div className="p-6 text-center">
-        <p className="text-red-600">{expense.error.message}</p>
-        <button onClick={() => navigate(-1)} className="mt-2 text-sm underline">
+        <p className="text-red-400">{expense.error.message}</p>
+        <button onClick={() => navigate(-1)} className="mt-2 text-sm text-neutral-400 underline">
           Volver
         </button>
       </div>
@@ -41,11 +42,14 @@ export function ExpenseDetail() {
   return (
     <main className="mx-auto min-h-dvh max-w-md p-6">
       <div className="mb-6 flex items-center justify-between">
-        <button onClick={() => navigate(-1)} aria-label="Volver" className="text-neutral-500">
+        <button onClick={() => navigate(-1)} aria-label="Volver" className="text-neutral-400">
           ←
         </button>
         <div className="flex gap-3">
-          <Link to={`/grupos/${groupId}/gastos/${expenseId}/editar`} className="text-sm underline">
+          <Link
+            to={`/grupos/${groupId}/gastos/${expenseId}/editar`}
+            className="text-sm text-neutral-400 underline"
+          >
             Editar
           </Link>
           <button
@@ -55,7 +59,7 @@ export function ExpenseDetail() {
               }
             }}
             disabled={deleteExpense.isPending}
-            className="text-sm text-red-600 disabled:opacity-50"
+            className="text-sm text-red-400 disabled:opacity-50"
           >
             {deleteExpense.isPending ? 'Borrando…' : 'Borrar'}
           </button>
@@ -65,32 +69,34 @@ export function ExpenseDetail() {
       <div className="space-y-5">
         <div>
           <h1 className="text-2xl font-bold">{e.description}</h1>
-          <p className="mt-1 text-neutral-500">
+          <p className="mt-1 text-neutral-400">
             {categoryLabels[e.category as keyof typeof categoryLabels]} · {formatDate(e.date)}
           </p>
         </div>
 
-        <div className="rounded-xl bg-neutral-50 p-4">
+        <div className="rounded-2xl bg-neutral-900 p-4">
           <p className="text-3xl font-bold">{formatCents(e.amountCents, e.currency)}</p>
           {e.exchangeRate && e.currency !== e.currency && (
-            <p className="mt-1 text-sm text-neutral-500">Tipo de cambio: {e.exchangeRate}</p>
+            <p className="mt-1 text-sm text-neutral-400">Tipo de cambio: {e.exchangeRate}</p>
           )}
         </div>
 
         <div>
-          <p className="text-sm text-neutral-500">Pagó</p>
+          <p className="text-sm text-neutral-400">Pagó</p>
           <p className="font-medium">{e.paidBy.name}</p>
         </div>
 
         <div>
-          <p className="mb-2 text-sm text-neutral-500">División ({e.splitType.toLowerCase()})</p>
+          <p className="mb-2 text-sm text-neutral-400">División ({e.splitType.toLowerCase()})</p>
           <ul className="space-y-1">
             {e.splits.map((split) => (
               <li key={split.participantId} className="flex justify-between text-sm">
-                <span>{split.participant.name}</span>
+                <span className="text-neutral-300">{split.participant.name}</span>
                 <span className="font-medium">
                   {formatCents(split.amountCents, e.currency)}
-                  {split.percentage != null && ` (${split.percentage}%)`}
+                  {split.percentage != null && (
+                    <span className="text-neutral-400"> ({split.percentage}%)</span>
+                  )}
                 </span>
               </li>
             ))}

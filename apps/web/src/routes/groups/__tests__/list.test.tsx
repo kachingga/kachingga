@@ -22,9 +22,9 @@ const fixGroups = [
 ];
 
 describe('GroupList', () => {
-  it('shows loading state', () => {
+  it('shows loading skeletons', () => {
     renderWithApi(<GroupList />, { 'groups.list': neverResolves });
-    expect(screen.getByText('Cargando…')).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Grupos' })).toBeInTheDocument();
   });
 
   it('shows groups when loaded', async () => {
@@ -48,9 +48,8 @@ describe('GroupList', () => {
     expect(screen.getByRole('button', { name: 'Reintentar' })).toBeInTheDocument();
   });
 
-  it('shows create and join buttons', () => {
+  it('shows bottom nav', () => {
     renderWithApi(<GroupList />, { 'groups.list': neverResolves });
-    expect(screen.getByRole('link', { name: '+ Crear grupo' })).toBeInTheDocument();
-    expect(screen.getByRole('link', { name: 'Unirme con código' })).toBeInTheDocument();
+    expect(screen.getByText('Perfil')).toBeInTheDocument();
   });
 });

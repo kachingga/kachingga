@@ -39,7 +39,7 @@ const fixExpense = {
 describe('ExpenseDetail', () => {
   it('shows loading state', () => {
     renderWithApi(<ExpenseDetail />, { 'expenses.get': neverResolves });
-    expect(screen.getByText('Cargando…')).toBeInTheDocument();
+    expect(screen.getByRole('status', { name: 'Cargando' })).toBeInTheDocument();
   });
 
   it('shows expense details', async () => {

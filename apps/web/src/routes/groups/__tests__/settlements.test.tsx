@@ -39,7 +39,7 @@ describe('Settlements', () => {
       'settlements.list': neverResolves,
     });
     // Shows while loading (either header or loading text)
-    expect(screen.getByText('Cargando…')).toBeInTheDocument();
+    expect(screen.getByRole('status', { name: 'Cargando' })).toBeInTheDocument();
   });
 
   it('shows register payment button', async () => {
