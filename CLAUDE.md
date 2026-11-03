@@ -306,6 +306,15 @@ gh pr create --fill                            # título = Conventional Commit (
 
 - Para mergear, el CI tiene que pasar: **"Typecheck, tests y lint"** (`bun run check`) y **"Formato de commits y título del PR"**.
 - Se mergea solo con **squash**: el título del PR queda como el commit en `main`, por eso tiene que respetar el formato. La branch se borra sola al mergear.
+- **El PR tiene que estar al día con `main`** para poder mergearse (GitHub lo marca como *BEHIND* si entró otro PR antes). Se actualiza **siempre con rebase, nunca con merge** (el historial de `main` es lineal):
+  ```bash
+  gh pr update-branch <número> --rebase          # desde GitHub, sin tocar tu copia local
+  # o en local:
+  git fetch origin && git rebase origin/main     # resolver conflictos según "Trabajo en paralelo y conflictos"
+  git push --force-with-lease                    # solo sobre TU branch, nunca sobre main
+  ```
+  Después del rebase el CI corre de nuevo y hay que esperar a que pase.
+- Resultado: **un PR = un commit en `main`**, con el título del PR como mensaje.
 - No hace falta aprobación de otro para mergear (somos pocos), pero conviene avisar al grupo en PRs grandes.
 - Mantener los PRs chicos y de un tema (una pantalla, un procedure, un fix).
 - Claude: crear la branch y el PR; **mergear solo si el usuario lo pide** (`gh pr merge --squash` cuando el CI esté en verde).
