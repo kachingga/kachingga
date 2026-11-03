@@ -19,7 +19,7 @@ Que desde la app, al ver "le debés $7.775 a Tuke", se pueda **pagar directament
 | Abrir Mercado Pago **con destinatario y monto ya cargados** | ❓ Sin confirmar | No | No encontramos documentación oficial de un link que lo permita |
 | **Pagar dentro de nuestra app**, de una persona a otra, **sin comisión** | ❌ No | — | No existe en las APIs de Mercado Pago |
 | Cobrar con la API (**Checkout Pro / link de pago**) | ✅ Sí | **Sí, al que recibe** | Mercado Pago lo trata como una venta |
-| Enviar plata con la API (**Payouts**) | ✅ Sí, pero no sirve | — | La plata sale de **una cuenta nuestra**, no de la de un amigo |
+| Enviar plata con la API (**Payouts**) | ✅ Sí, pero no sirve | ❓ No documentada | La plata sale de **una cuenta nuestra**. Usarla con la cuenta de cada amigo (OAuth) no está documentado y requeriría habilitación de Mercado Pago (ver abajo) |
 | Marcar la deuda como pagada **automáticamente** | Solo con Checkout Pro (con comisión) | — | Con alias o abriendo Mercado Pago, se marca "ya pagué" a mano |
 
 ---
@@ -50,6 +50,17 @@ Que desde la app, al ver "le debés $7.775 a Tuke", se pueda **pagar directament
 - Envía plata **desde una cuenta de Mercado Pago del integrador** (nuestra) hacia otras cuentas.
 - No puede sacar plata de la cuenta de un amigo para dársela a otro.
 - Para usarla, cada uno tendría que pagarnos primero (forma B, con comisión) y después nosotros reenviar: **quedaríamos con plata ajena** (riesgo legal). Además requiere habilitación de Mercado Pago.
+
+### ¿Y usar Payouts con la cuenta de cada uno, para que yo le mande a mi amigo?
+
+En teoría es lo único que se parece a "pagar desde la app", pero en la práctica no es viable:
+
+1. **Permiso para sacar plata de cada cuenta.** Cada amigo tendría que vincular su cuenta a la app (OAuth) dándole permiso para **enviar dinero**. Es el permiso más sensible posible: si alguien compromete nuestro servidor, puede vaciar las cuentas de todos.
+2. **Habilitación comercial por cuenta.** Payouts requiere que Mercado Pago lo habilite (según el foro de desarrolladores, a través de un asesor comercial y para cuentas de vendedor). No es algo que cada cuenta personal active sola.
+3. **Comisión desconocida.** La documentación de Payouts no menciona costos: "sin comisión" no está confirmado.
+4. **Sin documentación** que diga que Payouts funciona con la cuenta de un tercero autorizado por OAuth; la documentación lo describe con la cuenta del integrador.
+
+Para saberlo con certeza habría que **preguntarle a Mercado Pago** (soporte para desarrolladores o un asesor comercial): "¿puede una app, con OAuth, iniciar transferencias desde la cuenta personal de un usuario hacia la de otro usuario, y con qué costo?".
 
 ---
 

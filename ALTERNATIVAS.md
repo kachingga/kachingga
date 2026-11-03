@@ -6,7 +6,7 @@ Complementa `CONTRAS.md` (costos y límites). Acá están los caminos posibles y
 
 ## TL;DR
 
-- **Web app mobile-first (PWA)**: se usa desde el navegador en el celu y en la compu, y en el iPhone se "instala" agregándola a la pantalla de inicio. **Sin cuenta de Apple, sin stores y se puede hostear gratis** (Vercel + Supabase Free). Es la opción que mejor encaja con lo que queremos.
+- **Web app mobile-first (PWA)**: se usa desde el navegador en el celu y en la compu, y en el iPhone se "instala" agregándola a la pantalla de inicio. **Sin cuenta de Apple ni stores**: front gratis en Vercel, API en Railway (~USD 5/mes, servidor dedicado, elegido por el grupo) y Supabase Free; se podría bajar a USD 0 con la API en Vercel, perdiendo algunas cosas. **Es la dirección más probable del grupo** (la V1 se define para que sirva con cualquier front).
 - **No hay que tirar casi nada**: la API (Hono + tRPC + Prisma), las reglas de negocio, los tests de la API, el CI y la base quedan igual. Lo que cambia es `apps/mobile` → una app web, y hoy esa carpeta es casi solo el template de Expo.
 - Para ser **mejor que Tricount en Argentina**: dólar blue automático, "mantener en USD", **alias de cada uno cargado en el grupo** (pagar = copiar alias y monto, sin comisiones), filtros con totales, explicación de cada saldo y, más adelante, el agente de IA (~USD 1/mes con un modelo chico).
 
@@ -19,7 +19,7 @@ Complementa `CONTRAS.md` (costos y límites). Acá están los caminos posibles y
 | Qué es | App instalada (TestFlight en iPhone, APK en Android) | El mismo proyecto Expo compilado para web (`react-native-web`, ya está en el template) | App web pensada desde cero para el celu y la compu, como el front de dear-cred | — |
 | Celular | ✅ Nativa | ⚠️ Web en la pantalla de inicio | ⚠️ Web en la pantalla de inicio | ✅ |
 | Compu | ❌ | ⚠️ Funciona, pero los componentes de React Native en web se ven "de celu estirado" | ✅ Pensada para las dos | ✅ Web |
-| Costo fijo | ~USD 13/mes (Railway + Apple) | **~USD 0** (ver abajo) | **~USD 0** | USD 0 |
+| Costo fijo | ~USD 13/mes (Railway + Apple) | **~USD 5/mes** (API en Railway; USD 0 con la API en Vercel, ver abajo) | **~USD 5/mes** (ídem) | USD 0 |
 | Cuenta de Apple / stores | Obligatoria en iPhone | No | No | — |
 | Updates | EAS Update (OTA) / builds que vencen a los 90 días en TestFlight | Al deployar, todos tienen la última | Al deployar, todos tienen la última | — |
 | Reutiliza lo hecho | Todo | Todo | Todo menos `apps/mobile` (hoy casi vacío: template + cliente tRPC + tests) | Nada |
@@ -39,11 +39,18 @@ Complementa `CONTRAS.md` (costos y límites). Acá están los caminos posibles y
 - **Front**: React + Vite + TypeScript, mobile-first, Tailwind + shadcn/ui, **PWA** (manifest + íconos para "Agregar a inicio", se abre como app a pantalla completa).
 - **Datos**: igual que hoy → tRPC + TanStack Query contra la API, tipos de punta a punta, schemas Zod compartidos (`@kachingga/api/schemas`).
 - **Login**: Supabase Auth con email + password desde el front, igual que la decisión actual (sesión y refresh los maneja la librería).
-- **Hosting gratis**:
-  - **Front en Vercel** (Hobby, gratis).
-  - **API en Vercel** como función (Hono se deploya en Vercel sin configuración especial; Hobby incluye 1.000.000 de invocaciones/mes) → **no hace falta Railway**.
+- **Hosting — elegido por el grupo: API como servidor dedicado (~USD 5/mes)**:
+  - **Front en Vercel** (Hobby, gratis; es un sitio estático).
+  - **API en Railway** como **servidor dedicado**: un proceso Bun siempre prendido, como está armado hoy (USD 5/mes del plan Hobby).
   - **Supabase Free** (prod + dev).
-  - Ojo: Vercel Hobby es **solo para uso personal, no comercial**. Si algún día la app cobra o es un negocio, hay que pasar a Pro (USD 20/usuario/mes) o volver a Railway.
+- **Alternativa gratis (si algún día hace falta): API también en Vercel**, como *funciones* (Hono se deploya en Vercel sin configuración especial; Hobby incluye 1.000.000 de invocaciones/mes). Total **USD 0**, pero se pierden cosas:
+  - **Arranque en frío:** la API no está siempre prendida; el primer pedido después de un rato tarda más.
+  - **Límite de tiempo por pedido** (hasta 5 minutos en Hobby): puede molestar con el agente de IA (V2) si una respuesta tarda.
+  - **Conexiones a la base más delicadas:** cada función abre las suyas; hay que usar siempre el pooler de Supabase.
+  - **Nada en segundo plano:** sin tareas programadas ni cachés en memoria (ej. la del dólar blue dura lo que dura la función).
+  - **Logs cortos** (1 hora en Hobby) y menos control del entorno.
+  - Hay que adaptar la API para correr ahí (hoy está pensada como servidor Bun).
+- Ojo en los dos casos: Vercel Hobby es **solo para uso personal, no comercial**. Si algún día la app cobra o es un negocio, el front pasa a Pro (USD 20/usuario/mes) o a otro hosting.
 - **Qué se pierde frente a nativa**:
   - En iPhone la instalación es manual (Safari → Compartir → "Agregar a inicio"), no hay App Store.
   - Notificaciones push en iPhone: funcionan solo si la app está agregada a la pantalla de inicio (iOS 16.4+) y con menos opciones que en Android.
@@ -73,7 +80,8 @@ Complementa `CONTRAS.md` (costos y límites). Acá están los caminos posibles y
 | Opción | Fijo | Variable |
 |--------|------|----------|
 | A. Nativa | ~USD 13/mes (Railway USD 5 + Apple USD 99/año) | — |
-| B / C. Web app | **USD 0** (Vercel Hobby + Supabase Free) | Agente de IA ~USD 1/mes cuando exista (V2) |
+| B / C. Web app (elegido: API en Railway) | **~USD 5/mes** (front en Vercel gratis + API en Railway + Supabase Free) | Agente de IA ~USD 1/mes cuando exista (V2) |
+| B / C. Web app con la API en Vercel | **USD 0** (con las limitaciones de arriba) | ídem |
 | D. Tricount | USD 0 | — |
 
 > Con cualquier opción hay que bajar la org `kachingga` de Supabase de Pro a Free (hoy cuesta ~USD 35/mes, ver `CONTRAS.md`).
@@ -83,9 +91,9 @@ Complementa `CONTRAS.md` (costos y límites). Acá están los caminos posibles y
 ## Si se elige la web app: próximos pasos
 
 1. Decidir entre B y C (recomendado: C).
-2. Agregar a las reglas de negocio y a la API: **alias/CVU por participante** y **explicación de saldo** (son de la V1, sirven para cualquier front).
+2. **Alias/CVU para cobrar**: va en la V1 (sirve para cualquier front). **Explicación de saldo**: en la V2 (paso 1, sin IA), adelantable a la V1.
 3. Reemplazar `apps/mobile` por `apps/web` y adaptar CI, docs y la API para Vercel.
-4. Actualizar `LANZAMIENTO.md`: la Fase 1 pasa a ser "deploy en Vercel + que cada uno la agregue a la pantalla de inicio", sin Apple ni Railway.
+4. Actualizar `LANZAMIENTO.md`: la Fase 1 pasa a ser "API en Railway + front en Vercel + que cada uno la agregue a la pantalla de inicio", sin cuenta de Apple.
 
 ## Fuentes
 
