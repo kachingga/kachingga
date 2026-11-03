@@ -15,10 +15,12 @@
 ### 1. Railway — API
 
 1. [railway.app](https://railway.app) → New Project → Deploy from GitHub repo → `kachingga/kachingga`
-2. **Root Directory:** `apps/api`
-3. **Start Command:** `bun src/index.ts`
-4. Agregar las variables de entorno (ver `INFRA.md`)
-5. Deploy y copiar el dominio a `INFRA.md`
+2. **Root Directory:** vacío (raíz del repo) — así Railway usa el `bun.lock` del monorepo
+3. **Start Command:** `bun run --cwd apps/api start` (el `bun install` ya corre `prisma generate` por el postinstall)
+4. **Watch Paths:** `apps/api/**` y `bun.lock` — para no redeployar la API por cambios solo de la app
+5. **Healthcheck Path:** `/health`
+6. Agregar las variables de entorno (ver `INFRA.md`)
+7. Deploy y copiar el dominio a `INFRA.md`
 
 ### 2. EAS — App mobile
 

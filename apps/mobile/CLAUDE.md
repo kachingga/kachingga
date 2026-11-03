@@ -20,12 +20,19 @@ Usamos Bun, así que siempre `bunx` en lugar de `npx`.
 bunx expo install <paquete>  # usar SIEMPRE en lugar de bun add — resuelve versiones compatibles con el SDK
 bunx expo start              # levantar el dev server
 bunx expo lint               # lint
-bunx tsc --noEmit            # typecheck
+bun run typecheck            # typecheck (genera expo-env.d.ts si falta y corre tsc)
 bunx expo-doctor             # diagnosticar problemas de dependencias y config
 bunx expo install --fix      # arreglar versiones incompatibles
 ```
 
-Correr lint y typecheck antes de dar una tarea por terminada.
+Correr `bun run check` desde la raíz antes de dar una tarea por terminada (es lo que corre el pre-commit).
+
+## API (tRPC)
+
+- Toda la data viene de la API por tRPC. Cliente en `src/lib/trpc.ts`, provider en `src/components/api-provider.tsx` (ya montado en `src/app/_layout.tsx`).
+- En componentes: `const trpc = useTRPC()` + `useQuery(trpc.<router>.<procedure>.queryOptions(input))` / `useMutation(trpc.<router>.<procedure>.mutationOptions())` de `@tanstack/react-query`.
+- Solo `import type` desde `@kachingga/api`. Nunca importar código de runtime de la API.
+- URL de la API: `EXPO_PUBLIC_API_URL` si está definida; si no, en desarrollo usa la IP de la máquina que sirve el bundle en el puerto 3000 (funciona desde el teléfono en la misma red).
 
 ## Navegación y rutas
 

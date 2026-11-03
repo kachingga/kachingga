@@ -20,7 +20,7 @@ Proyecto de **Kachingga**, una organización de amigos (repo: `github.com/kachin
 | `DEPLOY.md` | Cómo deployar la API (Railway) y distribuir la app (EAS Build / EAS Update) |
 | `IMPROVEMENTS.md` | Mejoras de infraestructura pendientes (CI, staging, backups) |
 | `apps/mobile/CLAUDE.md` | Reglas de Expo / React Native para la app mobile |
-| `apps/api/CLAUDE.md` | Reglas de la API Hono + tRPC + Prisma (crear junto con `apps/api`) |
+| `apps/api/CLAUDE.md` | Reglas de la API: Hono + tRPC + Prisma, comandos de DB y migraciones |
 
 > **Alcance:** si una tarea toca algo de `V2.md` (agente o Mercado Pago), frená y preguntá antes de implementarlo. Todo lo demás es v1.
 
@@ -86,32 +86,45 @@ kachingga/
 ├── .claude/
 │   ├── CLAUDE.md            # guías de comportamiento
 │   └── settings.json        # config compartida de Claude Code
-├── .githooks/commit-msg     # valida el formato de commits
+├── .husky/
+│   ├── commit-msg           # valida el formato de commits
+│   └── pre-commit           # corre `bun run check` (typecheck + tests + lint)
 ├── apps/
-│   ├── mobile/              # app Expo (ver apps/mobile/CLAUDE.md)
-│   │   └── src/app/         # rutas de Expo Router
-│   └── api/                 # API Hono + tRPC (@kachingga/api) — todavía no creada
-│       └── src/trpc/        # init, context, routers/, appRouter
+│   ├── mobile/              # app Expo (@kachingga/mobile, ver apps/mobile/CLAUDE.md)
+│   │   └── src/
+│   │       ├── app/         # rutas de Expo Router
+│   │       └── lib/trpc.ts  # cliente tRPC tipado con AppRouter
+│   └── api/                 # API Hono + tRPC (@kachingga/api, ver apps/api/CLAUDE.md)
+│       └── src/
+│           ├── index.ts     # servidor Hono: /health y /trpc/*
+│           ├── trpc/        # init, context, router.ts (AppRouter), routers/
+│           └── db/          # schema Prisma (models/*.prisma), migrations, cliente
 ├── CLAUDE.md
 ├── V1.md / V2.md
 ├── INFRA.md / DEPLOY.md / IMPROVEMENTS.md
 └── package.json             # workspaces: apps/*
 ```
 
-> **Dependencias:** nunca agregar paquetes al `package.json` raíz. Siempre `cd` al workspace y desde ahí `bun add` (en mobile: `bunx expo install <paquete>`).
+> **Dependencias:** nunca agregar paquetes al `package.json` raíz (única excepción: tooling del repo como `husky`). Siempre `cd` al workspace y desde ahí `bun add` (en mobile: `bunx expo install <paquete>`).
 
 ---
 
 ## Comandos
 
-```bash
-bun install          # instala todo y activa los git hooks (.githooks)
-bun run mobile       # levanta Expo (apps/mobile)
+Desde la raíz (corren en todos los workspaces con `bun --filter`):
 
-# desde apps/mobile
-bunx expo lint       # lint
-bunx tsc --noEmit    # typecheck
+```bash
+bun install          # instala todo, activa husky y genera el cliente de Prisma
+bun run dev          # levanta la API (:3000) y Expo a la vez
+bun run api          # solo la API
+bun run mobile       # solo Expo
+bun run typecheck    # tsc en api y mobile
+bun run test         # tests (bun test en api)
+bun run lint         # expo lint en mobile
+bun run check        # typecheck + test + lint — lo mismo que corre el pre-commit
 ```
+
+**Antes de dar una tarea por terminada, correr `bun run check`.** El hook de pre-commit de husky lo corre en cada commit y lo rechaza si algo falla.
 
 > Los builds de EAS (`eas build`) solo se lanzan cuando alguien lo pide explícitamente — no son parte del flujo normal. Ver `DEPLOY.md`.
 
@@ -141,7 +154,7 @@ refactor(api)!: cambiar formato de respuesta de gastos   # ! = breaking change
 Reglas para Claude:
 - **Nunca** crear un commit que no respete este formato. Si el usuario pide un mensaje que no lo cumple, adaptarlo y avisar.
 - Un commit = un cambio lógico. No mezclar `feat` con `chore` no relacionado.
-- El hook `.githooks/commit-msg` rechaza mensajes inválidos — no usar `--no-verify` para saltearlo.
+- Los hooks de husky (`.husky/commit-msg` y `.husky/pre-commit`) rechazan mensajes inválidos y código que no pasa `bun run check` — **nunca** usar `--no-verify` para saltearlos. Si un hook falla, arreglar la causa.
 - Branches: `feat/<descripcion-corta>`, `fix/<descripcion-corta>`, `chore/<...>`. No commitear directo a `main` salvo que el usuario lo pida.
 
 ---

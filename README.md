@@ -72,12 +72,14 @@ El repo es un monorepo: la app mobile está en `apps/mobile`.
 ```bash
 git clone git@github.com:kachingga/kachingga.git
 cd kachingga
-bun install                              # instala dependencias y activa el hook de commits
+bun install                              # instala dependencias y activa los hooks (husky)
 cd apps/mobile && bunx eas-cli login     # login en Expo (una vez)
 cd ../.. && bun run mobile               # levanta la app
 ```
 
-> Si el hook de commits no rechaza un mensaje inválido, correr `git config core.hooksPath .githooks`.
+Para la API, copiar `apps/api/.env.example` a `apps/api/.env` y completar las claves de Supabase (pedirlas por el gestor de contraseñas). `bun run dev` levanta la API y la app juntas.
+
+Cada commit corre automáticamente typecheck, tests y lint (`bun run check`) y valida el formato del mensaje.
 
 ### 4. Claude Code
 
@@ -99,7 +101,7 @@ Infra y deploy: [`INFRA.md`](INFRA.md), [`DEPLOY.md`](DEPLOY.md), [`IMPROVEMENTS
 
 ## Commits
 
-Usamos [Conventional Commits](https://www.conventionalcommits.org/) (`feat(api): ...`, `chore: ...`). `bun install` activa un hook que rechaza mensajes que no cumplen el formato. Detalle en [`CLAUDE.md`](CLAUDE.md).
+Usamos [Conventional Commits](https://www.conventionalcommits.org/) (`feat(api): ...`, `chore: ...`). `bun install` activa los hooks de husky: uno rechaza mensajes que no cumplen el formato y otro corre typecheck, tests y lint antes de cada commit. Detalle en [`CLAUDE.md`](CLAUDE.md).
 
 ## Autores
 

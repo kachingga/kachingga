@@ -24,8 +24,9 @@ Actualizar este archivo con los valores reales después de cada setup.
 | `DATABASE_URL` | URL del pooler de Supabase (puerto 6543) — para queries |
 | `DIRECT_URL` | URL directa de Supabase (puerto 5432) — para migraciones |
 | `SUPABASE_URL` | `https://<project>.supabase.co` |
-| `SUPABASE_SECRET_KEY` | Clave **secret** de Supabase (`sb_secret_...`) — solo en el server |
+| `SUPABASE_SECRET_KEY` | Clave **secret** de Supabase (`sb_secret_...`) — solo en el server. Se usa para validar los tokens de los usuarios |
 | `PORT` | Lo setea Railway automáticamente — no pisarlo |
+| `NODE_ENV` | `production` — evita que tRPC devuelva stack traces en los errores |
 | _(v2)_ `LLM_API_KEY` | API key del proveedor del agente |
 | _(v2)_ `MP_ACCESS_TOKEN` | Access token de Mercado Pago |
 | _(v2)_ `MP_WEBHOOK_SECRET` | Secreto para validar webhooks de Mercado Pago |
