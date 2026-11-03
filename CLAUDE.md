@@ -37,6 +37,7 @@ Proyecto de **Kachingga**, una organización de amigos (repo: `github.com/kachin
 | Costos, front nativo vs. web, Tricount | `docs/decisiones/costos-y-alternativas.md` |
 | Mercado Pago | `docs/decisiones/mercado-pago.md` (no es parte de ninguna versión) |
 | Conflictos de git | "Trabajo en paralelo y conflictos" (abajo) + "Conflictos" del `CLAUDE.md` de cada app |
+| Cualquier cosa que toque permisos, login, secretos o datos de otros | "Seguridad" (abajo) + `apps/api/CLAUDE.md` → "Seguridad" |
 | Saber si una tarea está terminada | "Cuándo una tarea está terminada" (abajo) + plantilla de PR (`.github/pull_request_template.md`) |
 
 > **Alcance:** v1 = todo lo de `V1.md`; v2 = explicación de saldos y agente con IA (`V2.md`). Si una tarea toca la v2, frená y preguntá antes de implementarlo. Mercado Pago **no es parte de ninguna versión** (`docs/decisiones/mercado-pago.md`).
@@ -182,6 +183,23 @@ Web (Vercel) ──tRPC + token de Supabase──▶ API (Hono, Railway) ──P
 
 ---
 
+## Seguridad — reglas para todos
+
+**Nadie (persona o Claude) mergea algo que rompa esto.** Detalle de cómo está implementado y checklist por procedure: `apps/api/CLAUDE.md` → "Seguridad".
+
+- **Un usuario solo ve y toca los grupos de los que es miembro.** Todo procedure que toca un grupo chequea pertenencia en la API; el front nunca es la barrera. A quien no es miembro se le responde "no encontrado" (no se revela que el grupo existe).
+- **Lo personal es personal:** el alias de una persona con cuenta solo lo cambia ella; perfil y filtros guardados, solo el dueño.
+- **El test `authorization.test.ts` cubre todos los procedures**: un procedure nuevo no pasa el CI hasta que se agrega ahí (como atacable o con el motivo por el que no toca un grupo).
+- **Los datos solo por la API.** El front usa Supabase únicamente para el login; RLS bloquea cualquier otro acceso a la base.
+- **Secretos:** nunca en el código, en los `.env.sample`, en issues, PRs ni en el chat. Solo en `.env` / `.env.prod` locales (gitignoreados), en Railway y en Vercel. Lo que empieza con `VITE_` / `EXPO_PUBLIC_` es **público** (va dentro de la app): nunca un secreto ahí. GitHub escanea los pushes y bloquea si detecta una clave.
+- **Si se filtra un secreto:** avisar al grupo, **rotarlo** (generar uno nuevo en Supabase / Railway / Expo) y actualizarlo en todos lados. Borrarlo del historial no alcanza: el repo es público.
+- **Límite de pedidos por IP** en la API (más estricto en códigos de invitación y export). Un procedure caro o adivinable lleva su límite.
+- **Validar todo lo que entra** (Zod en la API) y no mostrar errores internos al usuario.
+- **Nunca resetear contraseñas de las bases, desactivar RLS, abrir CORS a cualquier origen, ni saltear hooks o checks** (`--no-verify`, `eslint-disable` de las reglas del proyecto) para "destrabar" algo.
+- **Ante la duda sobre algo de seguridad, frenar y preguntar** (ver `.claude/CLAUDE.md` → cuestionar al humano).
+
+---
+
 ## Estructura del monorepo
 
 ```
@@ -246,10 +264,11 @@ Para cualquier tarea, en cualquier parte del repo. Claude no dice "listo" hasta 
 
 1. **Cumple las reglas de negocio** de este archivo y el alcance de `V1.md`. Si la tarea pedía algo que las contradice, se avisó antes (ver `.claude/CLAUDE.md` → "Cuestionar al humano").
 2. **Tiene tests** según el `CLAUDE.md` de la app tocada (API: integración por procedure; web/mobile: contenido por estado de cada pantalla).
-3. **`bun run check` pasa** (typecheck + tests + lint). Nunca `--no-verify` ni desactivar reglas para que pase.
-4. **Docs actualizados en el lugar correcto:** regla de negocio nueva → acá; procedure o modelo → `apps/api/CLAUDE.md`; pantalla o roadmap → `V1.md`; decisión técnica → el `CLAUDE.md` de la app; servicios, variables o secretos → `INFRA.md`; cómo deployar → `DEPLOY.md`; decisión investigada (costos, alternativas) → `docs/decisiones/`. **Si la tarea completa (o deja a medias) algo de `PENDIENTES.md`, actualizarlo** junto con su issue: lo terminado se borra (o se tilda) y queda documentado donde corresponde; lo nuevo pendiente se agrega con su issue. Un dato vive en un solo lugar (guía completa: `README.md` → "Documentación").
-5. **En una branch con su PR** (título en formato Conventional Commits), con el checklist de la plantilla completo. Mergear solo si el usuario lo pide.
-6. **Se dijo qué quedó sin hacer o sin verificar** (ej. "no lo probé en un teléfono real").
+3. **No rompe ninguna regla de "Seguridad"**; si agrega o cambia un procedure, está cubierto en `authorization.test.ts`.
+4. **`bun run check` pasa** (typecheck + tests + lint). Nunca `--no-verify` ni desactivar reglas para que pase.
+5. **Docs actualizados en el lugar correcto:** regla de negocio nueva → acá; procedure o modelo → `apps/api/CLAUDE.md`; pantalla o roadmap → `V1.md`; decisión técnica → el `CLAUDE.md` de la app; servicios, variables o secretos → `INFRA.md`; cómo deployar → `DEPLOY.md`; decisión investigada (costos, alternativas) → `docs/decisiones/`. **Si la tarea completa (o deja a medias) algo de `PENDIENTES.md`, actualizarlo** junto con su issue: lo terminado se borra (o se tilda) y queda documentado donde corresponde; lo nuevo pendiente se agrega con su issue. Un dato vive en un solo lugar (guía completa: `README.md` → "Documentación").
+6. **En una branch con su PR** (título en formato Conventional Commits), con el checklist de la plantilla completo. Mergear solo si el usuario lo pide.
+7. **Se dijo qué quedó sin hacer o sin verificar** (ej. "no lo probé en un teléfono real").
 
 ---
 

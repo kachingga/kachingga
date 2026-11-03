@@ -63,7 +63,7 @@ Todo lo que falta **fuera del código de las versiones** (el alcance de producto
 **Producto y operación con usuarios desconocidos:**
 - [ ] Revisar decisiones "para amigos": todos con los mismos permisos (sin admin), cualquiera edita/borra cualquier gasto, el código de invitación como única barrera.
 - [ ] Servidor de mail propio (SMTP) en Supabase.
-- [ ] Límites contra abuso (rate limiting) en la API y en el registro.
+- [ ] Límites contra abuso más finos: por usuario (no solo por IP), store compartido si hay varias instancias de la API, y revisar los límites de registro de Supabase. (Ya hay límite por IP: `apps/api/CLAUDE.md` → "Seguridad".)
 - [ ] Reporte de errores en la app y en la API (ej. Sentry).
 - [ ] Revisar costos al crecer (Supabase, Railway, Vercel —Hobby es solo no comercial—, EAS).
 - [ ] Requisitos legales de datos personales en Argentina.

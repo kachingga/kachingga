@@ -93,6 +93,12 @@ Actualizar este archivo con los valores reales después de cada setup.
 
 ---
 
+## Seguridad del repo
+
+- **Escaneo de secretos de GitHub + protección de push: activos.** Si un push trae una clave (Supabase, tokens, etc.), GitHub lo rechaza. No saltear el bloqueo: sacar el secreto del commit.
+- **Alertas de vulnerabilidades de dependencias (Dependabot alerts): activas.** Dependabot además abre PRs mensuales para las GitHub Actions.
+- El repo es **público**: cualquier secreto que llegue a un commit hay que rotarlo, aunque se borre después.
+
 ## Accesos
 
 Todos los miembros de Kachingga deberían tener acceso a: org de GitHub, proyecto de Railway, proyecto de Vercel, org de Supabase y, si se trabaja en la app nativa, org de Expo.

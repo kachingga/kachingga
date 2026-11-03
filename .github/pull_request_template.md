@@ -18,8 +18,13 @@
 - [ ] Probado en un teléfono real, en modo claro y oscuro
 - [ ] Colores del tema, textos en español, montos con `formatMoney`
 
+**Seguridad**
+- [ ] No rompe ninguna regla de "Seguridad" del `CLAUDE.md` raíz (permisos por grupo, datos personales, secretos, CORS, RLS)
+- [ ] Sin secretos en el código, los `.env.sample` ni la descripción del PR
+
 **Si toca la API (`apps/api`)**
 - [ ] Tests de integración: sin login, no miembro, grupo archivado (si escribe), caso feliz y reglas de negocio
+- [ ] Procedure nuevo o cambiado → agregado en `authorization.test.ts`; si es caro o adivinable, con límite en `lib/rateLimit.ts`
 - [ ] Si cambió el schema: migración con `db:migrate:new`, revisada y aplicada en dev (prod solo cuando se pida)
 
 ## Cómo probarlo

@@ -162,12 +162,45 @@ Si agregás o cambiás un procedure, actualizá esta tabla.
 
 ---
 
+## Seguridad
+
+Las reglas generales están en el `CLAUDE.md` raíz → "Seguridad". Acá, cómo está implementado en la API.
+
+### Modelo
+| Capa | Cómo | Dónde |
+|------|------|-------|
+| **Autenticación** | Cada pedido trae `Authorization: Bearer <token de Supabase>`; `createContext` lo valida con Supabase. Sin token válido: `ctx.user = null` | `trpc/context.ts` |
+| **Login obligatorio** | Todo es `protectedProcedure` (→ `UNAUTHORIZED`) salvo `health.ping` | `trpc/init.ts` |
+| **Autorización por grupo** | `requireMembership` (leer) / `requireActiveGroup` (escribir) al principio de cada procedure; `assertParticipantsInGroup` para ids que vienen en el input. No miembro → `NOT_FOUND` (no revela que el grupo existe) | `lib/access.ts` |
+| **Datos personales** | Perfil, alias de una persona con cuenta y filtros guardados: siempre filtrados por `ctx.user.id` | routers `profile`, `participants`, `savedFilters` |
+| **Validación** | Todo input con Zod (tipos, largos, montos, formato del alias) | `schemas.ts` |
+| **Límite de pedidos por IP** | Global 300/min; códigos de invitación (`groups.preview` / `join`) 20 cada 10 min; `expenses.export` 20/min. Excedido → `TOO_MANY_REQUESTS`. Corre **antes** del chequeo de login | `lib/rateLimit.ts`, middleware en `trpc/init.ts` |
+| **Base de datos** | RLS sin políticas en todas las tablas: la API REST de Supabase no ve nada con la clave pública. La API entra como `postgres` | migraciones |
+| **CORS** | Solo los orígenes de `CORS_ORIGINS` (el front web) | `index.ts` |
+| **Errores** | Mensajes en español sin datos internos; `NODE_ENV=production` en Railway para no devolver stack traces | `trpc/init.ts`, Railway |
+| **Secretos** | Solo en `.env` / `.env.prod` (gitignoreados) y en Railway. GitHub tiene escaneo de secretos y bloquea el push si detecta uno | repo |
+
+### Checklist para cada procedure nuevo o cambiado
+1. `protectedProcedure` (público solo con una razón explícita).
+2. Si toca un grupo: `requireMembership` / `requireActiveGroup` **antes** de leer o escribir nada. Si recibe un id de gasto, pago o participante, buscarlo y chequear su `groupId` (nunca confiar en un `groupId` del input para un recurso que ya existe).
+3. Ids de participantes en el input → `assertParticipantsInGroup`.
+4. Datos de una persona → filtrar por `ctx.user.id`.
+5. Input validado con Zod, con límites de largo y de montos.
+6. **Agregarlo a `src/__tests__/integration/authorization.test.ts`**: en `attacks` si toca un grupo, o en `notGroupScoped` con el motivo. Si no, ese test falla (compara contra todos los procedures del router).
+7. Si es caro o se presta a fuerza bruta, sumarle un límite en `PROCEDURE_RULES` (`lib/rateLimit.ts`).
+
+### Límites del rate limiting
+- Es **en memoria**: sirve con **una sola instancia** de la API (Railway Hobby). Con varias instancias hace falta un store compartido (ej. Redis).
+- La IP sale del **último** valor de `X-Forwarded-For` (el que agrega el proxy de Railway; los anteriores los puede inventar el cliente). **Verificar en el primer deploy** que Railway lo setea así (ver `DEPLOY.md`).
+- Se reinicia al reiniciar la API (aceptable).
+
 ## Notas técnicas — no romper
 
 - **Prisma fijado en `7.10.1`** (sin `^`), CLI y cliente iguales. El tag `latest` de `prisma` en npm apuntaba a una `8.0.0-rc`: no actualizar con `bun add prisma` a secas.
 - `prisma generate` corre en `postinstall`; el cliente generado está gitignoreado.
 - `prisma.config.ts` usa `process.env.DIRECT_URL ?? ''` y **no** `env('DIRECT_URL')`: con `env()` el `postinstall` falla sin `.env` (clones nuevos, Railway).
 - `prisma.config.ts` carga el archivo de `PRISMA_ENV_FILE` (default `.env`) con `override: true`: así `db:migrate:prod` siempre usa `.env.prod` aunque haya variables de dev exportadas en la terminal.
+- **Solo TypeScript "borrable"** (`erasableSyntaxOnly` de la web): nada de `enum`, `namespace` ni parámetros de constructor con `private`/`public`. La web typechequea los archivos de la API y los rechaza.
 - **Imports relativos sin extensión `.ts`** (`from './init'`): la app typechequea estos archivos (vía `AppRouter`) con su `tsconfig`, que no acepta `.ts`.
 - El cliente de Supabase es **lazy** (`getSupabase()`) y Prisma no se conecta al importar: importar el router en tests o desde la app no puede requerir variables de entorno.
 - `router.ts` es el entry del paquete y `schemas.ts` el de `./schemas` (`exports` en `package.json`). `schemas.ts` no puede importar nada del server (Prisma, Supabase, `process.env`).
