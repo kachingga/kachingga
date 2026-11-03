@@ -18,6 +18,18 @@ Proyecto de **Kachingga**, una organización de amigos (repo: `github.com/kachin
 - Si cambia o se agrega una regla de negocio → se actualiza **acá**. Si cambia un detalle técnico → se actualiza el `CLAUDE.md` del proyecto. No duplicar: un dato vive en un solo lugar.
 - Lo personal de cada uno va en `CLAUDE.local.md` / `.claude/settings.local.json` (gitignoreados), nunca acá.
 
+### Dónde buscar según la tarea
+
+| Tarea | Leer primero |
+|-------|--------------|
+| Cualquier feature | "Reglas de negocio" (abajo) + `V1.md` (si está en alcance) |
+| Pantallas / UI de la app | `apps/mobile/CLAUDE.md` → **"Cómo usar la API desde la app"** (qué procedure usar, patrones de queries/mutations, montos, monedas, auth) |
+| Lógica, endpoints o datos de la API | `apps/api/CLAUDE.md` → "Procedures tRPC", "Modelo de datos", "Dónde vive cada regla de negocio" |
+| A la app le falta algo de la API | Se agrega en `apps/api` (mismo repo) siguiendo `apps/api/CLAUDE.md`; nunca workarounds en la app |
+| Cambios de base de datos | `apps/api/CLAUDE.md` → "Migraciones — reglas" + `DEPLOY.md` |
+| Deploy, builds, variables de entorno | `DEPLOY.md` + `INFRA.md` |
+| Conflictos de git | "Trabajo en paralelo y conflictos" (abajo) + "Conflictos" del `CLAUDE.md` de cada app |
+
 ### Mapa de documentos
 
 | Archivo | Qué tiene |

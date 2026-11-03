@@ -34,16 +34,67 @@ Copiar `.env.sample` a `.env`. Todo lo `EXPO_PUBLIC_*` queda **embebido en la ap
 - `EXPO_PUBLIC_API_URL` — opcional en desarrollo (ver abajo); en builds, la URL de Railway.
 - `EXPO_PUBLIC_SUPABASE_URL` / `EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY` — solo para login y sesión.
 
-## API (tRPC)
+## Cómo usar la API desde la app
 
+La API ya implementa **toda la lógica de la v1** (permisos, divisiones, redondeo, monedas, saldos, transferencias). **La app no recalcula nada de eso**: pide los datos ya resueltos y los muestra.
+
+### Dónde buscar
+| Necesito… | Dónde |
+|-----------|-------|
+| Entender qué tiene que hacer una pantalla | "Reglas de negocio" en el `CLAUDE.md` raíz |
+| Qué procedure llamar y qué devuelve | Tabla **"Procedures tRPC"** en `apps/api/CLAUDE.md` |
+| El input exacto (campos, validaciones) | `apps/api/src/schemas.ts` (importable como `@kachingga/api/schemas`) |
+| El output exacto | El router en `apps/api/src/trpc/routers/<dominio>.ts`, o `inferRouterOutputs<AppRouter>` |
+| Cómo se guardan los datos (monedas, centavos, borrados) | "Modelo de datos" en `apps/api/CLAUDE.md` |
+
+### Patrones (verificados con estas versiones)
+```tsx
+import type { AppRouter } from '@kachingga/api';
+import { expenseInput, type ExpenseInput } from '@kachingga/api/schemas';
+import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import type { inferRouterOutputs } from '@trpc/server';
+import { useTRPC } from '@/lib/trpc';
+
+type Balances = inferRouterOutputs<AppRouter>['balances']['get'];
+
+const trpc = useTRPC();
+const queryClient = useQueryClient();
+
+// Query
+const group = useQuery(trpc.groups.get.queryOptions({ groupId }));
+
+// Lista paginada (expenses.list devuelve { items, nextCursor }; el cursor lo maneja tRPC)
+const expenses = useInfiniteQuery(
+  trpc.expenses.list.infiniteQueryOptions({ groupId, filters }, { getNextPageParam: (last) => last.nextCursor }),
+);
+
+// Mutation + invalidar lo que cambia
+const createExpense = useMutation(
+  trpc.expenses.create.mutationOptions({
+    onSuccess: () => {
+      queryClient.invalidateQueries(trpc.expenses.pathFilter());
+      queryClient.invalidateQueries(trpc.balances.get.queryFilter({ groupId }));
+    },
+  }),
+);
+```
+
+### Reglas
 - Toda la data viene de la API por tRPC. Cliente en `src/lib/trpc.ts`, provider en `src/components/api-provider.tsx` (ya montado en `src/app/_layout.tsx`).
-- En componentes: `const trpc = useTRPC()` + `useQuery(trpc.<router>.<procedure>.queryOptions(input))` / `useMutation(trpc.<router>.<procedure>.mutationOptions())` de `@tanstack/react-query`.
-- Solo `import type` desde `@kachingga/api`. Los schemas Zod para formularios se importan de `@kachingga/api/schemas`. Nunca importar otro código de runtime de la API.
-- Tipos de respuesta: `inferRouterOutputs<AppRouter>`. No redefinirlos a mano.
-- Montos: la API usa **centavos enteros** (`amountCents`). Convertir a/desde pesos solo para mostrar y para leer inputs.
-- Los errores de la API vienen con mensaje en español listo para mostrar.
-- URL de la API: `EXPO_PUBLIC_API_URL` si está definida; si no, en desarrollo usa `Constants.expoConfig.hostUri` (la IP de la máquina que sirve el bundle) en el puerto 3000 — funciona desde el teléfono en la misma red.
-- **Auth (pendiente):** la app usará `@supabase/supabase-js` solo para login/sesión y mandará el `access_token` en el header `Authorization: Bearer` del `httpBatchLink`.
+- Solo `import type` desde `@kachingga/api`. Los schemas Zod para formularios se importan de `@kachingga/api/schemas` (verificado que Metro los empaqueta). Nunca importar otro código de runtime de la API. Si usás `zod` directo en la app, agregalo con `bunx expo install zod`.
+- No redefinir a mano tipos de inputs/outputs: `ExpenseInput` etc. desde `schemas`, outputs con `inferRouterOutputs<AppRouter>`.
+- **Después de una mutation, invalidar** lo que afecta: gastos y pagos cambian `balances.get`; participantes cambian `groups.get`; etc.
+- **Montos en centavos enteros** (`amountCents`). Convertir a/desde unidades solo para mostrar y al leer inputs (`Math.round(valor * 100)`). Mostrar con la moneda que viene en cada dato.
+- **Tipo de cambio:** al cargar un gasto en otra moneda, precargar `rates.blue` (`mid`) para ARS ↔ USD y dejarlo editable; ofrecer "mantener moneda" (`keepCurrency: true`). Si se manda sin `exchangeRate`, la API usa el blue automático.
+- **Errores:** los `TRPCClientError` traen `message` en español listo para mostrar. `NOT_FOUND` en un grupo = no sos miembro.
+- Fechas viajan como `Date` (superjson): no convertir a string.
+- **Si a la app le falta algo de la API** (un campo, un procedure, un filtro), no hacer workarounds en la app: se agrega en `apps/api` siguiendo `apps/api/CLAUDE.md` (mismo repo, mismo commit o uno `feat(api)` aparte) y se actualiza la tabla de procedures.
+- URL de la API: `EXPO_PUBLIC_API_URL` si está definida; si no, en desarrollo usa `Constants.expoConfig.hostUri` (la IP de la máquina que sirve el bundle) en el puerto 3000 — funciona desde el teléfono en la misma red. Para desarrollar la app hay que tener la API corriendo (`bun run dev` desde la raíz levanta las dos).
+
+### Auth (pendiente de implementar en la app)
+- Login/signup/logout con `@supabase/supabase-js` (email + password) usando `EXPO_PUBLIC_SUPABASE_URL` y `EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY`. Supabase **solo** para auth, nunca para leer datos.
+- Mandar el `access_token` de la sesión en `headers` del `httpBatchLink` de `src/lib/trpc.ts` (`Authorization: Bearer <token>`). Sin token, todo menos `health.ping` responde `UNAUTHORIZED`.
+- Después del login: `groups.list`. Para unirse a un grupo: `groups.preview` con el código → elegir participante sin cuenta o nombre nuevo → `groups.join`.
 
 ## Navegación y rutas
 
