@@ -1,13 +1,14 @@
 import type { User } from '@supabase/supabase-js'
 import { getSupabase } from '../lib/supabase'
 
-export type Context = { user: User | null }
+// `ip` is set for real HTTP requests (rate limiting); callers built in tests may omit it.
+export type Context = { user: User | null; ip?: string }
 
-export async function createContext(req: Request): Promise<Context> {
+export async function createContext(req: Request, ip?: string): Promise<Context> {
   const header = req.headers.get('Authorization')
   const token = header?.startsWith('Bearer ') ? header.slice(7) : null
-  if (!token) return { user: null }
+  if (!token) return { user: null, ip }
 
   const { data, error } = await getSupabase().auth.getUser(token)
-  return { user: error ? null : data.user }
+  return { user: error ? null : data.user, ip }
 }
