@@ -124,7 +124,7 @@ const createExpense = useMutation(
 ### Login (Supabase Auth, email + password)
 - **Decisión:** el login va **directo contra Supabase** (`src/lib/auth.ts`), no por nuestra API; la librería guarda la sesión (localStorage) y **renueva el token** sola. Los datos siempre por la API.
 - `src/lib/trpc.ts` ya manda el token en cada pedido (`Authorization: Bearer`). Sin sesión, todo menos `health.ping` responde `UNAUTHORIZED`.
-- Falta hacer (Manu): pantallas de login / registro y proteger las rutas con `<RequireAuth />` en `src/router.tsx`. `useSession()` devuelve `undefined` mientras restaura la sesión (no mostrar nada), `null` sin sesión.
+- Falta hacer (Juan): pantallas de login / registro y proteger las rutas con `<RequireAuth />` en `src/router.tsx`. `useSession()` devuelve `undefined` mientras restaura la sesión (no mostrar nada), `null` sin sesión.
 - Después del login: `groups.list`. Unirse: `groups.preview` con el código → elegir participante sin cuenta o nombre nuevo → `groups.join`.
 
 ### Lo que hace cumplir el lint (falla el commit y el CI)
@@ -148,7 +148,19 @@ const createExpense = useMutation(
 
 ## Componentes (shadcn/ui)
 
-Todavía no está inicializado (lo decide quien arma la UI). Para hacerlo: `bunx shadcn@latest init` desde `apps/web` (Tailwind v4, alias `@/`), y después `bunx shadcn@latest add <componente>`. Los componentes generados en `src/components/ui/` no se editan a mano salvo para ajustar estilo.
+**Se usa shadcn/ui** (sobre Tailwind). Todavía no está inicializado: es parte del trabajo de diseño de Juan (ver `V1.md` → "Trabajo de la UI (web)"). Para hacerlo: `bunx shadcn@latest init` desde `apps/web` (Tailwind v4, alias `@/`), y después `bunx shadcn@latest add <componente>`. Los componentes generados en `src/components/ui/` no se editan a mano salvo para ajustar estilo.
+
+## Sensación de app nativa
+
+Una web nunca se siente 100% nativa en iPhone: los gestos del sistema (deslizar desde el borde para volver), la física del scroll y del teclado, los haptics (Safari no los permite) y el arranque instantáneo son del sistema operativo. Pero se puede acercar mucho, y es parte del estándar:
+
+- **Que nada espere:** actualizaciones optimistas en lo frecuente, **precargar** los datos de la próxima pantalla (`queryClient.prefetchQuery` al tocar o al pasar por un link), skeletons con la forma real, cero saltos de layout.
+- **Transiciones** entre pantallas y al abrir hojas/modales: View Transitions API (`viewTransition` de React Router; Safari 18+) o una librería de animaciones. Cortas (150–250 ms) y que no bloqueen.
+- **Comportamiento de app:** sin rebote ni "pull to refresh" del navegador donde no corresponde (`overscroll-behavior`), sin selección de texto ni resaltado gris al tocar en controles (`-webkit-tap-highlight-color: transparent`, `user-select` donde aplique), `100dvh` para alturas, zonas seguras con `env(safe-area-inset-*)`.
+- **Inputs:** texto de **16 px o más** (si no, Safari en iPhone hace zoom al enfocar), `inputMode` correcto (`decimal` para montos), `autocomplete` en login.
+- **Gestos propios** donde suman (ej. deslizar un gasto para borrarlo), siempre con alternativa con botón.
+- **Arranque rápido:** bundle chico (rutas con `lazy`), y con la PWA (#18) un service worker que guarde la app para abrir al instante.
+- **Instalada:** con el manifest (#18) se abre a pantalla completa, sin barra del navegador.
 
 ## UI / UX — estándar de calidad
 
