@@ -19,7 +19,7 @@ export default function HomeScreen() {
     <ThemedView style={styles.container}>
       <SafeAreaView style={styles.safeArea}>
         <ThemedView style={styles.header}>
-          <ThemedText type="subtitle">Fourcount</ThemedText>
+          <ThemedText type="subtitle">Kachingga</ThemedText>
           <ThemedText themeColor="textSecondary">Dividí gastos en grupo sin vueltas.</ThemedText>
         </ThemedView>
 
