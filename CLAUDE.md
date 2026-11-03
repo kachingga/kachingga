@@ -1,21 +1,25 @@
 # Kachingga — App para dividir gastos en grupo
 
-Proyecto de **Kachingga**, una organización de amigos (repo: `github.com/kachingga/kachingga`). **Hoy es para uso propio del grupo**: cada uno tiene la app instalada (iPhone por TestFlight, Android por APK) y usa siempre la última versión. **A futuro se quiere publicar en las stores** (ver `LANZAMIENTO.md`): no tomar decisiones que lo hagan imposible, pero tampoco construir cosas para usuarios públicos antes de tiempo.
+Proyecto de **Kachingga**, una organización de amigos (repo: `github.com/kachingga/kachingga`). **Hoy es para uso propio del grupo**: cada uno la usa en su celu y siempre en la última versión. El front todavía no está decidido (lo más probable: **web app mobile-first**; ver `docs/decisiones/costos-y-alternativas.md`). **A futuro se podría publicar** (ver `PENDIENTES.md` → Lanzamiento → Fase 2): no tomar decisiones que lo hagan imposible, pero tampoco construir cosas para usuarios públicos antes de tiempo.
 
 ---
 
 ## Cómo está organizada la documentación
 
-**Regla para todos (personas y Claude):**
+**La guía completa —qué hay en cada archivo, qué tiene que haber y cómo se lee y se actualiza— está en `README.md` → "Documentación". Leerla antes de crear, mover o reorganizar un doc.** Resumen:
 
 | Dónde | Qué va |
 |-------|--------|
-| **Este `CLAUDE.md` (raíz)** | **Reglas de negocio y decisiones de producto** (cómo funcionan grupos, gastos, monedas, saldos…), más lo que aplica a todo el repo: stack, arquitectura general, comandos, commits, conflictos y tooling del monorepo |
-| **`apps/api/CLAUDE.md`** | Todo lo técnico de la API: modelo de datos, procedures tRPC, Prisma, migraciones, Supabase, decisiones de implementación |
-| **`apps/mobile/CLAUDE.md`** | Todo lo técnico de la app: Expo, EAS, navegación, cliente tRPC, decisiones de implementación |
+| **Este `CLAUDE.md` (raíz)** | **Reglas de negocio y decisiones de producto**, más lo que aplica a todo el repo: stack, arquitectura, comandos, commits, PRs, conflictos y tooling |
+| **`apps/api/CLAUDE.md`** | Todo lo técnico de la API: modelo de datos, procedures tRPC, Prisma, migraciones, Supabase |
+| **`apps/mobile/CLAUDE.md`** | Todo lo técnico de la app: Expo, EAS, navegación, cliente tRPC, UI/UX, testing |
+| **`V1.md` / `V2.md`** | Alcance de cada versión: qué entra, pantallas y roadmap |
+| **`INFRA.md` / `DEPLOY.md`** | Qué servicios y variables existen / cómo se deploya |
+| **`PENDIENTES.md`** | Lanzamiento e infraestructura pendientes (cada ítem con su issue) |
+| **`docs/decisiones/`** | Decisiones investigadas: costos y alternativas de front, Mercado Pago |
 
 - Antes de implementar cualquier feature, leer **"Reglas de negocio"** de este archivo. Si el código contradice una regla de negocio, gana la regla (y se avisa).
-- Si cambia o se agrega una regla de negocio → se actualiza **acá**. Si cambia un detalle técnico → se actualiza el `CLAUDE.md` del proyecto. No duplicar: un dato vive en un solo lugar.
+- **Un dato vive en un solo lugar.** Si cambia una regla de negocio → acá; un detalle técnico → el `CLAUDE.md` de la app; algo pendiente → `PENDIENTES.md` + issue; una decisión investigada → `docs/decisiones/`.
 - Lo personal de cada uno va en `CLAUDE.local.md` / `.claude/settings.local.json` (gitignoreados), nunca acá.
 
 ### Dónde buscar según la tarea
@@ -23,37 +27,18 @@ Proyecto de **Kachingga**, una organización de amigos (repo: `github.com/kachin
 | Tarea | Leer primero |
 |-------|--------------|
 | Cualquier feature | "Reglas de negocio" (abajo) + `V1.md` (si está en alcance) |
-| Pantallas / UI de la app | `V1.md` → **"Pantallas"** (qué pantallas y qué hace cada una) + `apps/mobile/CLAUDE.md` → **"UI / UX — estándar de calidad"** (cargas, vacíos, errores, fluidez, formularios) y **"Cómo usar la API desde la app"** (procedures, queries/mutations, montos, monedas, auth) |
+| Pantallas / UI de la app | `V1.md` → **"Pantallas"** + `apps/mobile/CLAUDE.md` → **"UI / UX — estándar de calidad"** y **"Cómo usar la API desde la app"** |
 | Lógica, endpoints o datos de la API | `apps/api/CLAUDE.md` → "Procedures tRPC", "Modelo de datos", "Dónde vive cada regla de negocio" |
 | A la app le falta algo de la API | Se agrega en `apps/api` (mismo repo) siguiendo `apps/api/CLAUDE.md`; nunca workarounds en la app |
 | Cambios de base de datos | `apps/api/CLAUDE.md` → "Migraciones — reglas" + `DEPLOY.md` |
 | Deploy, builds, variables de entorno | `DEPLOY.md` + `INFRA.md` |
-| Instalarla en los teléfonos del grupo / publicarla | `LANZAMIENTO.md` |
-| Infra pendiente / mejoras | `IMPROVEMENTS.md` (actualizarlo al terminar o empezar algo de ahí) |
+| Qué falta para que todos la usen / publicarla / infra pendiente | `PENDIENTES.md` (y los issues `infra`) |
+| Costos, front nativo vs. web, Tricount | `docs/decisiones/costos-y-alternativas.md` |
+| Mercado Pago | `docs/decisiones/mercado-pago.md` (no es parte de ninguna versión) |
 | Conflictos de git | "Trabajo en paralelo y conflictos" (abajo) + "Conflictos" del `CLAUDE.md` de cada app |
 | Saber si una tarea está terminada | "Cuándo una tarea está terminada" (abajo) + plantilla de PR (`.github/pull_request_template.md`) |
 
-### Mapa de documentos
-
-| Archivo | Qué tiene |
-|---------|-----------|
-| `CLAUDE.md` | Este archivo |
-| `.claude/CLAUDE.md` | Guías de comportamiento para Claude (pensar antes de codear, simplicidad, cambios quirúrgicos) |
-| `.claude/settings.json` | Config compartida de Claude Code (plugin de Expo) |
-| `apps/api/CLAUDE.md` | Técnico de la API (ver arriba) |
-| `apps/mobile/CLAUDE.md` | Técnico de la app (ver arriba) |
-| `V1.md` | Alcance y roadmap de la v1. **Lo que se construye ahora** |
-| `V2.md` | Alcance de la v2: explicación de saldos y agente de gastos con IA. **No implementar hasta cerrar v1** |
-| `LANZAMIENTO.md` | Qué falta para que todo el grupo la use (Fase 1, en curso) y para publicarla en las stores (Fase 2, futuro) |
-| `CONTRAS.md` | Costos (Railway, Supabase, Apple, Google, EAS, impuestos) y comparación con Tricount |
-| `INTEGRACION_MERCADOPAGO.md` | Qué se puede y qué no con Mercado Pago. **No es parte de ninguna versión** |
-| `ALTERNATIVAS.md` | App nativa vs. web app mobile-first (PWA) vs. Tricount: qué cambia, costos y qué la haría mejor que Tricount. **Decisión pendiente** |
-| `README.md` | Qué es la app y onboarding de cada miembro |
-| `INFRA.md` | Servicios, dashboards, variables de entorno, secretos |
-| `DEPLOY.md` | Deploy de la API (Railway), migraciones en prod y distribución de la app (EAS) |
-| `IMPROVEMENTS.md` | Mejoras de infraestructura pendientes |
-
-> **Alcance:** v1 = todo lo de `V1.md`; v2 = explicación de saldos y agente con IA (`V2.md`). Si una tarea toca la v2, frená y preguntá antes de implementarlo. Mercado Pago **no es parte de ninguna versión** (qué se puede y qué no: `INTEGRACION_MERCADOPAGO.md`).
+> **Alcance:** v1 = todo lo de `V1.md`; v2 = explicación de saldos y agente con IA (`V2.md`). Si una tarea toca la v2, frená y preguntá antes de implementarlo. Mercado Pago **no es parte de ninguna versión** (`docs/decisiones/mercado-pago.md`).
 
 ---
 
@@ -147,9 +132,9 @@ Proyecto de **Kachingga**, una organización de amigos (repo: `github.com/kachin
 - **Filtros guardados:** cada usuario puede guardar combinaciones con nombre, por grupo. Son personales (los demás no los ven).
 
 ### Decisiones de producto tomadas
-- Grupo de amigos, uso propio → sin roles ni permisos finos dentro de un grupo. *(A revisar antes de publicar en las stores: `LANZAMIENTO.md` → Fase 2.)*
+- Grupo de amigos, uso propio → sin roles ni permisos finos dentro de un grupo. *(A revisar antes de publicarla: `PENDIENTES.md` → Lanzamiento → Fase 2.)*
 - **Distribución V1:** iPhone por **TestFlight** (cuenta de Apple Developer, la paga Galo) y Android por **APK**. Expo Go solo para desarrollar, no para usar la app.
-- Saldar deudas es siempre manual (el pago se hace fuera de la app). **No hay integración con Mercado Pago**: pagar de una persona a otra desde la app sin comisiones no es posible (ver `INTEGRACION_MERCADOPAGO.md`). El agente con IA es v2.
+- Saldar deudas es siempre manual (el pago se hace fuera de la app). **No hay integración con Mercado Pago**: pagar de una persona a otra desde la app sin comisiones no es posible (ver `docs/decisiones/mercado-pago.md`). El agente con IA es v2.
 - Dólar de referencia: **blue promedio**, nunca oficial.
 - Los tipos de cambio quedan "congelados" en cada gasto/pago al cargarlo.
 - Borrados lógicos (gastos y pagos) para no perder historial.
@@ -199,7 +184,9 @@ kachingga/
 │   └── mobile/              # @kachingga/mobile — Expo (ver apps/mobile/CLAUDE.md)
 ├── CLAUDE.md
 ├── V1.md / V2.md
-├── INFRA.md / DEPLOY.md / IMPROVEMENTS.md
+├── INFRA.md / DEPLOY.md
+├── PENDIENTES.md
+├── docs/decisiones/     # costos-y-alternativas.md, mercado-pago.md
 └── package.json             # workspaces + scripts globales
 ```
 
@@ -249,7 +236,7 @@ Para cualquier tarea, en cualquier parte del repo. Claude no dice "listo" hasta 
 1. **Cumple las reglas de negocio** de este archivo y el alcance de `V1.md`. Si la tarea pedía algo que las contradice, se avisó antes (ver `.claude/CLAUDE.md` → "Cuestionar al humano").
 2. **Tiene tests** según el `CLAUDE.md` de la app tocada (API: integración por procedure; mobile: contenido por estado de cada pantalla).
 3. **`bun run check` pasa** (typecheck + tests + lint). Nunca `--no-verify` ni desactivar reglas para que pase.
-4. **Docs actualizados en el lugar correcto:** regla de negocio nueva → acá; procedure o modelo → `apps/api/CLAUDE.md`; pantalla o roadmap → `V1.md`; decisión técnica → el `CLAUDE.md` de la app; servicios, variables o secretos → `INFRA.md`; cómo deployar → `DEPLOY.md`. **Si la tarea completa (o deja a medias) algo de `IMPROVEMENTS.md`, actualizarlo:** lo terminado se borra de ahí y queda documentado donde corresponde; lo nuevo pendiente se agrega. Un dato vive en un solo lugar.
+4. **Docs actualizados en el lugar correcto:** regla de negocio nueva → acá; procedure o modelo → `apps/api/CLAUDE.md`; pantalla o roadmap → `V1.md`; decisión técnica → el `CLAUDE.md` de la app; servicios, variables o secretos → `INFRA.md`; cómo deployar → `DEPLOY.md`; decisión investigada (costos, alternativas) → `docs/decisiones/`. **Si la tarea completa (o deja a medias) algo de `PENDIENTES.md`, actualizarlo** junto con su issue: lo terminado se borra (o se tilda) y queda documentado donde corresponde; lo nuevo pendiente se agrega con su issue. Un dato vive en un solo lugar (guía completa: `README.md` → "Documentación").
 5. **En una branch con su PR** (título en formato Conventional Commits), con el checklist de la plantilla completo. Mergear solo si el usuario lo pide.
 6. **Se dijo qué quedó sin hacer o sin verificar** (ej. "no lo probé en un teléfono real").
 
@@ -342,5 +329,5 @@ gh pr create --fill                            # título = Conventional Commit (
 - Claude: crear la branch y el PR; **mergear solo si el usuario lo pide** (`gh pr merge --squash` cuando el CI esté en verde).
 
 ### Issues
-- Lo pendiente se trackea en **GitHub Issues** (labels: `infra` para infraestructura/CI/deploy, `blocked` si depende de algo externo). Cada ítem de `IMPROVEMENTS.md` tiene su issue y viceversa.
-- Un PR que resuelve un issue lo dice en la descripción (`Closes #N`) para que se cierre solo al mergear; al cerrar un issue de infra, sacarlo de `IMPROVEMENTS.md` (ver "Cuándo una tarea está terminada").
+- Lo pendiente se trackea en **GitHub Issues** (labels: `infra` para infraestructura/CI/deploy, `blocked` si depende de algo externo). Cada ítem de `PENDIENTES.md` tiene su issue y viceversa.
+- Un PR que resuelve un issue lo dice en la descripción (`Closes #N`) para que se cierre solo al mergear; al cerrar un issue de infra, sacarlo de `PENDIENTES.md` (ver "Cuándo una tarea está terminada").

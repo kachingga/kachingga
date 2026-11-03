@@ -99,7 +99,7 @@ Cada commit corre automáticamente typecheck, tests y lint (`bun run check`) y v
 
 ### 5. Claude Code
 
-Abrir `claude` desde la **raíz del repo**. Todo el contexto se carga solo y es igual para todos:
+Abrir `claude` desde la **raíz del repo**. Todo el contexto se carga solo y es igual para todos (qué hay en cada archivo: ver "Documentación" más abajo):
 
 - `CLAUDE.md` — **reglas de negocio** (cómo funcionan grupos, gastos, monedas, saldos) y reglas del repo (commits, conflictos)
 - `.claude/CLAUDE.md` — guías de comportamiento
@@ -110,12 +110,59 @@ Lo personal **no se commitea**: configuración propia en `.claude/settings.local
 
 ## Roadmap
 
-- **v1** — grupos, gastos, saldos, filtros y multimoneda. Ver [`V1.md`](V1.md).
+- **v1** — grupos, gastos, saldos, filtros, multimoneda y alias para cobrar. Ver [`V1.md`](V1.md).
 - **v2** — explicación de saldos y agente de gastos con IA. Ver [`V2.md`](V2.md).
+- Lanzamiento e infraestructura pendientes: [`PENDIENTES.md`](PENDIENTES.md).
 
-Lanzamiento: primero para el grupo (TestFlight en iPhone, APK en Android) y a futuro en las stores. Ver [`LANZAMIENTO.md`](LANZAMIENTO.md).
+## Documentación
 
-Infra y deploy: [`INFRA.md`](INFRA.md), [`DEPLOY.md`](DEPLOY.md), [`IMPROVEMENTS.md`](IMPROVEMENTS.md).
+El repo está documentado para que **cualquier persona y el Claude de cada uno trabajen igual sin preguntar**: las reglas, decisiones y pendientes están escritos, y cada cosa vive en **un solo lugar**.
+
+### Qué hay en cada archivo (y qué tiene que haber)
+
+| Archivo | Qué tiene que haber | Qué **no** va ahí |
+|---------|---------------------|-------------------|
+| [`README.md`](README.md) | Qué es la app, onboarding (accesos, setup, `.env`) y esta guía de documentación | Reglas de negocio o detalles técnicos |
+| [`CLAUDE.md`](CLAUDE.md) | **Reglas de negocio y decisiones de producto** (grupos, gastos, monedas, saldos, pagos, alias, filtros) y reglas de todo el repo: stack, arquitectura, comandos, commits, PRs, conflictos, cuándo una tarea está terminada | Detalles de una app (van en su `CLAUDE.md`), pendientes, investigaciones |
+| [`.claude/CLAUDE.md`](.claude/CLAUDE.md) | Cómo se comporta Claude: pensar antes de codear, simplicidad, cambios quirúrgicos, cuestionar y dar opciones | Nada del proyecto |
+| [`apps/api/CLAUDE.md`](apps/api/CLAUDE.md) | Todo lo técnico de la API: modelo de datos, **tabla de procedures**, dónde vive cada regla en el código, migraciones, notas técnicas, tests | Reglas de negocio (se referencian, no se copian) |
+| [`apps/mobile/CLAUDE.md`](apps/mobile/CLAUDE.md) | Todo lo técnico de la app: cómo usar la API, estándar de UI/UX, React, testing, EAS, notas técnicas | Ídem |
+| [`V1.md`](V1.md) / [`V2.md`](V2.md) | Alcance de cada versión: qué entra, qué no, **pantallas** y roadmap con checkboxes | Cómo se implementa |
+| [`INFRA.md`](INFRA.md) | Qué servicios existen (Supabase, Railway, Expo, GitHub…), entornos dev/prod, **todas las variables de entorno y secretos** (nombres, nunca valores) | Pasos de deploy |
+| [`DEPLOY.md`](DEPLOY.md) | **Cómo** se hace cada cosa: deploy de la API, migraciones en prod, builds, updates | Inventario de servicios |
+| [`PENDIENTES.md`](PENDIENTES.md) | Lo que falta fuera del alcance de las versiones: **lanzamiento** (fase 1 con el grupo, fase 2 pública) e **infraestructura**. Cada ítem con su issue de GitHub | Cosas ya hechas (se borran) |
+| [`docs/decisiones/`](docs/decisiones/) | Decisiones investigadas, con fuentes y fecha: [`costos-y-alternativas.md`](docs/decisiones/costos-y-alternativas.md) (costos, web app vs. nativa vs. Tricount), [`mercado-pago.md`](docs/decisiones/mercado-pago.md) (qué se puede y qué no) | Tareas pendientes |
+| `.env.sample` de cada app | Qué variables hacen falta y de dónde sale cada valor | Valores reales |
+| `.github/pull_request_template.md` | El checklist de cada PR | — |
+
+### Cómo leerlos
+
+- **Al empezar en el repo:** este README (onboarding) → `CLAUDE.md` → el `CLAUDE.md` de la app en la que vas a trabajar.
+- **Antes de cualquier feature:** "Reglas de negocio" de `CLAUDE.md` y el alcance en `V1.md`.
+- **Para una tarea puntual:** la tabla "Dónde buscar según la tarea" de `CLAUDE.md` dice qué leer.
+- **Claude** carga `CLAUDE.md`, `.claude/CLAUDE.md` y el `CLAUDE.md` de la app automáticamente; el resto lo lee cuando la tarea lo pide.
+
+### Cómo actualizarlos (personas y Claude)
+
+**Cada PR deja la documentación al día con lo que cambia.** Está en la "Definition of Done" de `CLAUDE.md` y en el checklist de la plantilla de PR.
+
+| Si cambia… | Se actualiza… |
+|------------|---------------|
+| Una regla de negocio (cómo funciona algo para el usuario) | `CLAUDE.md` → "Reglas de negocio" |
+| Un procedure, el modelo de datos o algo técnico de la API | `apps/api/CLAUDE.md` (tabla de procedures, modelo, notas) |
+| Algo técnico de la app | `apps/mobile/CLAUDE.md` |
+| El alcance o una pantalla | `V1.md` / `V2.md` (y se tilda el roadmap al terminar) |
+| Un servicio, una variable de entorno o un secreto | `INFRA.md` + el `.env.sample` que corresponda |
+| Cómo se deploya o se migra | `DEPLOY.md` |
+| Algo pendiente de lanzamiento o infra | `PENDIENTES.md` + un issue (`infra`, y `blocked` si depende de algo externo). Al terminarlo: se borra/tilda y se cierra el issue (`Closes #N` en el PR) |
+| Una decisión que requirió investigar (costos, alternativas, proveedores) | Un archivo en `docs/decisiones/` con fecha y fuentes |
+| Una convención del repo (commits, PRs, tooling) | `CLAUDE.md` |
+
+Reglas:
+- **Un dato vive en un solo lugar.** Si algo ya está escrito en otro archivo, se linkea en vez de copiarlo.
+- **Lo que se termina se saca de los pendientes**; lo que se decide queda escrito con el porqué, para no volver a discutirlo.
+- **Si el código contradice la documentación**, se avisa y se corrige uno de los dos en el mismo PR.
+- No crear archivos de documentación nuevos en la raíz sin necesidad: primero ver si entra en alguno de los de arriba.
 
 ## Commits
 
