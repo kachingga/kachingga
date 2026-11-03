@@ -251,6 +251,7 @@ Vercel (estático): ver `DEPLOY.md`. La API tiene que permitir la URL de Vercel 
 - `src/lib/supabase.ts` es el único archivo que importa Supabase (lint).
 - CORS: la API permite por defecto `http://localhost:5173` y `:4173`; si cambiás el puerto, cambiá también `CORS_ORIGINS` en `apps/api/.env`.
 - En tests, `QueryClient` usa `gcTime: Infinity` (si no, quedan timers colgados).
+- **Los tests no pueden depender de `.env`** (corren en el CI y en el pre-commit de todos): `vite.config.ts` → `test.env` les da valores fijos a las `VITE_*`. Si agregás una variable que se lee al importar un módulo, sumala ahí también.
 
 ## Conflictos (web)
 
