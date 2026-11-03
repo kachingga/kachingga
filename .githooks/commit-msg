@@ -1,0 +1,12 @@
+#!/bin/sh
+# Valida Conventional Commits: <type>(<scope>)!: <descripción>
+msg=$(head -n1 "$1")
+pattern='^(feat|fix|chore|docs|refactor|test|style|perf|build|ci|revert)(\([a-z0-9-]+\))?!?: .+'
+if echo "$msg" | grep -qE '^(Merge |Revert |fixup! |squash! |amend! )'; then exit 0; fi
+if ! echo "$msg" | grep -qE "$pattern"; then
+  echo "✖ Mensaje de commit inválido: \"$msg\""
+  echo "  Formato: <type>(<scope opcional>): <descripción>"
+  echo "  Ej: feat(api): agregar endpoint de grupos  |  chore: actualizar bun.lock"
+  echo "  Types: feat fix chore docs refactor test style perf build ci revert"
+  exit 1
+fi

@@ -1,10 +1,11 @@
 {
-  "name": "fourcount",
+  "name": "kachingga",
   "private": true,
   "workspaces": [
     "apps/*"
   ],
   "scripts": {
+    "prepare": "git config core.hooksPath .githooks",
     "mobile": "bun run --cwd apps/mobile start"
   }
 }
