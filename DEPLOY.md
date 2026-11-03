@@ -36,7 +36,7 @@ bunx eas-cli login
 Perfiles de `eas.json`:
 - `development` — development build para desarrollar (canal `development`). Requiere agregar `expo-dev-client` la primera vez que se use.
 - `preview` — instalación interna, APK en Android, canal `main`, variables `production`. **Es el que instalan los Android del grupo.**
-- `production` — build para las stores, canal `main`, variables `production`. **Es el que va a TestFlight para los iPhone del grupo.** Al publicar en las stores (Fase 2 de `LANZAMIENTO.md`) probablemente convenga separarle un canal propio.
+- `production` — build para las stores, canal `main`, variables `production`. **Es el que va a TestFlight para los iPhone del grupo.** Al publicar en las stores (`PENDIENTES.md` → Lanzamiento → Fase 2) probablemente convenga separarle un canal propio.
 
 > Todo el grupo (iPhone y Android) está en el canal `main`: un update OTA les llega a todos.
 
@@ -44,7 +44,7 @@ Perfiles de `eas.json`:
 
 ### 3. Instalar la app en cada teléfono
 
-Checklist completo en `LANZAMIENTO.md` → Fase 1. **Los builds solo se lanzan cuando alguien lo pide explícitamente.**
+Checklist completo en `PENDIENTES.md` → Lanzamiento → Fase 1. **Los builds solo se lanzan cuando alguien lo pide explícitamente.**
 
 **Android (APK):**
 ```bash
@@ -116,7 +116,7 @@ Recién tiene sentido cuando haya algo que reciba los updates. En orden:
 2. **Variables de prod en EAS**, entorno `production` (las usan el build `preview` y los updates): `EXPO_PUBLIC_API_URL` (URL de Railway), `EXPO_PUBLIC_SUPABASE_URL` y `EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY` de prod (valores en `apps/mobile/.env.prod`). Desde expo.dev → proyecto → Environment variables, o `bunx eas-cli env:create --environment production`.
 3. **Primer build `preview`** instalado en los teléfonos (solo cuando alguien lo pida).
 4. **Token:** expo.dev → org `kachingga` → Settings → Access tokens (idealmente de un *robot user*) → guardarlo como secret de GitHub: `gh secret set EXPO_TOKEN --repo kachingga/kachingga`.
-5. Probar con Actions → "EAS Update" → *Run workflow*, y después sacar este ítem de `IMPROVEMENTS.md`.
+5. Probar con Actions → "EAS Update" → *Run workflow*, y después sacar este ítem de `PENDIENTES.md` y cerrar el issue #6.
 
 ---
 
