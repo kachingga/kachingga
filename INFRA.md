@@ -9,6 +9,7 @@
 | Auth | Supabase Auth | supabase.com/dashboard → Authentication | — |
 | Builds mobile | EAS (Expo) | expo.dev/accounts/kachingga/projects/kachingga | Org `kachingga`, project ID `49f7728b-7782-46e5-8a8a-491bb590bfe1` |
 | Updates OTA | EAS Update | expo.dev | — |
+| Cotización dólar blue | DolarApi (público, sin clave) | dolarapi.com | `https://dolarapi.com/v1/dolares/blue` |
 | Repo | GitHub | github.com/kachingga/kachingga | — |
 
 Actualizar este archivo con los valores reales después de cada setup.
@@ -22,7 +23,7 @@ Actualizar este archivo con los valores reales después de cada setup.
 | Variable | Descripción |
 |----------|-------------|
 | `DATABASE_URL` | URL del pooler de Supabase (puerto 6543) — para queries |
-| `DIRECT_URL` | URL directa de Supabase (puerto 5432) — para migraciones |
+| `DIRECT_URL` | Session pooler de Supabase (puerto 5432) — para migraciones. No usar la conexión directa: es solo IPv6 |
 | `SUPABASE_URL` | `https://<project>.supabase.co` |
 | `SUPABASE_SECRET_KEY` | Clave **secret** de Supabase (`sb_secret_...`) — solo en el server. Se usa para validar los tokens de los usuarios |
 | `PORT` | Lo setea Railway automáticamente — no pisarlo |

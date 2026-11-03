@@ -157,6 +157,13 @@ Decisiones de setup que no son obvias leyendo el código. Si algo de esto molest
 - El cliente de Supabase es **lazy** (`getSupabase()`): importar el router en tests o desde mobile no puede requerir variables de entorno.
 - `router.ts` es el entry del paquete (`exports` en `package.json`). Lo que importe no puede arrastrar dependencias que mobile no pueda resolver a nivel de tipos.
 - En Railway, `NODE_ENV=production` para que tRPC no devuelva stack traces.
+- **RLS en todas las tablas.** Supabase expone el schema `public` por su API REST y la clave publishable está dentro de la app. Cada tabla tiene `ENABLE ROW LEVEL SECURITY` **sin políticas** → esa API no ve nada. Nuestra API entra como `postgres` y no le afecta. `db:migrate:new` lo agrega solo para tablas nuevas; si escribís SQL a mano, agregalo vos.
+- **`DIRECT_URL` usa el session pooler** (`aws-0-us-east-1.pooler.supabase.com:5432`), no la conexión directa `db.<ref>.supabase.co`: esa es solo IPv6 y no anda en la mayoría de las redes ni en Railway.
+- **Hay una sola base (la de producción).** `.env` y `.env.prod` apuntan a la misma. Por eso no existe `db:migrate:dev`: `prisma migrate dev` puede pedir resetear la base. Las migraciones se crean con `db:migrate:new` (genera el SQL comparando la base con el schema, sin tocarla) y se aplican con `db:migrate:deploy`.
+- **Plata en centavos enteros** (`amountCents: Int`), nunca `Float`. Los tipos de cambio sí son `Float`. Ver reglas de moneda en `V1.md`.
+- `src/schemas.ts` se exporta como `@kachingga/api/schemas` para la app: no puede importar nada del server (Prisma, Supabase, `process.env`).
+- Cotización automática: DolarApi (`dolarapi.com/v1/dolares/blue`), cacheada 10 min en memoria. Si falla, la API pide cargar el tipo de cambio a mano.
+- La CLI de Supabase deja una carpeta `supabase/.temp/` donde se corra (está gitignoreada). `supabase projects api-keys` muestra la secret key **enmascarada**; para la completa hace falta `--reveal`.
 
 ### Mobile
 - **TypeScript `~6.0.3`** en mobile y api (la versión que trae el SDK 58 de Expo). No subir a TS 7 en un solo workspace.
@@ -194,7 +201,7 @@ bun run check
 - **`apps/mobile/src/app/_layout.tsx`:** conservar el `<ApiProvider>` envolviendo todo y sumar los cambios del otro lado adentro.
 - **`apps/mobile/eas.json`:** conservar los perfiles y canales de `main` (`preview` → canal `main`).
 - **`apps/api/src/trpc/router.ts`:** si los dos agregaron routers, quedarse con ambos en el `appRouter`.
-- **Schema de Prisma / migraciones:** nunca editar ni borrar una migración que ya está en `main`. Si los dos crearon migraciones, rebasear, borrar **la tuya** (no pusheada), volver a correr `bun run db:migrate:dev` para regenerarla encima de la de `main`, y avisar.
+- **Schema de Prisma / migraciones:** nunca editar ni borrar una migración que ya está en `main`. Si los dos crearon migraciones, rebasear, borrar **la tuya** (no pusheada), volver a generarla con `bun run db:migrate:new <nombre>` encima de la de `main`, y avisar.
 - **Docs (`CLAUDE.md`, `V1.md`, etc.):** combinar ambos textos.
 
 Después de cualquier conflicto: `bun install && bun run check`. Si `check` falla, se arregla antes de commitear — **nunca** `--no-verify`.

@@ -16,16 +16,19 @@ bun run typecheck         # tsc --noEmit
 
 # Base de datos (desde apps/api/)
 bun run db:generate        # regenerar el cliente de Prisma (también corre en postinstall)
-bun run db:migrate:create  # crear el SQL de una migración sin aplicarla
-bun run db:migrate:dev     # crear y aplicar la migración en la DB de desarrollo (.env)
-bun run db:migrate:prod    # aplicar migraciones pendientes en producción (.env.prod)
+bun run db:migrate:new <nombre>  # genera el SQL (base actual → schema) + RLS para tablas nuevas. No toca la base
+bun run db:migrate:status        # qué migraciones faltan aplicar
+bun run db:migrate:deploy        # aplica las pendientes (usa .env)
+bun run db:migrate:prod          # lo mismo con .env.prod
 bun run db:studio          # Prisma Studio
 ```
 
 > **Reglas de migraciones:**
 > - Nunca correr `prisma db push`, `prisma migrate reset` ni `prisma db execute` contra producción.
 > - Nunca tocar a mano la tabla `_prisma_migrations` ni el schema desde el SQL editor de Supabase.
-> - Flujo: `db:migrate:dev` para crear el SQL → probar → `db:migrate:prod` → push (ver `DEPLOY.md`).
+> - Hay **una sola base** (producción): no existe `db:migrate:dev` a propósito (`prisma migrate dev` puede resetearla).
+> - Flujo: cambiar `models/*.prisma` → `db:migrate:new <nombre>` → **revisar el SQL** → `db:migrate:deploy` → push (ver `DEPLOY.md`).
+> - Toda tabla nueva lleva `ENABLE ROW LEVEL SECURITY` (lo agrega `db:migrate:new`).
 > - Después de cambiar el schema, `db:generate`.
 
 ---
@@ -36,7 +39,7 @@ Copiar `.env.sample` a `.env` (desarrollo) y a `.env.prod` (solo para `db:migrat
 
 ```
 DATABASE_URL=...          # Supabase pooler (puerto 6543) — queries en runtime
-DIRECT_URL=...            # Supabase directo (puerto 5432) — migraciones
+DIRECT_URL=...            # Supabase session pooler (puerto 5432) — migraciones. No la conexión directa (solo IPv6)
 SUPABASE_URL=https://czrkjokurbmbbvobvmxd.supabase.co
 SUPABASE_SECRET_KEY=sb_secret_...
 PORT=3000
@@ -60,7 +63,14 @@ src/
 │   ├── migrations/
 │   ├── generated/        # cliente de Prisma (gitignoreado, lo genera postinstall)
 │   └── index.ts          # `prisma` (PrismaClient con @prisma/adapter-pg)
-├── lib/                  # helpers (supabase.ts, lógica reutilizable entre routers)
+├── schemas.ts            # Zod compartidos con la app (@kachingga/api/schemas) — sin imports del server
+├── lib/
+│   ├── access.ts         # requireMembership / requireActiveGroup / assertParticipantsInGroup
+│   ├── splits.ts         # resolveSplits: EQUAL / AMOUNT / PERCENTAGE → centavos exactos
+│   ├── balances.ts       # computeBalances + minimizeTransfers (puro)
+│   ├── rates.ts          # blue de DolarApi + resolveExchangeRate
+│   ├── inviteCode.ts
+│   └── supabase.ts       # cliente lazy
 └── __tests__/            # bun:test
 ```
 
@@ -69,7 +79,9 @@ src/
 - Todo usa `protectedProcedure` salvo que sea explícitamente público.
 - Input siempre validado con Zod en `.input(...)`.
 - Prisma se llama directo desde el procedure; solo se extrae a `lib/` la lógica que se reusa entre routers (ej. cálculo de saldos).
-- Errores con `TRPCError` y el `code` adecuado.
+- Errores con `TRPCError` y el `code` adecuado, con mensaje en español (la app lo puede mostrar tal cual).
+- Al principio de cada procedure, chequear acceso con `requireMembership` (lectura) o `requireActiveGroup` (escritura). Si recibe ids de participantes, `assertParticipantsInGroup`.
+- Los errores de Prisma P2002 / P2025 ya se traducen a `CONFLICT` / `NOT_FOUND` en un middleware de `init.ts`.
 
 ### Imports
 Sin extensión `.ts` en los imports relativos (`from './init'`): la app typechequea estos archivos con su propio `tsconfig`, que no acepta extensiones `.ts`.

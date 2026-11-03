@@ -57,11 +57,14 @@ Push a `main` → Railway deploya solo.
 
 **Siempre migrar prod antes de pushear el código nuevo.** El código nuevo espera el schema nuevo.
 
-1. Hacer y probar los cambios de schema en local
-2. Aplicar la migración en prod desde local:
+1. Cambiar el schema (`apps/api/src/db/models/*.prisma`) y generar la migración:
    ```bash
    cd apps/api
-   bun run db:migrate:prod   # prisma migrate deploy con .env.prod (DIRECT_URL de Supabase)
+   bun run db:migrate:new <nombre>   # genera el SQL sin tocar la base
+   ```
+2. Revisar el SQL y aplicarlo:
+   ```bash
+   bun run db:migrate:deploy         # o db:migrate:prod si usás .env.prod
    ```
 3. Pushear a `main` → Railway deploya el código nuevo con el schema ya actualizado
 
