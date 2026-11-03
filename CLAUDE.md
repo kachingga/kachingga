@@ -46,6 +46,7 @@ Proyecto de **Kachingga**, una organización de amigos (repo: `github.com/kachin
 | `V2.md` | Alcance de la v2: integración con Mercado Pago. **No implementar hasta cerrar v1** |
 | `V3.md` | Alcance de la v3: agente de gastos con IA. **No implementar hasta cerrar v2** |
 | `LANZAMIENTO.md` | Qué falta para que todo el grupo la use (Fase 1, en curso) y para publicarla en las stores (Fase 2, futuro) |
+| `CONTRAS.md` | Costos (Railway, Supabase, Apple, Google, EAS, impuestos), límites de Mercado Pago y comparación con Tricount, para decidir si seguir |
 | `README.md` | Qué es la app y onboarding de cada miembro |
 | `INFRA.md` | Servicios, dashboards, variables de entorno, secretos |
 | `DEPLOY.md` | Deploy de la API (Railway), migraciones en prod y distribución de la app (EAS) |

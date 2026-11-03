@@ -1,5 +1,7 @@
 # Lanzamiento
 
+> Antes de pagar nada, ver **`CONTRAS.md`**: costos, impuestos y límites de Mercado Pago, para decidir si seguir o volver a Tricount.
+
 Dos hitos distintos. **El que está en curso es la Fase 1.** La Fase 2 es a futuro y no se arranca sin decidirlo explícitamente.
 
 | Fase | Para quién | Cómo se instala | Cuándo |
