@@ -1,0 +1,2 @@
+# Regenera el cliente de Prisma (no está en git) para que coincida con el schema de esta branch.
+bun run --cwd apps/api db:generate >/dev/null 2>&1 || true
