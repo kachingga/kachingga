@@ -1,0 +1,47 @@
+name: EAS Update
+
+# Publica un update OTA (canal `main`) cuando entra a main algo que cambia el bundle de la app.
+# Queda inactivo hasta que exista el secret EXPO_TOKEN (ver DEPLOY.md → "EAS Update automático").
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'apps/mobile/**'
+      - 'apps/api/src/schemas.ts' # va dentro del bundle de la app
+      - 'bun.lock'
+  workflow_dispatch:
+
+concurrency:
+  group: eas-update
+  cancel-in-progress: false
+
+jobs:
+  update:
+    name: Publicar update OTA
+    runs-on: ubuntu-latest
+    env:
+      EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
+    steps:
+      - name: Sin EXPO_TOKEN no se publica nada
+        if: env.EXPO_TOKEN == ''
+        run: echo "::notice::EXPO_TOKEN no está configurado; no se publica el update (ver DEPLOY.md)."
+
+      - uses: actions/checkout@v4
+        if: env.EXPO_TOKEN != ''
+      - uses: oven-sh/setup-bun@v2
+        if: env.EXPO_TOKEN != ''
+        with:
+          bun-version: 1.3.12
+      - if: env.EXPO_TOKEN != ''
+        run: bun install --frozen-lockfile
+
+      # Variables EXPO_PUBLIC_* = las del entorno "production" de EAS (mismas que el build preview).
+      - name: eas update
+        if: env.EXPO_TOKEN != ''
+        working-directory: apps/mobile
+        env:
+          COMMIT_MESSAGE: ${{ github.event.head_commit.message }}
+        run: |
+          message=$(printf '%s' "${COMMIT_MESSAGE:-manual}" | head -n1)
+          bunx eas-cli update --channel main --environment production --message "$message" --non-interactive
