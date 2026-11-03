@@ -1,0 +1,7 @@
+# Smoke E2E: abre la app desde cero y verifica que arranca.
+# Cómo correrlo y requisitos: apps/mobile/CLAUDE.md → "Testing" → "E2E (Maestro)".
+appId: com.kachingga.app
+---
+- launchApp:
+    clearState: true
+- assertVisible: "Kachingga"
