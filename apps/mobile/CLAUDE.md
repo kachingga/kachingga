@@ -1,5 +1,7 @@
 # CLAUDE.md — apps/mobile
 
+> **Esta es la app nativa (alternativa).** El front principal es la web (`apps/web`, ver `apps/web/CLAUDE.md`). Esto se mantiene funcionando (typecheck, tests, lint, Expo doctor) por si algún día se hace la app nativa, pero las pantallas de la V1 van en la web.
+
 > **Reglas de negocio → `CLAUDE.md` raíz** (grupos, participantes, gastos, multimoneda, saldos, pagos, filtros). Leelas antes de construir una pantalla: la UI tiene que reflejar esas reglas (ej. el tipo de cambio precargado con el blue y editable). Este archivo es solo lo **técnico** de la app. El contrato de la API (procedures y modelo) está en `apps/api/CLAUDE.md`.
 
 App mobile con Expo / React Native. Priorizar patrones mobile-first, performance y compatibilidad entre plataformas.

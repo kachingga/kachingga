@@ -1,8 +1,7 @@
-name: E2E (Android)
+name: E2E
 
-# Flujos de Maestro (apps/mobile/.maestro) contra un build release real en un emulador Android.
-# No es check obligatorio (tarda ~15-20 min y los emuladores pueden ser flaky):
-# corre a mano (Actions → "E2E (Android)" → Run workflow) o en PRs con la label `e2e`.
+# E2E de la web (Playwright, apps/web/e2e) y de la app nativa (Maestro, apps/mobile/.maestro).
+# No son checks obligatorios: corren a mano (Actions → "E2E" → Run workflow) o en PRs con la label `e2e`.
 
 on:
   workflow_dispatch:
@@ -14,6 +13,36 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  web:
+    name: Playwright (web)
+    if: github.event_name == 'workflow_dispatch' || contains(github.event.pull_request.labels.*.name, 'e2e')
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v7
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: 1.3.12
+      - run: bun install --frozen-lockfile
+      - name: Instalar navegadores
+        working-directory: apps/web
+        run: bunx playwright install --with-deps chromium webkit
+      # Celular (WebKit, como Safari en iPhone) y compu (Chrome). La API no se levanta: el smoke no la necesita.
+      - name: Correr Playwright
+        working-directory: apps/web
+        env:
+          VITE_API_URL: http://localhost:3000
+          VITE_SUPABASE_URL: https://example.supabase.co
+          VITE_SUPABASE_PUBLISHABLE_KEY: sb_publishable_ci
+        run: bun run e2e
+      - name: Guardar reporte
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report
+          path: apps/web/playwright-report
+          if-no-files-found: ignore
+
   e2e:
     name: Maestro en emulador Android
     if: github.event_name == 'workflow_dispatch' || contains(github.event.pull_request.labels.*.name, 'e2e')

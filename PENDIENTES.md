@@ -20,16 +20,18 @@ Todo lo que falta **fuera del código de las versiones** (el alcance de producto
 **Objetivo:** que todos la tengan en el celu, logueados contra producción y siempre en la última versión.
 
 **Bloqueantes:**
-- [ ] **Decidir el front**: web app mobile-first (lo más probable) o app nativa — `docs/decisiones/costos-y-alternativas.md`.
+- [x] **Decidir el front**: web app mobile-first (`apps/web`) — `docs/decisiones/costos-y-alternativas.md`.
+- [ ] **Pantallas de la V1** en `apps/web` (las hace Juan; ver `V1.md` → "Trabajo de la UI (web)").
 - [ ] **API en Railway** (producción) — [#5](https://github.com/kachingga/kachingga/issues/5). Bloqueado por presupuesto (Hobby, USD 5/mes).
 
-**Puesta en marcha si es web app:**
+**Puesta en marcha (web app)** — pasos en `DEPLOY.md`:
 1. [ ] API en Railway con las variables de `apps/api/.env.prod` y su URL en `INFRA.md` — [#5](https://github.com/kachingga/kachingga/issues/5).
-2. [ ] Front en Vercel con las variables de prod (URL de la API y Supabase de prod).
-3. [ ] Cada uno la abre en el celu y la agrega a la pantalla de inicio (iPhone: Safari → Compartir → "Agregar a inicio").
-4. [ ] Cada uno se registra **en prod** (las cuentas de dev no sirven en prod).
+2. [ ] Web en Vercel con las variables `VITE_*` de prod; su URL en `INFRA.md` y en `CORS_ORIGINS` de Railway.
+3. [ ] Hacerla instalable (PWA) — [#18](https://github.com/kachingga/kachingga/issues/18).
+4. [ ] Cada uno la abre en el celu y la agrega a la pantalla de inicio (iPhone: Safari → Compartir → "Agregar a inicio").
+5. [ ] Cada uno se registra **en prod** (las cuentas de dev no sirven en prod).
 
-**Puesta en marcha si es app nativa** (pasos en `DEPLOY.md`):
+**Si algún día se hace la app nativa** (pasos en `DEPLOY.md`):
 1. [ ] API en Railway — [#5](https://github.com/kachingga/kachingga/issues/5).
 2. [ ] Cuenta de Apple Developer (USD 99/año) — [#12](https://github.com/kachingga/kachingga/issues/12). Sin esto no hay app nativa en iPhone; Expo Go solo sirve para desarrollar.
 3. [ ] Variables de prod en EAS, entorno `production`.
@@ -71,8 +73,11 @@ Todo lo que falta **fuera del código de las versiones** (el alcance de producto
 
 ## Infraestructura
 
+### Web instalable (PWA) — [#18](https://github.com/kachingga/kachingga/issues/18)
+Manifest, íconos y meta tags para que "Agregar a inicio" la abra como app. Depende de los íconos del diseño.
+
 ### EAS Update automático — [#6](https://github.com/kachingga/kachingga/issues/6) (solo app nativa)
-El workflow existe (`.github/workflows/eas-update.yml`) y está **inactivo** hasta que haya a quién mandarle updates y un `EXPO_TOKEN`. **Falta:** Railway → variables de prod en EAS → primer build instalado → secret `EXPO_TOKEN`. Pasos en `DEPLOY.md` → "Activar EAS Update automático". Si se elige la web app, este ítem se cierra (los deploys de Vercel cumplen esa función).
+El workflow existe (`.github/workflows/eas-update.yml`) y está **inactivo** hasta que haya a quién mandarle updates y un `EXPO_TOKEN`. **Falta:** Railway → variables de prod en EAS → primer build instalado → secret `EXPO_TOKEN`. Pasos en `DEPLOY.md` → "Activar EAS Update automático". Con la web como front, este ítem queda en pausa (los deploys de Vercel cumplen esa función); solo aplica si se hace la app nativa.
 
 ### Entorno de staging (opcional) — [#7](https://github.com/kachingga/kachingga/issues/7)
 **Ya hay base de dev** (`kachingga-dev`, `INFRA.md` → "Entornos"). **Falta, solo si hace falta:** un entorno `staging` en Railway apuntando a `kachingga-dev` (y, si es nativa, un canal `staging` de EAS Update). Hoy no hace falta: se desarrolla en local contra dev.

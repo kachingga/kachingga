@@ -1,6 +1,6 @@
 # Kachingga — App para dividir gastos en grupo
 
-Proyecto de **Kachingga**, una organización de amigos (repo: `github.com/kachingga/kachingga`). **Hoy es para uso propio del grupo**: cada uno la usa en su celu y siempre en la última versión. El front todavía no está decidido (lo más probable: **web app mobile-first**; ver `docs/decisiones/costos-y-alternativas.md`). **A futuro se podría publicar** (ver `PENDIENTES.md` → Lanzamiento → Fase 2): no tomar decisiones que lo hagan imposible, pero tampoco construir cosas para usuarios públicos antes de tiempo.
+Proyecto de **Kachingga**, una organización de amigos (repo: `github.com/kachingga/kachingga`). **Hoy es para uso propio del grupo**: cada uno la usa en su celu y siempre en la última versión. El front es una **web app mobile-first** (`apps/web`: se usa en el celu y también en la compu); `apps/mobile` (Expo) queda como alternativa nativa por si algún día se hace (decisión en `docs/decisiones/costos-y-alternativas.md`). **A futuro se podría publicar** (ver `PENDIENTES.md` → Lanzamiento → Fase 2): no tomar decisiones que lo hagan imposible, pero tampoco construir cosas para usuarios públicos antes de tiempo.
 
 ---
 
@@ -12,7 +12,8 @@ Proyecto de **Kachingga**, una organización de amigos (repo: `github.com/kachin
 |-------|--------|
 | **Este `CLAUDE.md` (raíz)** | **Reglas de negocio y decisiones de producto**, más lo que aplica a todo el repo: stack, arquitectura, comandos, commits, PRs, conflictos y tooling |
 | **`apps/api/CLAUDE.md`** | Todo lo técnico de la API: modelo de datos, procedures tRPC, Prisma, migraciones, Supabase |
-| **`apps/mobile/CLAUDE.md`** | Todo lo técnico de la app: Expo, EAS, navegación, cliente tRPC, UI/UX, testing |
+| **`apps/web/CLAUDE.md`** | Todo lo técnico del front web (el principal): React + Vite, cliente tRPC, login, UI/UX, testing |
+| **`apps/mobile/CLAUDE.md`** | Lo técnico de la app nativa (Expo, alternativa por si algún día se hace) |
 | **`V1.md` / `V2.md`** | Alcance de cada versión: qué entra, pantallas y roadmap |
 | **`INFRA.md` / `DEPLOY.md`** | Qué servicios y variables existen / cómo se deploya |
 | **`PENDIENTES.md`** | Lanzamiento e infraestructura pendientes (cada ítem con su issue) |
@@ -27,7 +28,7 @@ Proyecto de **Kachingga**, una organización de amigos (repo: `github.com/kachin
 | Tarea | Leer primero |
 |-------|--------------|
 | Cualquier feature | "Reglas de negocio" (abajo) + `V1.md` (si está en alcance) |
-| Pantallas / UI de la app | `V1.md` → **"Pantallas"** + `apps/mobile/CLAUDE.md` → **"UI / UX — estándar de calidad"** y **"Cómo usar la API desde la app"** |
+| Pantallas / UI de la app | `V1.md` → **"Pantallas"** + `apps/web/CLAUDE.md` → **"UI / UX — estándar de calidad"** y **"Cómo usar la API"** |
 | Lógica, endpoints o datos de la API | `apps/api/CLAUDE.md` → "Procedures tRPC", "Modelo de datos", "Dónde vive cada regla de negocio" |
 | A la app le falta algo de la API | Se agrega en `apps/api` (mismo repo) siguiendo `apps/api/CLAUDE.md`; nunca workarounds en la app |
 | Cambios de base de datos | `apps/api/CLAUDE.md` → "Migraciones — reglas" + `DEPLOY.md` |
@@ -140,7 +141,7 @@ Proyecto de **Kachingga**, una organización de amigos (repo: `github.com/kachin
 - Cualquier miembro puede exportar los gastos de su grupo.
 ### Decisiones de producto tomadas
 - Grupo de amigos, uso propio → sin roles ni permisos finos dentro de un grupo. *(A revisar antes de publicarla: `PENDIENTES.md` → Lanzamiento → Fase 2.)*
-- **Distribución V1:** iPhone por **TestFlight** (cuenta de Apple Developer, la paga Galo) y Android por **APK**. Expo Go solo para desarrollar, no para usar la app.
+- **Front: web app mobile-first** (front en Vercel, API en Railway), instalable en el celu desde el navegador ("Agregar a inicio"). Sin cuenta de Apple ni stores. La app nativa (Expo) queda como alternativa: si algún día se hace, iPhone por TestFlight (cuenta de Apple Developer) y Android por APK.
 - Saldar deudas es siempre manual (el pago se hace fuera de la app). **No hay integración con Mercado Pago**: pagar de una persona a otra desde la app sin comisiones no es posible (ver `docs/decisiones/mercado-pago.md`). El agente con IA es v2.
 - Dólar de referencia: **blue promedio**, nunca oficial.
 - Los tipos de cambio quedan "congelados" en cada gasto/pago al cargarlo.
@@ -154,8 +155,8 @@ Proyecto de **Kachingga**, una organización de amigos (repo: `github.com/kachin
 | Capa | Tecnología |
 |------|------------|
 | Runtime / package manager | Bun (monorepo con workspaces) |
-| Mobile | React Native con Expo (SDK 58) + Expo Router |
-| Distribución mobile | EAS Build (instalación interna) + EAS Update (OTA) |
+| **Web (front principal)** | React 19 + Vite + Tailwind + React Router, hosteada en Vercel |
+| Mobile (alternativa nativa) | React Native con Expo (SDK 58) + Expo Router; EAS Build + EAS Update |
 | Backend | Hono + TypeScript sobre Bun, hosteado en Railway |
 | API (contrato app ↔ backend) | tRPC + Zod, con TanStack Query en la app |
 | Base de datos | PostgreSQL en Supabase, con Prisma |
@@ -168,7 +169,7 @@ Proyecto de **Kachingga**, una organización de amigos (repo: `github.com/kachin
 ## Arquitectura general
 
 ```
-App (Expo) ──tRPC + token de Supabase──▶ API (Hono, Railway) ──Prisma──▶ PostgreSQL (Supabase)
+Web (Vercel) ──tRPC + token de Supabase──▶ API (Hono, Railway) ──Prisma──▶ PostgreSQL (Supabase)
      │                                        │
      └── Supabase Auth (solo login/sesión)    └── valida el token con Supabase
 ```
@@ -176,7 +177,8 @@ App (Expo) ──tRPC + token de Supabase──▶ API (Hono, Railway) ──Pri
 - **La app nunca lee ni escribe la base directo**: todo pasa por la API, que es la que aplica las reglas de negocio y decide qué ve cada usuario. La app usa Supabase solo para el login.
 - **App ↔ API solo por tRPC**, con tipos de punta a punta: la app importa el *tipo* del router de la API, nunca código del server. No hay endpoints REST a mano para la app (la única ruta fuera de tRPC es `/health`).
 - Las validaciones de inputs (Zod) viven en la API y la app las reusa para sus formularios.
-- Detalles: `apps/api/CLAUDE.md` y `apps/mobile/CLAUDE.md`.
+- La web corre en el navegador en otro dominio: la API permite su origen por **CORS** (`CORS_ORIGINS`).
+- Detalles: `apps/api/CLAUDE.md` y `apps/web/CLAUDE.md`.
 
 ---
 
@@ -188,7 +190,8 @@ kachingga/
 ├── .husky/                  # commit-msg (formato) + pre-commit (bun run check)
 ├── apps/
 │   ├── api/                 # @kachingga/api — Hono + tRPC + Prisma (ver apps/api/CLAUDE.md)
-│   └── mobile/              # @kachingga/mobile — Expo (ver apps/mobile/CLAUDE.md)
+│   ├── web/                 # @kachingga/web — React + Vite, front principal (ver apps/web/CLAUDE.md)
+│   └── mobile/              # @kachingga/mobile — Expo, alternativa nativa (ver apps/mobile/CLAUDE.md)
 ├── CLAUDE.md
 ├── V1.md / V2.md
 ├── INFRA.md / DEPLOY.md
@@ -207,12 +210,13 @@ Desde la raíz (corren en todos los workspaces con `bun --filter`):
 
 ```bash
 bun install          # instala todo, activa husky y genera el cliente de Prisma
-bun run dev          # levanta la API (:3000) y Expo a la vez
+bun run dev          # levanta todo: API (:3000), web (:5173) y Expo
 bun run api          # solo la API
+bun run web          # solo la web (necesita la API)
 bun run mobile       # solo Expo
-bun run typecheck    # tsc en api y mobile
-bun run test         # tests: api (unit + integración con PGlite) y mobile (Jest + RNTL)
-bun run lint         # expo lint en mobile
+bun run typecheck    # tsc en api, web y mobile
+bun run test         # tests: api (unit + integración con PGlite), web (Vitest) y mobile (Jest)
+bun run lint         # ESLint en web y mobile
 bun run format       # formatea todo con Prettier (correrlo antes de commitear)
 bun run check        # formato + typecheck + test + lint — lo mismo que corre el pre-commit y el CI
 ```
@@ -231,8 +235,8 @@ Cada app tiene un `.env.sample` commiteado que dice qué variables hacen falta y
 - **Husky** se activa con `prepare` en `bun install`. `pre-commit` corre `bun run check`; `commit-msg` valida Conventional Commits y deja pasar `Merge`, `Revert`, `fixup!`, `squash!` y `amend!`; `post-checkout`, `post-merge` y `post-rewrite` regeneran el cliente de Prisma (sin frenar nunca a git).
 - `bunfig.toml` usa `linker = "hoisted"` (todo en el `node_modules` raíz). Viene así desde el setup de Expo; no cambiarlo sin probar que Metro siga resolviendo.
 - `bun --filter '*' <script>` corre solo en los workspaces que tienen ese script.
-- **Prettier** (versión fija en la raíz) con config por app que respeta su estilo: API sin `;` y líneas de hasta 140 (`apps/api/.prettierrc`), app con `;` y 100 (`apps/mobile/.prettierrc`). `.prettierignore` excluye generados, migraciones y markdown. Si `check` falla por formato: `bun run format`. No discutir estilo: lo decide Prettier.
-- **TypeScript `~6.0.3` en los dos workspaces** (el del SDK 58 de Expo): la app typechequea archivos de la API, así que tienen que ir juntos.
+- **Prettier** (versión fija en la raíz) con config por app que respeta su estilo: API sin `;` y líneas de hasta 140 (`apps/api/.prettierrc`), web y mobile con `;` y 100 (`apps/mobile/.prettierrc`). `.prettierignore` excluye generados, migraciones y markdown. Si `check` falla por formato: `bun run format`. No discutir estilo: lo decide Prettier.
+- **TypeScript `~6.0.3` y React `19.3.0` en todos los workspaces** (los del SDK 58 de Expo): web y mobile typechequean archivos de la API y comparten `node_modules`, así que tienen que ir juntos.
 
 ---
 
@@ -241,7 +245,7 @@ Cada app tiene un `.env.sample` commiteado que dice qué variables hacen falta y
 Para cualquier tarea, en cualquier parte del repo. Claude no dice "listo" hasta cumplir todo esto (y si algo no se pudo, lo dice explícitamente):
 
 1. **Cumple las reglas de negocio** de este archivo y el alcance de `V1.md`. Si la tarea pedía algo que las contradice, se avisó antes (ver `.claude/CLAUDE.md` → "Cuestionar al humano").
-2. **Tiene tests** según el `CLAUDE.md` de la app tocada (API: integración por procedure; mobile: contenido por estado de cada pantalla).
+2. **Tiene tests** según el `CLAUDE.md` de la app tocada (API: integración por procedure; web/mobile: contenido por estado de cada pantalla).
 3. **`bun run check` pasa** (typecheck + tests + lint). Nunca `--no-verify` ni desactivar reglas para que pase.
 4. **Docs actualizados en el lugar correcto:** regla de negocio nueva → acá; procedure o modelo → `apps/api/CLAUDE.md`; pantalla o roadmap → `V1.md`; decisión técnica → el `CLAUDE.md` de la app; servicios, variables o secretos → `INFRA.md`; cómo deployar → `DEPLOY.md`; decisión investigada (costos, alternativas) → `docs/decisiones/`. **Si la tarea completa (o deja a medias) algo de `PENDIENTES.md`, actualizarlo** junto con su issue: lo terminado se borra (o se tilda) y queda documentado donde corresponde; lo nuevo pendiente se agrega con su issue. Un dato vive en un solo lugar (guía completa: `README.md` → "Documentación").
 5. **En una branch con su PR** (título en formato Conventional Commits), con el checklist de la plantilla completo. Mergear solo si el usuario lo pide.
@@ -271,7 +275,7 @@ bun run check
 - **`bun.lock`:** nunca a mano. Quedarse con la de `main` (`git checkout --theirs bun.lock` en un merge, `--ours` en un rebase), `bun install` para regenerarlo y `git add bun.lock`.
 - **`package.json` (cualquiera):** combinar las dos listas de dependencias y scripts. En mobile, si quedan versiones raras, `bunx expo install --fix`. Después `bun install`.
 - **`CLAUDE.md`, `V1.md` y docs:** combinar ambos textos respetando la regla de "dónde va cada cosa".
-- **Archivos de cada app:** ver "Conflictos" en `apps/api/CLAUDE.md` y `apps/mobile/CLAUDE.md` (migraciones, `app.json`, `_layout.tsx`, `router.ts`…).
+- **Archivos de cada app:** ver "Conflictos" en `apps/api/CLAUDE.md`, `apps/web/CLAUDE.md` y `apps/mobile/CLAUDE.md` (migraciones, `app.json`, `_layout.tsx`, `router.ts`…).
 
 Después de cualquier conflicto: `bun install && bun run check`. Si falla, se arregla antes de commitear — **nunca** `--no-verify`.
 
@@ -286,11 +290,11 @@ Después de cualquier conflicto: `bun install && bun run check`. Si falla, se ar
 ```
 
 **Types:** `feat`, `fix`, `chore`, `docs`, `refactor`, `test`, `style`, `perf`, `build`, `ci`, `revert`
-**Scopes sugeridos:** `mobile`, `api`, `db`, `infra`, `deps`, `agent` (v2)
+**Scopes sugeridos:** `web`, `api`, `db`, `mobile`, `infra`, `deps`, `agent` (v2)
 
 ```
 feat(api): agregar endpoint para crear grupos
-fix(mobile): corregir cálculo de saldos con decimales
+fix(web): corregir cálculo de saldos con decimales
 chore: actualizar bun.lock
 refactor(api)!: cambiar formato de respuesta de gastos   # ! = breaking change
 ```
@@ -311,7 +315,7 @@ git switch main && git pull --rebase origin main
 git switch -c feat/<descripcion-corta>        # o fix/…, chore/…, docs/…
 # … commits con formato Conventional Commits …
 git push -u origin HEAD
-gh pr create --fill                            # título = Conventional Commit (ej. "feat(mobile): pantalla de grupos")
+gh pr create --fill                            # título = Conventional Commit (ej. "feat(web): pantalla de grupos")
 ```
 
 - Para mergear, el CI (`.github/workflows/ci.yml`) tiene que pasar entero:
@@ -319,7 +323,7 @@ gh pr create --fill                            # título = Conventional Commit (
   - **"Migraciones al día con el schema"** — aplica todas las migraciones en un Postgres vacío y falla si el schema de Prisma tiene cambios sin migración.
   - **"Expo doctor"** — versiones de paquetes compatibles con el SDK de Expo.
   - **"Formato de commits y título del PR"** — Conventional Commits.
-- **E2E** (`.github/workflows/e2e.yml`, no obligatorio): flujos de Maestro en un emulador Android. Corre a mano o en PRs con la label `e2e` — ponérsela a los PRs que cambian recorridos principales de la app (ver `apps/mobile/CLAUDE.md` → "Testing").
+- **E2E** (`.github/workflows/e2e.yml`, no obligatorio): Playwright en la web (celular y compu) y Maestro en un emulador Android para la app nativa. Corre a mano o en PRs con la label `e2e` — ponérsela a los PRs que cambian recorridos críticos (ver "Testing" en `apps/web/CLAUDE.md`).
 - Dependabot abre PRs mensuales solo para las GitHub Actions (las dependencias de la app se actualizan con `bunx expo install`).
 - Se mergea solo con **squash**: el título del PR queda como el commit en `main`, por eso tiene que respetar el formato. La branch se borra sola al mergear.
 - **El PR tiene que estar al día con `main`** para poder mergearse (GitHub lo marca como *BEHIND* si entró otro PR antes). Se actualiza **siempre con rebase, nunca con merge** (el historial de `main` es lineal):

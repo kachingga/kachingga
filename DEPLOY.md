@@ -5,8 +5,9 @@
 | Servicio | Proveedor | Cómo se deploya |
 |----------|-----------|-----------------|
 | API | Railway | Auto-deploy en push a `main` |
-| App mobile (binario) | EAS Build | Manual, solo cuando cambia código nativo |
-| App mobile (JS) | EAS Update | En cada push a `main` (OTA) |
+| **Web (front principal)** | Vercel | Auto-deploy en push a `main`; preview por cada PR |
+| App mobile (binario, alternativa nativa) | EAS Build | Manual, solo cuando cambia código nativo |
+| App mobile (JS, alternativa nativa) | EAS Update | En cada push a `main` (OTA) |
 
 ---
 
@@ -19,10 +20,21 @@
 3. **Start Command:** `bun run --cwd apps/api start` (el `bun install` ya corre `prisma generate` por el postinstall)
 4. **Watch Paths:** `apps/api/**` y `bun.lock` — para no redeployar la API por cambios solo de la app
 5. **Healthcheck Path:** `/health`
-6. Agregar las variables de entorno (ver `INFRA.md`)
+6. Agregar las variables de entorno (ver `INFRA.md`), incluida `CORS_ORIGINS` con la URL de Vercel (se completa después del paso 2)
 7. Deploy y copiar el dominio a `INFRA.md`
 
-### 2. EAS — App mobile
+### 2. Vercel — Web
+
+> Todavía no se deployó nunca: el `vercel.json` está armado pero sin probar contra Vercel. Verificarlo en el primer deploy.
+
+1. [vercel.com](https://vercel.com) → Add New → Project → importar `kachingga/kachingga`.
+2. **Root Directory:** vacío (raíz del repo). Toma la configuración del `vercel.json` de la raíz: instala el monorepo con Bun (la web necesita los tipos de la API y el cliente de Prisma generado), buildea `apps/web` y sirve `apps/web/dist`, mandando todas las rutas a `index.html` (las resuelve React Router).
+3. **Variables de entorno** (Production): `VITE_API_URL` (URL de Railway), `VITE_SUPABASE_URL` y `VITE_SUPABASE_PUBLISHABLE_KEY` **de prod** (ver `INFRA.md`).
+4. Deploy y copiar el dominio a `INFRA.md`.
+5. En Railway, poner ese dominio en `CORS_ORIGINS` (si no, el navegador bloquea los pedidos a la API).
+6. En cada PR, Vercel publica un *preview* con su propia URL: para que funcione contra la API habría que sumarla a `CORS_ORIGINS` (o no usar los previews contra prod).
+
+### 3. EAS — App mobile (solo si se hace la app nativa)
 
 ✅ Hecho: proyecto vinculado a la org `kachingga` en expo.dev, `eas.json` creado y EAS Update configurado (`expo-updates`, `runtimeVersion` con política `fingerprint`).
 
@@ -42,7 +54,7 @@ Perfiles de `eas.json`:
 
 > `runtimeVersion` usa la política `fingerprint`: EAS calcula un hash del código nativo. Si cambia (librería nativa nueva, plugin, SDK), los builds viejos dejan de recibir updates y hay que hacer un build nuevo.
 
-### 3. Instalar la app en cada teléfono
+### 4. Instalar la app nativa en cada teléfono (solo si se hace la app nativa)
 
 Checklist completo en `PENDIENTES.md` → Lanzamiento → Fase 1. **Los builds solo se lanzan cuando alguien lo pide explícitamente.**
 
@@ -92,7 +104,11 @@ Push a `main` → Railway deploya solo.
 
 Nunca usar `prisma migrate reset` ni `prisma db push` contra prod.
 
-### Cambios en la app (solo JS/TS/assets) — automático
+### Cambios en la web — automático
+
+Mergear a `main` → Vercel deploya solo. Todos ven la versión nueva al recargar (o al volver a abrir la app desde la pantalla de inicio).
+
+### Cambios en la app nativa (solo JS/TS/assets) — automático
 
 Al mergear un PR que toca `apps/mobile/**` (o `apps/api/src/schemas.ts`, o `bun.lock`), el workflow `.github/workflows/eas-update.yml` publica un update OTA al canal `main` con las variables del entorno **production** de EAS. Todos reciben la versión nueva la próxima vez que abren la app.
 
@@ -104,7 +120,7 @@ cd apps/mobile
 bunx eas-cli update --channel main --environment production --message "fix(mobile): ..."
 ```
 
-### Cambios en la app con código nativo
+### Cambios en la app nativa con código nativo
 
 Si se agrega una librería nativa, se cambia `app.json`/plugins o se sube el SDK de Expo, cambia el **fingerprint** (`runtimeVersion` con política `fingerprint`, se calcula solo): los builds instalados **ignoran** los updates nuevos hasta que se haga un **nuevo build** y cada uno lo reinstale. El workflow igual publica el update, pero solo le llega a builds con el mismo fingerprint.
 

@@ -6,3 +6,5 @@ bun.lock
 **/expo-env.d.ts
 **/migrations
 *.md
+**/test-results
+**/playwright-report
