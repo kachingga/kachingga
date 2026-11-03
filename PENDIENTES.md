@@ -76,6 +76,9 @@ Todo lo que falta **fuera del código de las versiones** (el alcance de producto
 ### Web instalable (PWA) — [#18](https://github.com/kachingga/kachingga/issues/18)
 Manifest, íconos y meta tags para que "Agregar a inicio" la abra como app. Depende de los íconos del diseño.
 
+### Sacar la app nativa del repo — [#20](https://github.com/kachingga/kachingga/issues/20)
+`apps/mobile` ya está fuera de los checks y del CI, pero el código sigue en el repo. **Falta:** borrarlo junto con EAS, el plugin de Expo y sus docs, y dejar solo la web. Checklist completo en el issue. Al hacerlo, se cierran también #6 y #12 (solo aplican a la nativa).
+
 ### EAS Update automático — [#6](https://github.com/kachingga/kachingga/issues/6) (solo app nativa)
 El workflow existe (`.github/workflows/eas-update.yml`) y está **inactivo** hasta que haya a quién mandarle updates y un `EXPO_TOKEN`. **Falta:** Railway → variables de prod en EAS → primer build instalado → secret `EXPO_TOKEN`. Pasos en `DEPLOY.md` → "Activar EAS Update automático". Con la web como front, este ítem queda en pausa (los deploys de Vercel cumplen esa función); solo aplica si se hace la app nativa.
 
