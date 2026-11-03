@@ -29,6 +29,15 @@ jobs:
           distribution: temurin
           java-version: 17
       - uses: gradle/actions/setup-gradle@v4
+        with:
+          # Por defecto solo main guarda caché; así cada PR también reaprovecha sus corridas anteriores
+          cache-read-only: false
+      # Caché del C++ de React Native y módulos nativos (lo más pesado de compilar)
+      - uses: hendrikmuhs/ccache-action@v1.2
+        with:
+          key: e2e-android-${{ hashFiles('bun.lock') }}
+          restore-keys: e2e-android-
+          max-size: 2G
       - run: bun install --frozen-lockfile
 
       # android/ se genera (Continuous Native Generation) y está gitignoreado
@@ -42,7 +51,12 @@ jobs:
         env:
           # 10.0.2.2 = la máquina host vista desde el emulador (para cuando los flujos usen la API)
           EXPO_PUBLIC_API_URL: http://10.0.2.2:3000
-        run: ./gradlew assembleRelease --no-daemon -PreactNativeArchitectures=x86_64
+          # CMake usa ccache para compilar C/C++ (ver paso de ccache)
+          CMAKE_C_COMPILER_LAUNCHER: ccache
+          CMAKE_CXX_COMPILER_LAUNCHER: ccache
+        run: |
+          ./gradlew assembleRelease --no-daemon -PreactNativeArchitectures=x86_64
+          ccache --show-stats
 
       - name: Instalar Maestro
         run: |
