@@ -255,6 +255,8 @@ bun install          # por si cambiaron dependencias, hooks o el schema de Prism
 bun run check
 ```
 
+> **Al cambiar de branch** (`git switch`, rebase): si alguna de las dos toca el schema de Prisma, correr `bun run db:generate` en `apps/api` (o `bun install`). El cliente de Prisma generado no está en git y queda con el schema de la branch anterior: los tests de integración fallan todos juntos con errores de columnas o tablas.
+
 ### Si tenés trabajo local viejo
 1. Commitealo en una branch (`git switch -c feat/<lo-que-sea>`). Si el hook rechaza el mensaje, usá `type(scope): ...`.
 2. `git rebase origin/main` (o `merge`) y resolvé los conflictos como abajo.

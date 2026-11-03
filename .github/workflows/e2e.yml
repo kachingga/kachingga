@@ -20,7 +20,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 60
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - uses: oven-sh/setup-bun@v2
         with:
           bun-version: 1.3.12
@@ -32,12 +32,6 @@ jobs:
         with:
           # Por defecto solo main guarda caché; así cada PR también reaprovecha sus corridas anteriores
           cache-read-only: false
-      # Caché del C++ de React Native y módulos nativos (lo más pesado de compilar)
-      - uses: hendrikmuhs/ccache-action@v1.2
-        with:
-          key: e2e-android-${{ hashFiles('bun.lock') }}
-          restore-keys: e2e-android-
-          max-size: 2G
       - run: bun install --frozen-lockfile
 
       # android/ se genera (Continuous Native Generation) y está gitignoreado
@@ -51,16 +45,9 @@ jobs:
         env:
           # 10.0.2.2 = la máquina host vista desde el emulador (para cuando los flujos usen la API)
           EXPO_PUBLIC_API_URL: http://10.0.2.2:3000
-          # CMake usa ccache para compilar C/C++ (ver paso de ccache)
-          CMAKE_C_COMPILER_LAUNCHER: ccache
-          CMAKE_CXX_COMPILER_LAUNCHER: ccache
-          # Los directorios de build nativos cambian entre corridas: que no entren en la clave de ccache
-          CCACHE_BASEDIR: ${{ github.workspace }}
-          CCACHE_NOHASHDIR: 'true'
-          CCACHE_SLOPPINESS: time_macros,include_file_mtime,include_file_ctime,file_stat_matches
-        run: |
-          ./gradlew assembleRelease --no-daemon --build-cache -PreactNativeArchitectures=x86_64
-          ccache --show-stats
+        # --build-cache reutiliza tareas de Gradle de corridas anteriores (bajó la compilación de ~15 a ~6 min).
+        # Se probó ccache para el C++ y no aportaba (~3% de aciertos): no agregarlo de nuevo sin medir.
+        run: ./gradlew assembleRelease --no-daemon --build-cache -PreactNativeArchitectures=x86_64
 
       - name: Instalar Maestro
         run: |
