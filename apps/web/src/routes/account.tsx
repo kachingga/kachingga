@@ -41,29 +41,29 @@ export function Account() {
   return (
     <main className="mx-auto min-h-dvh max-w-md p-6">
       <div className="mb-6 flex items-center gap-3">
-        <button onClick={() => navigate(-1)} aria-label="Volver" className="text-neutral-500">
+        <button onClick={() => navigate(-1)} aria-label="Volver" className="text-neutral-400">
           ←
         </button>
         <h1 className="text-xl font-bold">Mi cuenta</h1>
       </div>
 
       <div className="space-y-6">
-        <div>
-          <p className="text-sm text-neutral-500">Email</p>
-          <p className="font-medium">{session?.user.email ?? '—'}</p>
+        <div className="rounded-2xl bg-neutral-900 p-4">
+          <p className="text-sm text-neutral-400">Email</p>
+          <p className="mt-1 font-medium">{session?.user.email ?? '—'}</p>
         </div>
 
-        <div>
-          <p className="mb-1 text-sm text-neutral-500">Alias / CVU para cobrar</p>
+        <div className="rounded-2xl bg-neutral-900 p-4">
+          <p className="mb-2 text-sm text-neutral-400">Alias / CVU para cobrar</p>
 
           {profile.isPending && <p className="text-neutral-400">Cargando…</p>}
 
-          {profile.isError && <p className="text-sm text-red-600">{profile.error.message}</p>}
+          {profile.isError && <p className="text-sm text-red-400">{profile.error.message}</p>}
 
           {profile.isSuccess && !editingAlias && (
             <div className="flex items-center justify-between">
               <p className="font-medium">{profile.data.paymentAlias ?? 'Sin alias'}</p>
-              <button onClick={startEdit} className="text-sm text-neutral-500 underline">
+              <button onClick={startEdit} className="text-sm text-neutral-400 underline">
                 {profile.data.paymentAlias ? 'Cambiar' : 'Agregar'}
               </button>
             </div>
@@ -75,20 +75,20 @@ export function Account() {
                 value={aliasInput}
                 onChange={(e) => setAliasInput(e.target.value)}
                 placeholder="alias.ejemplo o CVU de 22 dígitos"
-                className="w-full rounded-lg border border-neutral-300 px-3 py-2 text-base focus:outline-none focus:ring-2 focus:ring-black"
+                className="w-full rounded-lg border border-neutral-700 bg-neutral-800 px-3 py-2 text-base text-white placeholder:text-neutral-600 focus:outline-none focus:ring-2 focus:ring-neutral-600"
               />
-              {aliasError && <p className="text-sm text-red-600">{aliasError}</p>}
+              {aliasError && <p className="text-sm text-red-400">{aliasError}</p>}
               <div className="flex gap-2">
                 <button
                   onClick={() => updateProfile.mutate({ paymentAlias: aliasInput || null })}
                   disabled={updateProfile.isPending}
-                  className="flex-1 rounded-lg bg-black py-2 font-medium text-white disabled:opacity-50"
+                  className="flex-1 rounded-lg bg-white py-2 font-medium text-black disabled:opacity-50"
                 >
                   {updateProfile.isPending ? 'Guardando…' : 'Guardar'}
                 </button>
                 <button
                   onClick={() => setEditingAlias(false)}
-                  className="flex-1 rounded-lg border border-neutral-300 py-2"
+                  className="flex-1 rounded-lg border border-neutral-700 py-2 text-neutral-300"
                 >
                   Cancelar
                 </button>
@@ -96,14 +96,14 @@ export function Account() {
             </div>
           )}
 
-          <p className="mt-1 text-xs text-neutral-400">
+          <p className="mt-2 text-xs text-neutral-500">
             Se usa en todos tus grupos para recibir transferencias.
           </p>
         </div>
 
         <button
           onClick={handleSignOut}
-          className="w-full rounded-lg border border-red-200 py-3 text-red-600"
+          className="w-full rounded-lg border border-red-900/50 py-3 text-red-400"
         >
           Cerrar sesión
         </button>

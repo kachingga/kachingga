@@ -59,7 +59,7 @@ export function Participants() {
   );
 
   if (group.isPending) return <p className="p-6 text-center text-neutral-400">Cargando…</p>;
-  if (group.isError) return <p className="p-6 text-red-600">{group.error.message}</p>;
+  if (group.isError) return <p className="p-6 text-red-400">{group.error.message}</p>;
 
   const g = group.data;
   const isArchived = !!g.archivedAt;
@@ -68,24 +68,24 @@ export function Participants() {
   return (
     <main className="mx-auto min-h-dvh max-w-md p-6">
       <div className="mb-6 flex items-center gap-3">
-        <button onClick={() => navigate(-1)} aria-label="Volver" className="text-neutral-500">
+        <button onClick={() => navigate(-1)} aria-label="Volver" className="text-neutral-400">
           ←
         </button>
         <h1 className="text-xl font-bold">Participantes</h1>
       </div>
 
       {/* Código de invitación */}
-      <div className="mb-6 rounded-xl border border-neutral-200 p-4">
-        <p className="mb-1 text-sm font-medium text-neutral-700">Código de invitación</p>
+      <div className="mb-6 rounded-2xl bg-neutral-900 p-4">
+        <p className="mb-1 text-sm font-medium text-neutral-400">Código de invitación</p>
         {showCode ? (
           <div className="space-y-2">
-            <p className="font-mono text-2xl font-bold tracking-widest text-center py-2">
+            <p className="py-2 text-center font-mono text-2xl font-bold tracking-widest">
               {g.inviteCode}
             </p>
             <div className="flex gap-2">
               <button
                 onClick={() => void navigator.clipboard.writeText(g.inviteCode)}
-                className="flex-1 rounded-lg border border-neutral-300 py-2 text-sm"
+                className="flex-1 rounded-lg border border-neutral-700 py-2 text-sm text-neutral-300"
               >
                 Copiar código
               </button>
@@ -96,7 +96,7 @@ export function Participants() {
                       regenerateCode.mutate({ groupId: groupId! });
                   }}
                   disabled={regenerateCode.isPending}
-                  className="flex-1 rounded-lg border border-neutral-300 py-2 text-sm text-neutral-500 disabled:opacity-50"
+                  className="flex-1 rounded-lg border border-neutral-700 py-2 text-sm text-neutral-400 disabled:opacity-50"
                 >
                   Regenerar
                 </button>
@@ -104,7 +104,7 @@ export function Participants() {
             </div>
           </div>
         ) : (
-          <button onClick={() => setShowCode(true)} className="text-sm underline text-neutral-500">
+          <button onClick={() => setShowCode(true)} className="text-sm text-neutral-400 underline">
             Ver código para compartir
           </button>
         )}
@@ -117,7 +117,7 @@ export function Participants() {
           const canRemove = !p.hasAccount;
 
           return (
-            <li key={p.id} className="rounded-xl border border-neutral-200 p-3">
+            <li key={p.id} className="rounded-2xl bg-neutral-900 p-3">
               {renamingId === p.id ? (
                 <form
                   className="flex gap-2"
@@ -130,7 +130,7 @@ export function Participants() {
                     value={renameValue}
                     onChange={(e) => setRenameValue(e.target.value)}
                     autoFocus
-                    className="flex-1 rounded-lg border border-neutral-300 px-2 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-black"
+                    className="flex-1 rounded-lg border border-neutral-700 bg-neutral-800 px-2 py-1 text-sm text-white focus:outline-none focus:ring-2 focus:ring-neutral-600"
                   />
                   <button type="submit" disabled={rename.isPending} className="text-sm font-medium">
                     OK
@@ -138,7 +138,7 @@ export function Participants() {
                   <button
                     type="button"
                     onClick={() => setRenamingId(null)}
-                    className="text-sm text-neutral-500"
+                    className="text-sm text-neutral-400"
                   >
                     ×
                   </button>
@@ -150,7 +150,7 @@ export function Participants() {
                       {p.name}
                       {p.isMe && <span className="ml-2 text-xs text-neutral-500">yo</span>}
                       {!p.hasAccount && (
-                        <span className="ml-2 text-xs text-neutral-400">sin cuenta</span>
+                        <span className="ml-2 text-xs text-neutral-500">sin cuenta</span>
                       )}
                     </p>
 
@@ -171,7 +171,7 @@ export function Participants() {
                           onChange={(e) => setAliasValue(e.target.value)}
                           placeholder="alias o CBU"
                           autoFocus
-                          className="flex-1 rounded-lg border border-neutral-300 px-2 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-black"
+                          className="flex-1 rounded-lg border border-neutral-700 bg-neutral-800 px-2 py-1 text-sm text-white placeholder:text-neutral-600 focus:outline-none focus:ring-2 focus:ring-neutral-600"
                         />
                         <button
                           type="submit"
@@ -183,7 +183,7 @@ export function Participants() {
                         <button
                           type="button"
                           onClick={() => setAliasingId(null)}
-                          className="text-xs text-neutral-500"
+                          className="text-xs text-neutral-400"
                         >
                           ×
                         </button>
@@ -214,13 +214,13 @@ export function Participants() {
                   </div>
 
                   {!isArchived && (
-                    <div className="flex gap-2 ml-2">
+                    <div className="ml-2 flex gap-2">
                       <button
                         onClick={() => {
                           setRenamingId(p.id);
                           setRenameValue(p.name);
                         }}
-                        className="text-xs text-neutral-500 underline"
+                        className="text-xs text-neutral-400 underline"
                       >
                         Renombrar
                       </button>
@@ -231,7 +231,7 @@ export function Participants() {
                               remove.mutate({ participantId: p.id });
                           }}
                           disabled={remove.isPending}
-                          className="text-xs text-red-500 underline disabled:opacity-50"
+                          className="text-xs text-red-400 underline disabled:opacity-50"
                         >
                           Quitar
                         </button>
@@ -265,19 +265,19 @@ export function Participants() {
             onChange={(e) => setAddName(e.target.value)}
             required
             placeholder="Nombre (sin cuenta)"
-            className="flex-1 rounded-lg border border-neutral-300 px-3 py-2 text-base focus:outline-none focus:ring-2 focus:ring-black"
+            className="flex-1 rounded-lg border border-neutral-700 bg-neutral-900 px-3 py-2 text-base text-white placeholder:text-neutral-600 focus:outline-none focus:ring-2 focus:ring-neutral-600"
           />
           <button
             type="submit"
             disabled={addParticipant.isPending}
-            className="rounded-lg bg-black px-4 py-2 font-medium text-white disabled:opacity-50"
+            className="rounded-lg bg-white px-4 py-2 font-medium text-black disabled:opacity-50"
           >
             +
           </button>
         </form>
       )}
 
-      {error && <p className="mt-2 text-sm text-red-600">{error}</p>}
+      {error && <p className="mt-2 text-sm text-red-400">{error}</p>}
     </main>
   );
 }
