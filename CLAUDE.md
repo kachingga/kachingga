@@ -18,7 +18,7 @@ Proyecto de **Kachingga**, una organización de amigos (repo: `github.com/kachin
 | `DEPLOY.md` | Cómo deployar la API (Railway) y distribuir la app (EAS Build / EAS Update) |
 | `IMPROVEMENTS.md` | Mejoras de infraestructura pendientes (CI, staging, backups) |
 | `apps/mobile/CLAUDE.md` | Reglas de Expo / React Native para la app mobile |
-| `apps/api/CLAUDE.md` | Reglas de la API Hono (crear junto con `apps/api`) |
+| `apps/api/CLAUDE.md` | Reglas de la API Hono + tRPC + Prisma (crear junto con `apps/api`) |
 
 > **Alcance:** si una tarea toca algo de `V2.md` (agente o Mercado Pago), frená y preguntá antes de implementarlo. Todo lo demás es v1.
 
@@ -40,6 +40,8 @@ Proyecto de **Kachingga**, una organización de amigos (repo: `github.com/kachin
 | Mobile | React Native con Expo (SDK 58) + Expo Router |
 | Distribución mobile | EAS Build (instalación interna) + EAS Update (OTA) |
 | Backend | Hono + TypeScript sobre Bun |
+| API (contrato app ↔ backend) | tRPC sobre Hono (`@hono/trpc-server`) + Zod |
+| Data fetching en la app | `@trpc/tanstack-react-query` + TanStack Query |
 | Hosting backend | Railway |
 | Base de datos | PostgreSQL en Supabase |
 | ORM | Prisma |
@@ -54,10 +56,24 @@ Proyecto de **Kachingga**, una organización de amigos (repo: `github.com/kachin
 Login simple con **email + password** usando **Supabase Auth**.
 
 - **App:** usa `@supabase/supabase-js` solo para auth (login, logout, sesión persistida y refresh del token). Con la clave **publishable** de Supabase (es pública, se puede embeber en la app).
-- **API:** cada request lleva `Authorization: Bearer <access_token>`. Un middleware de Hono valida el token contra Supabase y deja el usuario en el contexto. Todas las rutas están protegidas salvo las que se marquen explícitamente como públicas.
+- **API:** cada request lleva `Authorization: Bearer <access_token>`. El `createContext` de tRPC valida el token contra Supabase y deja el usuario en el contexto. Todo usa `protectedProcedure` (falla con `UNAUTHORIZED` si no hay usuario) salvo lo que se marque explícitamente como `publicProcedure`.
 - **Datos:** la app **nunca** lee ni escribe la base directo — todo pasa por la API. La API es la que decide qué grupos/gastos puede ver cada usuario.
 - **Usuarios:** al ser un grupo de amigos, alcanza con signup por email + password (o crear los usuarios desde el dashboard de Supabase). Sin login social ni magic link en v1.
 - La clave **secret** de Supabase (`sb_secret_...`) vive solo en Railway.
+
+---
+
+## tRPC — tipado de punta a punta
+
+La app y la API se comunican **solo por tRPC**. No hay endpoints REST a mano para features de la app ni tipos de respuesta duplicados.
+
+- **API (`apps/api`):** Hono monta tRPC en `/trpc/*` con `@hono/trpc-server`. Los routers viven en `src/trpc/routers/` (uno por dominio: `groups`, `expenses`, `balances`, …) y se juntan en `appRouter`. El archivo exporta **solo el tipo**: `export type AppRouter = typeof appRouter`.
+- **Validación:** todo input se valida con Zod en `.input(...)`. Los schemas que la app también necesite (ej. formularios) se exportan desde la API y se importan en la app.
+- **App (`apps/mobile`):** importa `AppRouter` con `import type` desde `@kachingga/api` — **nunca** código de runtime de la API (Prisma, secrets, etc. no pueden terminar en el bundle). Cliente con `httpBatchLink` apuntando a `EXPO_PUBLIC_API_URL/trpc`, que agrega el `Authorization` con el token de Supabase.
+- **Tipos derivados:** para tipos de inputs/outputs usar `inferRouterInputs<AppRouter>` / `inferRouterOutputs<AppRouter>`. No redefinir a mano tipos que ya salen del router.
+- **Errores:** tirar `TRPCError` con el `code` correcto (`NOT_FOUND`, `FORBIDDEN`, `BAD_REQUEST`, …). Mapear errores de Prisma conocidos (P2002 → `CONFLICT`, P2025 → `NOT_FOUND`) en un solo lugar.
+- **Transformer:** `superjson`, así `Date` y similares viajan con su tipo.
+- **Fuera de tRPC:** solo lo que llama un tercero y no la app — `GET /health` y, en v2, el webhook de Mercado Pago. Esas sí son rutas Hono normales.
 
 ---
 
@@ -70,7 +86,8 @@ kachingga/
 ├── apps/
 │   ├── mobile/              # app Expo (ver apps/mobile/CLAUDE.md)
 │   │   └── src/app/         # rutas de Expo Router
-│   └── api/                 # API Hono — todavía no creada
+│   └── api/                 # API Hono + tRPC (@kachingga/api) — todavía no creada
+│       └── src/trpc/        # init, context, routers/, appRouter
 ├── CLAUDE.md
 ├── V1.md / V2.md
 ├── INFRA.md / DEPLOY.md / IMPROVEMENTS.md

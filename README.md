@@ -43,6 +43,7 @@ El agente explica cómo se llegó a cada saldo, desglosando los gastos que lo co
 |------|------------|
 | Mobile | React Native (Expo), distribuida con EAS Build + EAS Update |
 | Backend | TypeScript con Hono y Bun, hosteado en Railway |
+| API | tRPC (tipado de punta a punta entre app y backend) |
 | Base de datos | PostgreSQL en Supabase con Prisma |
 | Auth | Supabase Auth (email + password) |
 | Agente | API de LLM con tool calling sobre los datos del grupo |
