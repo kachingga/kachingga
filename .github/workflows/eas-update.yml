@@ -27,7 +27,7 @@ jobs:
         if: env.EXPO_TOKEN == ''
         run: echo "::notice::EXPO_TOKEN no está configurado; no se publica el update (ver DEPLOY.md)."
 
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         if: env.EXPO_TOKEN != ''
       - uses: oven-sh/setup-bun@v2
         if: env.EXPO_TOKEN != ''
