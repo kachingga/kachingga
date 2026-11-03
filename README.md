@@ -21,13 +21,7 @@ Proyecto de [Kachingga](https://github.com/kachingga), una organización de amig
 - Búsqueda por texto en la descripción.
 - Filtros combinables y guardables.
 
-### Integración con Mercado Pago (v2)
-- Saldar deudas desde la app con Mercado Pago.
-- Generar un link de pago o un QR por el monto exacto que se debe.
-- Marcar la deuda como saldada automáticamente cuando se confirma el pago.
-- Opción de saldar manualmente si el pago se hizo por fuera.
-
-### Agente de gastos (v3)
+### Agente de gastos (v2)
 Un asistente con IA integrado en cada grupo que responde preguntas sobre los gastos en lenguaje natural:
 - "¿Por qué le debo $15.000 a Juan?"
 - "¿En qué gastamos más en el viaje?"
@@ -47,7 +41,6 @@ El agente explica cómo se llegó a cada saldo, desglosando los gastos que lo co
 | Base de datos | PostgreSQL en Supabase con Prisma |
 | Auth | Supabase Auth (email + password) |
 | Agente | API de LLM con tool calling sobre los datos del grupo |
-| Pagos | SDK / API de Mercado Pago |
 
 ## Onboarding (para cada miembro)
 
@@ -118,8 +111,9 @@ Lo personal **no se commitea**: configuración propia en `.claude/settings.local
 ## Roadmap
 
 - **v1** — grupos, gastos, saldos, filtros y multimoneda. Ver [`V1.md`](V1.md).
-- **v2** — integración con Mercado Pago. Ver [`V2.md`](V2.md).
-- **v3** — agente de gastos con IA. Ver [`V3.md`](V3.md).
+- **v2** — explicación de saldos y agente de gastos con IA. Ver [`V2.md`](V2.md).
+
+Lanzamiento: primero para el grupo (TestFlight en iPhone, APK en Android) y a futuro en las stores. Ver [`LANZAMIENTO.md`](LANZAMIENTO.md).
 
 Infra y deploy: [`INFRA.md`](INFRA.md), [`DEPLOY.md`](DEPLOY.md), [`IMPROVEMENTS.md`](IMPROVEMENTS.md).
 

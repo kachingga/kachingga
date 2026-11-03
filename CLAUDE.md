@@ -1,6 +1,6 @@
 # Kachingga — App para dividir gastos en grupo
 
-Proyecto de **Kachingga**, una organización de amigos (repo: `github.com/kachingga/kachingga`). Es para uso propio del grupo: cada uno tiene la app instalada en su teléfono y usa siempre la última versión.
+Proyecto de **Kachingga**, una organización de amigos (repo: `github.com/kachingga/kachingga`). **Hoy es para uso propio del grupo**: cada uno tiene la app instalada (iPhone por TestFlight, Android por APK) y usa siempre la última versión. **A futuro se quiere publicar en las stores** (ver `LANZAMIENTO.md`): no tomar decisiones que lo hagan imposible, pero tampoco construir cosas para usuarios públicos antes de tiempo.
 
 ---
 
@@ -28,6 +28,7 @@ Proyecto de **Kachingga**, una organización de amigos (repo: `github.com/kachin
 | A la app le falta algo de la API | Se agrega en `apps/api` (mismo repo) siguiendo `apps/api/CLAUDE.md`; nunca workarounds en la app |
 | Cambios de base de datos | `apps/api/CLAUDE.md` → "Migraciones — reglas" + `DEPLOY.md` |
 | Deploy, builds, variables de entorno | `DEPLOY.md` + `INFRA.md` |
+| Instalarla en los teléfonos del grupo / publicarla | `LANZAMIENTO.md` |
 | Infra pendiente / mejoras | `IMPROVEMENTS.md` (actualizarlo al terminar o empezar algo de ahí) |
 | Conflictos de git | "Trabajo en paralelo y conflictos" (abajo) + "Conflictos" del `CLAUDE.md` de cada app |
 | Saber si una tarea está terminada | "Cuándo una tarea está terminada" (abajo) + plantilla de PR (`.github/pull_request_template.md`) |
@@ -42,14 +43,17 @@ Proyecto de **Kachingga**, una organización de amigos (repo: `github.com/kachin
 | `apps/api/CLAUDE.md` | Técnico de la API (ver arriba) |
 | `apps/mobile/CLAUDE.md` | Técnico de la app (ver arriba) |
 | `V1.md` | Alcance y roadmap de la v1. **Lo que se construye ahora** |
-| `V2.md` | Alcance de la v2: integración con Mercado Pago. **No implementar hasta cerrar v1** |
-| `V3.md` | Alcance de la v3: agente de gastos con IA. **No implementar hasta cerrar v2** |
+| `V2.md` | Alcance de la v2: explicación de saldos y agente de gastos con IA. **No implementar hasta cerrar v1** |
+| `LANZAMIENTO.md` | Qué falta para que todo el grupo la use (Fase 1, en curso) y para publicarla en las stores (Fase 2, futuro) |
+| `CONTRAS.md` | Costos (Railway, Supabase, Apple, Google, EAS, impuestos) y comparación con Tricount |
+| `INTEGRACION_MERCADOPAGO.md` | Qué se puede y qué no con Mercado Pago. **No es parte de ninguna versión** |
+| `ALTERNATIVAS.md` | App nativa vs. web app mobile-first (PWA) vs. Tricount: qué cambia, costos y qué la haría mejor que Tricount. **Decisión pendiente** |
 | `README.md` | Qué es la app y onboarding de cada miembro |
 | `INFRA.md` | Servicios, dashboards, variables de entorno, secretos |
 | `DEPLOY.md` | Deploy de la API (Railway), migraciones en prod y distribución de la app (EAS) |
 | `IMPROVEMENTS.md` | Mejoras de infraestructura pendientes |
 
-> **Alcance:** v1 = todo lo de `V1.md`; v2 = Mercado Pago (`V2.md`); v3 = agente con IA (`V3.md`). Si una tarea toca v2 o v3, frená y preguntá antes de implementarlo.
+> **Alcance:** v1 = todo lo de `V1.md`; v2 = explicación de saldos y agente con IA (`V2.md`). Si una tarea toca la v2, frená y preguntá antes de implementarlo. Mercado Pago **no es parte de ninguna versión** (qué se puede y qué no: `INTEGRACION_MERCADOPAGO.md`).
 
 ---
 
@@ -124,7 +128,6 @@ Proyecto de **Kachingga**, una organización de amigos (repo: `github.com/kachin
 - Un pago **no es un gasto**: no aparece en la lista de gastos ni suma en los totales de gasto; solo mueve saldos.
 - Cualquier miembro puede registrar un pago entre otros dos (ej. "Román ya le pagó a Tuke").
 - "Marcar como pagado" una transferencia sugerida = registrar ese pago tal cual.
-- Pagar con Mercado Pago desde la app es **v2**.
 
 ### Filtros
 - Los gastos se pueden filtrar, combinando todo:
@@ -136,8 +139,9 @@ Proyecto de **Kachingga**, una organización de amigos (repo: `github.com/kachin
 - **Filtros guardados:** cada usuario puede guardar combinaciones con nombre, por grupo. Son personales (los demás no los ven).
 
 ### Decisiones de producto tomadas
-- Grupo de amigos, uso propio → sin roles ni permisos finos dentro de un grupo.
-- Saldar deudas en v1 es solo manual; el pago integrado con Mercado Pago es v2 y el agente con IA es v3.
+- Grupo de amigos, uso propio → sin roles ni permisos finos dentro de un grupo. *(A revisar antes de publicar en las stores: `LANZAMIENTO.md` → Fase 2.)*
+- **Distribución V1:** iPhone por **TestFlight** (cuenta de Apple Developer, la paga Galo) y Android por **APK**. Expo Go solo para desarrollar, no para usar la app.
+- Saldar deudas es siempre manual (el pago se hace fuera de la app). **No hay integración con Mercado Pago**: pagar de una persona a otra desde la app sin comisiones no es posible (ver `INTEGRACION_MERCADOPAGO.md`). El agente con IA es v2.
 - Dólar de referencia: **blue promedio**, nunca oficial.
 - Los tipos de cambio quedan "congelados" en cada gasto/pago al cargarlo.
 - Borrados lógicos (gastos y pagos) para no perder historial.
@@ -157,8 +161,7 @@ Proyecto de **Kachingga**, una organización de amigos (repo: `github.com/kachin
 | Base de datos | PostgreSQL en Supabase, con Prisma |
 | Auth | Supabase Auth — email + password |
 | Cotización del dólar | DolarApi (blue) |
-| Pagos (v2) | API de Mercado Pago |
-| Agente (v3) | API de LLM con tool calling sobre los datos del grupo |
+| Agente (v2) | API de LLM con tool calling sobre los datos del grupo |
 
 ---
 
@@ -171,7 +174,7 @@ App (Expo) ──tRPC + token de Supabase──▶ API (Hono, Railway) ──Pri
 ```
 
 - **La app nunca lee ni escribe la base directo**: todo pasa por la API, que es la que aplica las reglas de negocio y decide qué ve cada usuario. La app usa Supabase solo para el login.
-- **App ↔ API solo por tRPC**, con tipos de punta a punta: la app importa el *tipo* del router de la API, nunca código del server. No hay endpoints REST a mano para la app (las únicas rutas fuera de tRPC son `/health` y, en v2, el webhook de Mercado Pago).
+- **App ↔ API solo por tRPC**, con tipos de punta a punta: la app importa el *tipo* del router de la API, nunca código del server. No hay endpoints REST a mano para la app (la única ruta fuera de tRPC es `/health`).
 - Las validaciones de inputs (Zod) viven en la API y la app las reusa para sus formularios.
 - Detalles: `apps/api/CLAUDE.md` y `apps/mobile/CLAUDE.md`.
 
@@ -187,7 +190,7 @@ kachingga/
 │   ├── api/                 # @kachingga/api — Hono + tRPC + Prisma (ver apps/api/CLAUDE.md)
 │   └── mobile/              # @kachingga/mobile — Expo (ver apps/mobile/CLAUDE.md)
 ├── CLAUDE.md
-├── V1.md / V2.md / V3.md
+├── V1.md / V2.md
 ├── INFRA.md / DEPLOY.md / IMPROVEMENTS.md
 └── package.json             # workspaces + scripts globales
 ```
@@ -281,7 +284,7 @@ Después de cualquier conflicto: `bun install && bun run check`. Si falla, se ar
 ```
 
 **Types:** `feat`, `fix`, `chore`, `docs`, `refactor`, `test`, `style`, `perf`, `build`, `ci`, `revert`
-**Scopes sugeridos:** `mobile`, `api`, `db`, `infra`, `deps`, `mp` (v2), `agent` (v3)
+**Scopes sugeridos:** `mobile`, `api`, `db`, `infra`, `deps`, `agent` (v2)
 
 ```
 feat(api): agregar endpoint para crear grupos
