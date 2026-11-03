@@ -129,6 +129,14 @@ Proyecto de **Kachingga**, una organización de amigos (repo: `github.com/kachin
 - Cualquier miembro puede registrar un pago entre otros dos (ej. "Román ya le pagó a Tuke").
 - "Marcar como pagado" una transferencia sugerida = registrar ese pago tal cual.
 
+### Alias para cobrar
+- Cada persona puede cargar su **alias o CVU/CBU** para que le paguen por transferencia. Formato: alias de 6 a 20 letras, números, puntos o guiones, o CVU/CBU de 22 dígitos.
+- **Alias de la cuenta:** se carga una vez y se usa **en todos los grupos** de esa persona.
+- **Alias por grupo (opcional):** pisa al de la cuenta **solo en ese grupo** (ej. una cuenta distinta para un viaje). Si se borra, vuelve a usarse el de la cuenta.
+- El alias de alguien **con cuenta** solo lo cambia esa persona. A alguien **sin cuenta** cualquier miembro del grupo le puede cargar el alias.
+- Al saldar, la app muestra a quién pagarle, cuánto y su alias, con botones para **copiar el alias** y **copiar el monto**. La transferencia se hace afuera (Mercado Pago, banco) y después se marca "ya pagué" (pago manual). Sin comisiones.
+- Si la persona no tiene alias cargado, se muestra igual la transferencia sugerida, sin alias.
+
 ### Filtros
 - Los gastos se pueden filtrar, combinando todo:
   - **quién pagó** ("gastos que pagó Román"),

@@ -91,6 +91,7 @@ scripts/new-migration.ts  # implementación de db:migrate:new
 | Filtros | `buildExpenseWhere` en `routers/expenses.ts` |
 | Totales por filtro | `lib/summary.ts` (`summarizeExpenses`, mismas reglas de moneda y redondeo que los saldos) |
 | Unirse / reclamar participante | `routers/groups.ts` (`preview`, `join`) |
+| Alias para cobrar (cuál vale en cada grupo) | `lib/paymentAlias.ts` (`resolvePaymentAliases`); formato en `schemas.ts` (`paymentAlias`) |
 
 ---
 
@@ -101,7 +102,8 @@ Schema en `src/db/models/*.prisma`.
 | Modelo | Campos clave |
 |--------|--------------|
 | `Group` | `name`, `baseCurrency`, `inviteCode` (único), `createdById`, `archivedAt` |
-| `Participant` | `groupId`, `name`, `userId?` (Supabase; `null` = sin cuenta). Único `(groupId, userId)` |
+| `Participant` | `groupId`, `name`, `userId?` (Supabase; `null` = sin cuenta), `paymentAlias?` (alias propio del grupo). Único `(groupId, userId)` |
+| `UserProfile` | `userId` (id de Supabase, clave), `paymentAlias?` (alias de la cuenta, para todos los grupos) |
 | `Expense` | `description`, `category`, `date`, `amountCents`, `currency`, `exchangeRate?`, `splitType`, `paidById`, `createdById`, `deletedAt?` |
 | `ExpenseSplit` | `expenseId`, `participantId`, `amountCents` (parte ya resuelta), `percentage?` (solo `PERCENTAGE`). Único `(expenseId, participantId)`, cascade al borrar el gasto |
 | `Settlement` | `fromId`, `toId`, `amountCents`, `currency`, `exchangeRate?`, `date`, `note?`, `createdById`, `deletedAt?` |
@@ -127,7 +129,7 @@ Todos con `protectedProcedure` salvo `health.ping`. Inputs en `src/schemas.ts`.
 | `health.ping` | query | Público. Chequeo de vida |
 | `health.me` | query | Usuario logueado (id, email) |
 | `groups.list` | query | Mis grupos (`includeArchived?`), con `_count.participants` |
-| `groups.get` | query | Grupo + participantes (`isMe`, `hasAccount`) + `myParticipantId` |
+| `groups.get` | query | Grupo + participantes (`isMe`, `hasAccount`, `paymentAlias`, `paymentAliasSource`: `'group'` / `'account'` / `null`) + `myParticipantId` |
 | `groups.create` | mutation | Crea grupo + mi participante (`myName`) |
 | `groups.rename` | mutation | Cambia el nombre |
 | `groups.setArchived` | mutation | Archiva / desarchiva |
@@ -135,6 +137,8 @@ Todos con `protectedProcedure` salvo `health.ping`. Inputs en `src/schemas.ts`.
 | `groups.preview` | query | Por código: nombre, moneda, `unclaimedParticipants`, `alreadyMember` |
 | `groups.join` | mutation | Por código: `{ participantId }` (reclamar) o `{ name }` (nuevo) |
 | `participants.add` / `rename` / `remove` | mutation | ABM de participantes |
+| `participants.setPaymentAlias` | mutation | `{ participantId, paymentAlias \| null }`: alias propio del grupo. Con cuenta, solo esa persona (`FORBIDDEN` si no); sin cuenta, cualquier miembro. `null` = volver al de la cuenta |
+| `profile.get` / `profile.update` | query / mutation | Alias de la cuenta del usuario logueado (`{ paymentAlias \| null }`) |
 | `expenses.list` | query | `{ groupId, filters, cursor }` → `{ items, nextCursor }` (páginas de 50) |
 | `expenses.summary` | query | `{ groupId, filters }` (mismos filtros que `list`) → `[{ currency, count, totalCents, myShareCents, myPaidCents, byCategory: [{ category, totalCents }] }]`, base primero |
 | `expenses.get` / `create` / `update` / `delete` | query / mutation | `update` reemplaza el gasto y sus partes; `delete` es lógico |
