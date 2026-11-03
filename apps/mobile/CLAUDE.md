@@ -1,6 +1,6 @@
 # CLAUDE.md — apps/mobile
 
-> **Esta es la app nativa (alternativa).** El front principal es la web (`apps/web`, ver `apps/web/CLAUDE.md`). Esto se mantiene funcionando (typecheck, tests, lint, Expo doctor) por si algún día se hace la app nativa, pero las pantallas de la V1 van en la web.
+> **Esta es la app nativa (alternativa).** El front principal es la web (`apps/web`, ver `apps/web/CLAUDE.md`). El código queda por si algún día se hace la app nativa, pero **no corre en ningún check**: está fuera de `bun run check`, del pre-commit y del CI (Jest, typecheck, lint, Expo doctor y Maestro). Si se retoma, volver a sumarlo a los scripts del `package.json` raíz, a `.github/workflows/ci.yml` y al E2E (el workflow de Maestro está en el historial de git). Las pantallas de la V1 van en la web.
 
 > **Reglas de negocio → `CLAUDE.md` raíz** (grupos, participantes, gastos, multimoneda, saldos, pagos, filtros). Leelas antes de construir una pantalla: la UI tiene que reflejar esas reglas (ej. el tipo de cambio precargado con el blue y editable). Este archivo es solo lo **técnico** de la app. El contrato de la API (procedures y modelo) está en `apps/api/CLAUDE.md`.
 
@@ -26,7 +26,7 @@ bun run typecheck            # typecheck (genera expo-env.d.ts si falta y corre 
 bun run test                 # Jest: unit + contenido de pantallas
 bun run e2e:android          # compila la app release y la instala en el emulador/teléfono Android conectado
 bun run e2e                  # corre los flujos de Maestro contra la app instalada
-bunx expo-doctor             # diagnosticar problemas de dependencias y config (también corre en el CI)
+bunx expo-doctor             # diagnosticar problemas de dependencias y config 
 bunx expo install --fix      # arreglar versiones incompatibles
 ```
 
@@ -183,9 +183,9 @@ Tres niveles. Ninguna pantalla se da por terminada sin el primero.
 
 | Nivel | Herramienta | Dónde | Corre en |
 |-------|-------------|-------|----------|
-| Unit (helpers, hooks, lógica de UI) | Jest (`jest-expo`) | `src/**/__tests__/*.test.ts` | `bun run check` / pre-commit |
-| **Contenido de pantallas** | Jest + React Native Testing Library + `renderWithApi` | `src/**/__tests__/*.test.tsx` | `bun run check` / pre-commit |
-| E2E (flujos reales en el dispositivo) | Maestro | `.maestro/*.yaml` | Local (`bun run e2e`) y en GitHub Actions (a mano o PRs con label `e2e`); no en el pre-commit |
+| Unit (helpers, hooks, lógica de UI) | Jest (`jest-expo`) | `src/**/__tests__/*.test.ts` | `bun run test` en `apps/mobile` (fuera de `check`) |
+| **Contenido de pantallas** | Jest + React Native Testing Library + `renderWithApi` | `src/**/__tests__/*.test.tsx` | `bun run test` en `apps/mobile` (fuera de `check`) |
+| E2E (flujos reales en el dispositivo) | Maestro | `.maestro/*.yaml` | Solo local (`bun run e2e`) |
 
 > **No usamos Playwright:** prueba la versión web, y la app que usamos es la nativa (teclado, gestos y navegación nativos). Tampoco snapshots: se verifica lo que el usuario ve, no el árbol renderizado.
 
@@ -209,17 +209,12 @@ expect(await screen.findByText('Todavía no hay gastos')).toBeOnTheScreen();
 - Para pantallas que navegan, ver la sección de testing de Expo Router en la doc de la versión instalada.
 
 ### E2E (Maestro)
-**Maestro es la herramienta; los mismos flujos corren en dos lugares:**
-- **Local**, mientras desarrollás: con un emulador Android abierto (o un teléfono Android conectado por USB), `bun run e2e:android` compila la app release y la instala (la primera vez tarda; después es incremental), y `bun run e2e` corre los flujos. Requisitos abajo.
-- **GitHub Actions** (`.github/workflows/e2e.yml`): compila un APK release (prebuild + Gradle, sin builds de EAS), levanta un emulador Android y corre todos los flujos. Se dispara a mano (Actions → "E2E (Android)" → *Run workflow*) o poniéndole la label **`e2e`** a un PR. No es check obligatorio (~15-20 min); **ponerle la label a todo PR que cambie un recorrido principal** y no mergear si falla. Si falla, el reporte y las capturas quedan como artifact `maestro-results`.
+Los flujos corren **solo en local**: con un emulador Android abierto (o un teléfono Android conectado por USB), `bun run e2e:android` compila la app release y la instala (la primera vez tarda; después es incremental), y `bun run e2e` corre los flujos. Requisitos abajo. (El job de GitHub Actions se sacó: tardaba ~15 min y no aportaba mientras la app nativa no se usa.)
 
 Reglas:
 - **Qué lleva E2E (recorridos críticos, uno por archivo):** registrarse / login, crear grupo, unirse con código, agregar gasto (incluido en otra moneda), ver saldos y transferencias sugeridas, registrar pago. Nada más: el resto (estados, validaciones, textos, casos borde) va en los tests de Jest, que son rápidos y obligatorios.
-- **Cuándo ponerle la label `e2e` a un PR:** si toca alguno de esos recorridos, la navegación (`src/app/**/_layout.tsx`), el login/sesión, `app.json`, `eas.json` o dependencias nativas. Si un PR cambia un recorrido crítico, actualiza o agrega su flujo en `.maestro/`.
-- A futuro, si los E2E bajan de ~10 minutos, se puede pasar a correrlos en todo PR que toque `apps/mobile/**`.
 - Elementos con `testID` estables (`expense-amount-input`, `save-expense-button`, …) para que los flujos no dependan de textos.
 - Requisitos locales: [Maestro CLI](https://maestro.mobile.dev), Java 17 y Android Studio (SDK + un emulador). Se usa la app compilada en local con `bun run e2e:android` (`appId: com.kachingga.app`; Expo Go no sirve; no hace falta ningún build de EAS). Para flujos con datos: la API corriendo (`bun run api`) y un usuario de prueba en **dev**. `e2e:android` compila con `EXPO_PUBLIC_API_URL=http://10.0.2.2:3000` (tu máquina vista desde el emulador; en un build release no hay `hostUri`). Con un teléfono físico: `EXPO_PUBLIC_API_URL=http://<IP-de-tu-compu>:3000 bun run e2e:android`.
-- Hoy solo existe `smoke.yaml` (la app arranca). Los flujos con datos van a necesitar la API y un usuario de prueba también en CI: cuando exista el login, agregar al workflow la API levantada contra un Postgres de servicio (como el job de migraciones) y las claves de Supabase **dev** como secrets de GitHub. El build de CI usa `EXPO_PUBLIC_API_URL=http://10.0.2.2:3000` (la máquina host vista desde el emulador).
 
 ### Notas de configuración
 - `jest` está configurado en `package.json` (`preset: jest-expo`). `transformIgnorePatterns` incluye `superjson`, `copy-anything` e `is-what` porque se publican solo como ESM: si un paquete nuevo rompe Jest con "Must use import to load ES Module", agregarlo ahí.

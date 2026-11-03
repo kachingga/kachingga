@@ -224,20 +224,22 @@ kachingga/
 
 ## Comandos
 
-Desde la raíz (corren en todos los workspaces con `bun --filter`):
+Desde la raíz (corren en `api` y `web` con `bun --filter`; **`apps/mobile` quedó fuera de los checks y del CI**, ver abajo):
 
 ```bash
 bun install          # instala todo, activa husky y genera el cliente de Prisma
-bun run dev          # levanta todo: API (:3000), web (:5173) y Expo
+bun run dev          # levanta API (:3000) y web (:5173)
 bun run api          # solo la API
 bun run web          # solo la web (necesita la API)
-bun run mobile       # solo Expo
-bun run typecheck    # tsc en api, web y mobile
-bun run test         # tests: api (unit + integración con PGlite), web (Vitest) y mobile (Jest)
-bun run lint         # ESLint en web y mobile
+bun run mobile       # solo Expo (app nativa, sin uso hoy)
+bun run typecheck    # tsc en api y web
+bun run test         # tests: api (unit + integración con PGlite), y web (Vitest)
+bun run lint         # ESLint en web
 bun run format       # formatea todo con Prettier (correrlo antes de commitear)
 bun run check        # formato + typecheck + test + lint — lo mismo que corre el pre-commit y el CI
 ```
+
+> **`apps/mobile` no se chequea:** el código queda por si algún día se hace la app nativa, pero no corre en `bun run check`, en el pre-commit ni en el CI (sin Jest, typecheck, lint, Expo doctor ni Maestro). Si se retoma, volver a sumarlo a los scripts raíz y al CI. Mientras tanto, no invertir tiempo en mantenerlo.
 
 **Antes de dar una tarea por terminada, correr `bun run check`.** El pre-commit lo corre en cada commit y lo rechaza si algo falla.
 
@@ -340,10 +342,9 @@ gh pr create --fill                            # título = Conventional Commit (
 - Para mergear, el CI (`.github/workflows/ci.yml`) tiene que pasar entero:
   - **"Typecheck, tests y lint"** — `bun run check` (formato + typecheck + tests + lint).
   - **"Migraciones al día con el schema"** — aplica todas las migraciones en un Postgres vacío y falla si el schema de Prisma tiene cambios sin migración.
-  - **"Expo doctor"** — versiones de paquetes compatibles con el SDK de Expo.
   - **"Formato de commits y título del PR"** — Conventional Commits.
-- **E2E** (`.github/workflows/e2e.yml`, no obligatorio): Playwright en la web (celular y compu) y Maestro en un emulador Android para la app nativa. Corre a mano o en PRs con la label `e2e` — ponérsela a los PRs que cambian recorridos críticos (ver "Testing" en `apps/web/CLAUDE.md`).
-- Dependabot abre PRs mensuales solo para las GitHub Actions (las dependencias de la app se actualizan con `bunx expo install`).
+- **E2E** (`.github/workflows/e2e.yml`, no obligatorio): Playwright en la web (celular y compu). Corre a mano o en PRs con la label `e2e` — ponérsela a los PRs que cambian recorridos críticos (ver "Testing" en `apps/web/CLAUDE.md`).
+- Dependabot abre PRs mensuales solo para las GitHub Actions (las dependencias de las apps se actualizan a mano).
 - Se mergea solo con **squash**: el título del PR queda como el commit en `main`, por eso tiene que respetar el formato. La branch se borra sola al mergear.
 - **El PR tiene que estar al día con `main`** para poder mergearse (GitHub lo marca como *BEHIND* si entró otro PR antes). Se actualiza **siempre con rebase, nunca con merge** (el historial de `main` es lineal):
   ```bash
