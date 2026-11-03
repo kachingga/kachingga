@@ -131,6 +131,13 @@ Proyecto de **Kachingga**, una organización de amigos (repo: `github.com/kachin
 - **Totales para cualquier filtro** ("¿cuánto gasté en noviembre?"): cantidad de gastos, total gastado, **mi parte** (lo que me correspondió), **lo que pagué yo** y el total por categoría. Por moneda, con las mismas reglas que los saldos (lo convertido suma en la base; lo mantenido, en su moneda). Los pagos manuales no cuentan como gasto.
 - **Filtros guardados:** cada usuario puede guardar combinaciones con nombre, por grupo. Son personales (los demás no los ven).
 
+
+### Exportar gastos
+- Desde la lista de gastos, con **los filtros aplicados**, se puede exportar **todo** lo que coincide (no solo lo que se ve en pantalla) para analizarlo afuera (planilla, IA, gastos personales).
+- Formatos: **CSV** (se abre en Excel o Google Sheets; UTF-8, separado por comas, decimales con punto) y **JSON** (incluye el grupo, la moneda base, la fecha y los filtros usados).
+- Cada fila es un gasto, del más viejo al más nuevo: fecha, descripción, categoría, moneda y monto, tipo de cambio (si se convirtió), en qué saldo cuenta y su monto ahí, quién pagó, cómo se dividió, la parte de cada uno y **mi parte** (en la moneda del gasto y en la del saldo).
+- Exporta solo gastos: los pagos manuales no son gastos y no se incluyen.
+- Cualquier miembro puede exportar los gastos de su grupo.
 ### Decisiones de producto tomadas
 - Grupo de amigos, uso propio → sin roles ni permisos finos dentro de un grupo. *(A revisar antes de publicarla: `PENDIENTES.md` → Lanzamiento → Fase 2.)*
 - **Distribución V1:** iPhone por **TestFlight** (cuenta de Apple Developer, la paga Galo) y Android por **APK**. Expo Go solo para desarrollar, no para usar la app.

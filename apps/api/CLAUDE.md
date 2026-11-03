@@ -89,6 +89,7 @@ scripts/new-migration.ts  # implementación de db:migrate:new
 | Multimoneda (qué saldo, qué tipo de cambio) | `lib/balances.ts` (`balanceCurrency`) + `lib/rates.ts` (`resolveExchangeRate`) |
 | Saldos y transferencias mínimas | `lib/balances.ts` |
 | Filtros | `buildExpenseWhere` en `routers/expenses.ts` |
+| Exportar (formato de cada fila, CSV) | `lib/exportExpenses.ts` (`toExportRows`, `toCsv`, mismas reglas de moneda y redondeo que los saldos) |
 | Totales por filtro | `lib/summary.ts` (`summarizeExpenses`, mismas reglas de moneda y redondeo que los saldos) |
 | Unirse / reclamar participante | `routers/groups.ts` (`preview`, `join`) |
 | Alias para cobrar (cuál vale en cada grupo) | `lib/paymentAlias.ts` (`resolvePaymentAliases`); formato en `schemas.ts` (`paymentAlias`) |
@@ -140,6 +141,7 @@ Todos con `protectedProcedure` salvo `health.ping`. Inputs en `src/schemas.ts`.
 | `participants.setPaymentAlias` | mutation | `{ participantId, paymentAlias \| null }`: alias propio del grupo. Con cuenta, solo esa persona (`FORBIDDEN` si no); sin cuenta, cualquier miembro. `null` = volver al de la cuenta |
 | `profile.get` / `profile.update` | query / mutation | Alias de la cuenta del usuario logueado (`{ paymentAlias \| null }`) |
 | `expenses.list` | query | `{ groupId, filters, cursor }` → `{ items, nextCursor }` (páginas de 50) |
+| `expenses.export` | query | `{ groupId, filters, format: 'csv' \| 'json' }` → `{ filename, mimeType, content }`: **todos** los gastos que coinciden (sin paginar), del más viejo al más nuevo, con mi parte |
 | `expenses.summary` | query | `{ groupId, filters }` (mismos filtros que `list`) → `[{ currency, count, totalCents, myShareCents, myPaidCents, byCategory: [{ category, totalCents }] }]`, base primero |
 | `expenses.get` / `create` / `update` / `delete` | query / mutation | `update` reemplaza el gasto y sus partes; `delete` es lógico |
 | `settlements.list` / `create` / `delete` | query / mutation | Pagos manuales |
