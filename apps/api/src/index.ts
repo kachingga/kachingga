@@ -1,9 +1,21 @@
 import { Hono } from 'hono'
 import { trpcServer } from '@hono/trpc-server'
+import { cors } from 'hono/cors'
 import { appRouter } from './trpc/router'
 import { createContext } from './trpc/context'
 
 const app = new Hono()
+
+// The web front runs in a browser on another origin, so the browser needs CORS. Native apps are not affected.
+const allowedOrigins = (process.env.CORS_ORIGINS ?? 'http://localhost:5173,http://localhost:4173').split(',').map((o) => o.trim())
+app.use(
+  '/trpc/*',
+  cors({
+    origin: (origin) => (allowedOrigins.includes(origin) ? origin : null),
+    allowHeaders: ['Content-Type', 'Authorization'],
+    allowMethods: ['GET', 'POST', 'OPTIONS'],
+  }),
+)
 
 app.get('/health', (c) => c.json({ ok: true }))
 

@@ -31,4 +31,17 @@ describe('http', () => {
   test('unknown procedure → 404', async () => {
     expect((await call('/trpc/nope.nada')).status).toBe(404)
   })
+
+  test('CORS: allows the web front origin, not others', async () => {
+    const preflight = (origin: string) =>
+      call('/trpc/groups.list', {
+        method: 'OPTIONS',
+        headers: { Origin: origin, 'Access-Control-Request-Method': 'GET', 'Access-Control-Request-Headers': 'authorization' },
+      })
+    const allowed = await preflight('http://localhost:5173')
+    expect(allowed.headers.get('access-control-allow-origin')).toBe('http://localhost:5173')
+    expect(allowed.headers.get('access-control-allow-headers')?.toLowerCase()).toContain('authorization')
+    const blocked = await preflight('https://evil.example')
+    expect(blocked.headers.get('access-control-allow-origin')).toBeNull()
+  })
 })
