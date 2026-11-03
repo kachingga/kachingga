@@ -57,16 +57,20 @@ Push a `main` → Railway deploya solo.
 
 **Siempre migrar prod antes de pushear el código nuevo.** El código nuevo espera el schema nuevo.
 
-1. Cambiar el schema (`apps/api/src/db/models/*.prisma`) y generar la migración:
+1. Cambiar el schema (`apps/api/src/db/models/*.prisma`) y generar la migración contra **dev**:
    ```bash
    cd apps/api
    bun run db:migrate:new <nombre>   # genera el SQL sin tocar la base
    ```
-2. Revisar el SQL y aplicarlo:
+2. Revisar el SQL, aplicarlo en **dev** y probar:
    ```bash
-   bun run db:migrate:deploy         # o db:migrate:prod si usás .env.prod
+   bun run db:migrate:deploy         # dev (.env)
    ```
-3. Pushear a `main` → Railway deploya el código nuevo con el schema ya actualizado
+3. Aplicarlo en **prod**:
+   ```bash
+   bun run db:migrate:prod           # prod (.env.prod)
+   ```
+4. Pushear a `main` → Railway deploya el código nuevo con el schema ya actualizado
 
 Nunca usar `prisma migrate reset` ni `prisma db push` contra prod.
 

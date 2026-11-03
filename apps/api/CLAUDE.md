@@ -18,16 +18,18 @@ bun run typecheck         # tsc --noEmit
 bun run db:generate              # regenerar el cliente de Prisma (también corre en postinstall)
 bun run db:migrate:new <nombre>  # genera el SQL (base actual → schema) + RLS para tablas nuevas. No toca la base
 bun run db:migrate:status        # qué migraciones faltan aplicar
-bun run db:migrate:deploy        # aplica las pendientes (usa .env)
-bun run db:migrate:prod          # lo mismo con .env.prod
+bun run db:migrate:deploy        # aplica las pendientes en DEV (.env)
+bun run db:migrate:prod          # aplica las pendientes en PROD (.env.prod)
 bun run db:studio                # Prisma Studio
 ```
 
 ### Migraciones — reglas
 - Nunca correr `prisma db push`, `prisma migrate reset`, `prisma migrate dev` ni `prisma db execute` contra la base.
 - Nunca tocar a mano la tabla `_prisma_migrations` ni el schema desde el SQL editor de Supabase.
-- Hay **una sola base** (producción): por eso no existe `db:migrate:dev` (`prisma migrate dev` puede pedir resetearla).
-- Flujo: cambiar `src/db/models/*.prisma` → `db:migrate:new <nombre>` → **revisar el SQL** → `db:migrate:deploy` → push (ver `DEPLOY.md`).
+- **Dos bases:** `kachingga-dev` (`.env`) para todo lo local y `kachingga` (`.env.prod`) para producción. Todo comando de DB sin `:prod` va contra **dev**.
+- No existe `db:migrate:dev` a propósito: `prisma migrate dev` puede pedir resetear la base.
+- Flujo: cambiar `src/db/models/*.prisma` → `db:migrate:new <nombre>` (diff contra dev) → **revisar el SQL** → `db:migrate:deploy` (dev) → probar → `db:migrate:prod` → push (ver `DEPLOY.md`).
+- **Nunca correr `db:migrate:prod` sin que la migración esté probada en dev**, y nunca sin que el usuario lo pida explícitamente.
 - Toda tabla nueva lleva `ENABLE ROW LEVEL SECURITY` (lo agrega `db:migrate:new`; si escribís SQL a mano, agregalo vos).
 - Nunca editar ni borrar una migración que ya está en `main`.
 
@@ -35,12 +37,14 @@ bun run db:studio                # Prisma Studio
 
 ## Env
 
-Copiar `.env.sample` a `.env` (y a `.env.prod` solo para `db:migrate:prod`). Ambos gitignoreados. Cada línea del sample dice de dónde sale el valor.
+- **`.env` → DEV** (`kachingga-dev`, ref `nraoqdaplvvsakvtlcam`): lo usan `bun run dev`, los scripts de DB y Prisma Studio. El sample tiene estos valores.
+- **`.env.prod` → PROD** (`kachingga`, ref `czrkjokurbmbbvobvmxd`): solo para `db:migrate:prod` y como referencia de las variables de Railway.
+- Ambos gitignoreados; cada línea del sample dice de dónde sale el valor. Bun carga `.env` solo; `.env.prod` no lo carga nadie salvo `prisma.config.ts` cuando `PRISMA_ENV_FILE=.env.prod`.
 
 ```
 DATABASE_URL=...          # Supabase transaction pooler (6543) — queries en runtime
 DIRECT_URL=...            # Supabase session pooler (5432) — migraciones
-SUPABASE_URL=https://czrkjokurbmbbvobvmxd.supabase.co
+SUPABASE_URL=https://nraoqdaplvvsakvtlcam.supabase.co   # dev
 SUPABASE_SECRET_KEY=sb_secret_...
 PORT=3000
 ```
@@ -153,6 +157,7 @@ Si agregás o cambiás un procedure, actualizá esta tabla.
 - **Prisma fijado en `7.10.1`** (sin `^`), CLI y cliente iguales. El tag `latest` de `prisma` en npm apuntaba a una `8.0.0-rc`: no actualizar con `bun add prisma` a secas.
 - `prisma generate` corre en `postinstall`; el cliente generado está gitignoreado.
 - `prisma.config.ts` usa `process.env.DIRECT_URL ?? ''` y **no** `env('DIRECT_URL')`: con `env()` el `postinstall` falla sin `.env` (clones nuevos, Railway).
+- `prisma.config.ts` carga el archivo de `PRISMA_ENV_FILE` (default `.env`) con `override: true`: así `db:migrate:prod` siempre usa `.env.prod` aunque haya variables de dev exportadas en la terminal.
 - **Imports relativos sin extensión `.ts`** (`from './init'`): la app typechequea estos archivos (vía `AppRouter`) con su `tsconfig`, que no acepta `.ts`.
 - El cliente de Supabase es **lazy** (`getSupabase()`) y Prisma no se conecta al importar: importar el router en tests o desde la app no puede requerir variables de entorno.
 - `router.ts` es el entry del paquete y `schemas.ts` el de `./schemas` (`exports` en `package.json`). `schemas.ts` no puede importar nada del server (Prisma, Supabase, `process.env`).

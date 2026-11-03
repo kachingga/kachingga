@@ -5,7 +5,8 @@
 | Servicio | Proveedor | Dashboard | Dominio / ID |
 |----------|-----------|-----------|--------------|
 | API | Railway | railway.app/dashboard | Por definir después del primer deploy |
-| Base de datos (PostgreSQL) | Supabase | supabase.com/dashboard/project/czrkjokurbmbbvobvmxd | `https://czrkjokurbmbbvobvmxd.supabase.co` (ref `czrkjokurbmbbvobvmxd`) |
+| Base de datos **PROD** | Supabase (`kachingga`) | supabase.com/dashboard/project/czrkjokurbmbbvobvmxd | `https://czrkjokurbmbbvobvmxd.supabase.co` (ref `czrkjokurbmbbvobvmxd`) |
+| Base de datos **DEV** | Supabase (`kachingga-dev`) | supabase.com/dashboard/project/nraoqdaplvvsakvtlcam | `https://nraoqdaplvvsakvtlcam.supabase.co` (ref `nraoqdaplvvsakvtlcam`) |
 | Auth | Supabase Auth | supabase.com/dashboard → Authentication | — |
 | Builds mobile | EAS (Expo) | expo.dev/accounts/kachingga/projects/kachingga | Org `kachingga`, project ID `49f7728b-7782-46e5-8a8a-491bb590bfe1` |
 | Updates OTA | EAS Update | expo.dev | — |
@@ -15,6 +16,21 @@
 Actualizar este archivo con los valores reales después de cada setup.
 
 ---
+
+## Entornos
+
+| Entorno | Supabase | API | App |
+|---------|----------|-----|-----|
+| **DEV** | `kachingga-dev` (nraoqdaplvvsakvtlcam) | local (`bun run dev`) con `apps/api/.env` | Expo local con `apps/mobile/.env` |
+| **PROD** | `kachingga` (czrkjokurbmbbvobvmxd) | Railway (variables = `apps/api/.env.prod`) | builds de EAS (variables de EAS = `apps/mobile/.env.prod`) |
+
+- Cada base tiene **sus propios usuarios**: para probar en dev hay que registrarse en dev.
+- Los `.env` de EAS no se suben con el build (están gitignoreados): las variables de prod de la app se cargan en EAS (expo.dev → proyecto → Environment variables) antes del primer build.
+
+### Plan de Supabase
+- Hoy la org `kachingga` está en **Pro** (los dos proyectos se cobran por uso de cómputo).
+- Plan: pasar la org `dear-cred` a Pro y la org `kachingga` a **Free**. El límite gratis es de 2 proyectos activos por persona (sumando todas las orgs Free donde sos Owner/Admin), justo `kachingga` + `kachingga-dev`.
+- En Free, un proyecto **se pausa solo tras ~1 semana sin uso**; se reactiva desde el dashboard. Si prod se pausa, la app deja de funcionar hasta reactivarlo.
 
 ## Variables de entorno
 
@@ -45,7 +61,8 @@ Actualizar este archivo con los valores reales después de cada setup.
 ### Archivos locales (gitignoreados, nunca commitear)
 
 - `apps/api/.env` — variables de desarrollo de la API
-- `apps/api/.env.prod` — variables de prod, solo para correr `db:migrate:prod` desde local
+- `apps/api/.env` / `apps/mobile/.env` — **DEV** (`kachingga-dev`). Lo que usa todo lo local
+- `apps/api/.env.prod` / `apps/mobile/.env.prod` — **PROD** (`kachingga`). Solo para `db:migrate:prod` y como referencia de las variables de Railway y EAS
 - `apps/mobile/.env.local` — variables de desarrollo de la app
 
 ---

@@ -202,7 +202,9 @@ bun run check        # typecheck + test + lint — lo mismo que corre el pre-com
 
 ### Variables de entorno
 
-Cada app tiene un `.env.sample` commiteado que dice qué variables hacen falta y de dónde sale cada valor (`apps/api/.env.sample`, `apps/mobile/.env.sample`). Se copian a `.env` (gitignoreado). Si agregás una variable, sumala también al `.env.sample` y a `INFRA.md`.
+Cada app tiene un `.env.sample` commiteado que dice qué variables hacen falta y de dónde sale cada valor. **Hay dos entornos:** `.env` → **DEV** (Supabase `kachingga-dev`), que es lo que usa todo lo local; `.env.prod` → **PROD** (Supabase `kachingga`), solo para migrar producción y como referencia de Railway/EAS. Ambos gitignoreados. Detalle en `INFRA.md` → "Entornos". Si agregás una variable, sumala al `.env.sample` y a `INFRA.md`.
+
+> Claude: nunca correr nada contra **prod** (`db:migrate:prod`, scripts con `.env.prod`) salvo que el usuario lo pida explícitamente.
 
 ### Tooling del monorepo — no romper
 - **Husky** se activa con `prepare` en `bun install`. `pre-commit` corre `bun run check`; `commit-msg` valida Conventional Commits y deja pasar `Merge`, `Revert`, `fixup!`, `squash!` y `amend!`.
