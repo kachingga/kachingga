@@ -59,6 +59,8 @@ export const settlementInput = z.object({
 export const expenseFilters = z.object({
   paidById: id.optional(),
   splitParticipantId: id.optional(),
+  // paid it OR is part of the split ("gastos en los que estoy involucrado")
+  involvedParticipantId: id.optional(),
   categories: z.array(expenseCategory).optional(),
   dateFrom: z.date().optional(),
   dateTo: z.date().optional(),

@@ -6,6 +6,7 @@ import { prisma } from '../../db'
 import { assertParticipantsInGroup, requireActiveGroup, requireMembership } from '../../lib/access'
 import { resolveExchangeRate } from '../../lib/rates'
 import { resolveSplits } from '../../lib/splits'
+import { summarizeExpenses } from '../../lib/summary'
 import { expenseFilters, expenseInput, type ExpenseFilters } from '../../schemas'
 import { protectedProcedure, router } from '../init'
 
@@ -22,6 +23,9 @@ export function buildExpenseWhere(groupId: string, filters: ExpenseFilters): Pri
     deletedAt: null,
     ...(filters.paidById && { paidById: filters.paidById }),
     ...(filters.splitParticipantId && { splits: { some: { participantId: filters.splitParticipantId } } }),
+    ...(filters.involvedParticipantId && {
+      OR: [{ paidById: filters.involvedParticipantId }, { splits: { some: { participantId: filters.involvedParticipantId } } }],
+    }),
     ...(filters.categories?.length && { category: { in: filters.categories } }),
     ...((filters.dateFrom || filters.dateTo) && { date: { gte: filters.dateFrom, lte: filters.dateTo } }),
     ...((filters.minAmountCents != null || filters.maxAmountCents != null) && {
@@ -72,6 +76,24 @@ export const expensesRouter = router({
       const hasMore = items.length > PAGE_SIZE
       const page = hasMore ? items.slice(0, PAGE_SIZE) : items
       return { items: page, nextCursor: hasMore ? page[page.length - 1]!.id : null }
+    }),
+
+  // Totals for the same filters as `list` (e.g. "cuánto gasté en noviembre"), per currency.
+  summary: protectedProcedure
+    .input(z.object({ groupId: z.string(), filters: expenseFilters.default({}) }))
+    .query(async ({ ctx, input }) => {
+      const me = await requireMembership(input.groupId, ctx.user.id)
+      const expenses = await prisma.expense.findMany({
+        where: buildExpenseWhere(input.groupId, input.filters),
+        select: {
+          currency: true,
+          exchangeRate: true,
+          category: true,
+          paidById: true,
+          splits: { select: { participantId: true, amountCents: true } },
+        },
+      })
+      return summarizeExpenses(me.group.baseCurrency, me.id, expenses)
     }),
 
   get: protectedProcedure.input(z.object({ expenseId: z.string() })).query(async ({ ctx, input }) => {

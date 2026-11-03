@@ -26,6 +26,12 @@ describe('buildExpenseWhere', () => {
     })
   })
 
+  test('involved = paid it OR is in the split', () => {
+    expect(buildExpenseWhere('g1', { involvedParticipantId: 'p1' })).toMatchObject({
+      OR: [{ paidById: 'p1' }, { splits: { some: { participantId: 'p1' } } }],
+    })
+  })
+
   test('empty category list is ignored', () => {
     expect(buildExpenseWhere('g1', { categories: [] })).toEqual({ groupId: 'g1', deletedAt: null })
   })
