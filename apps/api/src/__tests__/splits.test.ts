@@ -13,14 +13,23 @@ describe('resolveSplits', () => {
   test('AMOUNT keeps the given shares', () => {
     const splits = resolveSplits(1000, {
       type: 'AMOUNT',
-      shares: [{ participantId: 'a', amountCents: 700 }, { participantId: 'b', amountCents: 300 }],
+      shares: [
+        { participantId: 'a', amountCents: 700 },
+        { participantId: 'b', amountCents: 300 },
+      ],
     })
     expect(splits.map((s) => s.amountCents)).toEqual([700, 300])
   })
 
   test('AMOUNT rejects shares that do not add up', () => {
     expect(() =>
-      resolveSplits(1000, { type: 'AMOUNT', shares: [{ participantId: 'a', amountCents: 600 }, { participantId: 'b', amountCents: 300 }] }),
+      resolveSplits(1000, {
+        type: 'AMOUNT',
+        shares: [
+          { participantId: 'a', amountCents: 600 },
+          { participantId: 'b', amountCents: 300 },
+        ],
+      }),
     ).toThrow('no coincide')
   })
 
@@ -39,7 +48,13 @@ describe('resolveSplits', () => {
 
   test('PERCENTAGE must add up to 100', () => {
     expect(() =>
-      resolveSplits(1000, { type: 'PERCENTAGE', shares: [{ participantId: 'a', percentage: 50 }, { participantId: 'b', percentage: 40 }] }),
+      resolveSplits(1000, {
+        type: 'PERCENTAGE',
+        shares: [
+          { participantId: 'a', percentage: 50 },
+          { participantId: 'b', percentage: 40 },
+        ],
+      }),
     ).toThrow('100')
   })
 

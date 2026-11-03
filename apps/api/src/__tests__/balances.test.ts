@@ -18,11 +18,23 @@ describe('balanceCurrency', () => {
 
 describe('computeBalances', () => {
   test('payer is owed what the others consumed', () => {
-    const [ars] = computeBalances('ARS', ['a', 'b', 'c'], [
-      { currency: 'ARS', exchangeRate: null, paidById: 'a', splits: [
-        { participantId: 'a', amountCents: 1000 }, { participantId: 'b', amountCents: 1000 }, { participantId: 'c', amountCents: 1000 },
-      ] },
-    ], [])
+    const [ars] = computeBalances(
+      'ARS',
+      ['a', 'b', 'c'],
+      [
+        {
+          currency: 'ARS',
+          exchangeRate: null,
+          paidById: 'a',
+          splits: [
+            { participantId: 'a', amountCents: 1000 },
+            { participantId: 'b', amountCents: 1000 },
+            { participantId: 'c', amountCents: 1000 },
+          ],
+        },
+      ],
+      [],
+    )
     expect(ars!.currency).toBe('ARS')
     expect(balanceOf(ars!, 'a')).toBe(2000)
     expect(balanceOf(ars!, 'b')).toBe(-1000)
@@ -33,38 +45,67 @@ describe('computeBalances', () => {
   })
 
   test('converted USD expense lands in the ARS balance at the given rate', () => {
-    const [ars, ...rest] = computeBalances('ARS', ['a', 'b'], [
-      { currency: 'USD', exchangeRate: 1555, paidById: 'a', splits: [
-        { participantId: 'a', amountCents: 1000 }, { participantId: 'b', amountCents: 1000 },
-      ] },
-    ], [])
+    const [ars, ...rest] = computeBalances(
+      'ARS',
+      ['a', 'b'],
+      [
+        {
+          currency: 'USD',
+          exchangeRate: 1555,
+          paidById: 'a',
+          splits: [
+            { participantId: 'a', amountCents: 1000 },
+            { participantId: 'b', amountCents: 1000 },
+          ],
+        },
+      ],
+      [],
+    )
     expect(rest).toHaveLength(0)
     expect(balanceOf(ars!, 'b')).toBe(-1_555_000) // USD 10 → ARS 15.550
   })
 
   test('native USD expense gets its own balance, base still listed first', () => {
-    const result = computeBalances('ARS', ['a', 'b'], [
-      { currency: 'USD', exchangeRate: null, paidById: 'a', splits: [{ participantId: 'b', amountCents: 5000 }] },
-    ], [])
+    const result = computeBalances(
+      'ARS',
+      ['a', 'b'],
+      [{ currency: 'USD', exchangeRate: null, paidById: 'a', splits: [{ participantId: 'b', amountCents: 5000 }] }],
+      [],
+    )
     expect(result.map((r) => r.currency)).toEqual(['ARS', 'USD'])
     expect(balanceOf(result[1]!, 'b')).toBe(-5000)
     expect(result[0]!.transfers).toEqual([])
   })
 
   test('settlements reduce debt', () => {
-    const [ars] = computeBalances('ARS', ['a', 'b'], [
-      { currency: 'ARS', exchangeRate: null, paidById: 'a', splits: [{ participantId: 'b', amountCents: 1000 }] },
-    ], [{ currency: 'ARS', exchangeRate: null, fromId: 'b', toId: 'a', amountCents: 400 }])
+    const [ars] = computeBalances(
+      'ARS',
+      ['a', 'b'],
+      [{ currency: 'ARS', exchangeRate: null, paidById: 'a', splits: [{ participantId: 'b', amountCents: 1000 }] }],
+      [{ currency: 'ARS', exchangeRate: null, fromId: 'b', toId: 'a', amountCents: 400 }],
+    )
     expect(balanceOf(ars!, 'b')).toBe(-600)
     expect(balanceOf(ars!, 'a')).toBe(600)
   })
 
   test('every currency balance nets to zero even with rounding', () => {
-    const result = computeBalances('ARS', ['a', 'b', 'c'], [
-      { currency: 'USD', exchangeRate: 1555.37, paidById: 'c', splits: [
-        { participantId: 'a', amountCents: 334 }, { participantId: 'b', amountCents: 333 }, { participantId: 'c', amountCents: 333 },
-      ] },
-    ], [])
+    const result = computeBalances(
+      'ARS',
+      ['a', 'b', 'c'],
+      [
+        {
+          currency: 'USD',
+          exchangeRate: 1555.37,
+          paidById: 'c',
+          splits: [
+            { participantId: 'a', amountCents: 334 },
+            { participantId: 'b', amountCents: 333 },
+            { participantId: 'c', amountCents: 333 },
+          ],
+        },
+      ],
+      [],
+    )
     for (const r of result) expect(r.balances.reduce((a, b) => a + b.amountCents, 0)).toBe(0)
   })
 })

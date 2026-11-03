@@ -32,6 +32,7 @@ bun run db:studio                # Prisma Studio
 - **Nunca correr `db:migrate:prod` sin que la migración esté probada en dev**, y nunca sin que el usuario lo pida explícitamente.
 - Toda tabla nueva lleva `ENABLE ROW LEVEL SECURITY` (lo agrega `db:migrate:new`; si escribís SQL a mano, agregalo vos).
 - Nunca editar ni borrar una migración que ya está en `main`.
+- El CI ("Migraciones al día con el schema") aplica todas las migraciones en un Postgres vacío y falla si cambiaste `models/*.prisma` sin generar la migración.
 
 ---
 

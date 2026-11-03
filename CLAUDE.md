@@ -192,7 +192,7 @@ kachingga/
 └── package.json             # workspaces + scripts globales
 ```
 
-> **Dependencias:** nunca agregar paquetes al `package.json` raíz (única excepción: tooling del repo como `husky`). Siempre `cd` al workspace y desde ahí `bun add` (en mobile: `bunx expo install <paquete>`).
+> **Dependencias:** nunca agregar paquetes al `package.json` raíz (única excepción: tooling del repo, hoy `husky` y `prettier`). Siempre `cd` al workspace y desde ahí `bun add` (en mobile: `bunx expo install <paquete>`).
 
 ---
 
@@ -208,7 +208,8 @@ bun run mobile       # solo Expo
 bun run typecheck    # tsc en api y mobile
 bun run test         # tests: api (unit + integración con PGlite) y mobile (Jest + RNTL)
 bun run lint         # expo lint en mobile
-bun run check        # typecheck + test + lint — lo mismo que corre el pre-commit
+bun run format       # formatea todo con Prettier (correrlo antes de commitear)
+bun run check        # formato + typecheck + test + lint — lo mismo que corre el pre-commit y el CI
 ```
 
 **Antes de dar una tarea por terminada, correr `bun run check`.** El pre-commit lo corre en cada commit y lo rechaza si algo falla.
@@ -225,6 +226,7 @@ Cada app tiene un `.env.sample` commiteado que dice qué variables hacen falta y
 - **Husky** se activa con `prepare` en `bun install`. `pre-commit` corre `bun run check`; `commit-msg` valida Conventional Commits y deja pasar `Merge`, `Revert`, `fixup!`, `squash!` y `amend!`.
 - `bunfig.toml` usa `linker = "hoisted"` (todo en el `node_modules` raíz). Viene así desde el setup de Expo; no cambiarlo sin probar que Metro siga resolviendo.
 - `bun --filter '*' <script>` corre solo en los workspaces que tienen ese script.
+- **Prettier** (versión fija en la raíz) con config por app que respeta su estilo: API sin `;` y líneas de hasta 140 (`apps/api/.prettierrc`), app con `;` y 100 (`apps/mobile/.prettierrc`). `.prettierignore` excluye generados, migraciones y markdown. Si `check` falla por formato: `bun run format`. No discutir estilo: lo decide Prettier.
 - **TypeScript `~6.0.3` en los dos workspaces** (el del SDK 58 de Expo): la app typechequea archivos de la API, así que tienen que ir juntos.
 
 ---
@@ -305,7 +307,12 @@ git push -u origin HEAD
 gh pr create --fill                            # título = Conventional Commit (ej. "feat(mobile): pantalla de grupos")
 ```
 
-- Para mergear, el CI tiene que pasar: **"Typecheck, tests y lint"** (`bun run check`) y **"Formato de commits y título del PR"**.
+- Para mergear, el CI (`.github/workflows/ci.yml`) tiene que pasar entero:
+  - **"Typecheck, tests y lint"** — `bun run check` (formato + typecheck + tests + lint).
+  - **"Migraciones al día con el schema"** — aplica todas las migraciones en un Postgres vacío y falla si el schema de Prisma tiene cambios sin migración.
+  - **"Expo doctor"** — versiones de paquetes compatibles con el SDK de Expo.
+  - **"Formato de commits y título del PR"** — Conventional Commits.
+- Dependabot abre PRs mensuales solo para las GitHub Actions (las dependencias de la app se actualizan con `bunx expo install`).
 - Se mergea solo con **squash**: el título del PR queda como el commit en `main`, por eso tiene que respetar el formato. La branch se borra sola al mergear.
 - **El PR tiene que estar al día con `main`** para poder mergearse (GitHub lo marca como *BEHIND* si entró otro PR antes). Se actualiza **siempre con rebase, nunca con merge** (el historial de `main` es lineal):
   ```bash
@@ -319,3 +326,7 @@ gh pr create --fill                            # título = Conventional Commit (
 - No hace falta aprobación de otro para mergear (somos pocos), pero conviene avisar al grupo en PRs grandes.
 - Mantener los PRs chicos y de un tema (una pantalla, un procedure, un fix).
 - Claude: crear la branch y el PR; **mergear solo si el usuario lo pide** (`gh pr merge --squash` cuando el CI esté en verde).
+
+### Issues
+- Lo pendiente se trackea en **GitHub Issues** (labels: `infra` para infraestructura/CI/deploy, `blocked` si depende de algo externo). Cada ítem de `IMPROVEMENTS.md` tiene su issue y viceversa.
+- Un PR que resuelve un issue lo dice en la descripción (`Closes #N`) para que se cierre solo al mergear; al cerrar un issue de infra, sacarlo de `IMPROVEMENTS.md` (ver "Cuándo una tarea está terminada").

@@ -14,19 +14,15 @@ async function findParticipant(participantId: string, userId: string) {
 
 export const participantsRouter = router({
   // Someone without an account (yet). They can claim it later with the invite code.
-  add: protectedProcedure
-    .input(z.object({ groupId: z.string(), name: participantName }))
-    .mutation(async ({ ctx, input }) => {
-      await requireActiveGroup(input.groupId, ctx.user.id)
-      return prisma.participant.create({ data: { groupId: input.groupId, name: input.name } })
-    }),
+  add: protectedProcedure.input(z.object({ groupId: z.string(), name: participantName })).mutation(async ({ ctx, input }) => {
+    await requireActiveGroup(input.groupId, ctx.user.id)
+    return prisma.participant.create({ data: { groupId: input.groupId, name: input.name } })
+  }),
 
-  rename: protectedProcedure
-    .input(z.object({ participantId: z.string(), name: participantName }))
-    .mutation(async ({ ctx, input }) => {
-      await findParticipant(input.participantId, ctx.user.id)
-      return prisma.participant.update({ where: { id: input.participantId }, data: { name: input.name } })
-    }),
+  rename: protectedProcedure.input(z.object({ participantId: z.string(), name: participantName })).mutation(async ({ ctx, input }) => {
+    await findParticipant(input.participantId, ctx.user.id)
+    return prisma.participant.update({ where: { id: input.participantId }, data: { name: input.name } })
+  }),
 
   // Only for participants without account that never appear in an expense or settlement.
   remove: protectedProcedure.input(z.object({ participantId: z.string() })).mutation(async ({ ctx, input }) => {

@@ -12,7 +12,9 @@ import { TRPCProvider } from '@/lib/trpc';
 export type ApiHandlers = Partial<Record<string, (input: unknown) => unknown>>;
 
 export function apiError(message: string, code = 'BAD_REQUEST') {
-  return new TRPCClientError(message, { result: { error: { message, code: -32600, data: { code } } } } as never);
+  return new TRPCClientError(message, {
+    result: { error: { message, code: -32600, data: { code } } },
+  } as never);
 }
 
 /** A promise that never resolves: keeps a query in its loading state. */
@@ -33,7 +35,9 @@ function fakeLink(handlers: ApiHandlers): TRPCLink<AppRouter> {
             observer.next({ result: { type: 'data', data } });
             observer.complete();
           })
-          .catch((e: unknown) => observer.error(e instanceof TRPCClientError ? e : apiError(String(e))));
+          .catch((e: unknown) =>
+            observer.error(e instanceof TRPCClientError ? e : apiError(String(e))),
+          );
       });
 }
 
@@ -44,7 +48,10 @@ function fakeLink(handlers: ApiHandlers): TRPCLink<AppRouter> {
 export async function renderWithApi(ui: ReactElement, api: ApiHandlers = {}) {
   // gcTime: Infinity → no cache-cleanup timers left running, so Jest can exit.
   const queryClient = new QueryClient({
-    defaultOptions: { queries: { retry: false, gcTime: Infinity }, mutations: { retry: false, gcTime: Infinity } },
+    defaultOptions: {
+      queries: { retry: false, gcTime: Infinity },
+      mutations: { retry: false, gcTime: Infinity },
+    },
   });
   const trpcClient = createTRPCClient<AppRouter>({ links: [fakeLink(api)] });
   return await render(

@@ -4,7 +4,16 @@ import { summarizeExpenses } from '../lib/summary'
 describe('summarizeExpenses', () => {
   test('totals, my share and what I paid, per balance currency', () => {
     const result = summarizeExpenses('ARS', 'me', [
-      { currency: 'ARS', exchangeRate: null, category: 'FOOD', paidById: 'me', splits: [{ participantId: 'me', amountCents: 500 }, { participantId: 'x', amountCents: 500 }] },
+      {
+        currency: 'ARS',
+        exchangeRate: null,
+        category: 'FOOD',
+        paidById: 'me',
+        splits: [
+          { participantId: 'me', amountCents: 500 },
+          { participantId: 'x', amountCents: 500 },
+        ],
+      },
       { currency: 'USD', exchangeRate: 1555, category: 'TRANSPORT', paidById: 'x', splits: [{ participantId: 'me', amountCents: 1000 }] },
       { currency: 'USD', exchangeRate: null, category: 'FOOD', paidById: 'x', splits: [{ participantId: 'x', amountCents: 3000 }] },
     ])

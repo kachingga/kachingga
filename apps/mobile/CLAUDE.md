@@ -23,7 +23,7 @@ bunx expo lint               # lint
 bun run typecheck            # typecheck (genera expo-env.d.ts si falta y corre tsc)
 bun run test                 # Jest: unit + contenido de pantallas
 bun run e2e                  # Maestro (requiere setup, ver "Testing")
-bunx expo-doctor             # diagnosticar problemas de dependencias y config
+bunx expo-doctor             # diagnosticar problemas de dependencias y config (también corre en el CI)
 bunx expo install --fix      # arreglar versiones incompatibles
 ```
 

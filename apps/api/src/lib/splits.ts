@@ -33,7 +33,10 @@ function assertUnique(ids: string[]) {
 export function resolveSplits(amountCents: number, split: SplitInput): ResolvedSplit[] {
   if (split.type === 'EQUAL') {
     assertUnique(split.participantIds)
-    const amounts = distribute(amountCents, split.participantIds.map(() => 1))
+    const amounts = distribute(
+      amountCents,
+      split.participantIds.map(() => 1),
+    )
     return split.participantIds.map((participantId, i) => ({ participantId, amountCents: amounts[i]!, percentage: null }))
   }
 
@@ -51,6 +54,9 @@ export function resolveSplits(amountCents: number, split: SplitInput): ResolvedS
   if (Math.abs(percentSum - 100) > 0.001) {
     throw new TRPCError({ code: 'BAD_REQUEST', message: 'Los porcentajes tienen que sumar 100' })
   }
-  const amounts = distribute(amountCents, split.shares.map((s) => s.percentage))
+  const amounts = distribute(
+    amountCents,
+    split.shares.map((s) => s.percentage),
+  )
   return split.shares.map((s, i) => ({ participantId: s.participantId, amountCents: amounts[i]!, percentage: s.percentage }))
 }

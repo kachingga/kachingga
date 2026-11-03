@@ -6,7 +6,8 @@ const expoConfig = require('eslint-config-expo/flat');
 const apiRuntimeImport = {
   name: '@kachingga/api',
   allowTypeImports: true,
-  message: 'De la API solo se importan tipos (`import type`). Para validaciones usá `@kachingga/api/schemas`.',
+  message:
+    'De la API solo se importan tipos (`import type`). Para validaciones usá `@kachingga/api/schemas`.',
 };
 const apiDeepImport = {
   group: ['@kachingga/api/*', '!@kachingga/api/schemas'],
@@ -15,7 +16,8 @@ const apiDeepImport = {
 };
 const supabaseImport = {
   name: '@supabase/supabase-js',
-  message: 'Supabase se usa solo para auth y solo desde src/lib/supabase.ts. Los datos van por tRPC.',
+  message:
+    'Supabase se usa solo para auth y solo desde src/lib/supabase.ts. Los datos van por tRPC.',
 };
 
 module.exports = defineConfig([
@@ -33,7 +35,10 @@ module.exports = defineConfig([
       ],
       'no-restricted-globals': [
         'error',
-        { name: 'fetch', message: 'No hacer fetch a mano: la data va por tRPC (useTRPC + TanStack Query).' },
+        {
+          name: 'fetch',
+          message: 'No hacer fetch a mano: la data va por tRPC (useTRPC + TanStack Query).',
+        },
       ],
     },
   },
@@ -41,7 +46,10 @@ module.exports = defineConfig([
     // The only place allowed to talk to Supabase (auth/session).
     files: ['src/lib/supabase.ts'],
     rules: {
-      '@typescript-eslint/no-restricted-imports': ['error', { paths: [apiRuntimeImport], patterns: [apiDeepImport] }],
+      '@typescript-eslint/no-restricted-imports': [
+        'error',
+        { paths: [apiRuntimeImport], patterns: [apiDeepImport] },
+      ],
     },
   },
 ]);

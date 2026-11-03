@@ -38,5 +38,7 @@ export async function setupTestApi() {
 
 // Blue rate used whenever a test triggers the automatic conversion (fetch is stubbed, no network).
 export function stubBlueRate(compra = 1545, venta = 1565) {
-  globalThis.fetch = mock(async () => Response.json({ compra, venta, fechaActualizacion: '2026-11-02T20:58:00.000Z' })) as unknown as typeof fetch
+  globalThis.fetch = mock(async () =>
+    Response.json({ compra, venta, fechaActualizacion: '2026-11-02T20:58:00.000Z' }),
+  ) as unknown as typeof fetch
 }

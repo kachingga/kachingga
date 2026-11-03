@@ -19,8 +19,54 @@ jobs:
         with:
           bun-version: 1.3.12
       - run: bun install --frozen-lockfile
-      # Lo mismo que el pre-commit de husky
+      # Lo mismo que el pre-commit de husky (formato + typecheck + tests + lint)
       - run: bun run check
+
+  migrations:
+    name: Migraciones al día con el schema
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_PASSWORD: postgres
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd pg_isready --health-interval 5s --health-timeout 5s --health-retries 10
+    env:
+      DIRECT_URL: postgresql://postgres:postgres@localhost:5432/postgres
+      DATABASE_URL: postgresql://postgres:postgres@localhost:5432/postgres
+    steps:
+      - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: 1.3.12
+      - run: bun install --frozen-lockfile
+      # Aplica todas las migraciones en un Postgres vacío y falla si el schema de Prisma
+      # tiene cambios sin migración (falta correr `bun run db:migrate:new`).
+      - name: Aplicar migraciones
+        working-directory: apps/api
+        run: bunx prisma migrate deploy
+      - name: Schema sin cambios pendientes
+        working-directory: apps/api
+        run: |
+          bunx prisma migrate diff --from-config-datasource --to-schema src/db --exit-code || {
+            echo "::error::El schema de Prisma tiene cambios sin migración. Corré 'bun run db:migrate:new <nombre>' en apps/api."
+            exit 1
+          }
+
+  expo-doctor:
+    name: Expo doctor
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: 1.3.12
+      - run: bun install --frozen-lockfile
+      # Versiones de paquetes compatibles con el SDK de Expo (usar siempre `bunx expo install`)
+      - working-directory: apps/mobile
+        run: bunx expo-doctor
 
   commits:
     name: Formato de commits y título del PR

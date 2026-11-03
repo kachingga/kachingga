@@ -33,7 +33,15 @@ describe('auth', () => {
 describe('groups', () => {
   test('inside a group everything is visible to every member', async () => {
     const { ana, beto, group, pAna, pBeto, pJuan } = await groupWithMembers()
-    await ana.expenses.create({ groupId: group.id, description: 'Pagó Juan, cargó Ana', date: day('01'), amountCents: 1000, currency: 'ARS', paidById: pJuan, split: { type: 'EQUAL', participantIds: [pAna, pJuan] } })
+    await ana.expenses.create({
+      groupId: group.id,
+      description: 'Pagó Juan, cargó Ana',
+      date: day('01'),
+      amountCents: 1000,
+      currency: 'ARS',
+      paidById: pJuan,
+      split: { type: 'EQUAL', participantIds: [pAna, pJuan] },
+    })
     await ana.settlements.create({ groupId: group.id, fromId: pAna, toId: pJuan, amountCents: 500, currency: 'ARS', date: day('02') })
     // Beto is not involved in anything, but sees all of it
     expect((await beto.expenses.list({ groupId: group.id })).items.map((e) => e.description)).toEqual(['Pagó Juan, cargó Ana'])
@@ -72,7 +80,15 @@ describe('groups', () => {
     const { ana, group, pAna } = await groupWithMembers()
     await ana.groups.setArchived({ groupId: group.id, archived: true })
     await expect(
-      ana.expenses.create({ groupId: group.id, description: 'x', date: day('01'), amountCents: 100, currency: 'ARS', paidById: pAna, split: { type: 'EQUAL', participantIds: [pAna] } }),
+      ana.expenses.create({
+        groupId: group.id,
+        description: 'x',
+        date: day('01'),
+        amountCents: 100,
+        currency: 'ARS',
+        paidById: pAna,
+        split: { type: 'EQUAL', participantIds: [pAna] },
+      }),
     ).rejects.toThrow('archivado')
     expect(await ana.groups.list()).toHaveLength(0)
     expect(await ana.groups.list({ includeArchived: true })).toHaveLength(1)
@@ -85,7 +101,15 @@ describe('participants', () => {
   test('can only remove people without account and without movements', async () => {
     const { ana, group, pAna, pBeto, pJuan } = await groupWithMembers()
     await expect(ana.participants.remove({ participantId: pBeto })).rejects.toThrow('ya tiene cuenta')
-    await ana.expenses.create({ groupId: group.id, description: 'Pizza', date: day('01'), amountCents: 1000, currency: 'ARS', paidById: pAna, split: { type: 'EQUAL', participantIds: [pAna, pJuan] } })
+    await ana.expenses.create({
+      groupId: group.id,
+      description: 'Pizza',
+      date: day('01'),
+      amountCents: 1000,
+      currency: 'ARS',
+      paidById: pAna,
+      split: { type: 'EQUAL', participantIds: [pAna, pJuan] },
+    })
     await expect(ana.participants.remove({ participantId: pJuan })).rejects.toThrow('gastos o pagos')
     const extra = await ana.participants.add({ groupId: group.id, name: 'Extra' })
     expect(await ana.participants.remove({ participantId: extra.id })).toEqual({ ok: true })
@@ -95,10 +119,43 @@ describe('participants', () => {
 describe('expenses and balances', () => {
   test('full flow: ARS, converted USD (automatic blue), kept USD, settlement', async () => {
     const { ana, beto, group, pAna, pBeto, pJuan } = await groupWithMembers()
-    await ana.expenses.create({ groupId: group.id, description: 'Asado', category: 'FOOD', date: day('01'), amountCents: 300000, currency: 'ARS', paidById: pAna, split: { type: 'EQUAL', participantIds: [pAna, pBeto, pJuan] } })
-    const nafta = await beto.expenses.create({ groupId: group.id, description: 'Nafta', category: 'TRANSPORT', date: day('02'), amountCents: 2000, currency: 'USD', paidById: pBeto, split: { type: 'EQUAL', participantIds: [pAna, pBeto] } })
+    await ana.expenses.create({
+      groupId: group.id,
+      description: 'Asado',
+      category: 'FOOD',
+      date: day('01'),
+      amountCents: 300000,
+      currency: 'ARS',
+      paidById: pAna,
+      split: { type: 'EQUAL', participantIds: [pAna, pBeto, pJuan] },
+    })
+    const nafta = await beto.expenses.create({
+      groupId: group.id,
+      description: 'Nafta',
+      category: 'TRANSPORT',
+      date: day('02'),
+      amountCents: 2000,
+      currency: 'USD',
+      paidById: pBeto,
+      split: { type: 'EQUAL', participantIds: [pAna, pBeto] },
+    })
     expect(nafta.exchangeRate).toBe(1555) // blue midpoint
-    await beto.expenses.create({ groupId: group.id, description: 'Cena', date: day('02'), amountCents: 6000, currency: 'USD', keepCurrency: true, paidById: pBeto, split: { type: 'PERCENTAGE', shares: [{ participantId: pAna, percentage: 50 }, { participantId: pJuan, percentage: 50 }] } })
+    await beto.expenses.create({
+      groupId: group.id,
+      description: 'Cena',
+      date: day('02'),
+      amountCents: 6000,
+      currency: 'USD',
+      keepCurrency: true,
+      paidById: pBeto,
+      split: {
+        type: 'PERCENTAGE',
+        shares: [
+          { participantId: pAna, percentage: 50 },
+          { participantId: pJuan, percentage: 50 },
+        ],
+      },
+    })
 
     const balances = await ana.balances.get({ groupId: group.id })
     expect(balances.map((b) => b.currency)).toEqual(['ARS', 'USD'])
@@ -115,7 +172,16 @@ describe('expenses and balances', () => {
 
   test('manual exchange rate wins over the automatic one', async () => {
     const { ana, group, pAna, pBeto } = await groupWithMembers()
-    const e = await ana.expenses.create({ groupId: group.id, description: 'Hotel', date: day('01'), amountCents: 10000, currency: 'USD', exchangeRate: 1500, paidById: pAna, split: { type: 'EQUAL', participantIds: [pAna, pBeto] } })
+    const e = await ana.expenses.create({
+      groupId: group.id,
+      description: 'Hotel',
+      date: day('01'),
+      amountCents: 10000,
+      currency: 'USD',
+      exchangeRate: 1500,
+      paidById: pAna,
+      split: { type: 'EQUAL', participantIds: [pAna, pBeto] },
+    })
     expect(e.exchangeRate).toBe(1500)
   })
 
@@ -123,14 +189,38 @@ describe('expenses and balances', () => {
     const { ana, group, pAna } = await groupWithMembers()
     const other = await groupWithMembers()
     await expect(
-      ana.expenses.create({ groupId: group.id, description: 'x', date: day('01'), amountCents: 100, currency: 'ARS', paidById: pAna, split: { type: 'EQUAL', participantIds: [other.pAna] } }),
+      ana.expenses.create({
+        groupId: group.id,
+        description: 'x',
+        date: day('01'),
+        amountCents: 100,
+        currency: 'ARS',
+        paidById: pAna,
+        split: { type: 'EQUAL', participantIds: [other.pAna] },
+      }),
     ).rejects.toThrow('no son del grupo')
   })
 
   test('update replaces splits; delete hides it from lists and balances', async () => {
     const { ana, group, pAna, pBeto, pJuan } = await groupWithMembers()
-    const e = await ana.expenses.create({ groupId: group.id, description: 'Super', date: day('01'), amountCents: 900, currency: 'ARS', paidById: pAna, split: { type: 'EQUAL', participantIds: [pAna, pBeto, pJuan] } })
-    const updated = await ana.expenses.update({ expenseId: e.id, description: 'Super', date: day('01'), amountCents: 1000, currency: 'ARS', paidById: pAna, split: { type: 'AMOUNT', shares: [{ participantId: pBeto, amountCents: 1000 }] } })
+    const e = await ana.expenses.create({
+      groupId: group.id,
+      description: 'Super',
+      date: day('01'),
+      amountCents: 900,
+      currency: 'ARS',
+      paidById: pAna,
+      split: { type: 'EQUAL', participantIds: [pAna, pBeto, pJuan] },
+    })
+    const updated = await ana.expenses.update({
+      expenseId: e.id,
+      description: 'Super',
+      date: day('01'),
+      amountCents: 1000,
+      currency: 'ARS',
+      paidById: pAna,
+      split: { type: 'AMOUNT', shares: [{ participantId: pBeto, amountCents: 1000 }] },
+    })
     expect(updated.splits.map((s) => [s.participantId, s.amountCents])).toEqual([[pBeto, 1000]])
     await ana.expenses.delete({ expenseId: e.id })
     expect((await ana.expenses.list({ groupId: group.id })).items).toEqual([])
@@ -142,7 +232,16 @@ describe('expenses and balances', () => {
   test('list: combined filters and cursor pagination', async () => {
     const { ana, group, pAna, pJuan } = await groupWithMembers()
     for (let i = 0; i < 55; i++) {
-      await ana.expenses.create({ groupId: group.id, description: i === 8 ? 'Asado del sábado' : `Gasto ${i}`, category: i === 8 ? 'FOOD' : 'OTHER', date: day('01'), amountCents: 100 + i, currency: 'ARS', paidById: pAna, split: { type: 'EQUAL', participantIds: i % 2 ? [pAna] : [pAna, pJuan] } })
+      await ana.expenses.create({
+        groupId: group.id,
+        description: i === 8 ? 'Asado del sábado' : `Gasto ${i}`,
+        category: i === 8 ? 'FOOD' : 'OTHER',
+        date: day('01'),
+        amountCents: 100 + i,
+        currency: 'ARS',
+        paidById: pAna,
+        split: { type: 'EQUAL', participantIds: i % 2 ? [pAna] : [pAna, pJuan] },
+      })
     }
     const first = await ana.expenses.list({ groupId: group.id })
     expect(first.items).toHaveLength(50)
@@ -151,7 +250,10 @@ describe('expenses and balances', () => {
     expect(second.nextCursor).toBeNull()
     expect(new Set([...first.items, ...second.items].map((e) => e.id)).size).toBe(55)
 
-    const search = await ana.expenses.list({ groupId: group.id, filters: { search: 'ASADO', categories: ['FOOD'], splitParticipantId: pJuan } })
+    const search = await ana.expenses.list({
+      groupId: group.id,
+      filters: { search: 'ASADO', categories: ['FOOD'], splitParticipantId: pJuan },
+    })
     expect(search.items.map((e) => e.description)).toEqual(['Asado del sábado'])
   })
 })
@@ -159,7 +261,9 @@ describe('expenses and balances', () => {
 describe('settlements', () => {
   test('must be between two different people of the group', async () => {
     const { ana, group, pAna } = await groupWithMembers()
-    await expect(ana.settlements.create({ groupId: group.id, fromId: pAna, toId: pAna, amountCents: 100, currency: 'ARS', date: day('01') })).rejects.toThrow('distintas')
+    await expect(
+      ana.settlements.create({ groupId: group.id, fromId: pAna, toId: pAna, amountCents: 100, currency: 'ARS', date: day('01') }),
+    ).rejects.toThrow('distintas')
   })
 })
 
@@ -173,4 +277,3 @@ describe('saved filters', () => {
     await expect(beto.savedFilters.delete({ savedFilterId: saved.id })).rejects.toThrow('no encontrado')
   })
 })
-
