@@ -1,61 +1,60 @@
-import * as Device from 'expo-device';
-import { Platform, StyleSheet } from 'react-native';
+import { SymbolView } from 'expo-symbols';
+import { Alert, Pressable, StyleSheet } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { AnimatedIcon } from '@/components/animated-icon';
-import { HintRow } from '@/components/hint-row';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
-import { WebBadge } from '@/components/web-badge';
 import { BottomTabInset, MaxContentWidth, Spacing } from '@/constants/theme';
-
-function getDevMenuHint() {
-  if (Platform.OS === 'web') {
-    return <ThemedText type="small">use browser devtools</ThemedText>;
-  }
-  if (Device.isDevice) {
-    return (
-      <ThemedText type="small">
-        shake device or press <ThemedText type="code">m</ThemedText> in terminal
-      </ThemedText>
-    );
-  }
-  const shortcut = Platform.OS === 'android' ? 'cmd+m (or ctrl+m)' : 'cmd+d';
-  return (
-    <ThemedText type="small">
-      press <ThemedText type="code">{shortcut}</ThemedText>
-    </ThemedText>
-  );
-}
+import { useTheme } from '@/hooks/use-theme';
 
 export default function HomeScreen() {
+  const theme = useTheme();
+
+  function handleCreateGroup() {
+    // TODO: navigate to the group creation flow once it exists.
+    Alert.alert('Crear grupo', 'Esta función todavía no está disponible.');
+  }
+
   return (
     <ThemedView style={styles.container}>
       <SafeAreaView style={styles.safeArea}>
-        <ThemedView style={styles.heroSection}>
-          <AnimatedIcon />
-          <ThemedText type="title" style={styles.title}>
-            Welcome to&nbsp;Expo
+        <ThemedView style={styles.header}>
+          <ThemedText type="subtitle">Fourcount</ThemedText>
+          <ThemedText themeColor="textSecondary">Dividí gastos en grupo sin vueltas.</ThemedText>
+        </ThemedView>
+
+        <ThemedView style={styles.emptyState}>
+          <ThemedView type="backgroundElement" style={styles.iconCircle}>
+            <SymbolView
+              name={{ ios: 'person.2.fill', android: 'groups', web: 'groups' }}
+              tintColor={theme.textSecondary}
+              size={32}
+            />
+          </ThemedView>
+          <ThemedText type="smallBold" style={styles.emptyTitle}>
+            Todavía no tenés grupos
+          </ThemedText>
+          <ThemedText type="small" themeColor="textSecondary" style={styles.emptyDescription}>
+            Creá tu primer grupo para cargar gastos y ver cuánto le debe cada uno.
           </ThemedText>
         </ThemedView>
 
-        <ThemedText type="code" style={styles.code}>
-          get started
-        </ThemedText>
-
-        <ThemedView type="backgroundElement" style={styles.stepContainer}>
-          <HintRow
-            title="Try editing"
-            hint={<ThemedText type="code">src/app/index.tsx</ThemedText>}
+        <Pressable
+          onPress={handleCreateGroup}
+          style={({ pressed }) => [
+            styles.button,
+            { backgroundColor: theme.primary },
+            pressed && styles.pressed,
+          ]}>
+          <SymbolView
+            name={{ ios: 'plus', android: 'add', web: 'add' }}
+            tintColor={theme.onPrimary}
+            size={18}
           />
-          <HintRow title="Dev tools" hint={getDevMenuHint()} />
-          <HintRow
-            title="Fresh start"
-            hint={<ThemedText type="code">npm run reset-project</ThemedText>}
-          />
-        </ThemedView>
-
-        {Platform.OS === 'web' && <WebBadge />}
+          <ThemedText type="smallBold" style={{ color: theme.onPrimary }}>
+            Crear grupo
+          </ThemedText>
+        </Pressable>
       </SafeAreaView>
     </ThemedView>
   );
@@ -64,35 +63,50 @@ export default function HomeScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    justifyContent: 'center',
     flexDirection: 'row',
+    justifyContent: 'center',
   },
   safeArea: {
     flex: 1,
+    alignSelf: 'stretch',
     paddingHorizontal: Spacing.four,
-    alignItems: 'center',
-    gap: Spacing.three,
     paddingBottom: BottomTabInset + Spacing.three,
     maxWidth: MaxContentWidth,
   },
-  heroSection: {
+  header: {
+    paddingTop: Spacing.four,
+    gap: Spacing.one,
+  },
+  emptyState: {
+    flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    flex: 1,
-    paddingHorizontal: Spacing.four,
-    gap: Spacing.four,
+    gap: Spacing.two,
+    paddingHorizontal: Spacing.five,
   },
-  title: {
+  iconCircle: {
+    width: 72,
+    height: 72,
+    borderRadius: 36,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: Spacing.two,
+  },
+  emptyTitle: {
     textAlign: 'center',
   },
-  code: {
-    textTransform: 'uppercase',
+  emptyDescription: {
+    textAlign: 'center',
   },
-  stepContainer: {
-    gap: Spacing.three,
-    alignSelf: 'stretch',
-    paddingHorizontal: Spacing.three,
-    paddingVertical: Spacing.four,
-    borderRadius: Spacing.four,
+  button: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: Spacing.two,
+    paddingVertical: Spacing.three,
+    borderRadius: Spacing.five,
+  },
+  pressed: {
+    opacity: 0.85,
   },
 });
