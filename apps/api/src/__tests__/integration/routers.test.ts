@@ -31,6 +31,17 @@ describe('auth', () => {
 })
 
 describe('groups', () => {
+  test('inside a group everything is visible to every member', async () => {
+    const { ana, beto, group, pAna, pBeto, pJuan } = await groupWithMembers()
+    await ana.expenses.create({ groupId: group.id, description: 'Pagó Juan, cargó Ana', date: day('01'), amountCents: 1000, currency: 'ARS', paidById: pJuan, split: { type: 'EQUAL', participantIds: [pAna, pJuan] } })
+    await ana.settlements.create({ groupId: group.id, fromId: pAna, toId: pJuan, amountCents: 500, currency: 'ARS', date: day('02') })
+    // Beto is not involved in anything, but sees all of it
+    expect((await beto.expenses.list({ groupId: group.id })).items.map((e) => e.description)).toEqual(['Pagó Juan, cargó Ana'])
+    expect(await beto.settlements.list({ groupId: group.id })).toHaveLength(1)
+    const [ars] = await beto.balances.get({ groupId: group.id })
+    expect(ars!.balances.map((b) => b.participantId).sort()).toEqual([pAna, pBeto, pJuan].sort())
+  })
+
   test('non-members cannot see a group (NOT_FOUND, no leak)', async () => {
     const { eve, group } = await groupWithMembers()
     await expect(eve.groups.get({ groupId: group.id })).rejects.toThrow('Grupo no encontrado')
