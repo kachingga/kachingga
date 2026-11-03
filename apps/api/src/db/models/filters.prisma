@@ -1,0 +1,13 @@
+// Saved expense filters, per user and group. `filters` matches the expenseFilters Zod schema.
+model SavedFilter {
+  id        String   @id @default(cuid())
+  groupId   String
+  userId    String // Supabase auth user id
+  name      String
+  filters   Json
+  createdAt DateTime @default(now())
+
+  group Group @relation(fields: [groupId], references: [id])
+
+  @@index([groupId, userId])
+}

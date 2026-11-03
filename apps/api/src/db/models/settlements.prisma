@@ -1,0 +1,21 @@
+// A manual "I paid you back". Same currency rules as Expense.
+model Settlement {
+  id           String    @id @default(cuid())
+  groupId      String
+  fromId       String // participant who paid
+  toId         String // participant who received
+  amountCents  Int
+  currency     Currency
+  exchangeRate Float?
+  date         DateTime
+  note         String?
+  createdById  String // Supabase auth user id
+  createdAt    DateTime  @default(now())
+  deletedAt    DateTime?
+
+  group Group       @relation(fields: [groupId], references: [id])
+  from  Participant @relation("SettlementFrom", fields: [fromId], references: [id])
+  to    Participant @relation("SettlementTo", fields: [toId], references: [id])
+
+  @@index([groupId])
+}

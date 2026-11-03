@@ -1,0 +1,33 @@
+model Group {
+  id           String    @id @default(cuid())
+  name         String
+  baseCurrency Currency
+  inviteCode   String    @unique
+  createdById  String // Supabase auth user id
+  createdAt    DateTime  @default(now())
+  archivedAt   DateTime? // null = active
+
+  participants Participant[]
+  expenses     Expense[]
+  settlements  Settlement[]
+  savedFilters SavedFilter[]
+}
+
+// A person in a group. May exist without an account (userId = null) until someone
+// joins with the invite code and claims it.
+model Participant {
+  id        String   @id @default(cuid())
+  groupId   String
+  name      String
+  userId    String? // Supabase auth user id
+  createdAt DateTime @default(now())
+
+  group             Group          @relation(fields: [groupId], references: [id])
+  expensesPaid      Expense[]
+  splits            ExpenseSplit[]
+  settlementsPaid   Settlement[]   @relation("SettlementFrom")
+  settlementsGotten Settlement[]   @relation("SettlementTo")
+
+  @@unique([groupId, userId])
+  @@index([groupId])
+}

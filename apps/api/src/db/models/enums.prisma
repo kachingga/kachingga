@@ -1,0 +1,25 @@
+enum Currency {
+  ARS
+  USD
+  EUR
+  BRL
+  UYU
+  CLP
+}
+
+enum ExpenseCategory {
+  FOOD
+  GROCERIES
+  TRANSPORT
+  LODGING
+  ENTERTAINMENT
+  SHOPPING
+  SERVICES
+  OTHER
+}
+
+enum SplitType {
+  EQUAL
+  AMOUNT
+  PERCENTAGE
+}

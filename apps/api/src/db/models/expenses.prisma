@@ -1,0 +1,41 @@
+// Amounts are integer cents in the expense's own currency.
+//
+// Currency handling:
+// - currency == group.baseCurrency           → counts in the base balance, exchangeRate = null
+// - currency != base and exchangeRate != null → converted: 1 unit of `currency` = exchangeRate units of base
+// - currency != base and exchangeRate == null → "native": settled in its own currency, separate balance
+model Expense {
+  id           String          @id @default(cuid())
+  groupId      String
+  description  String
+  category     ExpenseCategory
+  date         DateTime
+  amountCents  Int
+  currency     Currency
+  exchangeRate Float?
+  splitType    SplitType
+  paidById     String
+  createdById  String // Supabase auth user id
+  createdAt    DateTime        @default(now())
+  updatedAt    DateTime        @updatedAt
+  deletedAt    DateTime? // null = active; set = soft-deleted
+
+  group  Group          @relation(fields: [groupId], references: [id])
+  paidBy Participant    @relation(fields: [paidById], references: [id])
+  splits ExpenseSplit[]
+
+  @@index([groupId, date])
+}
+
+model ExpenseSplit {
+  id            String @id @default(cuid())
+  expenseId     String
+  participantId String
+  amountCents   Int // resolved share; shares always add up to expense.amountCents
+  percentage    Float? // only for PERCENTAGE splits, as entered
+
+  expense     Expense     @relation(fields: [expenseId], references: [id], onDelete: Cascade)
+  participant Participant @relation(fields: [participantId], references: [id])
+
+  @@unique([expenseId, participantId])
+}
