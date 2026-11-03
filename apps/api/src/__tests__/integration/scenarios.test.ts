@@ -118,6 +118,33 @@ describe('quién pagó y entre quiénes', () => {
   })
 })
 
+describe('cada gasto en otra moneda elige su tipo de cambio', () => {
+  test('tres gastos en USD en el mismo grupo: oficial, blue y mantenido en USD', async () => {
+    const { yo, groupId, id } = await friends()
+    const usd = (description: string, extra: { exchangeRate?: number; keepCurrency?: boolean }) =>
+      yo.expenses.create({
+        groupId,
+        description,
+        date: day('11-01'),
+        amountCents: 100_00,
+        currency: 'USD',
+        ...extra,
+        paidById: id.Yo,
+        split: { type: 'EQUAL', participantIds: [id.Yo, id.Tuke] },
+      })
+    await usd('Pasaje con tarjeta', { exchangeRate: 1540 }) // oficial (lo manda la app)
+    await usd('Cena en efectivo', { exchangeRate: 1555 }) // blue
+    await usd('Hotel', { keepCurrency: true }) // se devuelve en USD
+    const balances = await yo.balances.get({ groupId })
+    expect(balances.map((b) => b.currency)).toEqual(['ARS', 'USD'])
+    // ARS: Tuke me debe la mitad de 154.000 (oficial) + 155.500 (blue); USD: la mitad del hotel
+    const tuke = (currency: string) =>
+      balances.find((b) => b.currency === currency)!.balances.find((b) => b.participantId === id.Tuke)!.amountCents
+    expect(tuke('ARS')).toBe(-ars(77_000 + 77_750))
+    expect(tuke('USD')).toBe(-50_00)
+  })
+})
+
 describe('filtros y totales', () => {
   test('gastos en los que estoy involucrado, gastos que pagó Román, y cuánto gasté en noviembre', async () => {
     const { yo, groupId, id } = await friends()
