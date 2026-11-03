@@ -1,31 +1,23 @@
-import { MutationCache, QueryCache, QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { TRPCClientError } from '@trpc/client';
 import { useState, type ReactNode } from 'react';
 
-import { signOut } from '@/lib/auth';
 import { createApiClient, TRPCProvider } from '@/lib/trpc';
 
 function isUnauthorized(error: unknown) {
   return error instanceof TRPCClientError && error.data?.code === 'UNAUTHORIZED';
 }
 
-function handleUnauthorized(error: unknown) {
-  if (isUnauthorized(error)) {
-    void signOut().then(() => {
-      window.location.replace('/login');
-    });
-  }
-}
-
 export function ApiProvider({ children }: { children: ReactNode }) {
   const [queryClient] = useState(
     () =>
       new QueryClient({
-        queryCache: new QueryCache({ onError: handleUnauthorized }),
-        mutationCache: new MutationCache({ onError: handleUnauthorized }),
         defaultOptions: {
           queries: {
-            retry: (count, error) => !isUnauthorized(error) && count < 3,
+            // Retry once on UNAUTHORIZED to recover from the race condition right after login
+            // (token may not be ready when the first request fires). After 1 retry, stop.
+            // Genuine session expiry: Supabase fires onAuthStateChange → RequireAuth redirects.
+            retry: (count, error) => (isUnauthorized(error) ? count < 1 : count < 3),
           },
         },
       }),
