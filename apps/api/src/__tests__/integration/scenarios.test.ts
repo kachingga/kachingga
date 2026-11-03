@@ -1,6 +1,6 @@
 // Real-life scenarios from the group, end to end through the routers.
 import { describe, expect, test } from 'bun:test'
-import { setupTestApi } from './setup'
+import { setupTestApi, stubBlueRate } from './setup'
 
 const { caller } = await setupTestApi()
 let n = 0
@@ -115,6 +115,50 @@ describe('quién pagó y entre quiénes', () => {
     })
     expect(await balanceOf('Yo')).toBe(-ars(10_000))
     expect(await balanceOf('Tuke')).toBe(-ars(2_000))
+  })
+})
+
+describe('cada gasto en otra moneda elige su tipo de cambio', () => {
+  test('tres gastos en USD en el mismo grupo: oficial, blue y mantenido en USD', async () => {
+    const { yo, groupId, id } = await friends()
+    const usd = (description: string, extra: { exchangeRate?: number; keepCurrency?: boolean }) =>
+      yo.expenses.create({
+        groupId,
+        description,
+        date: day('11-01'),
+        amountCents: 100_00,
+        currency: 'USD',
+        ...extra,
+        paidById: id.Yo,
+        split: { type: 'EQUAL', participantIds: [id.Yo, id.Tuke] },
+      })
+    await usd('Pasaje con tarjeta', { exchangeRate: 1540 }) // oficial (lo manda la app)
+    await usd('Cena en efectivo', { exchangeRate: 1555 }) // blue
+    await usd('Hotel', { keepCurrency: true }) // se devuelve en USD
+    const balances = await yo.balances.get({ groupId })
+    expect(balances.map((b) => b.currency)).toEqual(['ARS', 'USD'])
+    // ARS: Tuke me debe la mitad de 154.000 (oficial) + 155.500 (blue); USD: la mitad del hotel
+    const tuke = (currency: string) =>
+      balances.find((b) => b.currency === currency)!.balances.find((b) => b.participantId === id.Tuke)!.amountCents
+    expect(tuke('ARS')).toBe(-ars(77_000 + 77_750))
+    expect(tuke('USD')).toBe(-50_00)
+  })
+})
+
+describe('cotización automática de otras monedas', () => {
+  test('un gasto en EUR sin tipo de cambio se convierte con el oficial del euro', async () => {
+    stubBlueRate(1700, 1740) // DolarApi falso: misma respuesta para cualquier moneda
+    const { yo, groupId, id } = await friends()
+    const expense = await yo.expenses.create({
+      groupId,
+      description: 'Museo en Madrid',
+      date: day('11-04'),
+      amountCents: 10_00,
+      currency: 'EUR',
+      paidById: id.Yo,
+      split: { type: 'EQUAL', participantIds: [id.Yo, id.Tuke] },
+    })
+    expect((await yo.expenses.get({ expenseId: expense.id })).exchangeRate).toBe(1720)
   })
 })
 

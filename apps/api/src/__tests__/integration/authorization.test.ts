@@ -80,7 +80,7 @@ const notGroupScoped: Record<string, string> = {
   'groups.join': 'by invite code, on purpose (rate limited)',
   'profile.get': "only the caller's profile",
   'profile.update': "only the caller's profile",
-  'rates.blue': 'public exchange rate',
+  'rates.get': 'public exchange rate',
 }
 
 describe('authorization: non-members', () => {

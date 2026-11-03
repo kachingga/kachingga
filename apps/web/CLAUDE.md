@@ -115,7 +115,8 @@ const createExpense = useMutation(
 - No redefinir a mano tipos de inputs/outputs.
 - **Después de una mutation, invalidar** lo que afecta (gastos y pagos → `balances.get` y `expenses.summary`; participantes → `groups.get`).
 - **Montos en centavos enteros** (`amountCents`): convertir solo para mostrar y al leer inputs (`Math.round(valor * 100)`).
-- **Tipo de cambio:** al cargar un gasto en otra moneda, precargar `rates.blue` (`mid`) para ARS ↔ USD, editable, y ofrecer "mantener moneda" (`keepCurrency: true`).
+- **Tipo de cambio:** al cargar un gasto o pago en otra moneda, precargar la sugerencia de `rates.get({ currency, source })` (`mid`), editable, y mandar el valor final como `exchangeRate`. En **USD**: selector **Blue** (default) / **Oficial** / **A mano**; en **EUR, BRL, UYU y CLP**: **Oficial** (default) / **A mano**. `rates.get` da 1 unidad en ARS: si la base del grupo es la moneda extranjera y el gasto es en ARS, usar `1 / mid`. Entre dos monedas extranjeras no hay sugerencia: solo a mano. Ofrecer también "mantener moneda" (`keepCurrency: true`). Cada gasto elige lo suyo (uno en oficial, otro en blue, otro mantenido en USD en el mismo grupo).
+- **Monedas:** los selectores (moneda base del grupo, moneda de gasto y pago) muestran **todas** las de `currencies` de `@kachingga/api/schemas` (ARS, USD, EUR, BRL, UYU, CLP), con su nombre en español. Nunca una lista a mano: si se agrega una moneda en la API, aparece sola.
 - **Alias para cobrar:** `groups.get` trae el alias de cada participante (`paymentAlias`, `paymentAliasSource`). Botones de copiar con `navigator.clipboard.writeText`.
 - **Exportar:** `expenses.export` devuelve `{ filename, mimeType, content }` → descargar con `new Blob([content], { type: mimeType })` + un `<a download={filename}>`.
 - **Errores:** los `TRPCClientError` traen `message` en español listo para mostrar. `NOT_FOUND` en un grupo = no sos miembro.
