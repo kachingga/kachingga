@@ -9,7 +9,8 @@
 | Base de datos **DEV** | Supabase (`kachingga-dev`) | supabase.com/dashboard/project/nraoqdaplvvsakvtlcam | `https://nraoqdaplvvsakvtlcam.supabase.co` (ref `nraoqdaplvvsakvtlcam`) |
 | Auth | Supabase Auth | supabase.com/dashboard → Authentication | — |
 | Builds mobile | EAS (Expo) | expo.dev/accounts/kachingga/projects/kachingga | Org `kachingga`, project ID `49f7728b-7782-46e5-8a8a-491bb590bfe1` |
-| Updates OTA | EAS Update | expo.dev | — |
+| Updates OTA | EAS Update (canal `main`) | expo.dev | Automático al mergear a `main` (`.github/workflows/eas-update.yml`), inactivo hasta configurar `EXPO_TOKEN` |
+| CI | GitHub Actions | github.com/kachingga/kachingga/actions | `ci.yml` (check + formato en PRs) y `eas-update.yml` |
 | Cotización dólar blue | DolarApi (público, sin clave) | dolarapi.com | `https://dolarapi.com/v1/dolares/blue` |
 | Repo | GitHub | github.com/kachingga/kachingga | — |
 
@@ -25,7 +26,7 @@ Actualizar este archivo con los valores reales después de cada setup.
 | **PROD** | `kachingga` (czrkjokurbmbbvobvmxd) | Railway (variables = `apps/api/.env.prod`) | builds de EAS (variables de EAS = `apps/mobile/.env.prod`) |
 
 - Cada base tiene **sus propios usuarios**: para probar en dev hay que registrarse en dev.
-- Los `.env` de EAS no se suben con el build (están gitignoreados): las variables de prod de la app se cargan en EAS (expo.dev → proyecto → Environment variables) antes del primer build.
+- Los `.env` no se suben con el build (están gitignoreados): las variables de prod de la app se cargan en EAS, entorno **`production`** (expo.dev → proyecto → Environment variables) antes del primer build. El perfil `preview` de `eas.json` y el workflow de EAS Update usan ese entorno.
 
 ### Plan de Supabase
 - Hoy la org `kachingga` está en **Pro** (los dos proyectos se cobran por uso de cómputo).
@@ -57,6 +58,12 @@ Actualizar este archivo con los valores reales después de cada setup.
 | `EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY` | Clave **publishable** de Supabase (`sb_publishable_...`) — pública, solo para auth |
 
 > Todo lo que empieza con `EXPO_PUBLIC_` queda embebido en la app y es **público**. Nunca poner secretos ahí.
+
+### GitHub (secrets del repo)
+
+| Secret | Descripción |
+|--------|-------------|
+| `EXPO_TOKEN` | Token de acceso de Expo (org `kachingga`) para que `eas-update.yml` publique updates. **Todavía no creado** — ver `DEPLOY.md` → "Activar EAS Update automático" |
 
 ### Archivos locales (gitignoreados, nunca commitear)
 

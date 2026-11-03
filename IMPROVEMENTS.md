@@ -1,47 +1,27 @@
 # Mejoras de infraestructura
 
-Tareas de infraestructura pendientes, para ir haciendo de a poco.
+Pendientes de infraestructura, para ir haciendo de a poco. **Solo lo que falta:** cuando una mejora se termina, se borra de acá y lo que haya que saber queda en `DEPLOY.md`, `INFRA.md` o el `CLAUDE.md` que corresponda.
 
 ---
 
-## 1. EAS Update automático en push a `main`
+## 1. Activar EAS Update automático
 
-**Objetivo:** que nadie tenga que correr `eas update` a mano.
+El workflow ya existe (`.github/workflows/eas-update.yml`): al mergear a `main` un cambio de la app publica un update OTA. **Está inactivo** hasta que haya a quién mandárselo y un token.
 
-**Plan:**
-- `.github/workflows/eas-update.yml` con `expo/expo-github-action`
-- En push a `main` que toque `apps/mobile/**`: `eas update --channel main --auto`
-- Secret `EXPO_TOKEN` en GitHub
+**Falta:** Railway deployado → variables de prod en EAS (`production`) → primer build `preview` instalado → secret `EXPO_TOKEN` en GitHub. Pasos en `DEPLOY.md` → "Activar EAS Update automático".
 
-**Criterio de éxito:** se mergea un PR y al rato todos ven el cambio al abrir la app.
+**Criterio de éxito:** se mergea un PR de la app y al rato todos ven el cambio al abrir la app.
 
 ---
 
-## 2. CI en Pull Requests — ✅ hecho (`.github/workflows/ci.yml`)
+## 2. Entorno de staging (opcional)
 
-> Corre `bun run check` en cada PR y push a `main`, y en los PRs valida título y commits. `main` protegido (también para admins): solo por PR, con los dos checks en verde, merge por squash e historial lineal.
+**Ya hay base de dev** (`kachingga-dev`, ver `INFRA.md` → "Entornos"): las migraciones se prueban ahí antes de prod y todo lo local la usa.
 
-### Plan original
-
-**Objetivo:** typecheck y lint automáticos en cada PR.
-
-**Plan:**
-- `.github/workflows/ci.yml`: en `pull_request` a `main`, instalar con Bun y correr typecheck/lint de `apps/mobile` y `apps/api`
-- Validar el título del PR con Conventional Commits (squash merge usa el título como mensaje)
-- Branch protection en `main`
-
-**Criterio de éxito:** un PR con errores de tipos muestra un check rojo y no se puede mergear.
+**Falta (solo si hace falta más adelante):** una API de staging en Railway apuntando a `kachingga-dev` y un canal `staging` de EAS Update, para probar builds/updates sin tocar prod. Hoy no hace falta: se desarrolla en local contra dev.
 
 ---
 
-## 3. Entorno de staging
+## 3. Backup semanal de la base de datos
 
-**Objetivo:** probar migraciones y deploys sin tocar los datos reales del grupo.
-
-**Plan:** segunda DB + segundo servicio de Railway + canal `staging` de EAS Update.
-
----
-
-## 4. Backup semanal de la base de datos
-
-**Objetivo:** snapshot semanal de la DB de producción (`pg_dump`) guardado fuera del proveedor.
+**Objetivo:** snapshot semanal de la DB de producción (`pg_dump`) guardado fuera de Supabase.

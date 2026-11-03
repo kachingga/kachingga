@@ -74,18 +74,31 @@ Push a `main` → Railway deploya solo.
 
 Nunca usar `prisma migrate reset` ni `prisma db push` contra prod.
 
-### Cambios en la app (solo JS/TS/assets)
+### Cambios en la app (solo JS/TS/assets) — automático
 
+Al mergear un PR que toca `apps/mobile/**` (o `apps/api/src/schemas.ts`, o `bun.lock`), el workflow `.github/workflows/eas-update.yml` publica un update OTA al canal `main` con las variables del entorno **production** de EAS. Todos reciben la versión nueva la próxima vez que abren la app.
+
+> **Hoy está inactivo:** solo publica si existe el secret `EXPO_TOKEN` en GitHub. Ver "Activar EAS Update automático" abajo.
+
+A mano (solo si hace falta, ej. un hotfix sin PR — que con `main` protegido no debería pasar):
 ```bash
 cd apps/mobile
-bunx eas-cli update --channel main --message "feat(mobile): ..."
+bunx eas-cli update --channel main --environment production --message "fix(mobile): ..."
 ```
-
-Todos reciben la versión nueva la próxima vez que abren la app (idealmente automatizado con GitHub Actions, ver `IMPROVEMENTS.md`).
 
 ### Cambios en la app con código nativo
 
-Si se agrega una librería nativa, se cambia `app.json`/plugins o se sube el SDK de Expo: hay que subir el `runtimeVersion`, hacer un **nuevo build** y que cada uno lo reinstale. Un update OTA no alcanza.
+Si se agrega una librería nativa, se cambia `app.json`/plugins o se sube el SDK de Expo, cambia el **fingerprint** (`runtimeVersion` con política `fingerprint`, se calcula solo): los builds instalados **ignoran** los updates nuevos hasta que se haga un **nuevo build** y cada uno lo reinstale. El workflow igual publica el update, pero solo le llega a builds con el mismo fingerprint.
+
+### Activar EAS Update automático
+
+Recién tiene sentido cuando haya algo que reciba los updates. En orden:
+
+1. **API en Railway** deployada (ver "Setup inicial" → Railway) y su URL en `INFRA.md`.
+2. **Variables de prod en EAS**, entorno `production` (las usan el build `preview` y los updates): `EXPO_PUBLIC_API_URL` (URL de Railway), `EXPO_PUBLIC_SUPABASE_URL` y `EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY` de prod (valores en `apps/mobile/.env.prod`). Desde expo.dev → proyecto → Environment variables, o `bunx eas-cli env:create --environment production`.
+3. **Primer build `preview`** instalado en los teléfonos (solo cuando alguien lo pida).
+4. **Token:** expo.dev → org `kachingga` → Settings → Access tokens (idealmente de un *robot user*) → guardarlo como secret de GitHub: `gh secret set EXPO_TOKEN --repo kachingga/kachingga`.
+5. Probar con Actions → "EAS Update" → *Run workflow*, y después sacar este ítem de `IMPROVEMENTS.md`.
 
 ---
 
