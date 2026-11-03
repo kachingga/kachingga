@@ -6,6 +6,8 @@ export const currencies = ['ARS', 'USD', 'EUR', 'BRL', 'UYU', 'CLP'] as const
 export const expenseCategories = ['FOOD', 'GROCERIES', 'TRANSPORT', 'LODGING', 'ENTERTAINMENT', 'SHOPPING', 'SERVICES', 'OTHER'] as const
 
 export const currency = z.enum(currencies)
+// Where a suggested exchange rate comes from: blue (only USD, the default for it) or oficial
+export const rateSource = z.enum(['blue', 'oficial'])
 export const expenseCategory = z.enum(expenseCategories)
 
 const id = z.string().min(1)
@@ -86,3 +88,4 @@ export type ExpenseInput = z.input<typeof expenseInput>
 export type SettlementInput = z.input<typeof settlementInput>
 export type ExpenseFilters = z.infer<typeof expenseFilters>
 export type SplitInput = z.infer<typeof splitInput>
+export type RateSource = z.infer<typeof rateSource>

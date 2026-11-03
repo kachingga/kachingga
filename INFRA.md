@@ -12,7 +12,7 @@
 | Builds mobile (alternativa nativa) | EAS (Expo) | expo.dev/accounts/kachingga/projects/kachingga | Org `kachingga`, project ID `49f7728b-7782-46e5-8a8a-491bb590bfe1` |
 | Updates OTA | EAS Update (canal `main`) | expo.dev | Automático al mergear a `main` (`.github/workflows/eas-update.yml`), inactivo hasta configurar `EXPO_TOKEN` |
 | CI | GitHub Actions | github.com/kachingga/kachingga/actions | `ci.yml` (checks obligatorios), `e2e.yml` (Playwright en la web, a demanda) y `eas-update.yml` |
-| Cotización del dólar (blue y oficial) | DolarApi (público, sin clave) | dolarapi.com | `https://dolarapi.com/v1/dolares/blue` y `/oficial` |
+| Cotizaciones (dólar blue y oficial, oficial de EUR, BRL, UYU y CLP) | DolarApi (público, sin clave) | dolarapi.com | `https://dolarapi.com/v1/dolares/{blue,oficial}` y `/v1/cotizaciones/{eur,brl,uyu,clp}` |
 | Repo | GitHub | github.com/kachingga/kachingga | — |
 
 Actualizar este archivo con los valores reales después de cada setup.

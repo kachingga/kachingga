@@ -76,7 +76,7 @@ src/
 │   ├── splits.ts         # resolveSplits: EQUAL / AMOUNT / PERCENTAGE → centavos exactos
 │   ├── balances.ts       # computeBalances + minimizeTransfers (puro)
 │   ├── summary.ts        # summarizeExpenses: totales por filtro (puro)
-│   ├── rates.ts          # blue y oficial de DolarApi + resolveExchangeRate
+│   ├── rates.ts          # cotizaciones de DolarApi (getQuote) + resolveExchangeRate
 │   ├── inviteCode.ts
 │   └── supabase.ts       # cliente lazy
 └── __tests__/            # bun:test
@@ -150,7 +150,7 @@ Todos con `protectedProcedure` salvo `health.ping`. Inputs en `src/schemas.ts`.
 | `settlements.list` / `create` / `delete` | query / mutation | Pagos manuales |
 | `balances.get` | query | `[{ currency, balances: [{ participantId, amountCents }], transfers: [{ fromId, toId, amountCents }] }]`, base primero |
 | `savedFilters.list` / `create` / `delete` | query / mutation | Solo los del usuario |
-| `rates.blue` / `rates.official` | query | `{ buy, sell, mid, updatedAt }` para precargar el tipo de cambio (blue por defecto, oficial si el usuario lo elige) |
+| `rates.get` | query | `{ currency (no ARS), source?: 'blue' \| 'oficial' }` → `{ buy, sell, mid, updatedAt, source }`: 1 unidad en ARS, para precargar el tipo de cambio. Sin `source`: blue para USD, oficial para el resto. `blue` con otra moneda → `BAD_REQUEST` |
 
 **`expenseFilters`:** `paidById`, `splitParticipantId`, `involvedParticipantId` (pagó **o** participa), `categories[]`, `dateFrom`, `dateTo`, `minAmountCents`, `maxAmountCents`, `search`.
 
@@ -224,8 +224,8 @@ Las reglas generales están en el `CLAUDE.md` raíz → "Seguridad". Acá, cómo
 - `router.ts` es el entry del paquete y `schemas.ts` el de `./schemas` (`exports` en `package.json`). `schemas.ts` no puede importar nada del server (Prisma, Supabase, `process.env`).
 - **RLS en todas las tablas, sin políticas.** Supabase expone `public` por su API REST y la clave publishable está en la app; RLS sin políticas bloquea esa API. Nuestra API entra como `postgres` y no le afecta. Verificado: la REST devuelve `[]` aunque haya datos.
 - **`DIRECT_URL` usa el session pooler** (`aws-0-us-east-1.pooler.supabase.com:5432`), no la conexión directa `db.<ref>.supabase.co`: es solo IPv6 y no anda en la mayoría de las redes ni en Railway.
-- Cotización: DolarApi (`dolarapi.com/v1/dolares/blue` y `/oficial`), cache de 10 min en memoria por cada una. Si falla, la API responde pidiendo el tipo de cambio manual.
-- Sin `exchangeRate` en el input, la API usa el **blue** (el default). El oficial o uno manual los manda la app como `exchangeRate`; en la base se guarda solo el número, no de dónde salió.
+- Cotizaciones: DolarApi (`/v1/dolares/{blue,oficial}` para USD, `/v1/cotizaciones/{eur,brl,uyu,clp}` para el resto, que solo tienen oficial), cache de 10 min en memoria por cada una. Si falla, la API responde pidiendo el tipo de cambio manual.
+- Sin `exchangeRate` en el input, la API usa la cotización por defecto (blue para USD, oficial para el resto) si el par es ARS ↔ otra moneda; entre dos extranjeras responde pidiendo el tipo de cambio a mano. El oficial del dólar o uno manual los manda la app como `exchangeRate`; en la base se guarda solo el número, no de dónde salió.
 - En Railway, `NODE_ENV=production` para que tRPC no devuelva stack traces.
 - CLI de Supabase: deja `supabase/.temp/` donde se corra (gitignoreado). `supabase projects api-keys` muestra la secret key **enmascarada**; la completa requiere `--reveal`.
 

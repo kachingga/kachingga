@@ -1,6 +1,6 @@
 // Real-life scenarios from the group, end to end through the routers.
 import { describe, expect, test } from 'bun:test'
-import { setupTestApi } from './setup'
+import { setupTestApi, stubBlueRate } from './setup'
 
 const { caller } = await setupTestApi()
 let n = 0
@@ -142,6 +142,23 @@ describe('cada gasto en otra moneda elige su tipo de cambio', () => {
       balances.find((b) => b.currency === currency)!.balances.find((b) => b.participantId === id.Tuke)!.amountCents
     expect(tuke('ARS')).toBe(-ars(77_000 + 77_750))
     expect(tuke('USD')).toBe(-50_00)
+  })
+})
+
+describe('cotización automática de otras monedas', () => {
+  test('un gasto en EUR sin tipo de cambio se convierte con el oficial del euro', async () => {
+    stubBlueRate(1700, 1740) // DolarApi falso: misma respuesta para cualquier moneda
+    const { yo, groupId, id } = await friends()
+    const expense = await yo.expenses.create({
+      groupId,
+      description: 'Museo en Madrid',
+      date: day('11-04'),
+      amountCents: 10_00,
+      currency: 'EUR',
+      paidById: id.Yo,
+      split: { type: 'EQUAL', participantIds: [id.Yo, id.Tuke] },
+    })
+    expect((await yo.expenses.get({ expenseId: expense.id })).exchangeRate).toBe(1720)
   })
 })
 

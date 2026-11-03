@@ -1,9 +1,15 @@
-import { getDollarRate } from '../../lib/rates'
+import { z } from 'zod'
+import { defaultRateSource, getQuote } from '../../lib/rates'
+import { currency, rateSource } from '../../schemas'
 import { protectedProcedure, router } from '../init'
 
-// For pre-filling the exchange rate in the app (mid = (buy + sell) / 2). Blue is the default;
-// oficial is an alternative the user can pick. Either way the app sends it as `exchangeRate`.
 export const ratesRouter = router({
-  blue: protectedProcedure.query(() => getDollarRate('blue')),
-  official: protectedProcedure.query(() => getDollarRate('oficial')),
+  // Suggested rate to pre-fill when a movement is in another currency: 1 `currency` in ARS (mid = (buy + sell) / 2).
+  // Without `source`: blue for USD, oficial for the rest. The app sends whatever ends up chosen as `exchangeRate`.
+  get: protectedProcedure
+    .input(z.object({ currency: currency.exclude(['ARS']), source: rateSource.optional() }))
+    .query(async ({ input }) => {
+      const source = input.source ?? defaultRateSource(input.currency)
+      return { ...(await getQuote(input.currency, source)), source }
+    }),
 })
