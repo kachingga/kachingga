@@ -47,6 +47,7 @@ Actualizar este archivo con los valores reales después de cada setup.
 | `PORT` | Lo setea Railway automáticamente — no pisarlo |
 | `NODE_ENV` | `production` — evita que tRPC devuelva stack traces en los errores |
 | `CORS_ORIGINS` | Orígenes del front web que pueden llamar a la API, separados por coma. Prod: la URL de Vercel. Local (default): `http://localhost:5173,http://localhost:4173` |
+| `SEED_USER_PASSWORD` | **Solo `apps/api/.env` (dev).** Contraseña de los usuarios de prueba de `bun run db:seed`. No va en Railway ni en `.env.prod` |
 | _(v2)_ `LLM_API_KEY` | API key del proveedor del agente |
 
 ### Vercel (web — `apps/web`)

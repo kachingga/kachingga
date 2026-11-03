@@ -22,10 +22,11 @@
 
 ## Comandos
 
-Desde `apps/web` (o `bun run web` desde la raíz; `bun run dev` en la raíz levanta API + web + mobile):
+Desde `apps/web` (o `bun run web` desde la raíz; `bun run dev` en la raíz levanta API + web):
 
 ```bash
 bun run dev          # Vite en :5173 (necesita la API corriendo: `bun run api` desde la raíz)
+                     # Login con datos cargados: juan.demo@example.com (contraseña: SEED_USER_PASSWORD de apps/api/.env)
 bun run build        # typecheck + build de producción en dist/
 bun run preview      # sirve el build
 bun run typecheck    # tsc -b
@@ -234,7 +235,7 @@ expect(await screen.findByText('Todavía no hay gastos')).toBeInTheDocument();
 ### E2E (Playwright)
 - **Qué lleva E2E:** solo los recorridos críticos (registrarse / login, crear grupo, unirse con código, agregar gasto, ver saldos, registrar pago). El resto va en los tests de contenido.
 - Corre contra el **build de producción** (`build` + `preview` en :4173) en celular y compu. Hoy solo existe `e2e/smoke.spec.ts` (la app carga).
-- Para flujos con datos: la API corriendo (`bun run api`, que permite el origen :4173 por CORS) y un usuario de prueba en **dev**.
+- Para flujos con datos: la API corriendo (`bun run api`, que permite el origen :4173 por CORS) y un usuario de prueba en **dev** (los de `bun run db:seed`, ver `apps/api/CLAUDE.md` → "Datos de prueba").
 - Ponerle la label `e2e` a los PRs que cambian un recorrido crítico.
 
 ---
