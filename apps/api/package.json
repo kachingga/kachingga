@@ -3,7 +3,8 @@
   "private": true,
   "type": "module",
   "exports": {
-    ".": "./src/trpc/router.ts"
+    ".": "./src/trpc/router.ts",
+    "./schemas": "./src/schemas.ts"
   },
   "scripts": {
     "dev": "bun run --hot src/index.ts",
@@ -12,8 +13,9 @@
     "test": "bun test",
     "postinstall": "prisma generate",
     "db:generate": "prisma generate",
-    "db:migrate:create": "prisma migrate dev --create-only",
-    "db:migrate:dev": "prisma migrate dev",
+    "db:migrate:new": "bun scripts/new-migration.ts",
+    "db:migrate:deploy": "prisma migrate deploy",
+    "db:migrate:status": "prisma migrate status",
     "db:migrate:prod": "PRISMA_ENV_FILE=.env.prod prisma migrate deploy",
     "db:studio": "prisma studio"
   },
