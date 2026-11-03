@@ -17,7 +17,11 @@ Tareas de infraestructura pendientes, para ir haciendo de a poco.
 
 ---
 
-## 2. CI en Pull Requests
+## 2. CI en Pull Requests — ✅ hecho (`.github/workflows/ci.yml`)
+
+> Corre `bun run check` en cada PR y push a `main`, y en los PRs valida título y commits. **Falta:** activar branch protection en GitHub (Settings → Branches → `main` → requerir los checks "Typecheck, tests y lint" y "Formato de commits y título del PR").
+
+### Plan original
 
 **Objetivo:** typecheck y lint automáticos en cada PR.
 
