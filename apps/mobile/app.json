@@ -47,15 +47,15 @@
         }
       },
       "eas": {
-        "projectId": "d3b34610-93fe-4f7f-aaf1-0ac593ea1920"
+        "projectId": "49f7728b-7782-46e5-8a8a-491bb590bfe1"
       }
-    },
-    "owner": "kachinnga",
-    "updates": {
-      "url": "https://u.expo.dev/d3b34610-93fe-4f7f-aaf1-0ac593ea1920"
     },
     "runtimeVersion": {
       "policy": "fingerprint"
+    },
+    "owner": "kachingga",
+    "updates": {
+      "url": "https://u.expo.dev/49f7728b-7782-46e5-8a8a-491bb590bfe1"
     }
   }
 }

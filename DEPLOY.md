@@ -22,7 +22,7 @@
 
 ### 2. EAS — App mobile
 
-✅ Hecho: proyecto vinculado a la org `kachinnga` en expo.dev, `eas.json` creado y EAS Update configurado (`expo-updates`, `runtimeVersion` con política `fingerprint`).
+✅ Hecho: proyecto vinculado a la org `kachingga` en expo.dev, `eas.json` creado y EAS Update configurado (`expo-updates`, `runtimeVersion` con política `fingerprint`).
 
 Cada miembro solo necesita estar invitado a la org de Expo y loguearse:
 

@@ -7,7 +7,7 @@
 | API | Railway | railway.app/dashboard | Por definir después del primer deploy |
 | Base de datos (PostgreSQL) | Supabase | supabase.com/dashboard/project/czrkjokurbmbbvobvmxd | `https://czrkjokurbmbbvobvmxd.supabase.co` (ref `czrkjokurbmbbvobvmxd`) |
 | Auth | Supabase Auth | supabase.com/dashboard → Authentication | — |
-| Builds mobile | EAS (Expo) | expo.dev/accounts/kachinnga/projects/kachingga | Org `kachinnga`, project ID `d3b34610-93fe-4f7f-aaf1-0ac593ea1920` |
+| Builds mobile | EAS (Expo) | expo.dev/accounts/kachingga/projects/kachingga | Org `kachingga`, project ID `49f7728b-7782-46e5-8a8a-491bb590bfe1` |
 | Updates OTA | EAS Update | expo.dev | — |
 | Repo | GitHub | github.com/kachingga/kachingga | — |
 
