@@ -22,17 +22,21 @@
 
 ### 2. EAS — App mobile
 
+✅ Hecho: proyecto vinculado a la org `kachinnga` en expo.dev, `eas.json` creado y EAS Update configurado (`expo-updates`, `runtimeVersion` con política `fingerprint`).
+
+Cada miembro solo necesita estar invitado a la org de Expo y loguearse:
+
 ```bash
 cd apps/mobile
 bunx eas-cli login
-bunx eas-cli init              # crea el proyecto en expo.dev (owner: kachingga)
-bunx eas-cli build:configure   # genera eas.json
-bunx eas-cli update:configure  # configura EAS Update (runtimeVersion + updates.url)
 ```
 
-Perfiles de `eas.json` previstos:
-- `development` — development build para desarrollar (reemplaza a Expo Go).
-- `preview` — `"distribution": "internal"`, canal `main`. **Es el que instala cada uno en su teléfono.**
+Perfiles de `eas.json`:
+- `development` — development build para desarrollar (canal `development`). Requiere agregar `expo-dev-client` la primera vez que se use.
+- `preview` — instalación interna, APK en Android, canal `main`. **Es el que instala cada uno en su teléfono.**
+- `production` — para stores, si algún día hace falta (canal `production`).
+
+> `runtimeVersion` usa la política `fingerprint`: EAS calcula un hash del código nativo. Si cambia (librería nativa nueva, plugin, SDK), los builds viejos dejan de recibir updates y hay que hacer un build nuevo.
 
 ### 3. Instalar la app en cada teléfono
 

@@ -7,7 +7,7 @@
 | API | Railway | railway.app/dashboard | Por definir después del primer deploy |
 | Base de datos (PostgreSQL) | Supabase | supabase.com/dashboard | Por definir |
 | Auth | Supabase Auth | supabase.com/dashboard → Authentication | — |
-| Builds mobile | EAS (Expo) | expo.dev | Por definir (cuenta/org `kachingga`) |
+| Builds mobile | EAS (Expo) | expo.dev/accounts/kachinnga/projects/kachingga | Org `kachinnga`, project ID `d3b34610-93fe-4f7f-aaf1-0ac593ea1920` |
 | Updates OTA | EAS Update | expo.dev | — |
 | Repo | GitHub | github.com/kachingga/kachingga | — |
 

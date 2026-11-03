@@ -39,6 +39,23 @@
     "experiments": {
       "typedRoutes": true,
       "reactCompiler": true
+    },
+    "extra": {
+      "router": {
+        "asyncRoutes": {
+          "web": true
+        }
+      },
+      "eas": {
+        "projectId": "d3b34610-93fe-4f7f-aaf1-0ac593ea1920"
+      }
+    },
+    "owner": "kachinnga",
+    "updates": {
+      "url": "https://u.expo.dev/d3b34610-93fe-4f7f-aaf1-0ac593ea1920"
+    },
+    "runtimeVersion": {
+      "policy": "fingerprint"
     }
   }
 }
