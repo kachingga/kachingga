@@ -1,0 +1,7 @@
+// Per-user settings, keyed by the Supabase auth user id (there is no users table).
+model UserProfile {
+  userId       String   @id
+  // Alias/CVU to get paid, used in every group unless the group overrides it (Participant.paymentAlias)
+  paymentAlias String?
+  updatedAt    DateTime @updatedAt
+}
