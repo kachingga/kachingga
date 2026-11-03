@@ -1,0 +1,12 @@
+# Generated / build artifacts
+dist/
+build/
+
+# Dependencies
+node_modules/
+
+# Lockfiles
+*.lock
+
+# Logs
+*.log
