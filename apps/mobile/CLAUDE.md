@@ -101,6 +101,24 @@ const createExpense = useMutation(
 - Mandar el `access_token` de la sesión en `headers` del `httpBatchLink` de `src/lib/trpc.ts` (`Authorization: Bearer <token>`). Sin token, todo menos `health.ping` responde `UNAUTHORIZED`.
 - Después del login: `groups.list`. Para unirse a un grupo: `groups.preview` con el código → elegir participante sin cuenta o nombre nuevo → `groups.join`.
 
+### Lo que hace cumplir el lint (falla el commit y el CI)
+Configurado en `eslint.config.js`. No desactivar estas reglas; si de verdad hace falta una excepción, `eslint-disable-next-line` con el motivo y avisar en el PR.
+- Importar código de runtime de `@kachingga/api` (solo `import type`, o `@kachingga/api/schemas`).
+- Importar `@supabase/supabase-js` fuera de `src/lib/supabase.ts` (el único archivo de auth).
+- Usar `fetch` a mano: la data va por tRPC.
+- Las reglas de hooks / React Compiler de `eslint-config-expo` (ej. `react-hooks/set-state-in-effect`).
+
+## React — cómo escribir componentes
+
+La app tiene el **React Compiler activado** (`experiments.reactCompiler` en `app.json`). Eso cambia algunas costumbres:
+- **No usar `useMemo` / `useCallback` / `React.memo` "por las dudas"**: el compilador ya memoiza. Solo si hay un problema de performance medido.
+- Respetar las **Reglas de React** (componentes y hooks puros, no mutar props/estado, hooks siempre en el mismo orden). Si el compilador o el lint marcan algo, se arregla el código, no se silencia.
+- **Nada de `useEffect` para traer datos** (eso es TanStack Query) ni para **derivar estado** (calcularlo en el render). `useEffect` solo para sincronizar con algo externo.
+- El estado del servidor vive en TanStack Query; `useState` solo para estado de UI (inputs, toggles, modales). No copiar datos de una query a un `useState`.
+- Listas largas con `FlatList` (o la lista recomendada por la skill `expo-native-ui`), con `keyExtractor` estable (el `id`), nunca `.map` dentro de un `ScrollView` para listas que crecen.
+- Componentes chicos y con nombre; lógica reutilizable en hooks (`src/hooks/`), formateo en `src/lib/`.
+- **Componentes base primero:** antes de la segunda pantalla, armar en `src/components/ui/` las piezas que se repiten (ej. un componente que resuelva los 4 estados de una query, un botón con estado de carga, un texto de monto) y usarlas en todas las pantallas. Consistencia gratis y menos código.
+
 ## UI / UX — estándar de calidad
 
 Qué pantallas hay y qué hace cada una: **`V1.md` → "Pantallas"**. Esta sección es **cómo** tienen que sentirse. La app la usamos nosotros todos los días: tiene que ser rápida, clara y linda. Ante la duda, priorizar que **cargar un gasto sea lo más rápido posible**.
