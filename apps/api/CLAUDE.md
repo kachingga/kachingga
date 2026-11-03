@@ -188,6 +188,7 @@ Si agregás o cambiás un procedure, actualizá esta tabla.
 | Tipo | Dónde | Qué |
 |------|-------|-----|
 | Unit | `src/__tests__/*.test.ts` | Lógica pura (`lib/`, `buildExpenseWhere`) |
+| HTTP | `src/__tests__/http.test.ts` | El servidor real (`index.ts`) por HTTP sin red: Hono + adaptador tRPC + superjson, 401 sin token, 404 |
 | **Integración** | `src/__tests__/integration/*.test.ts` | Routers reales + Prisma contra **PGlite** (Postgres en memoria) armado con las **migraciones reales**. `routers.test.ts` = reglas por router; `scenarios.test.ts` = casos reales del grupo (pagarle a un tercero, quién pagó / entre quiénes, "mis gastos", totales del mes) |
 
 ### Integración (`setupTestApi`)

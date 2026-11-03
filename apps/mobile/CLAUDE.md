@@ -182,7 +182,7 @@ Tres niveles. Ninguna pantalla se da por terminada sin el primero.
 |-------|-------------|-------|----------|
 | Unit (helpers, hooks, lógica de UI) | Jest (`jest-expo`) | `src/**/__tests__/*.test.ts` | `bun run check` / pre-commit |
 | **Contenido de pantallas** | Jest + React Native Testing Library + `renderWithApi` | `src/**/__tests__/*.test.tsx` | `bun run check` / pre-commit |
-| E2E (flujos reales en el dispositivo) | Maestro | `.maestro/*.yaml` | A mano (`bun run e2e`), no en el pre-commit |
+| E2E (flujos reales en el dispositivo) | Maestro | `.maestro/*.yaml` | Local (`bun run e2e`) y en GitHub Actions (a mano o PRs con label `e2e`); no en el pre-commit |
 
 > **No usamos Playwright:** prueba la versión web, y la app que usamos es la nativa (teclado, gestos y navegación nativos). Tampoco snapshots: se verifica lo que el usuario ve, no el árbol renderizado.
 
@@ -206,10 +206,15 @@ expect(await screen.findByText('Todavía no hay gastos')).toBeOnTheScreen();
 - Para pantallas que navegan, ver la sección de testing de Expo Router en la doc de la versión instalada.
 
 ### E2E (Maestro)
+**Maestro es la herramienta; los mismos flujos corren en dos lugares:**
+- **Local** (`bun run e2e`, desde `apps/mobile`): contra un emulador o tu teléfono, mientras desarrollás una pantalla. Requisitos abajo.
+- **GitHub Actions** (`.github/workflows/e2e.yml`): compila un APK release (prebuild + Gradle, sin builds de EAS), levanta un emulador Android y corre todos los flujos. Se dispara a mano (Actions → "E2E (Android)" → *Run workflow*) o poniéndole la label **`e2e`** a un PR. No es check obligatorio (~15-20 min); **ponerle la label a todo PR que cambie un recorrido principal** y no mergear si falla. Si falla, el reporte y las capturas quedan como artifact `maestro-results`.
+
+Reglas:
 - Un flujo por recorrido principal: registrarse/login, crear grupo, unirse con código, agregar gasto, ver saldos, registrar pago. Empezar con `.maestro/smoke.yaml` (abre la app).
 - Elementos con `testID` estables (`expense-amount-input`, `save-expense-button`, …) para que los flujos no dependan de textos.
 - Requisitos: [Maestro CLI](https://maestro.mobile.dev) + Java, un emulador Android o simulador iOS con un **development build** de la app instalado (`appId: com.kachingga.app`; Expo Go no sirve), la API corriendo (`bun run dev`) y un usuario de prueba en **dev**. Los builds de EAS solo se lanzan si alguien lo pide.
-- Correr: `bun run e2e` desde `apps/mobile`. Todavía no se corrió nunca: el primer flujo real queda para cuando exista el login.
+- Hoy solo existe `smoke.yaml` (la app arranca). Los flujos con datos van a necesitar la API y un usuario de prueba también en CI: cuando exista el login, agregar al workflow la API levantada contra un Postgres de servicio (como el job de migraciones) y las claves de Supabase **dev** como secrets de GitHub. El build de CI usa `EXPO_PUBLIC_API_URL=http://10.0.2.2:3000` (la máquina host vista desde el emulador).
 
 ### Notas de configuración
 - `jest` está configurado en `package.json` (`preset: jest-expo`). `transformIgnorePatterns` incluye `superjson`, `copy-anything` e `is-what` porque se publican solo como ESM: si un paquete nuevo rompe Jest con "Must use import to load ES Module", agregarlo ahí.
