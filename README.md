@@ -77,13 +77,32 @@ cd apps/mobile && bunx eas-cli login     # login en Expo (una vez)
 cd ../.. && bun run mobile               # levanta la app
 ```
 
-Para la API, copiar `apps/api/.env.sample` a `apps/api/.env` y `apps/mobile/.env.sample` a `apps/mobile/.env`, y completar las claves de Supabase **de dev** (los `.env` locales siempre apuntan a `kachingga-dev`; prod solo lo necesita quien migre producción) (pedirlas por el gestor de contraseñas; cada línea del sample dice de dónde sale). `bun run dev` levanta la API y la app juntas.
+### 4. Armar los `.env` (dev)
+
+Para desarrollar solo hacen falta los de **dev** (proyecto `kachingga-dev`). El `.env.prod` lo necesita únicamente quien vaya a migrar producción.
+
+```bash
+cp apps/api/.env.sample apps/api/.env
+cp apps/mobile/.env.sample apps/mobile/.env
+```
+
+Los samples ya traen el ref, el host y las URLs de dev. Solo hay que completar:
+
+| Variable | Archivo | De dónde sale |
+|----------|---------|---------------|
+| `<DB_PASSWORD>` (en `DATABASE_URL` y `DIRECT_URL`) | `apps/api/.env` | **Pedírsela a Galo** (por privado o gestor de contraseñas). Supabase **no la muestra** en el dashboard |
+| `SUPABASE_SECRET_KEY` | `apps/api/.env` | Supabase → `kachingga-dev` → Project Settings → API Keys → Secret key (o `supabase projects api-keys --project-ref nraoqdaplvvsakvtlcam --reveal`) |
+| `EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY` | `apps/mobile/.env` | Supabase → `kachingga-dev` → Project Settings → API Keys → Publishable key |
+
+> ⚠️ **Nunca resetear la contraseña de la base** desde el dashboard: deja sin conexión a todos los demás (y, en prod, a Railway). Si se perdió, avisar al grupo antes.
+
+Después: `bun run dev` levanta la API y la app juntas, y te registrás en la app (cada base tiene sus propios usuarios).
 
 Cada commit corre automáticamente typecheck, tests y lint (`bun run check`) y valida el formato del mensaje.
 
 > **¿Tenías cambios locales de antes de este setup?** Commitealos en una branch y seguí "Trabajo en paralelo y conflictos" en [`CLAUDE.md`](CLAUDE.md) para traer `main` sin romper nada (o pedile a Claude que lo haga: ya conoce esas reglas).
 
-### 4. Claude Code
+### 5. Claude Code
 
 Abrir `claude` desde la **raíz del repo**. Todo el contexto se carga solo y es igual para todos:
 
