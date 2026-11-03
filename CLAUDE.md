@@ -255,6 +255,8 @@ bun install          # por si cambiaron dependencias, hooks o el schema de Prism
 bun run check
 ```
 
+> **Al cambiar de branch** (`git switch`, rebase): si alguna de las dos toca el schema de Prisma, correr `bun run db:generate` en `apps/api` (o `bun install`). El cliente de Prisma generado no está en git y queda con el schema de la branch anterior: los tests de integración fallan todos juntos con errores de columnas o tablas.
+
 ### Si tenés trabajo local viejo
 1. Commitealo en una branch (`git switch -c feat/<lo-que-sea>`). Si el hook rechaza el mensaje, usá `type(scope): ...`.
 2. `git rebase origin/main` (o `merge`) y resolvé los conflictos como abajo.
@@ -312,6 +314,7 @@ gh pr create --fill                            # título = Conventional Commit (
   - **"Migraciones al día con el schema"** — aplica todas las migraciones en un Postgres vacío y falla si el schema de Prisma tiene cambios sin migración.
   - **"Expo doctor"** — versiones de paquetes compatibles con el SDK de Expo.
   - **"Formato de commits y título del PR"** — Conventional Commits.
+- **E2E** (`.github/workflows/e2e.yml`, no obligatorio): flujos de Maestro en un emulador Android. Corre a mano o en PRs con la label `e2e` — ponérsela a los PRs que cambian recorridos principales de la app (ver `apps/mobile/CLAUDE.md` → "Testing").
 - Dependabot abre PRs mensuales solo para las GitHub Actions (las dependencias de la app se actualizan con `bunx expo install`).
 - Se mergea solo con **squash**: el título del PR queda como el commit en `main`, por eso tiene que respetar el formato. La branch se borra sola al mergear.
 - **El PR tiene que estar al día con `main`** para poder mergearse (GitHub lo marca como *BEHIND* si entró otro PR antes). Se actualiza **siempre con rebase, nunca con merge** (el historial de `main` es lineal):

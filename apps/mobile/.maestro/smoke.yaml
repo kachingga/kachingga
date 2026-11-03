@@ -4,4 +4,7 @@ appId: com.kachingga.app
 ---
 - launchApp:
     clearState: true
-- assertVisible: "Kachingga"
+# El primer arranque en un emulador de CI puede tardar
+- extendedWaitUntil:
+    visible: 'Kachingga'
+    timeout: 60000

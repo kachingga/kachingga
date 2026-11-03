@@ -54,6 +54,7 @@
     "web": "expo start --web",
     "lint": "expo lint",
     "test": "jest",
+    "e2e:android": "EXPO_PUBLIC_API_URL=${EXPO_PUBLIC_API_URL:-http://10.0.2.2:3000} expo run:android --variant release --no-bundler",
     "e2e": "maestro test .maestro",
     "typecheck": "[ -f expo-env.d.ts ] || echo '/// <reference types=\"expo/types\" />' > expo-env.d.ts; tsc --noEmit"
   },
