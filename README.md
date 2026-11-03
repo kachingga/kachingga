@@ -77,9 +77,11 @@ cd apps/mobile && bunx eas-cli login     # login en Expo (una vez)
 cd ../.. && bun run mobile               # levanta la app
 ```
 
-Para la API, copiar `apps/api/.env.example` a `apps/api/.env` y completar las claves de Supabase (pedirlas por el gestor de contraseñas). `bun run dev` levanta la API y la app juntas.
+Para la API, copiar `apps/api/.env.sample` a `apps/api/.env` y `apps/mobile/.env.sample` a `apps/mobile/.env`, y completar las claves de Supabase (pedirlas por el gestor de contraseñas; cada línea del sample dice de dónde sale). `bun run dev` levanta la API y la app juntas.
 
 Cada commit corre automáticamente typecheck, tests y lint (`bun run check`) y valida el formato del mensaje.
+
+> **¿Tenías cambios locales de antes de este setup?** Commitealos en una branch y seguí "Trabajo en paralelo y conflictos" en [`CLAUDE.md`](CLAUDE.md) para traer `main` sin romper nada (o pedile a Claude que lo haga: ya conoce esas reglas).
 
 ### 4. Claude Code
 

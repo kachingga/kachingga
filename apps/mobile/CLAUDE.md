@@ -1,6 +1,6 @@
 # CLAUDE.md — apps/mobile
 
-> Ver el `CLAUDE.md` raíz para alcance (v1/v2), stack, convenciones y formato de commits. Consultalo antes de implementar una feature.
+> Ver el `CLAUDE.md` raíz para alcance (v1/v2), stack, convenciones y formato de commits. Consultalo antes de implementar una feature. Antes de tocar `app.json`, `package.json`, `_layout.tsx` o resolver un conflicto, leer **"Notas técnicas — no romper"** y **"Trabajo en paralelo y conflictos"** del `CLAUDE.md` raíz.
 
 App mobile con Expo / React Native. Priorizar patrones mobile-first, performance y compatibilidad entre plataformas.
 

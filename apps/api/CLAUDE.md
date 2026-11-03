@@ -1,6 +1,6 @@
 # CLAUDE.md — apps/api
 
-> Ver el `CLAUDE.md` raíz para alcance (v1/v2), stack, auth, reglas de tRPC y formato de commits. Consultalo antes de implementar lógica de dominio o un router nuevo.
+> Ver el `CLAUDE.md` raíz para alcance (v1/v2), stack, auth, reglas de tRPC y formato de commits. Consultalo antes de implementar lógica de dominio o un router nuevo. Antes de tocar dependencias, `prisma.config.ts`, migraciones o resolver un conflicto, leer **"Notas técnicas — no romper"** y **"Trabajo en paralelo y conflictos"** del `CLAUDE.md` raíz.
 
 API en Hono + tRPC sobre Bun, con Prisma contra PostgreSQL en Supabase. Paquete `@kachingga/api`: la app importa **solo el tipo** `AppRouter` desde acá.
 
@@ -32,7 +32,7 @@ bun run db:studio          # Prisma Studio
 
 ## Env
 
-Copiar `.env.example` a `.env` (desarrollo) y a `.env.prod` (solo para `db:migrate:prod`). Ambos están gitignoreados.
+Copiar `.env.sample` a `.env` (desarrollo) y a `.env.prod` (solo para `db:migrate:prod`). Ambos están gitignoreados.
 
 ```
 DATABASE_URL=...          # Supabase pooler (puerto 6543) — queries en runtime

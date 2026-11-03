@@ -10,7 +10,7 @@ Proyecto de **Kachingga**, una organización de amigos (repo: `github.com/kachin
 
 | Archivo | Qué tiene |
 |---------|-----------|
-| `CLAUDE.md` | Este archivo: overview, stack, estructura, convenciones, reglas de commits |
+| `CLAUDE.md` | Este archivo: overview, stack, estructura, comandos, notas técnicas, conflictos y reglas de commits |
 | `.claude/CLAUDE.md` | Guías de comportamiento para Claude (pensar antes de codear, simplicidad, cambios quirúrgicos) |
 | `.claude/settings.json` | Config compartida de Claude Code (plugin de Expo). Lo personal va en `.claude/settings.local.json` / `CLAUDE.local.md` (gitignoreados) |
 | `README.md` | Qué es la app y onboarding de cada miembro (accesos, herramientas, setup) |
@@ -127,6 +127,77 @@ bun run check        # typecheck + test + lint — lo mismo que corre el pre-com
 **Antes de dar una tarea por terminada, correr `bun run check`.** El hook de pre-commit de husky lo corre en cada commit y lo rechaza si algo falla.
 
 > Los builds de EAS (`eas build`) solo se lanzan cuando alguien lo pide explícitamente — no son parte del flujo normal. Ver `DEPLOY.md`.
+
+### Variables de entorno
+
+Cada app tiene un `.env.sample` commiteado que dice qué variables hacen falta y de dónde sale cada valor:
+
+- `apps/api/.env.sample` → copiar a `apps/api/.env` (y a `.env.prod` solo para migrar producción)
+- `apps/mobile/.env.sample` → copiar a `apps/mobile/.env`
+
+Los `.env` reales están gitignoreados. Si agregás una variable nueva, **agregala también al `.env.sample`** (con un comentario de dónde sale) y a `INFRA.md`.
+
+---
+
+## Notas técnicas — no romper
+
+Decisiones de setup que no son obvias leyendo el código. Si algo de esto molesta, se cambia a propósito y se actualiza esta sección; no se "arregla" de pasada.
+
+### Monorepo y tooling
+- **Husky** (`.husky/`) se activa con el script `prepare` en `bun install`. `pre-commit` corre `bun run check`; `commit-msg` valida Conventional Commits y deja pasar `Merge`, `Revert`, `fixup!`, `squash!` y `amend!` (los usa git en merges y rebases).
+- `husky` es la única dependencia en el `package.json` raíz. Todo lo demás va en su workspace.
+- `bunfig.toml` usa `linker = "hoisted"` (todo en el `node_modules` raíz). Viene así desde el setup inicial de Expo; no cambiarlo sin probar que Metro siga resolviendo los paquetes.
+- `bun --filter '*' <script>` corre el script solo en los workspaces que lo tienen (por eso `test` hoy solo corre en la API y `lint` solo en mobile).
+
+### API
+- **Prisma fijado en `7.10.1`** (sin `^`), CLI y cliente en la misma versión. El tag `latest` de `prisma` en npm apuntaba a una `8.0.0-rc`; no actualizar con `bun add prisma` a secas.
+- `prisma generate` corre en `postinstall`. El cliente generado (`src/db/generated/`) está gitignoreado.
+- `prisma.config.ts` usa `process.env.DIRECT_URL ?? ''` y **no** `env('DIRECT_URL')`: con `env()` el `postinstall` falla en cualquier máquina sin `.env` (clones nuevos, Railway en build).
+- **Imports relativos sin extensión `.ts`** (`from './init'`): mobile typechequea los archivos de la API (vía el tipo `AppRouter`) con su propio `tsconfig`, que no acepta `.ts` en los imports.
+- El cliente de Supabase es **lazy** (`getSupabase()`): importar el router en tests o desde mobile no puede requerir variables de entorno.
+- `router.ts` es el entry del paquete (`exports` en `package.json`). Lo que importe no puede arrastrar dependencias que mobile no pueda resolver a nivel de tipos.
+- En Railway, `NODE_ENV=production` para que tRPC no devuelva stack traces.
+
+### Mobile
+- **TypeScript `~6.0.3`** en mobile y api (la versión que trae el SDK 58 de Expo). No subir a TS 7 en un solo workspace.
+- El script `typecheck` crea `expo-env.d.ts` si no existe (lo genera `expo start` y está gitignoreado). Sin ese archivo, `tsc` falla con los imports de CSS.
+- `src/components/app-tabs.web.tsx` tiene un cast `props as PressableProps` y `src/hooks/use-color-scheme.web.ts` un `eslint-disable` puntual: son workarounds de tipos/lint del template de Expo. No sacarlos sin correr `bun run check`.
+- `src/app/_layout.tsx` envuelve todo en `<ApiProvider>` (tRPC + TanStack Query). Cualquier layout nuevo tiene que quedar **adentro** de ese provider.
+- `@kachingga/api` es devDependency de mobile (`workspace:*`) y se importa **solo con `import type`**.
+- En desarrollo la URL de la API sale de `Constants.expoConfig.hostUri` (la IP de la máquina que corre Expo) + puerto 3000, salvo que `EXPO_PUBLIC_API_URL` esté definida.
+- `app.json`: `owner: "kachingga"`, `extra.eas.projectId`, `updates.url` y `runtimeVersion: { policy: "fingerprint" }` vinculan la app al proyecto de EAS. **No borrarlos ni cambiarlos** — si se pierden, los teléfonos dejan de recibir updates.
+- Nombres fijos: `slug`/`scheme` `kachingga`, bundle id iOS y package Android `com.kachingga.app`. Cambiarlos después del primer build obliga a reinstalar en todos los teléfonos.
+- Paquetes nuevos en mobile: siempre `bunx expo install`, no `bun add`.
+
+---
+
+## Trabajo en paralelo y conflictos
+
+Somos varios trabajando a la vez. Para no romper el setup de arriba:
+
+### Antes de empezar y antes de pushear
+```bash
+git pull --rebase origin main
+bun install          # por si cambiaron dependencias, hooks o el schema de Prisma
+bun run check
+```
+
+### Si tenés trabajo local viejo (de antes de este setup)
+1. Commitealo en una branch (`git switch -c feat/<lo-que-sea>` + commit). Si el hook rechaza el mensaje, usá el formato `type(scope): ...`.
+2. `git rebase origin/main` (o `git merge origin/main`) y resolvé los conflictos como se indica abajo.
+3. `bun install && bun run check` antes de pushear.
+
+### Cómo resolver conflictos por archivo
+- **`bun.lock`:** nunca resolverlo a mano. Quedarse con la versión de `main` (`git checkout --theirs bun.lock` durante un merge, `--ours` durante un rebase), después `bun install` para que se regenere con los cambios de ambos lados, y `git add bun.lock`.
+- **`package.json` (cualquiera):** combinar las dos listas de dependencias y scripts — no descartar las de ningún lado. En mobile, si quedan versiones raras, `bunx expo install --fix`. Después `bun install`.
+- **`apps/mobile/app.json`:** combinar a mano. Siempre conservar `owner`, `extra.eas.projectId`, `updates.url`, `runtimeVersion`, `slug`, `scheme`, `ios.bundleIdentifier` y `android.package` tal como están en `main`.
+- **`apps/mobile/src/app/_layout.tsx`:** conservar el `<ApiProvider>` envolviendo todo y sumar los cambios del otro lado adentro.
+- **`apps/mobile/eas.json`:** conservar los perfiles y canales de `main` (`preview` → canal `main`).
+- **`apps/api/src/trpc/router.ts`:** si los dos agregaron routers, quedarse con ambos en el `appRouter`.
+- **Schema de Prisma / migraciones:** nunca editar ni borrar una migración que ya está en `main`. Si los dos crearon migraciones, rebasear, borrar **la tuya** (no pusheada), volver a correr `bun run db:migrate:dev` para regenerarla encima de la de `main`, y avisar.
+- **Docs (`CLAUDE.md`, `V1.md`, etc.):** combinar ambos textos.
+
+Después de cualquier conflicto: `bun install && bun run check`. Si `check` falla, se arregla antes de commitear — **nunca** `--no-verify`.
 
 ---
 
