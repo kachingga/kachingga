@@ -28,6 +28,7 @@ Proyecto de **Kachingga**, una organización de amigos (repo: `github.com/kachin
 | A la app le falta algo de la API | Se agrega en `apps/api` (mismo repo) siguiendo `apps/api/CLAUDE.md`; nunca workarounds en la app |
 | Cambios de base de datos | `apps/api/CLAUDE.md` → "Migraciones — reglas" + `DEPLOY.md` |
 | Deploy, builds, variables de entorno | `DEPLOY.md` + `INFRA.md` |
+| Infra pendiente / mejoras | `IMPROVEMENTS.md` (actualizarlo al terminar o empezar algo de ahí) |
 | Conflictos de git | "Trabajo en paralelo y conflictos" (abajo) + "Conflictos" del `CLAUDE.md` de cada app |
 | Saber si una tarea está terminada | "Cuándo una tarea está terminada" (abajo) + plantilla de PR (`.github/pull_request_template.md`) |
 
@@ -235,7 +236,7 @@ Para cualquier tarea, en cualquier parte del repo. Claude no dice "listo" hasta 
 1. **Cumple las reglas de negocio** de este archivo y el alcance de `V1.md`. Si la tarea pedía algo que las contradice, se avisó antes (ver `.claude/CLAUDE.md` → "Cuestionar al humano").
 2. **Tiene tests** según el `CLAUDE.md` de la app tocada (API: integración por procedure; mobile: contenido por estado de cada pantalla).
 3. **`bun run check` pasa** (typecheck + tests + lint). Nunca `--no-verify` ni desactivar reglas para que pase.
-4. **Docs actualizados en el lugar correcto:** regla de negocio nueva → acá; procedure o modelo → `apps/api/CLAUDE.md`; pantalla o roadmap → `V1.md`; decisión técnica → el `CLAUDE.md` de la app. Un dato vive en un solo lugar.
+4. **Docs actualizados en el lugar correcto:** regla de negocio nueva → acá; procedure o modelo → `apps/api/CLAUDE.md`; pantalla o roadmap → `V1.md`; decisión técnica → el `CLAUDE.md` de la app; servicios, variables o secretos → `INFRA.md`; cómo deployar → `DEPLOY.md`. **Si la tarea completa (o deja a medias) algo de `IMPROVEMENTS.md`, actualizarlo:** lo terminado se borra de ahí y queda documentado donde corresponde; lo nuevo pendiente se agrega. Un dato vive en un solo lugar.
 5. **En una branch con su PR** (título en formato Conventional Commits), con el checklist de la plantilla completo. Mergear solo si el usuario lo pide.
 6. **Se dijo qué quedó sin hacer o sin verificar** (ej. "no lo probé en un teléfono real").
 

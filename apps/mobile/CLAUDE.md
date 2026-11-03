@@ -242,7 +242,8 @@ Docs: https://docs.expo.dev/eas/index.md
 - `@kachingga/api` es devDependency (`workspace:*`). La app typechequea archivos de la API: si la API importa algo que acá no resuelve, se rompe el typecheck de mobile.
 - `app.json`: `owner: "kachingga"`, `extra.eas.projectId`, `updates.url` y `runtimeVersion: { policy: "fingerprint" }` vinculan la app al proyecto de EAS. **No borrarlos ni cambiarlos** — si se pierden, los teléfonos dejan de recibir updates.
 - Nombres fijos: `slug`/`scheme` `kachingga`, bundle id iOS y package Android `com.kachingga.app`. Cambiarlos después del primer build obliga a reinstalar en todos los teléfonos.
-- `eas.json`: perfil `preview` → canal `main` (el que tienen instalado todos). No cambiar canales sin avisar.
+- `eas.json`: perfil `preview` → canal `main` (el que tienen instalado todos) y `environment: production` (variables de EAS de prod). No cambiar canales ni entornos sin avisar.
+- Updates OTA: al mergear a `main` un cambio de la app, `.github/workflows/eas-update.yml` publica al canal `main` (inactivo hasta configurar `EXPO_TOKEN`, ver `DEPLOY.md`). Si el cambio toca código nativo, cambia el fingerprint y hace falta un build nuevo: avisarlo en el PR.
 
 ## Conflictos (mobile)
 
