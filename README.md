@@ -49,16 +49,46 @@ El agente explica cómo se llegó a cada saldo, desglosando los gastos que lo co
 | Agente | API de LLM con tool calling sobre los datos del grupo |
 | Pagos | SDK / API de Mercado Pago |
 
-## Instalación
+## Onboarding (para cada miembro)
 
-Requiere [Bun](https://bun.sh). El repo es un monorepo: la app mobile está en `apps/mobile`.
+### 1. Accesos
+
+Pedir invitación a:
+- Org de GitHub `kachingga`
+- Org de Supabase (proyecto `czrkjokurbmbbvobvmxd`)
+- Proyecto de Railway
+- Org de Expo `kachingga`
+
+### 2. Herramientas
+
+- [Bun](https://bun.sh)
+- Git con SSH configurado para GitHub
+- [Claude Code](https://claude.com/claude-code)
+
+### 3. Instalación
+
+El repo es un monorepo: la app mobile está en `apps/mobile`.
 
 ```bash
 git clone git@github.com:kachingga/kachingga.git
 cd kachingga
-bun install
-bun run mobile
+bun install                              # instala dependencias y activa el hook de commits
+cd apps/mobile && bunx eas-cli login     # login en Expo (una vez)
+cd ../.. && bun run mobile               # levanta la app
 ```
+
+> Si el hook de commits no rechaza un mensaje inválido, correr `git config core.hooksPath .githooks`.
+
+### 4. Claude Code
+
+Abrir `claude` desde la **raíz del repo**. Todo el contexto se carga solo y es igual para todos:
+
+- `CLAUDE.md` — contexto del proyecto, stack y reglas (incluye el formato de commits)
+- `.claude/CLAUDE.md` — guías de comportamiento
+- `apps/*/CLAUDE.md` — reglas de cada app, se cargan al trabajar en esa carpeta
+- `.claude/settings.json` — config compartida (plugin de Expo). Aceptar cuando Claude pregunte si confiar en la carpeta / instalar el plugin
+
+Lo personal **no se commitea**: configuración propia en `.claude/settings.local.json` y notas propias en `CLAUDE.local.md` (ambos gitignoreados). Si algo debería aplicar a todos, va en `CLAUDE.md` o `.claude/settings.json` vía PR.
 
 ## Roadmap
 

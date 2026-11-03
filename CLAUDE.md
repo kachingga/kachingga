@@ -12,6 +12,8 @@ Proyecto de **Kachingga**, una organización de amigos (repo: `github.com/kachin
 |---------|-----------|
 | `CLAUDE.md` | Este archivo: overview, stack, estructura, convenciones, reglas de commits |
 | `.claude/CLAUDE.md` | Guías de comportamiento para Claude (pensar antes de codear, simplicidad, cambios quirúrgicos) |
+| `.claude/settings.json` | Config compartida de Claude Code (plugin de Expo). Lo personal va en `.claude/settings.local.json` / `CLAUDE.local.md` (gitignoreados) |
+| `README.md` | Qué es la app y onboarding de cada miembro (accesos, herramientas, setup) |
 | `V1.md` | Alcance de la v1: grupos, gastos, saldos, filtros, multimoneda. **Lo que se construye ahora** |
 | `V2.md` | Alcance de la v2: agente de gastos con IA e integración con Mercado Pago. **No implementar hasta cerrar v1** |
 | `INFRA.md` | Servicios, dashboards, variables de entorno, secretos |
@@ -81,7 +83,9 @@ La app y la API se comunican **solo por tRPC**. No hay endpoints REST a mano par
 
 ```
 kachingga/
-├── .claude/CLAUDE.md        # guías de comportamiento
+├── .claude/
+│   ├── CLAUDE.md            # guías de comportamiento
+│   └── settings.json        # config compartida de Claude Code
 ├── .githooks/commit-msg     # valida el formato de commits
 ├── apps/
 │   ├── mobile/              # app Expo (ver apps/mobile/CLAUDE.md)
@@ -103,7 +107,13 @@ kachingga/
 ```bash
 bun install          # instala todo y activa los git hooks (.githooks)
 bun run mobile       # levanta Expo (apps/mobile)
+
+# desde apps/mobile
+bunx expo lint       # lint
+bunx tsc --noEmit    # typecheck
 ```
+
+> Los builds de EAS (`eas build`) solo se lanzan cuando alguien lo pide explícitamente — no son parte del flujo normal. Ver `DEPLOY.md`.
 
 ---
 
@@ -140,7 +150,7 @@ Reglas para Claude:
 
 - [x] Base de datos: PostgreSQL en Supabase.
 - [x] Auth: Supabase Auth con email + password.
-- [x] Nombre: `Kachingga` (slug/scheme `kachingga`, bundle id iOS y package Android `com.kachingga.app`).
+- [x] Nombre: `Kachingga` (slug/scheme `kachingga`, bundle id iOS y package Android `com.kachingga.app`, org de Expo `kachingga`).
 - [x] ORM: Prisma.
 
 Cuando se decida algo, actualizar esta sección, la tabla de stack y `INFRA.md`.
