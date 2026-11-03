@@ -1,6 +1,6 @@
 # Kachingga
 
-App mobile para dividir gastos en grupo: viajes, departamentos compartidos, salidas con amigos. Cargás quién pagó qué, la app calcula cuánto debe cada uno y te dice cómo quedar a mano con la menor cantidad de transferencias.
+App (web, mobile-first) para dividir gastos en grupo: viajes, departamentos compartidos, salidas con amigos. Cargás quién pagó qué, la app calcula cuánto debe cada uno y te dice cómo quedar a mano con la menor cantidad de transferencias.
 
 Proyecto de [Kachingga](https://github.com/kachingga), una organización de amigos, para uso propio del grupo.
 
@@ -35,7 +35,8 @@ El agente explica cómo se llegó a cada saldo, desglosando los gastos que lo co
 
 | Capa | Tecnología |
 |------|------------|
-| Mobile | React Native (Expo), distribuida con EAS Build + EAS Update |
+| Web (front principal) | React + Vite + Tailwind, mobile-first, en Vercel |
+| Mobile (alternativa nativa) | React Native (Expo) |
 | Backend | TypeScript con Hono y Bun, hosteado en Railway |
 | API | tRPC (tipado de punta a punta entre app y backend) |
 | Base de datos | PostgreSQL en Supabase con Prisma |
@@ -50,7 +51,8 @@ Pedir invitación a:
 - Org de GitHub `kachingga`
 - Org de Supabase `kachingga` (proyectos `kachingga-dev` para desarrollo y `kachingga` para producción)
 - Proyecto de Railway
-- Org de Expo `kachingga`
+- Org de Expo `kachingga` (solo si se trabaja en la app nativa)
+- Proyecto de Vercel (cuando se deploye la web)
 
 ### 2. Herramientas
 
@@ -60,15 +62,17 @@ Pedir invitación a:
 
 ### 3. Instalación
 
-El repo es un monorepo: la app mobile está en `apps/mobile`.
+El repo es un monorepo: la API está en `apps/api`, el front web (el principal) en `apps/web` y la app nativa (alternativa) en `apps/mobile`.
 
 ```bash
 git clone git@github.com:kachingga/kachingga.git
 cd kachingga
 bun install                              # instala dependencias y activa los hooks (husky)
-cd apps/mobile && bunx eas-cli login     # login en Expo (una vez)
-cd ../.. && bun run mobile               # levanta la app
+bun run api                              # API en :3000 (en otra terminal:)
+bun run web                              # web en http://localhost:5173
 ```
+
+Solo si vas a tocar la app nativa: `cd apps/mobile && bunx eas-cli login` (una vez) y `bun run mobile`.
 
 ### 4. Armar los `.env` (dev)
 
@@ -76,7 +80,8 @@ Para desarrollar solo hacen falta los de **dev** (proyecto `kachingga-dev`). El 
 
 ```bash
 cp apps/api/.env.sample apps/api/.env
-cp apps/mobile/.env.sample apps/mobile/.env
+cp apps/web/.env.sample apps/web/.env
+cp apps/mobile/.env.sample apps/mobile/.env   # solo si vas a tocar la app nativa
 ```
 
 Los samples ya traen el ref, el host y las URLs de dev. Solo hay que completar:
@@ -85,11 +90,11 @@ Los samples ya traen el ref, el host y las URLs de dev. Solo hay que completar:
 |----------|---------|---------------|
 | `<DB_PASSWORD>` (en `DATABASE_URL` y `DIRECT_URL`) | `apps/api/.env` | **Pedírsela a Galo** (por privado o gestor de contraseñas). Supabase **no la muestra** en el dashboard |
 | `SUPABASE_SECRET_KEY` | `apps/api/.env` | Supabase → `kachingga-dev` → Project Settings → API Keys → Secret key (o `supabase projects api-keys --project-ref nraoqdaplvvsakvtlcam --reveal`) |
-| `EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY` | `apps/mobile/.env` | Supabase → `kachingga-dev` → Project Settings → API Keys → Publishable key |
+| `VITE_SUPABASE_PUBLISHABLE_KEY` (y `EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY` en mobile) | `apps/web/.env` (y `apps/mobile/.env`) | Supabase → `kachingga-dev` → Project Settings → API Keys → Publishable key |
 
 > ⚠️ **Nunca resetear la contraseña de la base** desde el dashboard: deja sin conexión a todos los demás (y, en prod, a Railway). Si se perdió, avisar al grupo antes.
 
-Después: `bun run dev` levanta la API y la app juntas, y te registrás en la app (cada base tiene sus propios usuarios).
+Después: `bun run api` + `bun run web` (o `bun run dev`, que levanta todo), y te registrás en la app (cada base tiene sus propios usuarios).
 
 Cada commit corre automáticamente typecheck, tests y lint (`bun run check`) y valida el formato del mensaje.
 
@@ -103,7 +108,7 @@ Abrir `claude` desde la **raíz del repo**. Todo el contexto se carga solo y es 
 
 - `CLAUDE.md` — **reglas de negocio** (cómo funcionan grupos, gastos, monedas, saldos) y reglas del repo (commits, conflictos)
 - `.claude/CLAUDE.md` — guías de comportamiento
-- `apps/api/CLAUDE.md` y `apps/mobile/CLAUDE.md` — **lo técnico** de cada proyecto (modelo de datos, procedures, Expo, decisiones de implementación)
+- `apps/api/CLAUDE.md`, `apps/web/CLAUDE.md` y `apps/mobile/CLAUDE.md` — **lo técnico** de cada proyecto (modelo de datos, procedures, front, decisiones de implementación)
 - `.claude/settings.json` — config compartida (plugin de Expo). Aceptar cuando Claude pregunte si confiar en la carpeta / instalar el plugin
 
 Lo personal **no se commitea**: configuración propia en `.claude/settings.local.json` y notas propias en `CLAUDE.local.md` (ambos gitignoreados). Si algo debería aplicar a todos, va en `CLAUDE.md` o `.claude/settings.json` vía PR.
@@ -126,7 +131,8 @@ El repo está documentado para que **cualquier persona y el Claude de cada uno t
 | [`CLAUDE.md`](CLAUDE.md) | **Reglas de negocio y decisiones de producto** (grupos, gastos, monedas, saldos, pagos, alias, filtros) y reglas de todo el repo: stack, arquitectura, comandos, commits, PRs, conflictos, cuándo una tarea está terminada | Detalles de una app (van en su `CLAUDE.md`), pendientes, investigaciones |
 | [`.claude/CLAUDE.md`](.claude/CLAUDE.md) | Cómo se comporta Claude: pensar antes de codear, simplicidad, cambios quirúrgicos, cuestionar y dar opciones | Nada del proyecto |
 | [`apps/api/CLAUDE.md`](apps/api/CLAUDE.md) | Todo lo técnico de la API: modelo de datos, **tabla de procedures**, dónde vive cada regla en el código, migraciones, notas técnicas, tests | Reglas de negocio (se referencian, no se copian) |
-| [`apps/mobile/CLAUDE.md`](apps/mobile/CLAUDE.md) | Todo lo técnico de la app: cómo usar la API, estándar de UI/UX, React, testing, EAS, notas técnicas | Ídem |
+| [`apps/web/CLAUDE.md`](apps/web/CLAUDE.md) | Todo lo técnico del front web (el principal): cómo usar la API, login, estándar de UI/UX, React, testing, deploy | Ídem |
+| [`apps/mobile/CLAUDE.md`](apps/mobile/CLAUDE.md) | Todo lo técnico de la app nativa (alternativa): cómo usar la API, estándar de UI/UX, React, testing, EAS, notas técnicas | Ídem |
 | [`V1.md`](V1.md) / [`V2.md`](V2.md) | Alcance de cada versión: qué entra, qué no, **pantallas** y roadmap con checkboxes | Cómo se implementa |
 | [`INFRA.md`](INFRA.md) | Qué servicios existen (Supabase, Railway, Expo, GitHub…), entornos dev/prod, **todas las variables de entorno y secretos** (nombres, nunca valores) | Pasos de deploy |
 | [`DEPLOY.md`](DEPLOY.md) | **Cómo** se hace cada cosa: deploy de la API, migraciones en prod, builds, updates | Inventario de servicios |
@@ -150,7 +156,7 @@ El repo está documentado para que **cualquier persona y el Claude de cada uno t
 |------------|---------------|
 | Una regla de negocio (cómo funciona algo para el usuario) | `CLAUDE.md` → "Reglas de negocio" |
 | Un procedure, el modelo de datos o algo técnico de la API | `apps/api/CLAUDE.md` (tabla de procedures, modelo, notas) |
-| Algo técnico de la app | `apps/mobile/CLAUDE.md` |
+| Algo técnico del front | `apps/web/CLAUDE.md` (o `apps/mobile/CLAUDE.md` si es la app nativa) |
 | El alcance o una pantalla | `V1.md` / `V2.md` (y se tilda el roadmap al terminar) |
 | Un servicio, una variable de entorno o un secreto | `INFRA.md` + el `.env.sample` que corresponda |
 | Cómo se deploya o se migra | `DEPLOY.md` |

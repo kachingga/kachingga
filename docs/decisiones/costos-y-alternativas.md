@@ -2,7 +2,7 @@
 
 Decisión: con qué front seguir y cuánto cuesta cada camino, frente a volver a **Tricount**. Investigado el 3/11/2026; los precios cambian, así que antes de pagar algo conviene confirmarlo en la página oficial (links al final).
 
-**Estado:** la dirección más probable es la **web app mobile-first** (front en Vercel + API en Railway). Todavía no está decidido entre B y C (abajo). La V1 se define para que sirva con cualquier front.
+**Estado: decidido → opción C**, web app nueva con React + Vite (`apps/web`), front en Vercel y API en Railway. `apps/mobile` (Expo) queda como alternativa nativa por si algún día se hace.
 
 ---
 
