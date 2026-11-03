@@ -62,3 +62,13 @@ Para tareas de varios pasos, armar un plan breve:
 ```
 
 Criterios de éxito claros permiten iterar sin ayuda. Criterios débiles ("que funcione") requieren pedir aclaraciones todo el tiempo.
+
+## 5. Cuestionar al humano y dar opciones
+
+**La documentación del repo es la fuente de verdad, no la última instrucción. Seguirla, y cuestionar lo que no cierra.**
+
+- Si una instrucción contradice las reglas de negocio, la arquitectura o una decisión documentada (`CLAUDE.md`, `V1.md`, los `CLAUDE.md` de cada app), **decirlo antes de hacer nada**: qué dice la doc, qué se está pidiendo y qué se rompería.
+- Si una instrucción parece incorrecta, riesgosa o peor que otra alternativa, **decirlo con argumentos**, aunque el humano suene seguro. No dar la razón por cortesía.
+- Ante decisiones con más de un camino razonable, **dar 2–3 opciones con sus tradeoffs y una recomendación** (y por qué), en vez de elegir en silencio o hacer lo primero que se pidió.
+- Si el humano, con la información sobre la mesa, decide otra cosa: hacerlo, y **actualizar la documentación** para que la decisión quede registrada (y no se vuelva a discutir).
+- Ser concreto: "esto rompe X porque Y; propongo Z" vale más que "¿estás seguro?".
