@@ -35,15 +35,33 @@ bunx eas-cli login
 
 Perfiles de `eas.json`:
 - `development` — development build para desarrollar (canal `development`). Requiere agregar `expo-dev-client` la primera vez que se use.
-- `preview` — instalación interna, APK en Android, canal `main`. **Es el que instala cada uno en su teléfono.**
-- `production` — para stores, si algún día hace falta (canal `production`).
+- `preview` — instalación interna, APK en Android, canal `main`, variables `production`. **Es el que instalan los Android del grupo.**
+- `production` — build para las stores, canal `main`, variables `production`. **Es el que va a TestFlight para los iPhone del grupo.** Al publicar en las stores (Fase 2 de `LANZAMIENTO.md`) probablemente convenga separarle un canal propio.
+
+> Todo el grupo (iPhone y Android) está en el canal `main`: un update OTA les llega a todos.
 
 > `runtimeVersion` usa la política `fingerprint`: EAS calcula un hash del código nativo. Si cambia (librería nativa nueva, plugin, SDK), los builds viejos dejan de recibir updates y hay que hacer un build nuevo.
 
 ### 3. Instalar la app en cada teléfono
 
-- **Android:** `bunx eas-cli build --profile preview --platform android` → genera un APK; se instala desde el link/QR que da EAS.
-- **iOS:** requiere cuenta de Apple Developer. Registrar cada iPhone con `bunx eas-cli device:create` (antes del build), después `bunx eas-cli build --profile preview --platform ios`. Alternativa: TestFlight con `eas submit`.
+Checklist completo en `LANZAMIENTO.md` → Fase 1. **Los builds solo se lanzan cuando alguien lo pide explícitamente.**
+
+**Android (APK):**
+```bash
+cd apps/mobile
+bunx eas-cli build --profile preview --platform android
+```
+Genera un APK; cada uno lo instala desde el link/QR que da EAS (aceptando "instalar apps de fuentes desconocidas").
+
+**iPhone (TestFlight)** — requiere la cuenta de Apple Developer ([#12](https://github.com/kachingga/kachingga/issues/12)):
+```bash
+cd apps/mobile
+bunx eas-cli build --profile production --platform ios   # la primera vez pide loguearse en Apple y genera certificados
+bunx eas-cli submit --platform ios --latest               # lo sube a App Store Connect
+```
+Después, en App Store Connect → la app → TestFlight → *Internal Testing*: agregar a cada amigo (tienen que estar como usuarios del equipo en App Store Connect con su Apple ID). Instalan la app **TestFlight** del App Store y desde ahí Kachingga. No pasa por la revisión de Apple.
+
+> **Expo Go no sirve para usar la app**: carga el proyecto desde la compu de alguien que esté corriendo `expo start` (si se apaga, deja de andar) y no está documentado que abra updates publicados. Sirve para **desarrollar** (`bun run mobile` + escanear el QR).
 
 ---
 

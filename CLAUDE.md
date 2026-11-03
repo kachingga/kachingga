@@ -1,6 +1,6 @@
 # Kachingga — App para dividir gastos en grupo
 
-Proyecto de **Kachingga**, una organización de amigos (repo: `github.com/kachingga/kachingga`). Es para uso propio del grupo: cada uno tiene la app instalada en su teléfono y usa siempre la última versión.
+Proyecto de **Kachingga**, una organización de amigos (repo: `github.com/kachingga/kachingga`). **Hoy es para uso propio del grupo**: cada uno tiene la app instalada (iPhone por TestFlight, Android por APK) y usa siempre la última versión. **A futuro se quiere publicar en las stores** (ver `LANZAMIENTO.md`): no tomar decisiones que lo hagan imposible, pero tampoco construir cosas para usuarios públicos antes de tiempo.
 
 ---
 
@@ -28,6 +28,7 @@ Proyecto de **Kachingga**, una organización de amigos (repo: `github.com/kachin
 | A la app le falta algo de la API | Se agrega en `apps/api` (mismo repo) siguiendo `apps/api/CLAUDE.md`; nunca workarounds en la app |
 | Cambios de base de datos | `apps/api/CLAUDE.md` → "Migraciones — reglas" + `DEPLOY.md` |
 | Deploy, builds, variables de entorno | `DEPLOY.md` + `INFRA.md` |
+| Instalarla en los teléfonos del grupo / publicarla | `LANZAMIENTO.md` |
 | Infra pendiente / mejoras | `IMPROVEMENTS.md` (actualizarlo al terminar o empezar algo de ahí) |
 | Conflictos de git | "Trabajo en paralelo y conflictos" (abajo) + "Conflictos" del `CLAUDE.md` de cada app |
 | Saber si una tarea está terminada | "Cuándo una tarea está terminada" (abajo) + plantilla de PR (`.github/pull_request_template.md`) |
@@ -44,6 +45,7 @@ Proyecto de **Kachingga**, una organización de amigos (repo: `github.com/kachin
 | `V1.md` | Alcance y roadmap de la v1. **Lo que se construye ahora** |
 | `V2.md` | Alcance de la v2: integración con Mercado Pago. **No implementar hasta cerrar v1** |
 | `V3.md` | Alcance de la v3: agente de gastos con IA. **No implementar hasta cerrar v2** |
+| `LANZAMIENTO.md` | Qué falta para que todo el grupo la use (Fase 1, en curso) y para publicarla en las stores (Fase 2, futuro) |
 | `README.md` | Qué es la app y onboarding de cada miembro |
 | `INFRA.md` | Servicios, dashboards, variables de entorno, secretos |
 | `DEPLOY.md` | Deploy de la API (Railway), migraciones en prod y distribución de la app (EAS) |
@@ -136,7 +138,8 @@ Proyecto de **Kachingga**, una organización de amigos (repo: `github.com/kachin
 - **Filtros guardados:** cada usuario puede guardar combinaciones con nombre, por grupo. Son personales (los demás no los ven).
 
 ### Decisiones de producto tomadas
-- Grupo de amigos, uso propio → sin roles ni permisos finos dentro de un grupo.
+- Grupo de amigos, uso propio → sin roles ni permisos finos dentro de un grupo. *(A revisar antes de publicar en las stores: `LANZAMIENTO.md` → Fase 2.)*
+- **Distribución V1:** iPhone por **TestFlight** (cuenta de Apple Developer, la paga Galo) y Android por **APK**. Expo Go solo para desarrollar, no para usar la app.
 - Saldar deudas en v1 es solo manual; el pago integrado con Mercado Pago es v2 y el agente con IA es v3.
 - Dólar de referencia: **blue promedio**, nunca oficial.
 - Los tipos de cambio quedan "congelados" en cada gasto/pago al cargarlo.

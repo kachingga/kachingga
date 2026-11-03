@@ -121,6 +121,8 @@ Lo personal **no se commitea**: configuración propia en `.claude/settings.local
 - **v2** — integración con Mercado Pago. Ver [`V2.md`](V2.md).
 - **v3** — agente de gastos con IA. Ver [`V3.md`](V3.md).
 
+Lanzamiento: primero para el grupo (TestFlight en iPhone, APK en Android) y a futuro en las stores. Ver [`LANZAMIENTO.md`](LANZAMIENTO.md).
+
 Infra y deploy: [`INFRA.md`](INFRA.md), [`DEPLOY.md`](DEPLOY.md), [`IMPROVEMENTS.md`](IMPROVEMENTS.md).
 
 ## Commits
