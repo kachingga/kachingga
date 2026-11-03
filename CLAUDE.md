@@ -94,9 +94,10 @@ Proyecto de **Kachingga**, una organización de amigos (repo: `github.com/kachin
 - Un gasto en la moneda base cuenta tal cual.
 - Un gasto en **otra moneda** tiene dos opciones:
   1. **Convertir a la base** (por defecto). Se guarda el tipo de cambio en el gasto, así el saldo no cambia aunque después cambie el dólar.
-     - **Tipo de cambio automático = dólar blue promedio:** `(compra + venta) / 2`. Ej.: compra 1545, venta 1565 → **1555**. Es la cotización que usamos en Argentina (la de dolarhoy.com); **nunca el oficial**.
-     - El automático solo existe entre **ARS y USD**. Para otras monedas el tipo de cambio se carga a mano (obligatorio).
-     - **Siempre se puede pisar con uno manual** (ej. el que se usó de verdad en ese momento).
+     - **Por defecto, dólar blue promedio:** `(compra + venta) / 2`. Ej.: compra 1545, venta 1565 → **1555**. Es la cotización que usamos en Argentina (la de dolarhoy.com).
+     - **Se puede elegir el oficial** (también promedio entre compra y venta) en vez del blue, ej. si se pagó con tarjeta.
+     - Blue y oficial son automáticos solo entre **ARS y USD**. Para otras monedas el tipo de cambio se carga a mano (obligatorio).
+     - **Siempre se puede poner uno a mano** (ej. el que se usó de verdad en ese momento).
   2. **Mantener la moneda** ("este gasto es en USD, pagame en USD"): no se convierte. Genera un **saldo aparte en esa moneda**.
 - Los **pagos manuales** (ver abajo) siguen exactamente las mismas reglas.
 - **Saldos por moneda:** el grupo muestra primero el saldo en la moneda base y después uno por cada moneda "mantenida" que tenga movimientos. Cada saldo se salda por separado y en su moneda.
@@ -144,7 +145,7 @@ Proyecto de **Kachingga**, una organización de amigos (repo: `github.com/kachin
 - Grupo de amigos, uso propio → sin roles ni permisos finos dentro de un grupo. *(A revisar antes de publicarla: `PENDIENTES.md` → Lanzamiento → Fase 2.)*
 - **Front: web app mobile-first** (front en Vercel, API en Railway), instalable en el celu desde el navegador ("Agregar a inicio"). Sin cuenta de Apple ni stores. La app nativa (Expo) queda como alternativa: si algún día se hace, iPhone por TestFlight (cuenta de Apple Developer) y Android por APK.
 - Saldar deudas es siempre manual (el pago se hace fuera de la app). **No hay integración con Mercado Pago**: pagar de una persona a otra desde la app sin comisiones no es posible (ver `docs/decisiones/mercado-pago.md`). El agente con IA es v2.
-- Dólar de referencia: **blue promedio**, nunca oficial.
+- Dólar de referencia: **blue promedio** por defecto; se puede elegir el oficial o cargar uno a mano en cada gasto o pago.
 - Los tipos de cambio quedan "congelados" en cada gasto/pago al cargarlo.
 - Borrados lógicos (gastos y pagos) para no perder historial.
 - **Login directo con Supabase Auth desde la app** (no vía nuestra API): la librería de Supabase ya maneja sesión, renovación del token, registro y recuperación de contraseña. Los datos igual pasan siempre por la API. Se evaluó la alternativa "login vía API" y se descartó por el código y el riesgo extra (renovación de tokens a mano).
@@ -162,7 +163,7 @@ Proyecto de **Kachingga**, una organización de amigos (repo: `github.com/kachin
 | API (contrato app ↔ backend) | tRPC + Zod, con TanStack Query en la app |
 | Base de datos | PostgreSQL en Supabase, con Prisma |
 | Auth | Supabase Auth — email + password |
-| Cotización del dólar | DolarApi (blue) |
+| Cotización del dólar | DolarApi (blue y oficial) |
 | Agente (v2) | API de LLM con tool calling sobre los datos del grupo |
 
 ---

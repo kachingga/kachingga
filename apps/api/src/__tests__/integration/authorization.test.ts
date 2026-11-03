@@ -81,6 +81,7 @@ const notGroupScoped: Record<string, string> = {
   'profile.get': "only the caller's profile",
   'profile.update': "only the caller's profile",
   'rates.blue': 'public exchange rate',
+  'rates.official': 'public exchange rate',
 }
 
 describe('authorization: non-members', () => {
