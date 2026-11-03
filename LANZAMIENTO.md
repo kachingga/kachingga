@@ -1,6 +1,6 @@
 # Lanzamiento
 
-> Antes de pagar nada, ver **`CONTRAS.md`**: costos, impuestos y por qué no hay integración con Mercado Pago, para decidir si seguir o volver a Tricount.
+> Antes de pagar nada, ver **`CONTRAS.md`**: costos e impuestos, para decidir si seguir o volver a Tricount.
 
 Dos hitos distintos. **El que está en curso es la Fase 1.** La Fase 2 es a futuro y no se arranca sin decidirlo explícitamente.
 

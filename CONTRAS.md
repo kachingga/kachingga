@@ -6,8 +6,6 @@ Para decidir si vale la pena seguir con la app propia o volver a **Tricount**. I
 
 > Caminos posibles (app nativa, web app mobile-first, Tricount) en **`ALTERNATIVAS.md`**.
 
-> **Decisión:** la integración con Mercado Pago queda **descartada**. Esta sección queda como registro de por qué.
-
 ## TL;DR
 
 - **Pagar "desde la app" de una persona a otra sin comisiones no existe** con las APIs de Mercado Pago. Lo único sin comisión es que la app **abra Mercado Pago con el alias y el monto** y la transferencia se haga ahí (después se marca "ya pagué" a mano).
@@ -16,15 +14,9 @@ Para decidir si vale la pena seguir con la app propia o volver a **Tricount**. I
 
 ---
 
-## 1. Mercado Pago: ¿se puede pagar desde la app sin comisiones?
+## 1. Mercado Pago
 
-| Forma | Cómo funciona | Comisión | ¿Sirve? |
-|-------|---------------|----------|---------|
-| **A. Abrir Mercado Pago con el alias** | La app guarda el alias/CVU de cada uno. "Pagar" copia alias + monto y abre la app de Mercado Pago; se transfiere ahí y al volver se marca "ya pagué" | **No** (transferencia común) | ✅ Es lo único sin costo. No es "pagar dentro de la app": se termina en Mercado Pago y la confirmación es manual. Falta confirmar si se puede abrir Mercado Pago con destinatario y monto precargados o solo abrirla |
-| **B. Cobro con la API (Checkout Pro / link de pago)** | Cada uno vincula su cuenta; la app genera un cobro por el monto exacto y Mercado Pago avisa cuando se pagó | **Sí, al que recibe**: ~6,3–6,6% + IVA con acreditación inmediata; ~3,4% + IVA a 14 días; ~1,5–1,8% + IVA a 30–35 días (fuentes no oficiales, no coinciden) | ❌ Una deuda de $100.000 cobrada al instante pierde ~$8.000 |
-| **C. Payouts (API de envío de dinero)** | La plata sale **de una cuenta de Mercado Pago nuestra** hacia otra cuenta | — | ❌ No mueve plata de un amigo a otro. Habría que cobrar primero (forma B, con comisión) y después reenviar, **quedándonos con plata ajena** (riesgo legal). Además requiere habilitación de Mercado Pago |
-
-**Conclusión:** la "integración con Mercado Pago" que diferenciaba a la app solo es viable sin costo como **atajo para abrir Mercado Pago** (forma A). Si eso no alcanza, la razón principal de la V2 desaparece.
+Pagar de una persona a otra dentro de la app sin comisión **no es posible**; lo único gratis es mostrar el alias de cada uno para copiarlo (y quizás abrir Mercado Pago). Detalle completo, comisiones y fuentes en **`INTEGRACION_MERCADOPAGO.md`**.
 
 ---
 
@@ -99,7 +91,6 @@ Precios en USD; a todo lo que se paga con tarjeta argentina en dólares se le su
 - Railway: [planes](https://docs.railway.com/reference/pricing/plans)
 - Supabase: [precios](https://supabase.com/pricing) · [facturación y proyectos gratis](https://supabase.com/docs/guides/platform/billing-on-supabase)
 - Expo / EAS: [precios](https://expo.dev/pricing)
-- Mercado Pago comisiones (no oficiales, verificar en la ayuda de Mercado Pago): [guiadebancos.com](https://www.guiadebancos.com/ar/blog/comisiones-mercado-pago-latam-2026) · [dptiendaonline.com](https://dptiendaonline.com/calculadora-cuotas-sin-interes-mercado-pago/) · [talo.com.ar](https://talo.com.ar/blogs/alternativas-mercado-pago)
-- Mercado Pago Payouts: [documentación](https://www.mercadopago.com.mx/developers/es/docs/payouts-v2/overview) · [foro de desarrolladores](https://groups.google.com/g/mercadopago-developers/c/s0gztUHgQ4w)
 - Impuestos: [nacho.com.ar (RG 4240)](https://nacho.com.ar/iva-netflix-cobraran-el-impuesto-a-los-usuarios-de-servicios-digitales/) · [global66](https://www.global66.com/blog/como-afectan-los-impuestos-a-tus-gastos-digitales/) · [economis.com.ar (fin del Impuesto PAIS)](https://economis.com.ar/desde-2026-pagar-con-tarjeta-en-dolares-cuesta-menos-tras-el-fin-del-impuesto-pais/)
+- Mercado Pago: ver `INTEGRACION_MERCADOPAGO.md`
 - Tricount / Splitwise (blogs comparativos, verificar en las stores): [app-partly](https://app-partly.web.app/en/blog/splitwise-vs-tricount-vs-partly-2026/) · [endlesstravelplans](https://www.endlesstravelplans.com/guides/family-dynamics/family-trip-cost-splitting-2026)

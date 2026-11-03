@@ -45,14 +45,15 @@ Proyecto de **Kachingga**, una organización de amigos (repo: `github.com/kachin
 | `V1.md` | Alcance y roadmap de la v1. **Lo que se construye ahora** |
 | `V2.md` | Alcance de la v2: explicación de saldos y agente de gastos con IA. **No implementar hasta cerrar v1** |
 | `LANZAMIENTO.md` | Qué falta para que todo el grupo la use (Fase 1, en curso) y para publicarla en las stores (Fase 2, futuro) |
-| `CONTRAS.md` | Costos (Railway, Supabase, Apple, Google, EAS, impuestos), por qué se descartó integrar Mercado Pago y comparación con Tricount |
+| `CONTRAS.md` | Costos (Railway, Supabase, Apple, Google, EAS, impuestos) y comparación con Tricount |
+| `INTEGRACION_MERCADOPAGO.md` | Qué se puede y qué no con Mercado Pago. **No es parte de ninguna versión** |
 | `ALTERNATIVAS.md` | App nativa vs. web app mobile-first (PWA) vs. Tricount: qué cambia, costos y qué la haría mejor que Tricount. **Decisión pendiente** |
 | `README.md` | Qué es la app y onboarding de cada miembro |
 | `INFRA.md` | Servicios, dashboards, variables de entorno, secretos |
 | `DEPLOY.md` | Deploy de la API (Railway), migraciones en prod y distribución de la app (EAS) |
 | `IMPROVEMENTS.md` | Mejoras de infraestructura pendientes |
 
-> **Alcance:** v1 = todo lo de `V1.md`; v2 = explicación de saldos y agente con IA (`V2.md`). Si una tarea toca la v2, frená y preguntá antes de implementarlo. **No hay integración con Mercado Pago** (descartada: ver `CONTRAS.md`).
+> **Alcance:** v1 = todo lo de `V1.md`; v2 = explicación de saldos y agente con IA (`V2.md`). Si una tarea toca la v2, frená y preguntá antes de implementarlo. Mercado Pago **no es parte de ninguna versión** (qué se puede y qué no: `INTEGRACION_MERCADOPAGO.md`).
 
 ---
 
@@ -140,7 +141,7 @@ Proyecto de **Kachingga**, una organización de amigos (repo: `github.com/kachin
 ### Decisiones de producto tomadas
 - Grupo de amigos, uso propio → sin roles ni permisos finos dentro de un grupo. *(A revisar antes de publicar en las stores: `LANZAMIENTO.md` → Fase 2.)*
 - **Distribución V1:** iPhone por **TestFlight** (cuenta de Apple Developer, la paga Galo) y Android por **APK**. Expo Go solo para desarrollar, no para usar la app.
-- Saldar deudas es siempre manual (el pago se hace fuera de la app). **No hay integración con Mercado Pago**: pagar de una persona a otra desde la app sin comisiones no es posible (ver `CONTRAS.md`). El agente con IA es v2.
+- Saldar deudas es siempre manual (el pago se hace fuera de la app). **No hay integración con Mercado Pago**: pagar de una persona a otra desde la app sin comisiones no es posible (ver `INTEGRACION_MERCADOPAGO.md`). El agente con IA es v2.
 - Dólar de referencia: **blue promedio**, nunca oficial.
 - Los tipos de cambio quedan "congelados" en cada gasto/pago al cargarlo.
 - Borrados lógicos (gastos y pagos) para no perder historial.
