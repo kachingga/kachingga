@@ -61,7 +61,7 @@ Complementa `CONTRAS.md` (costos y límites). Acá están los caminos posibles y
 | **Alias / CVU de cada uno en el grupo**: en "cómo quedar a mano" se ve "Pagale $7.775 a Tuke — alias `tuke.mp` [Copiar alias] [Copiar monto]". Se transfiere desde Mercado Pago o el banco y se marca "ya pagué" | ❌ A agregar (campo en el participante + UI) | Gratis, sin comisiones |
 | **Filtros combinables + totales** ("¿cuánto gasté en noviembre?", "mis gastos", "lo que pagó Román") | ✅ API hecha | — |
 | **Explicación de un saldo** ("¿por qué le debo $15.000 a Juan?"): lista de los gastos y pagos entre las dos personas que suman ese número. Sale de los datos con filtros, **sin IA** | ❌ A agregar (un procedure + pantalla) | Gratis |
-| **Agente de IA** que responde preguntas en lenguaje natural usando los datos y filtros | V3 | ~USD 1/mes con Claude Haiku 5.5 (estimado: 300 preguntas/mes, ~30k tokens de entrada y ~1,5k de salida por pregunta, a USD 0,10 / 0,50 por millón). Con Sonnet 5.5 serían ~USD 22/mes |
+| **Agente de IA** que responde preguntas en lenguaje natural usando los datos y filtros | V2 | ~USD 1/mes con Claude Haiku 5.5 (estimado: 300 preguntas/mes, ~30k tokens de entrada y ~1,5k de salida por pregunta, a USD 0,10 / 0,50 por millón). Con Sonnet 5.5 serían ~USD 22/mes |
 | Celu **y** compu | Con la web app | — |
 
 > La "explicación de un saldo" resuelve sin IA y gratis la mayoría de las preguntas tipo "¿por qué le debo tanto?". El agente queda para preguntas libres ("¿en qué gastamos más en el viaje?").
@@ -73,7 +73,7 @@ Complementa `CONTRAS.md` (costos y límites). Acá están los caminos posibles y
 | Opción | Fijo | Variable |
 |--------|------|----------|
 | A. Nativa | ~USD 13/mes (Railway USD 5 + Apple USD 99/año) | — |
-| B / C. Web app | **USD 0** (Vercel Hobby + Supabase Free) | Agente de IA ~USD 1/mes cuando exista (V3) |
+| B / C. Web app | **USD 0** (Vercel Hobby + Supabase Free) | Agente de IA ~USD 1/mes cuando exista (V2) |
 | D. Tricount | USD 0 | — |
 
 > Con cualquier opción hay que bajar la org `kachingga` de Supabase de Pro a Free (hoy cuesta ~USD 35/mes, ver `CONTRAS.md`).

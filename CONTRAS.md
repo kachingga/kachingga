@@ -6,6 +6,8 @@ Para decidir si vale la pena seguir con la app propia o volver a **Tricount**. I
 
 > Caminos posibles (app nativa, web app mobile-first, Tricount) en **`ALTERNATIVAS.md`**.
 
+> **Decisión:** la integración con Mercado Pago queda **descartada**. Esta sección queda como registro de por qué.
+
 ## TL;DR
 
 - **Pagar "desde la app" de una persona a otra sin comisiones no existe** con las APIs de Mercado Pago. Lo único sin comisión es que la app **abra Mercado Pago con el alias y el monto** y la transferencia se haga ahí (después se marca "ya pagué" a mano).
@@ -77,7 +79,7 @@ Precios en USD; a todo lo que se paga con tarjeta argentina en dólares se le su
 
 - **Dólar blue promedio automático** al cargar un gasto en USD (editable), en vez de cargar el tipo de cambio a mano.
 - **"Mantener en USD"**: deudas que se saldan en dólares, separadas de las de pesos.
-- **Atajo a Mercado Pago** con el alias y el monto (forma A), sin comisiones.
+- **Alias de cada uno cargado en el grupo** para copiar al pagar (alias + monto), sin comisiones.
 - Totales por filtro ("¿cuánto gasté en noviembre?") y filtros guardados a medida.
 - Los datos son nuestros y la app se adapta a lo que queramos.
 

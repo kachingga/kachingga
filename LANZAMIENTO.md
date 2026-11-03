@@ -1,6 +1,6 @@
 # Lanzamiento
 
-> Antes de pagar nada, ver **`CONTRAS.md`**: costos, impuestos y límites de Mercado Pago, para decidir si seguir o volver a Tricount.
+> Antes de pagar nada, ver **`CONTRAS.md`**: costos, impuestos y por qué no hay integración con Mercado Pago, para decidir si seguir o volver a Tricount.
 
 Dos hitos distintos. **El que está en curso es la Fase 1.** La Fase 2 es a futuro y no se arranca sin decidirlo explícitamente.
 
@@ -59,6 +59,3 @@ Dos hitos distintos. **El que está en curso es la Fase 1.** La Fase 2 es a futu
 - [ ] Revisar costos al crecer: planes de Supabase, Railway y EAS.
 - [ ] Revisar requisitos legales de datos personales en Argentina.
 - [ ] Canales de EAS Update separados para la versión de las stores (hoy todo el grupo está en `main`).
-
-### Mercado Pago (V2) siendo pública
-- Ver `V2.md`: el enfoque recomendado (abrir Mercado Pago con el alias del otro, sin comisiones) sirve igual; si se usara cobro con la API de Mercado Pago, con usuarios desconocidos aparecen comisiones y temas legales.
