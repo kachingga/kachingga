@@ -44,9 +44,9 @@ Actualizar este archivo con los valores reales después de cada setup.
 | `SUPABASE_SECRET_KEY` | Clave **secret** de Supabase (`sb_secret_...`) — solo en el server. Se usa para validar los tokens de los usuarios |
 | `PORT` | Lo setea Railway automáticamente — no pisarlo |
 | `NODE_ENV` | `production` — evita que tRPC devuelva stack traces en los errores |
-| _(v2)_ `LLM_API_KEY` | API key del proveedor del agente |
 | _(v2)_ `MP_ACCESS_TOKEN` | Access token de Mercado Pago |
 | _(v2)_ `MP_WEBHOOK_SECRET` | Secreto para validar webhooks de Mercado Pago |
+| _(v3)_ `LLM_API_KEY` | API key del proveedor del agente |
 
 ### EAS / Expo (mobile — `apps/mobile`)
 

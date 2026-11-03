@@ -72,6 +72,7 @@ src/
 │   ├── access.ts         # requireMembership / requireActiveGroup / assertParticipantsInGroup
 │   ├── splits.ts         # resolveSplits: EQUAL / AMOUNT / PERCENTAGE → centavos exactos
 │   ├── balances.ts       # computeBalances + minimizeTransfers (puro)
+│   ├── summary.ts        # summarizeExpenses: totales por filtro (puro)
 │   ├── rates.ts          # blue de DolarApi + resolveExchangeRate
 │   ├── inviteCode.ts
 │   └── supabase.ts       # cliente lazy
@@ -87,6 +88,7 @@ scripts/new-migration.ts  # implementación de db:migrate:new
 | Multimoneda (qué saldo, qué tipo de cambio) | `lib/balances.ts` (`balanceCurrency`) + `lib/rates.ts` (`resolveExchangeRate`) |
 | Saldos y transferencias mínimas | `lib/balances.ts` |
 | Filtros | `buildExpenseWhere` en `routers/expenses.ts` |
+| Totales por filtro | `lib/summary.ts` (`summarizeExpenses`, mismas reglas de moneda y redondeo que los saldos) |
 | Unirse / reclamar participante | `routers/groups.ts` (`preview`, `join`) |
 
 ---
@@ -133,13 +135,14 @@ Todos con `protectedProcedure` salvo `health.ping`. Inputs en `src/schemas.ts`.
 | `groups.join` | mutation | Por código: `{ participantId }` (reclamar) o `{ name }` (nuevo) |
 | `participants.add` / `rename` / `remove` | mutation | ABM de participantes |
 | `expenses.list` | query | `{ groupId, filters, cursor }` → `{ items, nextCursor }` (páginas de 50) |
+| `expenses.summary` | query | `{ groupId, filters }` (mismos filtros que `list`) → `[{ currency, count, totalCents, myShareCents, myPaidCents, byCategory: [{ category, totalCents }] }]`, base primero |
 | `expenses.get` / `create` / `update` / `delete` | query / mutation | `update` reemplaza el gasto y sus partes; `delete` es lógico |
 | `settlements.list` / `create` / `delete` | query / mutation | Pagos manuales |
 | `balances.get` | query | `[{ currency, balances: [{ participantId, amountCents }], transfers: [{ fromId, toId, amountCents }] }]`, base primero |
 | `savedFilters.list` / `create` / `delete` | query / mutation | Solo los del usuario |
 | `rates.blue` | query | `{ buy, sell, mid, updatedAt }` para precargar el tipo de cambio |
 
-**`expenseFilters`:** `paidById`, `splitParticipantId`, `categories[]`, `dateFrom`, `dateTo`, `minAmountCents`, `maxAmountCents`, `search`.
+**`expenseFilters`:** `paidById`, `splitParticipantId`, `involvedParticipantId` (pagó **o** participa), `categories[]`, `dateFrom`, `dateTo`, `minAmountCents`, `maxAmountCents`, `search`.
 
 Si agregás o cambiás un procedure, actualizá esta tabla.
 
@@ -184,7 +187,7 @@ Si agregás o cambiás un procedure, actualizá esta tabla.
 | Tipo | Dónde | Qué |
 |------|-------|-----|
 | Unit | `src/__tests__/*.test.ts` | Lógica pura (`lib/`, `buildExpenseWhere`) |
-| **Integración** | `src/__tests__/integration/*.test.ts` | Routers reales + Prisma contra **PGlite** (Postgres en memoria) armado con las **migraciones reales** |
+| **Integración** | `src/__tests__/integration/*.test.ts` | Routers reales + Prisma contra **PGlite** (Postgres en memoria) armado con las **migraciones reales**. `routers.test.ts` = reglas por router; `scenarios.test.ts` = casos reales del grupo (pagarle a un tercero, quién pagó / entre quiénes, "mis gastos", totales del mes) |
 
 ### Integración (`setupTestApi`)
 ```ts

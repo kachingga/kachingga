@@ -40,13 +40,14 @@ Proyecto de **Kachingga**, una organización de amigos (repo: `github.com/kachin
 | `apps/api/CLAUDE.md` | Técnico de la API (ver arriba) |
 | `apps/mobile/CLAUDE.md` | Técnico de la app (ver arriba) |
 | `V1.md` | Alcance y roadmap de la v1. **Lo que se construye ahora** |
-| `V2.md` | Alcance de la v2: agente con IA y Mercado Pago. **No implementar hasta cerrar v1** |
+| `V2.md` | Alcance de la v2: integración con Mercado Pago. **No implementar hasta cerrar v1** |
+| `V3.md` | Alcance de la v3: agente de gastos con IA. **No implementar hasta cerrar v2** |
 | `README.md` | Qué es la app y onboarding de cada miembro |
 | `INFRA.md` | Servicios, dashboards, variables de entorno, secretos |
 | `DEPLOY.md` | Deploy de la API (Railway), migraciones en prod y distribución de la app (EAS) |
 | `IMPROVEMENTS.md` | Mejoras de infraestructura pendientes |
 
-> **Alcance:** si una tarea toca algo de `V2.md` (agente o Mercado Pago), frená y preguntá antes de implementarlo. Todo lo demás es v1.
+> **Alcance:** v1 = todo lo de `V1.md`; v2 = Mercado Pago (`V2.md`); v3 = agente con IA (`V3.md`). Si una tarea toca v2 o v3, frená y preguntá antes de implementarlo.
 
 ---
 
@@ -83,7 +84,8 @@ Proyecto de **Kachingga**, una organización de amigos (repo: `github.com/kachin
 ### Gastos
 - Un gasto tiene: descripción, categoría, fecha, monto, moneda, quién pagó y entre quiénes se divide.
 - **Categorías:** comida (`FOOD`), súper (`GROCERIES`), transporte (`TRANSPORT`), alojamiento (`LODGING`), salidas (`ENTERTAINMENT`), compras (`SHOPPING`), servicios (`SERVICES`), otros (`OTHER`, default).
-- **Quien paga puede no estar en la división** (ej. pagó algo solo para otros).
+- **Quien paga puede no estar en la división** (ej. pagué yo un regalo que es solo de Román).
+- **Cualquier miembro puede cargar un gasto pagado por otro** (ej. "pagó Román, entre Tuke y yo") y editar o borrar cualquier gasto.
 - **Formas de dividir:**
   - **Partes iguales** entre los elegidos.
   - **Por monto:** cada uno un monto fijo; tienen que sumar exactamente el total.
@@ -115,15 +117,24 @@ Proyecto de **Kachingga**, una organización de amigos (repo: `github.com/kachin
 - "Ya te pagué": se registra quién le pagó a quién, cuánto, en qué moneda y cuándo (con nota opcional). El pago en sí se hizo **fuera de la app** (efectivo, transferencia…).
 - Tiene que ser entre dos personas distintas del grupo.
 - Se puede borrar (queda oculto y deja de contar).
+- **Se le puede pagar a cualquiera del grupo, no solo a quien le debés.** Ej.: le debo $100.000 a Tuke y le transfiero $50.000 a Manu → yo paso a deber $50.000, Manu pasa a deber $50.000 (tiene plata mía) y las transferencias sugeridas se recalculan (Yo → Tuke $50.000, Manu → Tuke $50.000).
+- Un pago **no es un gasto**: no aparece en la lista de gastos ni suma en los totales de gasto; solo mueve saldos.
+- Cualquier miembro puede registrar un pago entre otros dos (ej. "Román ya le pagó a Tuke").
+- "Marcar como pagado" una transferencia sugerida = registrar ese pago tal cual.
 - Pagar con Mercado Pago desde la app es **v2**.
 
 ### Filtros
-- Los gastos se pueden filtrar, combinando todo: quién pagó, a quién le corresponde (participa de la división), categorías, rango de fechas, rango de montos (en la moneda de cada gasto) y búsqueda por texto en la descripción (sin distinguir mayúsculas).
+- Los gastos se pueden filtrar, combinando todo:
+  - **quién pagó** ("gastos que pagó Román"),
+  - **a quién le corresponde** (participa de la división),
+  - **en qué gastos está involucrado alguien** (lo pagó **o** participa: "mis gastos"),
+  - categorías, rango de fechas (por mes = del 1 al último día), rango de montos (en la moneda de cada gasto) y texto en la descripción (sin distinguir mayúsculas).
+- **Totales para cualquier filtro** ("¿cuánto gasté en noviembre?"): cantidad de gastos, total gastado, **mi parte** (lo que me correspondió), **lo que pagué yo** y el total por categoría. Por moneda, con las mismas reglas que los saldos (lo convertido suma en la base; lo mantenido, en su moneda). Los pagos manuales no cuentan como gasto.
 - **Filtros guardados:** cada usuario puede guardar combinaciones con nombre, por grupo. Son personales (los demás no los ven).
 
 ### Decisiones de producto tomadas
 - Grupo de amigos, uso propio → sin roles ni permisos finos dentro de un grupo.
-- Saldar deudas en v1 es solo manual; el pago integrado (Mercado Pago) y el agente con IA son v2.
+- Saldar deudas en v1 es solo manual; el pago integrado con Mercado Pago es v2 y el agente con IA es v3.
 - Dólar de referencia: **blue promedio**, nunca oficial.
 - Los tipos de cambio quedan "congelados" en cada gasto/pago al cargarlo.
 - Borrados lógicos (gastos y pagos) para no perder historial.
@@ -143,8 +154,8 @@ Proyecto de **Kachingga**, una organización de amigos (repo: `github.com/kachin
 | Base de datos | PostgreSQL en Supabase, con Prisma |
 | Auth | Supabase Auth — email + password |
 | Cotización del dólar | DolarApi (blue) |
-| Agente (v2) | API de LLM con tool calling sobre los datos del grupo |
 | Pagos (v2) | API de Mercado Pago |
+| Agente (v3) | API de LLM con tool calling sobre los datos del grupo |
 
 ---
 
@@ -173,7 +184,7 @@ kachingga/
 │   ├── api/                 # @kachingga/api — Hono + tRPC + Prisma (ver apps/api/CLAUDE.md)
 │   └── mobile/              # @kachingga/mobile — Expo (ver apps/mobile/CLAUDE.md)
 ├── CLAUDE.md
-├── V1.md / V2.md
+├── V1.md / V2.md / V3.md
 ├── INFRA.md / DEPLOY.md / IMPROVEMENTS.md
 └── package.json             # workspaces + scripts globales
 ```
@@ -250,7 +261,7 @@ Después de cualquier conflicto: `bun install && bun run check`. Si falla, se ar
 ```
 
 **Types:** `feat`, `fix`, `chore`, `docs`, `refactor`, `test`, `style`, `perf`, `build`, `ci`, `revert`
-**Scopes sugeridos:** `mobile`, `api`, `db`, `infra`, `deps`, `agent` (v2), `mp` (v2)
+**Scopes sugeridos:** `mobile`, `api`, `db`, `infra`, `deps`, `mp` (v2), `agent` (v3)
 
 ```
 feat(api): agregar endpoint para crear grupos
