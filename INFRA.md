@@ -11,7 +11,7 @@
 | Auth | Supabase Auth | supabase.com/dashboard → Authentication | — |
 | Builds mobile (alternativa nativa) | EAS (Expo) | expo.dev/accounts/kachingga/projects/kachingga | Org `kachingga`, project ID `49f7728b-7782-46e5-8a8a-491bb590bfe1` |
 | Updates OTA | EAS Update (canal `main`) | expo.dev | Automático al mergear a `main` (`.github/workflows/eas-update.yml`), inactivo hasta configurar `EXPO_TOKEN` |
-| CI | GitHub Actions | github.com/kachingga/kachingga/actions | `ci.yml` (checks obligatorios), `e2e.yml` (Playwright en la web y Maestro en emulador, a demanda) y `eas-update.yml` |
+| CI | GitHub Actions | github.com/kachingga/kachingga/actions | `ci.yml` (checks obligatorios), `e2e.yml` (Playwright en la web, a demanda) y `eas-update.yml` |
 | Cotización dólar blue | DolarApi (público, sin clave) | dolarapi.com | `https://dolarapi.com/v1/dolares/blue` |
 | Repo | GitHub | github.com/kachingga/kachingga | — |
 
@@ -92,6 +92,12 @@ Actualizar este archivo con los valores reales después de cada setup.
 - **Contraseñas de las bases:** Supabase solo las muestra al crear el proyecto; después **no se pueden ver**, solo resetear. Las tiene Galo y se pasan por privado / gestor de contraseñas. **Nunca resetearlas** sin avisar: rompe el `.env` de todos y, en prod, Railway.
 
 ---
+
+## Seguridad del repo
+
+- **Escaneo de secretos de GitHub + protección de push: activos.** Si un push trae una clave (Supabase, tokens, etc.), GitHub lo rechaza. No saltear el bloqueo: sacar el secreto del commit.
+- **Alertas de vulnerabilidades de dependencias (Dependabot alerts): activas.** Dependabot además abre PRs mensuales para las GitHub Actions.
+- El repo es **público**: cualquier secreto que llegue a un commit hay que rotarlo, aunque se borre después.
 
 ## Accesos
 

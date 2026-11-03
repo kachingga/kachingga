@@ -239,6 +239,16 @@ expect(await screen.findByText('Todavía no hay gastos')).toBeInTheDocument();
 
 ---
 
+## Seguridad (front)
+
+Reglas generales: `CLAUDE.md` raíz → "Seguridad".
+- **El front nunca es la barrera de seguridad:** permisos y validaciones los aplica la API. Ocultar un botón es UX, no seguridad.
+- **Nada secreto en `VITE_*`** ni en el código: todo lo del front es público.
+- Supabase solo para auth (`src/lib/supabase.ts`); la sesión la maneja la librería. No guardar tokens en otro lado ni loguearlos.
+- No renderizar HTML que venga de usuarios (`dangerouslySetInnerHTML`): React ya escapa el texto (descripciones, nombres, alias).
+- Links externos con `rel="noopener noreferrer"`.
+- `TOO_MANY_REQUESTS` de la API = límite de pedidos: mostrar el mensaje y no reintentar en loop.
+
 ## Deploy
 
 Vercel (estático): ver `DEPLOY.md`. La API tiene que permitir la URL de Vercel en `CORS_ORIGINS` (Railway).

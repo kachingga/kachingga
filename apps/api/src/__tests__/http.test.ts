@@ -44,4 +44,20 @@ describe('http', () => {
     const blocked = await preflight('https://evil.example')
     expect(blocked.headers.get('access-control-allow-origin')).toBeNull()
   })
+
+  test('rate limit: too many invite-code attempts from one IP → 429 TOO_MANY_REQUESTS (even without login)', async () => {
+    const attempt = () =>
+      call('/trpc/groups.preview?input=' + encodeURIComponent(JSON.stringify({ json: { inviteCode: 'ABCDEFGH' } })), {
+        headers: { 'x-forwarded-for': '198.51.100.23' },
+      })
+    for (let i = 0; i < 20; i++) expect((await attempt()).status).toBe(401) // UNAUTHORIZED: counted, not blocked yet
+    const blocked = await attempt()
+    expect(blocked.status).toBe(429)
+    const body = (await blocked.json()) as { error: { json: { message: string; data: { code: string } } } }
+    expect(body.error.json.data.code).toBe('TOO_MANY_REQUESTS')
+    expect(body.error.json.message).toContain('Demasiados pedidos')
+    // another IP is not affected
+    const other = await call('/trpc/groups.preview', { headers: { 'x-forwarded-for': '198.51.100.99' } })
+    expect(other.status).not.toBe(429)
+  })
 })

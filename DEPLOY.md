@@ -20,6 +20,7 @@
 3. **Start Command:** `bun run --cwd apps/api start` (el `bun install` ya corre `prisma generate` por el postinstall)
 4. **Watch Paths:** `apps/api/**` y `bun.lock` — para no redeployar la API por cambios solo de la app
 5. **Healthcheck Path:** `/health`
+   - **Verificar el límite de pedidos por IP:** la API toma la IP del **último** valor de `X-Forwarded-For`. En el primer deploy, confirmar que Railway lo setea así (ej. loguear temporalmente el header en un pedido y comparar con tu IP pública). Si no, ajustar `clientIp` en `apps/api/src/lib/rateLimit.ts`.
 6. Agregar las variables de entorno (ver `INFRA.md`), incluida `CORS_ORIGINS` con la URL de Vercel (se completa después del paso 2)
 7. Deploy y copiar el dominio a `INFRA.md`
 
