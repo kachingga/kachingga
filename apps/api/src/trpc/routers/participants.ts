@@ -2,7 +2,7 @@ import { TRPCError } from '@trpc/server'
 import { z } from 'zod'
 import { prisma } from '../../db'
 import { requireActiveGroup } from '../../lib/access'
-import { participantName } from '../../schemas'
+import { participantName, paymentAlias } from '../../schemas'
 import { protectedProcedure, router } from '../init'
 
 async function findParticipant(participantId: string, userId: string) {
@@ -22,6 +22,16 @@ export const participantsRouter = router({
   rename: protectedProcedure.input(z.object({ participantId: z.string(), name: participantName })).mutation(async ({ ctx, input }) => {
     await findParticipant(input.participantId, ctx.user.id)
     return prisma.participant.update({ where: { id: input.participantId }, data: { name: input.name } })
+  }),
+
+  // Alias/CVU to get paid in this group. With account: only that person can set it (null = use the account's).
+  // Without account: any member can set it.
+  setPaymentAlias: protectedProcedure.input(z.object({ participantId: z.string(), paymentAlias })).mutation(async ({ ctx, input }) => {
+    const participant = await findParticipant(input.participantId, ctx.user.id)
+    if (participant.userId && participant.userId !== ctx.user.id) {
+      throw new TRPCError({ code: 'FORBIDDEN', message: `Solo ${participant.name} puede cambiar su alias` })
+    }
+    return prisma.participant.update({ where: { id: participant.id }, data: { paymentAlias: input.paymentAlias } })
   }),
 
   // Only for participants without account that never appear in an expense or settlement.
