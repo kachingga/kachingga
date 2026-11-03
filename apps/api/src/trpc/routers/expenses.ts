@@ -4,10 +4,11 @@ import type { Prisma } from '../../db/generated/prisma/client'
 import type { Currency } from '../../db/generated/prisma/enums'
 import { prisma } from '../../db'
 import { assertParticipantsInGroup, requireActiveGroup, requireMembership } from '../../lib/access'
+import { exportFilename, toCsv, toExportRows } from '../../lib/exportExpenses'
 import { resolveExchangeRate } from '../../lib/rates'
 import { resolveSplits } from '../../lib/splits'
 import { summarizeExpenses } from '../../lib/summary'
-import { expenseFilters, expenseInput, type ExpenseFilters } from '../../schemas'
+import { expenseFilters, expenseInput, exportFormat, type ExpenseFilters } from '../../schemas'
 import { protectedProcedure, router } from '../init'
 
 const PAGE_SIZE = 50
@@ -79,6 +80,34 @@ export const expensesRouter = router({
     }),
 
   // Totals for the same filters as `list` (e.g. "cuánto gasté en noviembre"), per currency.
+  // All expenses matching the filters (no pagination), as a file to download: CSV (Excel/Sheets) or JSON.
+  export: protectedProcedure
+    .input(z.object({ groupId: z.string(), filters: expenseFilters.default({}), format: exportFormat }))
+    .query(async ({ ctx, input }) => {
+      const me = await requireMembership(input.groupId, ctx.user.id)
+      const expenses = await prisma.expense.findMany({
+        where: buildExpenseWhere(input.groupId, input.filters),
+        include: expenseInclude,
+        orderBy: [{ date: 'asc' }, { createdAt: 'asc' }, { id: 'asc' }],
+      })
+      const rows = toExportRows(me.group.baseCurrency, me.id, expenses)
+      if (input.format === 'csv') {
+        return { filename: exportFilename(me.group.name, 'csv'), mimeType: 'text/csv;charset=utf-8', content: toCsv(rows) }
+      }
+      const content = JSON.stringify(
+        {
+          grupo: me.group.name,
+          moneda_base: me.group.baseCurrency,
+          exportado: new Date().toISOString(),
+          filtros: input.filters,
+          gastos: rows,
+        },
+        null,
+        2,
+      )
+      return { filename: exportFilename(me.group.name, 'json'), mimeType: 'application/json', content }
+    }),
+
   summary: protectedProcedure
     .input(z.object({ groupId: z.string(), filters: expenseFilters.default({}) }))
     .query(async ({ ctx, input }) => {

@@ -56,6 +56,8 @@ export const settlementInput = z.object({
   note: z.string().trim().max(200).nullish(),
 })
 
+export const exportFormat = z.enum(['csv', 'json'])
+
 export const expenseFilters = z.object({
   paidById: id.optional(),
   splitParticipantId: id.optional(),
