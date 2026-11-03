@@ -54,8 +54,12 @@ jobs:
           # CMake usa ccache para compilar C/C++ (ver paso de ccache)
           CMAKE_C_COMPILER_LAUNCHER: ccache
           CMAKE_CXX_COMPILER_LAUNCHER: ccache
+          # Los directorios de build nativos cambian entre corridas: que no entren en la clave de ccache
+          CCACHE_BASEDIR: ${{ github.workspace }}
+          CCACHE_NOHASHDIR: 'true'
+          CCACHE_SLOPPINESS: time_macros,include_file_mtime,include_file_ctime,file_stat_matches
         run: |
-          ./gradlew assembleRelease --no-daemon -PreactNativeArchitectures=x86_64
+          ./gradlew assembleRelease --no-daemon --build-cache -PreactNativeArchitectures=x86_64
           ccache --show-stats
 
       - name: Instalar Maestro
