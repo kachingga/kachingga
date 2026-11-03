@@ -4,6 +4,8 @@ Para decidir si vale la pena seguir con la app propia o volver a **Tricount**. I
 
 ---
 
+> Caminos posibles (app nativa, web app mobile-first, Tricount) en **`ALTERNATIVAS.md`**.
+
 ## TL;DR
 
 - **Pagar "desde la app" de una persona a otra sin comisiones no existe** con las APIs de Mercado Pago. Lo único sin comisión es que la app **abra Mercado Pago con el alias y el monto** y la transferencia se haga ahí (después se marca "ya pagué" a mano).
