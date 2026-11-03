@@ -87,9 +87,9 @@ Cada commit corre automáticamente typecheck, tests y lint (`bun run check`) y v
 
 Abrir `claude` desde la **raíz del repo**. Todo el contexto se carga solo y es igual para todos:
 
-- `CLAUDE.md` — contexto del proyecto, stack y reglas (incluye el formato de commits)
+- `CLAUDE.md` — **reglas de negocio** (cómo funcionan grupos, gastos, monedas, saldos) y reglas del repo (commits, conflictos)
 - `.claude/CLAUDE.md` — guías de comportamiento
-- `apps/*/CLAUDE.md` — reglas de cada app, se cargan al trabajar en esa carpeta
+- `apps/api/CLAUDE.md` y `apps/mobile/CLAUDE.md` — **lo técnico** de cada proyecto (modelo de datos, procedures, Expo, decisiones de implementación)
 - `.claude/settings.json` — config compartida (plugin de Expo). Aceptar cuando Claude pregunte si confiar en la carpeta / instalar el plugin
 
 Lo personal **no se commitea**: configuración propia en `.claude/settings.local.json` y notas propias en `CLAUDE.local.md` (ambos gitignoreados). Si algo debería aplicar a todos, va en `CLAUDE.md` o `.claude/settings.json` vía PR.

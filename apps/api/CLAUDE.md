@@ -1,8 +1,8 @@
 # CLAUDE.md — apps/api
 
-> Ver el `CLAUDE.md` raíz para alcance (v1/v2), stack, auth, reglas de tRPC y formato de commits. Consultalo antes de implementar lógica de dominio o un router nuevo. Antes de tocar dependencias, `prisma.config.ts`, migraciones o resolver un conflicto, leer **"Notas técnicas — no romper"** y **"Trabajo en paralelo y conflictos"** del `CLAUDE.md` raíz.
+> **Reglas de negocio → `CLAUDE.md` raíz** (grupos, participantes, gastos, multimoneda, saldos, pagos, filtros). Leelas antes de implementar o cambiar lógica de dominio. Este archivo es solo lo **técnico** de la API: si cambia una regla de negocio se actualiza la raíz; si cambia un detalle de implementación, acá.
 
-API en Hono + tRPC sobre Bun, con Prisma contra PostgreSQL en Supabase. Paquete `@kachingga/api`: la app importa **solo el tipo** `AppRouter` desde acá.
+API en Hono + tRPC sobre Bun, con Prisma contra PostgreSQL en Supabase. Paquete `@kachingga/api`: la app importa **solo el tipo** `AppRouter` (y los schemas Zod de `@kachingga/api/schemas`).
 
 ---
 
@@ -15,31 +15,31 @@ bun test <path>           # un archivo de tests
 bun run typecheck         # tsc --noEmit
 
 # Base de datos (desde apps/api/)
-bun run db:generate        # regenerar el cliente de Prisma (también corre en postinstall)
+bun run db:generate              # regenerar el cliente de Prisma (también corre en postinstall)
 bun run db:migrate:new <nombre>  # genera el SQL (base actual → schema) + RLS para tablas nuevas. No toca la base
 bun run db:migrate:status        # qué migraciones faltan aplicar
 bun run db:migrate:deploy        # aplica las pendientes (usa .env)
 bun run db:migrate:prod          # lo mismo con .env.prod
-bun run db:studio          # Prisma Studio
+bun run db:studio                # Prisma Studio
 ```
 
-> **Reglas de migraciones:**
-> - Nunca correr `prisma db push`, `prisma migrate reset` ni `prisma db execute` contra producción.
-> - Nunca tocar a mano la tabla `_prisma_migrations` ni el schema desde el SQL editor de Supabase.
-> - Hay **una sola base** (producción): no existe `db:migrate:dev` a propósito (`prisma migrate dev` puede resetearla).
-> - Flujo: cambiar `models/*.prisma` → `db:migrate:new <nombre>` → **revisar el SQL** → `db:migrate:deploy` → push (ver `DEPLOY.md`).
-> - Toda tabla nueva lleva `ENABLE ROW LEVEL SECURITY` (lo agrega `db:migrate:new`).
-> - Después de cambiar el schema, `db:generate`.
+### Migraciones — reglas
+- Nunca correr `prisma db push`, `prisma migrate reset`, `prisma migrate dev` ni `prisma db execute` contra la base.
+- Nunca tocar a mano la tabla `_prisma_migrations` ni el schema desde el SQL editor de Supabase.
+- Hay **una sola base** (producción): por eso no existe `db:migrate:dev` (`prisma migrate dev` puede pedir resetearla).
+- Flujo: cambiar `src/db/models/*.prisma` → `db:migrate:new <nombre>` → **revisar el SQL** → `db:migrate:deploy` → push (ver `DEPLOY.md`).
+- Toda tabla nueva lleva `ENABLE ROW LEVEL SECURITY` (lo agrega `db:migrate:new`; si escribís SQL a mano, agregalo vos).
+- Nunca editar ni borrar una migración que ya está en `main`.
 
 ---
 
 ## Env
 
-Copiar `.env.sample` a `.env` (desarrollo) y a `.env.prod` (solo para `db:migrate:prod`). Ambos están gitignoreados.
+Copiar `.env.sample` a `.env` (y a `.env.prod` solo para `db:migrate:prod`). Ambos gitignoreados. Cada línea del sample dice de dónde sale el valor.
 
 ```
-DATABASE_URL=...          # Supabase pooler (puerto 6543) — queries en runtime
-DIRECT_URL=...            # Supabase session pooler (puerto 5432) — migraciones. No la conexión directa (solo IPv6)
+DATABASE_URL=...          # Supabase transaction pooler (6543) — queries en runtime
+DIRECT_URL=...            # Supabase session pooler (5432) — migraciones
 SUPABASE_URL=https://czrkjokurbmbbvobvmxd.supabase.co
 SUPABASE_SECRET_KEY=sb_secret_...
 PORT=3000
@@ -52,18 +52,18 @@ PORT=3000
 ```
 src/
 ├── index.ts              # Hono: GET /health + tRPC montado en /trpc/*
+├── schemas.ts            # Zod compartidos con la app (@kachingga/api/schemas) — sin imports del server
 ├── trpc/
-│   ├── init.ts           # initTRPC (superjson), router, publicProcedure, protectedProcedure
+│   ├── init.ts           # initTRPC (superjson), middleware de errores Prisma, publicProcedure, protectedProcedure
 │   ├── context.ts        # createContext: valida el Bearer token con Supabase → ctx.user
 │   ├── router.ts         # appRouter + `export type AppRouter` (entry del paquete)
-│   └── routers/          # un router por dominio (health, groups, expenses, …)
+│   └── routers/          # un router por dominio
 ├── db/
 │   ├── schema.prisma     # generator + datasource
-│   ├── models/*.prisma   # un archivo por modelo/dominio
+│   ├── models/*.prisma   # un archivo por dominio
 │   ├── migrations/
 │   ├── generated/        # cliente de Prisma (gitignoreado, lo genera postinstall)
 │   └── index.ts          # `prisma` (PrismaClient con @prisma/adapter-pg)
-├── schemas.ts            # Zod compartidos con la app (@kachingga/api/schemas) — sin imports del server
 ├── lib/
 │   ├── access.ts         # requireMembership / requireActiveGroup / assertParticipantsInGroup
 │   ├── splits.ts         # resolveSplits: EQUAL / AMOUNT / PERCENTAGE → centavos exactos
@@ -72,24 +72,106 @@ src/
 │   ├── inviteCode.ts
 │   └── supabase.ts       # cliente lazy
 └── __tests__/            # bun:test
+scripts/new-migration.ts  # implementación de db:migrate:new
 ```
 
-### Routers
+### Dónde vive cada regla de negocio
+| Regla (ver raíz) | Código |
+|------------------|--------|
+| Acceso a grupos, grupos archivados | `lib/access.ts` (`requireMembership` lectura, `requireActiveGroup` escritura) |
+| División y redondeo | `lib/splits.ts` |
+| Multimoneda (qué saldo, qué tipo de cambio) | `lib/balances.ts` (`balanceCurrency`) + `lib/rates.ts` (`resolveExchangeRate`) |
+| Saldos y transferencias mínimas | `lib/balances.ts` |
+| Filtros | `buildExpenseWhere` en `routers/expenses.ts` |
+| Unirse / reclamar participante | `routers/groups.ts` (`preview`, `join`) |
+
+---
+
+## Modelo de datos
+
+Schema en `src/db/models/*.prisma`.
+
+| Modelo | Campos clave |
+|--------|--------------|
+| `Group` | `name`, `baseCurrency`, `inviteCode` (único), `createdById`, `archivedAt` |
+| `Participant` | `groupId`, `name`, `userId?` (Supabase; `null` = sin cuenta). Único `(groupId, userId)` |
+| `Expense` | `description`, `category`, `date`, `amountCents`, `currency`, `exchangeRate?`, `splitType`, `paidById`, `createdById`, `deletedAt?` |
+| `ExpenseSplit` | `expenseId`, `participantId`, `amountCents` (parte ya resuelta), `percentage?` (solo `PERCENTAGE`). Único `(expenseId, participantId)`, cascade al borrar el gasto |
+| `Settlement` | `fromId`, `toId`, `amountCents`, `currency`, `exchangeRate?`, `date`, `note?`, `createdById`, `deletedAt?` |
+| `SavedFilter` | `groupId`, `userId`, `name`, `filters` (JSON con la forma de `expenseFilters`) |
+
+- **Plata en centavos enteros** (`amountCents: Int`), nunca `Float`. Límite int4: ~21,4 millones por gasto en su moneda (validado en Zod). Los tipos de cambio sí son `Float`.
+- **Codificación de la moneda** (`Expense` y `Settlement`):
+  - `currency == group.baseCurrency` → `exchangeRate = null`, cuenta en la base
+  - `currency != base` y `exchangeRate != null` → convertido (1 unidad = `exchangeRate` de la base)
+  - `currency != base` y `exchangeRate == null` → "mantener moneda", saldo propio
+- En el input de la API eso se expresa con `currency`, `exchangeRate?` y `keepCurrency` (`resolveExchangeRate` decide qué se guarda; si falta el rate y no es `keepCurrency`, busca el blue).
+- `userId` / `createdById` son ids de Supabase Auth (no hay tabla de usuarios propia).
+- Borrados lógicos con `deletedAt` en `Expense` y `Settlement`: **toda query de gastos/pagos filtra `deletedAt: null`**.
+
+---
+
+## Procedures tRPC
+
+Todos con `protectedProcedure` salvo `health.ping`. Inputs en `src/schemas.ts`.
+
+| Procedure | Tipo | Qué hace |
+|-----------|------|----------|
+| `health.ping` | query | Público. Chequeo de vida |
+| `health.me` | query | Usuario logueado (id, email) |
+| `groups.list` | query | Mis grupos (`includeArchived?`), con `_count.participants` |
+| `groups.get` | query | Grupo + participantes (`isMe`, `hasAccount`) + `myParticipantId` |
+| `groups.create` | mutation | Crea grupo + mi participante (`myName`) |
+| `groups.rename` | mutation | Cambia el nombre |
+| `groups.setArchived` | mutation | Archiva / desarchiva |
+| `groups.regenerateInviteCode` | mutation | Nuevo código |
+| `groups.preview` | query | Por código: nombre, moneda, `unclaimedParticipants`, `alreadyMember` |
+| `groups.join` | mutation | Por código: `{ participantId }` (reclamar) o `{ name }` (nuevo) |
+| `participants.add` / `rename` / `remove` | mutation | ABM de participantes |
+| `expenses.list` | query | `{ groupId, filters, cursor }` → `{ items, nextCursor }` (páginas de 50) |
+| `expenses.get` / `create` / `update` / `delete` | query / mutation | `update` reemplaza el gasto y sus partes; `delete` es lógico |
+| `settlements.list` / `create` / `delete` | query / mutation | Pagos manuales |
+| `balances.get` | query | `[{ currency, balances: [{ participantId, amountCents }], transfers: [{ fromId, toId, amountCents }] }]`, base primero |
+| `savedFilters.list` / `create` / `delete` | query / mutation | Solo los del usuario |
+| `rates.blue` | query | `{ buy, sell, mid, updatedAt }` para precargar el tipo de cambio |
+
+**`expenseFilters`:** `paidById`, `splitParticipantId`, `categories[]`, `dateFrom`, `dateTo`, `minAmountCents`, `maxAmountCents`, `search`.
+
+Si agregás o cambiás un procedure, actualizá esta tabla.
+
+### Convenciones de routers
 - Un archivo por dominio en `src/trpc/routers/`, registrado en `router.ts`.
-- Todo usa `protectedProcedure` salvo que sea explícitamente público.
-- Input siempre validado con Zod en `.input(...)`.
-- Prisma se llama directo desde el procedure; solo se extrae a `lib/` la lógica que se reusa entre routers (ej. cálculo de saldos).
-- Errores con `TRPCError` y el `code` adecuado, con mensaje en español (la app lo puede mostrar tal cual).
-- Al principio de cada procedure, chequear acceso con `requireMembership` (lectura) o `requireActiveGroup` (escritura). Si recibe ids de participantes, `assertParticipantsInGroup`.
-- Los errores de Prisma P2002 / P2025 ya se traducen a `CONFLICT` / `NOT_FOUND` en un middleware de `init.ts`.
+- Al principio de cada procedure: `requireMembership` (lectura) o `requireActiveGroup` (escritura). Si recibe ids de participantes: `assertParticipantsInGroup`. Si no es miembro → `NOT_FOUND` (no revelar que existe).
+- Input siempre validado con Zod. Schemas reusables por la app → `schemas.ts`.
+- Prisma directo desde el procedure; a `lib/` solo lo que se reusa o es lógica pura testeable.
+- Errores con `TRPCError` y mensaje **en español** (la app lo muestra tal cual). P2002 / P2025 de Prisma ya se traducen a `CONFLICT` / `NOT_FOUND` en `init.ts`.
 
-### Imports
-Sin extensión `.ts` en los imports relativos (`from './init'`): la app typechequea estos archivos con su propio `tsconfig`, que no acepta extensiones `.ts`.
+---
 
-**`router.ts` y lo que importa no pueden depender de nada que no exista en la app** a nivel de tipos (por eso el cliente de Supabase es lazy y el de Prisma vive en `db/`, fuera del grafo de tipos del router hasta que un router lo use).
+## Notas técnicas — no romper
+
+- **Prisma fijado en `7.10.1`** (sin `^`), CLI y cliente iguales. El tag `latest` de `prisma` en npm apuntaba a una `8.0.0-rc`: no actualizar con `bun add prisma` a secas.
+- `prisma generate` corre en `postinstall`; el cliente generado está gitignoreado.
+- `prisma.config.ts` usa `process.env.DIRECT_URL ?? ''` y **no** `env('DIRECT_URL')`: con `env()` el `postinstall` falla sin `.env` (clones nuevos, Railway).
+- **Imports relativos sin extensión `.ts`** (`from './init'`): la app typechequea estos archivos (vía `AppRouter`) con su `tsconfig`, que no acepta `.ts`.
+- El cliente de Supabase es **lazy** (`getSupabase()`) y Prisma no se conecta al importar: importar el router en tests o desde la app no puede requerir variables de entorno.
+- `router.ts` es el entry del paquete y `schemas.ts` el de `./schemas` (`exports` en `package.json`). `schemas.ts` no puede importar nada del server (Prisma, Supabase, `process.env`).
+- **RLS en todas las tablas, sin políticas.** Supabase expone `public` por su API REST y la clave publishable está en la app; RLS sin políticas bloquea esa API. Nuestra API entra como `postgres` y no le afecta. Verificado: la REST devuelve `[]` aunque haya datos.
+- **`DIRECT_URL` usa el session pooler** (`aws-0-us-east-1.pooler.supabase.com:5432`), no la conexión directa `db.<ref>.supabase.co`: es solo IPv6 y no anda en la mayoría de las redes ni en Railway.
+- Cotización: DolarApi (`dolarapi.com/v1/dolares/blue`), cache de 10 min en memoria. Si falla, la API responde pidiendo el tipo de cambio manual.
+- En Railway, `NODE_ENV=production` para que tRPC no devuelva stack traces.
+- CLI de Supabase: deja `supabase/.temp/` donde se corra (gitignoreado). `supabase projects api-keys` muestra la secret key **enmascarada**; la completa requiere `--reveal`.
+
+---
+
+## Conflictos (API)
+
+- **`src/trpc/router.ts`:** si los dos agregaron routers, quedarse con ambos.
+- **`src/schemas.ts` / routers:** combinar; después `bun run check`.
+- **`src/db/models/*.prisma` y migraciones:** nunca editar ni borrar una migración que ya está en `main`. Si los dos crearon migraciones: rebasear, borrar **la tuya** (no pusheada), regenerarla con `bun run db:migrate:new <nombre>` sobre la de `main`, revisar el SQL y avisar al grupo.
 
 ---
 
 ## Tests
 
-`bun:test` en `src/__tests__/`. Para routers, usar `createCallerFactory(appRouter)` con un contexto armado a mano (`{ user: null }` o un `User` fake) — sin HTTP ni Supabase real. La lógica pura en `lib/` se testea directo.
+`bun:test` en `src/__tests__/`. La lógica pura (`lib/`, `buildExpenseWhere`) se testea directo. Para routers, `createCallerFactory(appRouter)` con un contexto armado a mano (`{ user: null }` o un `User` fake), sin HTTP ni Supabase real. Los tests no pueden depender de `.env` (corren en el pre-commit de todos).
