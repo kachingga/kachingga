@@ -90,11 +90,12 @@ Los samples ya traen el ref, el host y las URLs de dev. Solo hay que completar:
 |----------|---------|---------------|
 | `<DB_PASSWORD>` (en `DATABASE_URL` y `DIRECT_URL`) | `apps/api/.env` | **Pedírsela a Galo** (por privado o gestor de contraseñas). Supabase **no la muestra** en el dashboard |
 | `SUPABASE_SECRET_KEY` | `apps/api/.env` | Supabase → `kachingga-dev` → Project Settings → API Keys → Secret key (o `supabase projects api-keys --project-ref nraoqdaplvvsakvtlcam --reveal`) |
+| `SEED_USER_PASSWORD` | `apps/api/.env` | **Pedírsela a Galo**. Es la contraseña de los usuarios de prueba (`juan.demo@example.com`, etc.) |
 | `VITE_SUPABASE_PUBLISHABLE_KEY` (y `EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY` en mobile) | `apps/web/.env` (y `apps/mobile/.env`) | Supabase → `kachingga-dev` → Project Settings → API Keys → Publishable key |
 
 > ⚠️ **Nunca resetear la contraseña de la base** desde el dashboard: deja sin conexión a todos los demás (y, en prod, a Railway). Si se perdió, avisar al grupo antes.
 
-Después: `bun run api` + `bun run web` (o `bun run dev`, que levanta todo), y te registrás en la app (cada base tiene sus propios usuarios).
+Después: `bun run api` + `bun run web` (o `bun run dev`, que levanta las dos). Para entrar con datos ya cargados: **`juan.demo@example.com`** con la contraseña de `SEED_USER_PASSWORD`. Si los datos de prueba se rompieron, `bun run --cwd apps/api db:seed` los vuelve a crear (ver `apps/api/CLAUDE.md` → "Datos de prueba"). También te podés registrar con tu mail (cada base tiene sus propios usuarios).
 
 Cada commit corre automáticamente typecheck, tests y lint (`bun run check`) y valida el formato del mensaje.
 
