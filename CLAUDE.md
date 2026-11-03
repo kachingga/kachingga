@@ -234,7 +234,7 @@ Cada app tiene un `.env.sample` commiteado que dice qué variables hacen falta y
 > Claude: nunca correr nada contra **prod** (`db:migrate:prod`, scripts con `.env.prod`) salvo que el usuario lo pida explícitamente. **Nunca resetear la contraseña de una base de Supabase** ni sugerirlo como solución: rompe el `.env` de todos. Para armar un `.env`, guiar con la tabla de `README.md` → "Armar los `.env`"; la contraseña de la base se le pide a Galo.
 
 ### Tooling del monorepo — no romper
-- **Husky** se activa con `prepare` en `bun install`. `pre-commit` corre `bun run check`; `commit-msg` valida Conventional Commits y deja pasar `Merge`, `Revert`, `fixup!`, `squash!` y `amend!`.
+- **Husky** se activa con `prepare` en `bun install`. `pre-commit` corre `bun run check`; `commit-msg` valida Conventional Commits y deja pasar `Merge`, `Revert`, `fixup!`, `squash!` y `amend!`; `post-checkout`, `post-merge` y `post-rewrite` regeneran el cliente de Prisma (sin frenar nunca a git).
 - `bunfig.toml` usa `linker = "hoisted"` (todo en el `node_modules` raíz). Viene así desde el setup de Expo; no cambiarlo sin probar que Metro siga resolviendo.
 - `bun --filter '*' <script>` corre solo en los workspaces que tienen ese script.
 - **Prettier** (versión fija en la raíz) con config por app que respeta su estilo: API sin `;` y líneas de hasta 140 (`apps/api/.prettierrc`), app con `;` y 100 (`apps/mobile/.prettierrc`). `.prettierignore` excluye generados, migraciones y markdown. Si `check` falla por formato: `bun run format`. No discutir estilo: lo decide Prettier.
@@ -262,11 +262,11 @@ Somos varios trabajando a la vez.
 ### Antes de empezar y antes de pushear
 ```bash
 git pull --rebase origin main
-bun install          # por si cambiaron dependencias, hooks o el schema de Prisma
+bun install          # por si cambiaron dependencias o hooks (el cliente de Prisma lo regeneran los hooks de git)
 bun run check
 ```
 
-> **Al cambiar de branch** (`git switch`, rebase): si alguna de las dos toca el schema de Prisma, correr `bun run db:generate` en `apps/api` (o `bun install`). El cliente de Prisma generado no está en git y queda con el schema de la branch anterior: los tests de integración fallan todos juntos con errores de columnas o tablas.
+> **Cliente de Prisma al cambiar de branch:** el cliente generado no está en git, así que al cambiar de branch puede quedar con el schema de la otra (síntoma: fallan todos los tests de integración juntos, o el typecheck dice que no existe un modelo/campo). Los hooks de husky `post-checkout`, `post-merge` y `post-rewrite` lo regeneran solos. Si igual pasa: `bun run --cwd apps/api db:generate`. **`bun install` no alcanza**: si no hay dependencias nuevas, no vuelve a correr el `postinstall`.
 
 ### Si tenés trabajo local viejo
 1. Commitealo en una branch (`git switch -c feat/<lo-que-sea>`). Si el hook rechaza el mensaje, usá `type(scope): ...`.
