@@ -20,9 +20,11 @@
     "db:studio": "prisma studio"
   },
   "devDependencies": {
+    "@electric-sql/pglite": "^0.5.14",
     "@types/bun": "^1.4.4",
     "@types/pg": "^8.23.1",
     "dotenv": "^18.0.9",
+    "pglite-prisma-adapter": "^0.7.2",
     "prisma": "7.10.1",
     "typescript": "~6.0.3"
   },
