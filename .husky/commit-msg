@@ -1,4 +1,3 @@
-#!/bin/sh
 # Valida Conventional Commits: <type>(<scope>)!: <descripción>
 msg=$(head -n1 "$1")
 pattern='^(feat|fix|chore|docs|refactor|test|style|perf|build|ci|revert)(\([a-z0-9-]+\))?!?: .+'
