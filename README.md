@@ -100,6 +100,8 @@ Después: `bun run dev` levanta la API y la app juntas, y te registrás en la ap
 
 Cada commit corre automáticamente typecheck, tests y lint (`bun run check`) y valida el formato del mensaje.
 
+**`main` está protegido:** se trabaja en una branch y se entra por Pull Request, que se mergea con squash cuando el CI pasa. Detalle en [`CLAUDE.md`](CLAUDE.md) → "Flujo de trabajo".
+
 > **¿Tenías cambios locales de antes de este setup?** Commitealos en una branch y seguí "Trabajo en paralelo y conflictos" en [`CLAUDE.md`](CLAUDE.md) para traer `main` sin romper nada (o pedile a Claude que lo haga: ya conoce esas reglas).
 
 ### 5. Claude Code

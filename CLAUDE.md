@@ -69,6 +69,7 @@ Proyecto de **Kachingga**, una organización de amigos (repo: `github.com/kachin
 - Un grupo tiene **nombre** y **moneda base** (ver Multimoneda). Quien lo crea queda como participante con el nombre que elija.
 - **Solo ven un grupo los usuarios que son participantes de ese grupo.** Para cualquier otro, el grupo "no existe" (no se revela que existe).
 - Todos los miembros tienen los mismos permisos: no hay admin. Cualquiera puede cargar, editar o borrar cualquier gasto del grupo.
+- **Dentro del grupo todo es público para sus miembros:** todos ven todos los gastos (los cargue y los pague quien sea), todos los pagos y los saldos de todos. Lo único personal son los **filtros guardados**.
 - **Código de invitación:** cada grupo tiene un código (8 caracteres, sin letras/números confusibles como 0/O, 1/I/L). Se puede regenerar; el anterior deja de servir.
 - **Archivar:** un grupo archivado se puede ver pero no modificar (ni gastos, ni pagos, ni participantes) hasta desarchivarlo. No aparece en la lista por defecto.
 
@@ -274,4 +275,23 @@ Reglas para Claude:
 - **Nunca** crear un commit que no respete este formato. Si el usuario pide un mensaje que no lo cumple, adaptarlo y avisar.
 - Un commit = un cambio lógico.
 - Los hooks de husky rechazan mensajes inválidos y código que no pasa `bun run check` — **nunca** `--no-verify`. Si un hook falla, arreglar la causa.
-- Branches: `feat/<descripcion-corta>`, `fix/…`, `chore/…`. No commitear directo a `main` salvo que el usuario lo pida.
+
+---
+
+## Flujo de trabajo: branches y Pull Requests
+
+**`main` está protegido en GitHub: no se puede pushear directo (ni los admins).** Todo cambio entra por PR.
+
+```bash
+git switch main && git pull --rebase origin main
+git switch -c feat/<descripcion-corta>        # o fix/…, chore/…, docs/…
+# … commits con formato Conventional Commits …
+git push -u origin HEAD
+gh pr create --fill                            # título = Conventional Commit (ej. "feat(mobile): pantalla de grupos")
+```
+
+- Para mergear, el CI tiene que pasar: **"Typecheck, tests y lint"** (`bun run check`) y **"Formato de commits y título del PR"**.
+- Se mergea solo con **squash**: el título del PR queda como el commit en `main`, por eso tiene que respetar el formato. La branch se borra sola al mergear.
+- No hace falta aprobación de otro para mergear (somos pocos), pero conviene avisar al grupo en PRs grandes.
+- Mantener los PRs chicos y de un tema (una pantalla, un procedure, un fix).
+- Claude: crear la branch y el PR; **mergear solo si el usuario lo pide** (`gh pr merge --squash` cuando el CI esté en verde).
