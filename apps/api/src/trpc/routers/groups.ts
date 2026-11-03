@@ -10,18 +10,16 @@ const groupId = z.object({ groupId: z.string() })
 const inviteCode = z.string().trim().toUpperCase().min(1)
 
 export const groupsRouter = router({
-  list: protectedProcedure
-    .input(z.object({ includeArchived: z.boolean().default(false) }).optional())
-    .query(({ ctx, input }) =>
-      prisma.group.findMany({
-        where: {
-          participants: { some: { userId: ctx.user.id } },
-          ...(input?.includeArchived ? {} : { archivedAt: null }),
-        },
-        include: { _count: { select: { participants: true } } },
-        orderBy: { createdAt: 'desc' },
-      }),
-    ),
+  list: protectedProcedure.input(z.object({ includeArchived: z.boolean().default(false) }).optional()).query(({ ctx, input }) =>
+    prisma.group.findMany({
+      where: {
+        participants: { some: { userId: ctx.user.id } },
+        ...(input?.includeArchived ? {} : { archivedAt: null }),
+      },
+      include: { _count: { select: { participants: true } } },
+      orderBy: { createdAt: 'desc' },
+    }),
+  ),
 
   get: protectedProcedure.input(groupId).query(async ({ ctx, input }) => {
     const me = await requireMembership(input.groupId, ctx.user.id)
@@ -36,36 +34,30 @@ export const groupsRouter = router({
     }
   }),
 
-  create: protectedProcedure
-    .input(groupInput.extend({ myName: participantName }))
-    .mutation(({ ctx, input }) =>
-      prisma.group.create({
-        data: {
-          name: input.name,
-          baseCurrency: input.baseCurrency,
-          inviteCode: generateInviteCode(),
-          createdById: ctx.user.id,
-          participants: { create: { name: input.myName, userId: ctx.user.id } },
-        },
-      }),
-    ),
-
-  rename: protectedProcedure
-    .input(groupId.extend({ name: groupInput.shape.name }))
-    .mutation(async ({ ctx, input }) => {
-      await requireActiveGroup(input.groupId, ctx.user.id)
-      return prisma.group.update({ where: { id: input.groupId }, data: { name: input.name } })
+  create: protectedProcedure.input(groupInput.extend({ myName: participantName })).mutation(({ ctx, input }) =>
+    prisma.group.create({
+      data: {
+        name: input.name,
+        baseCurrency: input.baseCurrency,
+        inviteCode: generateInviteCode(),
+        createdById: ctx.user.id,
+        participants: { create: { name: input.myName, userId: ctx.user.id } },
+      },
     }),
+  ),
 
-  setArchived: protectedProcedure
-    .input(groupId.extend({ archived: z.boolean() }))
-    .mutation(async ({ ctx, input }) => {
-      await requireMembership(input.groupId, ctx.user.id)
-      return prisma.group.update({
-        where: { id: input.groupId },
-        data: { archivedAt: input.archived ? new Date() : null },
-      })
-    }),
+  rename: protectedProcedure.input(groupId.extend({ name: groupInput.shape.name })).mutation(async ({ ctx, input }) => {
+    await requireActiveGroup(input.groupId, ctx.user.id)
+    return prisma.group.update({ where: { id: input.groupId }, data: { name: input.name } })
+  }),
+
+  setArchived: protectedProcedure.input(groupId.extend({ archived: z.boolean() })).mutation(async ({ ctx, input }) => {
+    await requireMembership(input.groupId, ctx.user.id)
+    return prisma.group.update({
+      where: { id: input.groupId },
+      data: { archivedAt: input.archived ? new Date() : null },
+    })
+  }),
 
   regenerateInviteCode: protectedProcedure.input(groupId).mutation(async ({ ctx, input }) => {
     await requireActiveGroup(input.groupId, ctx.user.id)
@@ -90,12 +82,7 @@ export const groupsRouter = router({
 
   // Join by claiming an existing participant without account, or as a new participant.
   join: protectedProcedure
-    .input(
-      z.union([
-        z.object({ inviteCode, participantId: z.string() }),
-        z.object({ inviteCode, name: participantName }),
-      ]),
-    )
+    .input(z.union([z.object({ inviteCode, participantId: z.string() }), z.object({ inviteCode, name: participantName })]))
     .mutation(async ({ ctx, input }) => {
       const group = await prisma.group.findUnique({ where: { inviteCode: input.inviteCode } })
       if (!group || group.archivedAt) throw new TRPCError({ code: 'NOT_FOUND', message: 'Código inválido' })

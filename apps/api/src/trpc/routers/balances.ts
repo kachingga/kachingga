@@ -19,6 +19,11 @@ export const balancesRouter = router({
         select: { currency: true, exchangeRate: true, fromId: true, toId: true, amountCents: true },
       }),
     ])
-    return computeBalances(group.baseCurrency, participants.map((p) => p.id), expenses, settlements)
+    return computeBalances(
+      group.baseCurrency,
+      participants.map((p) => p.id),
+      expenses,
+      settlements,
+    )
   }),
 })

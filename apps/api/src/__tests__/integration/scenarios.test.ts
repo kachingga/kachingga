@@ -23,7 +23,15 @@ const ars = (pesos: number) => pesos * 100
 describe('pagos que no son gastos', () => {
   test('le debo 100k a Tuke y le transfiero 50k a Manu: se recalcula quién le debe a quién', async () => {
     const { yo, groupId, id, balanceOf } = await friends()
-    await yo.expenses.create({ groupId, description: 'Entradas', date: day('11-01'), amountCents: ars(100_000), currency: 'ARS', paidById: id.Tuke, split: { type: 'EQUAL', participantIds: [id.Yo] } })
+    await yo.expenses.create({
+      groupId,
+      description: 'Entradas',
+      date: day('11-01'),
+      amountCents: ars(100_000),
+      currency: 'ARS',
+      paidById: id.Tuke,
+      split: { type: 'EQUAL', participantIds: [id.Yo] },
+    })
     expect(await balanceOf('Yo')).toBe(-ars(100_000))
 
     await yo.settlements.create({ groupId, fromId: id.Yo, toId: id.Manu, amountCents: ars(50_000), currency: 'ARS', date: day('11-02') })
@@ -45,7 +53,15 @@ describe('pagos que no son gastos', () => {
 
   test('marcar como pagada una transferencia sugerida deja a todos en cero', async () => {
     const { yo, groupId, id, balanceOf } = await friends()
-    await yo.expenses.create({ groupId, description: 'Cena', date: day('11-01'), amountCents: ars(30_000), currency: 'ARS', paidById: id.Yo, split: { type: 'EQUAL', participantIds: [id.Yo, id.Tuke, id.Manu] } })
+    await yo.expenses.create({
+      groupId,
+      description: 'Cena',
+      date: day('11-01'),
+      amountCents: ars(30_000),
+      currency: 'ARS',
+      paidById: id.Yo,
+      split: { type: 'EQUAL', participantIds: [id.Yo, id.Tuke, id.Manu] },
+    })
     const transfers = (await yo.balances.get({ groupId }))[0]!.transfers
     for (const t of transfers) await yo.settlements.create({ groupId, ...t, currency: 'ARS', date: day('11-02') })
     for (const name of ['Yo', 'Tuke', 'Manu', 'Román'] as const) expect(await balanceOf(name)).toBe(0)
@@ -55,18 +71,48 @@ describe('pagos que no son gastos', () => {
 describe('quién pagó y entre quiénes', () => {
   test('pagué yo pero el gasto fue solo de Román', async () => {
     const { yo, groupId, id, balanceOf } = await friends()
-    await yo.expenses.create({ groupId, description: 'Regalo', date: day('11-01'), amountCents: ars(20_000), currency: 'ARS', paidById: id.Yo, split: { type: 'EQUAL', participantIds: [id.Román] } })
+    await yo.expenses.create({
+      groupId,
+      description: 'Regalo',
+      date: day('11-01'),
+      amountCents: ars(20_000),
+      currency: 'ARS',
+      paidById: id.Yo,
+      split: { type: 'EQUAL', participantIds: [id.Román] },
+    })
     expect(await balanceOf('Yo')).toBe(ars(20_000))
     expect(await balanceOf('Román')).toBe(-ars(20_000))
   })
 
   test('cargo un gasto que pagó Román, dividido entre Tuke y yo, y después lo edito', async () => {
     const { yo, groupId, id, balanceOf } = await friends()
-    const e = await yo.expenses.create({ groupId, description: 'Nafta', date: day('11-01'), amountCents: ars(10_000), currency: 'ARS', paidById: id.Román, split: { type: 'EQUAL', participantIds: [id.Tuke, id.Yo] } })
+    const e = await yo.expenses.create({
+      groupId,
+      description: 'Nafta',
+      date: day('11-01'),
+      amountCents: ars(10_000),
+      currency: 'ARS',
+      paidById: id.Román,
+      split: { type: 'EQUAL', participantIds: [id.Tuke, id.Yo] },
+    })
     expect(await balanceOf('Román')).toBe(ars(10_000))
     expect(await balanceOf('Yo')).toBe(-ars(5_000))
 
-    await yo.expenses.update({ expenseId: e.id, description: 'Nafta', date: day('11-01'), amountCents: ars(12_000), currency: 'ARS', paidById: id.Román, split: { type: 'AMOUNT', shares: [{ participantId: id.Tuke, amountCents: ars(2_000) }, { participantId: id.Yo, amountCents: ars(10_000) }] } })
+    await yo.expenses.update({
+      expenseId: e.id,
+      description: 'Nafta',
+      date: day('11-01'),
+      amountCents: ars(12_000),
+      currency: 'ARS',
+      paidById: id.Román,
+      split: {
+        type: 'AMOUNT',
+        shares: [
+          { participantId: id.Tuke, amountCents: ars(2_000) },
+          { participantId: id.Yo, amountCents: ars(10_000) },
+        ],
+      },
+    })
     expect(await balanceOf('Yo')).toBe(-ars(10_000))
     expect(await balanceOf('Tuke')).toBe(-ars(2_000))
   })
@@ -76,7 +122,15 @@ describe('filtros y totales', () => {
   test('gastos en los que estoy involucrado, gastos que pagó Román, y cuánto gasté en noviembre', async () => {
     const { yo, groupId, id } = await friends()
     const add = (description: string, date: string, pesos: number, paidById: string, participantIds: string[]) =>
-      yo.expenses.create({ groupId, description, date: day(date), amountCents: ars(pesos), currency: 'ARS', paidById, split: { type: 'EQUAL', participantIds } })
+      yo.expenses.create({
+        groupId,
+        description,
+        date: day(date),
+        amountCents: ars(pesos),
+        currency: 'ARS',
+        paidById,
+        split: { type: 'EQUAL', participantIds },
+      })
     await add('Pagué yo, solo Román', '11-03', 1_000, id.Yo, [id.Román])
     await add('Pagó Román, entre Tuke y yo', '11-10', 4_000, id.Román, [id.Tuke, id.Yo])
     await add('Pagó Tuke, solo Manu', '11-15', 9_000, id.Tuke, [id.Manu])
