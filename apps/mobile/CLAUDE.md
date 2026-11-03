@@ -96,6 +96,59 @@ const createExpense = useMutation(
 - Mandar el `access_token` de la sesión en `headers` del `httpBatchLink` de `src/lib/trpc.ts` (`Authorization: Bearer <token>`). Sin token, todo menos `health.ping` responde `UNAUTHORIZED`.
 - Después del login: `groups.list`. Para unirse a un grupo: `groups.preview` con el código → elegir participante sin cuenta o nombre nuevo → `groups.join`.
 
+## UI / UX — estándar de calidad
+
+Qué pantallas hay y qué hace cada una: **`V1.md` → "Pantallas"**. Esta sección es **cómo** tienen que sentirse. La app la usamos nosotros todos los días: tiene que ser rápida, clara y linda. Ante la duda, priorizar que **cargar un gasto sea lo más rápido posible**.
+
+### Skills del plugin de Expo (usarlas antes de inventar)
+El plugin de Expo está activado en `.claude/settings.json`. Para UI, cargar la skill que corresponda antes de escribir código:
+- `expo-native-ui` — estilo de pantallas nativas, colores, controles, íconos.
+- `expo-design-system` — tokens de tema y componentes reutilizables (partir de `src/constants/theme.ts`).
+- `expo-router` — stacks, tabs, headers, modales.
+- `expo-animation` — animaciones y gestos (Reanimated + Gesture Handler, ya instalados).
+- `expo-ui` — componentes de `@expo/ui` (ya instalado).
+- `expo-data-fetching` **no** reemplaza nuestro patrón: la data va **siempre** por tRPC + TanStack Query como se describe arriba.
+
+### Los 4 estados de toda pantalla con datos
+Ninguna pantalla puede quedar en blanco ni "colgada". Siempre contemplar:
+1. **Cargando:** skeletons con la forma del contenido (no un spinner suelto en el medio). En recargas, mantener los datos viejos visibles (TanStack Query lo hace solo) y mostrar un indicador sutil.
+2. **Vacío:** mensaje que explique qué va ahí + la acción para empezar ("Todavía no hay gastos" + "Agregar gasto").
+3. **Error:** el `message` de la API en español + botón **Reintentar**. Nunca un error técnico crudo.
+4. **Con datos:** el contenido. Listas con **pull-to-refresh** y scroll infinito donde haya paginación.
+
+### Acciones y feedback
+- **Botones de envío:** deshabilitados + indicador mientras la mutation está en curso (`isPending`); nunca permitir doble envío.
+- **Optimistic updates** en lo frecuente (agregar/borrar gasto, marcar pago) para que se sienta instantáneo; si falla, revertir y avisar. Después siempre invalidar las queries afectadas (ver arriba).
+- **Confirmación** antes de lo destructivo (borrar gasto/pago, quitar participante, archivar), explicando la consecuencia.
+- Confirmar éxitos de forma breve y no bloqueante (toast/feedback visual), y **haptics** suaves en acciones clave (`expo-haptics`, se instala con `bunx expo install expo-haptics`).
+- Transiciones y animaciones cortas y nativas (Reanimated). Nada que haga esperar.
+
+### Formularios
+- Validar con los schemas de `@kachingga/api/schemas` y mostrar el error **al lado del campo**, en español.
+- Teclado correcto por campo (`decimal-pad` para montos), el formulario no queda tapado por el teclado, "siguiente" pasa al próximo campo.
+- Defaults inteligentes (fecha = hoy, pagó = yo, moneda = la base, división = todos en partes iguales) para cargar un gasto en segundos.
+- En divisiones por monto/porcentaje, mostrar en vivo cuánto falta para el total/100% y no dejar enviar hasta que cierre.
+
+### Plata, fechas y textos
+- Formatear montos en **un solo helper** (ej. `src/lib/format.ts`) con `Intl.NumberFormat('es-AR', { style: 'currency', currency })`: `$ 15.550,00`, `US$ 20,00`. Siempre mostrar la moneda de cada dato.
+- Saldos con color y texto, no solo color: "Debés $X" / "Te deben $X" / "Estás al día".
+- Fechas relativas cuando ayuda ("hoy", "ayer") y si no `dd/mm`; formato argentino.
+- Copy en español argentino, corto y claro ("Agregá un gasto", "¿Quién pagó?").
+
+### Visual y accesibilidad
+- **Modo claro y oscuro**: usar siempre los colores de `theme.ts` vía `useTheme` / `ThemedText` / `ThemedView`; nunca colores hardcodeados. Si hace falta un color nuevo, se agrega al tema (light y dark).
+- Espaciados de `Spacing`; tipografías de `ThemedText`. Consistencia antes que creatividad por pantalla.
+- Safe areas respetadas; áreas táctiles de al menos 44×44; contraste suficiente; `accessibilityLabel` en botones con solo ícono.
+- Íconos con `expo-symbols` (ya instalado), consistentes en toda la app.
+- Probar cada pantalla en un teléfono real (no solo simulador) y en los dos modos de color.
+
+### Antes de dar una pantalla por terminada
+- [ ] Cumple las reglas de negocio de la raíz y lo descripto en `V1.md` → "Pantallas".
+- [ ] Tiene los 4 estados (cargando, vacío, error, datos).
+- [ ] Mutations con `isPending`, invalidación y (si aplica) optimistic update.
+- [ ] Funciona en modo claro y oscuro, con teclado abierto y en pantallas chicas.
+- [ ] `bun run check` pasa.
+
 ## Navegación y rutas
 
 - Usar **Expo Router** para toda la navegación. Las rutas viven en `src/app/` — cada archivo ahí es una pantalla, y los `_layout.tsx` definen los navegadores. Lo que no es ruta (componentes, hooks, utils) va fuera de `src/app/`.

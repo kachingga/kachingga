@@ -23,7 +23,7 @@ Proyecto de **Kachingga**, una organización de amigos (repo: `github.com/kachin
 | Tarea | Leer primero |
 |-------|--------------|
 | Cualquier feature | "Reglas de negocio" (abajo) + `V1.md` (si está en alcance) |
-| Pantallas / UI de la app | `apps/mobile/CLAUDE.md` → **"Cómo usar la API desde la app"** (qué procedure usar, patrones de queries/mutations, montos, monedas, auth) |
+| Pantallas / UI de la app | `V1.md` → **"Pantallas"** (qué pantallas y qué hace cada una) + `apps/mobile/CLAUDE.md` → **"UI / UX — estándar de calidad"** (cargas, vacíos, errores, fluidez, formularios) y **"Cómo usar la API desde la app"** (procedures, queries/mutations, montos, monedas, auth) |
 | Lógica, endpoints o datos de la API | `apps/api/CLAUDE.md` → "Procedures tRPC", "Modelo de datos", "Dónde vive cada regla de negocio" |
 | A la app le falta algo de la API | Se agrega en `apps/api` (mismo repo) siguiendo `apps/api/CLAUDE.md`; nunca workarounds en la app |
 | Cambios de base de datos | `apps/api/CLAUDE.md` → "Migraciones — reglas" + `DEPLOY.md` |
