@@ -16,11 +16,13 @@ model Group {
 // A person in a group. May exist without an account (userId = null) until someone
 // joins with the invite code and claims it.
 model Participant {
-  id        String   @id @default(cuid())
-  groupId   String
-  name      String
-  userId    String? // Supabase auth user id
-  createdAt DateTime @default(now())
+  id           String   @id @default(cuid())
+  groupId      String
+  name         String
+  userId       String? // Supabase auth user id
+  // Alias/CVU to get paid in this group: overrides the account's (UserProfile) or, without account, is the only one
+  paymentAlias String?
+  createdAt    DateTime @default(now())
 
   group             Group          @relation(fields: [groupId], references: [id])
   expensesPaid      Expense[]

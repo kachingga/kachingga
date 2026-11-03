@@ -3,6 +3,7 @@ import { z } from 'zod'
 import { prisma } from '../../db'
 import { requireActiveGroup, requireMembership } from '../../lib/access'
 import { generateInviteCode } from '../../lib/inviteCode'
+import { resolvePaymentAliases } from '../../lib/paymentAlias'
 import { groupInput, participantName } from '../../schemas'
 import { protectedProcedure, router } from '../init'
 
@@ -27,10 +28,18 @@ export const groupsRouter = router({
       where: { groupId: input.groupId },
       orderBy: { createdAt: 'asc' },
     })
+    const aliases = await resolvePaymentAliases(participants)
     return {
       ...me.group,
       myParticipantId: me.id,
-      participants: participants.map((p) => ({ id: p.id, name: p.name, hasAccount: p.userId !== null, isMe: p.id === me.id })),
+      participants: participants.map((p) => ({
+        id: p.id,
+        name: p.name,
+        hasAccount: p.userId !== null,
+        isMe: p.id === me.id,
+        // Alias/CVU to pay this person in this group ('group' = set for this group, 'account' = from their account)
+        ...aliases.get(p.id)!,
+      })),
     }
   }),
 

@@ -72,6 +72,14 @@ export const expenseFilters = z.object({
 export const groupInput = z.object({ name, baseCurrency: currency })
 export const participantName = name
 
+// Alias (6-20 letters, digits, dots or hyphens) or CVU/CBU (22 digits) to get paid by transfer.
+// null = remove it.
+export const paymentAlias = z
+  .string()
+  .trim()
+  .regex(/^([a-zA-Z0-9.-]{6,20}|\d{22})$/, 'Alias (6 a 20 letras, números, puntos o guiones) o CVU/CBU (22 dígitos)')
+  .nullable()
+
 export type ExpenseInput = z.input<typeof expenseInput>
 export type SettlementInput = z.input<typeof settlementInput>
 export type ExpenseFilters = z.infer<typeof expenseFilters>
