@@ -179,4 +179,21 @@ Si agregás o cambiás un procedure, actualizá esta tabla.
 
 ## Tests
 
-`bun:test` en `src/__tests__/`. La lógica pura (`lib/`, `buildExpenseWhere`) se testea directo. Para routers, `createCallerFactory(appRouter)` con un contexto armado a mano (`{ user: null }` o un `User` fake), sin HTTP ni Supabase real. Los tests no pueden depender de `.env` (corren en el pre-commit de todos).
+`bun:test` en `src/__tests__/`. Corren en el pre-commit de todos, así que **no pueden depender de `.env`, red ni Supabase**.
+
+| Tipo | Dónde | Qué |
+|------|-------|-----|
+| Unit | `src/__tests__/*.test.ts` | Lógica pura (`lib/`, `buildExpenseWhere`) |
+| **Integración** | `src/__tests__/integration/*.test.ts` | Routers reales + Prisma contra **PGlite** (Postgres en memoria) armado con las **migraciones reales** |
+
+### Integración (`setupTestApi`)
+```ts
+const { caller, anonymous } = await setupTestApi()   // al principio del archivo
+stubBlueRate()                                       // si el test dispara el blue automático (fetch falso)
+const ana = caller('ana-1')                          // caller autenticado como un usuario fake
+await ana.groups.create({ ... })
+```
+- `setupTestApi` reemplaza `../../db` por un Prisma sobre PGlite (`mock.module`). Cada archivo arranca con una base vacía y con todas las migraciones aplicadas: si una migración nueva rompe, estos tests fallan.
+- Usar usuarios distintos por test (ver `users()` en `routers.test.ts`) para que los tests no dependan entre sí.
+- **Cada procedure nuevo o cambiado lleva tests de integración** que cubran: sin login (`UNAUTHORIZED`), no miembro (`NOT_FOUND`), grupo archivado si escribe, el caso feliz y cada regla de negocio que valide (con el mensaje en español).
+- Lógica nueva en `lib/` → test unit además.

@@ -127,6 +127,7 @@ Proyecto de **Kachingga**, una organización de amigos (repo: `github.com/kachin
 - Dólar de referencia: **blue promedio**, nunca oficial.
 - Los tipos de cambio quedan "congelados" en cada gasto/pago al cargarlo.
 - Borrados lógicos (gastos y pagos) para no perder historial.
+- **Login directo con Supabase Auth desde la app** (no vía nuestra API): la librería de Supabase ya maneja sesión, renovación del token, registro y recuperación de contraseña. Los datos igual pasan siempre por la API. Se evaluó la alternativa "login vía API" y se descartó por el código y el riesgo extra (renovación de tokens a mano).
 
 ---
 
@@ -191,7 +192,7 @@ bun run dev          # levanta la API (:3000) y Expo a la vez
 bun run api          # solo la API
 bun run mobile       # solo Expo
 bun run typecheck    # tsc en api y mobile
-bun run test         # tests (bun test en api)
+bun run test         # tests: api (unit + integración con PGlite) y mobile (Jest + RNTL)
 bun run lint         # expo lint en mobile
 bun run check        # typecheck + test + lint — lo mismo que corre el pre-commit
 ```

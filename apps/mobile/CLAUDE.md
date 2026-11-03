@@ -21,6 +21,8 @@ bunx expo install <paquete>  # usar SIEMPRE en lugar de bun add — resuelve ver
 bunx expo start              # levantar el dev server (o `bun run dev` / `bun run mobile` desde la raíz)
 bunx expo lint               # lint
 bun run typecheck            # typecheck (genera expo-env.d.ts si falta y corre tsc)
+bun run test                 # Jest: unit + contenido de pantallas
+bun run e2e                  # Maestro (requiere setup, ver "Testing")
 bunx expo-doctor             # diagnosticar problemas de dependencias y config
 bunx expo install --fix      # arreglar versiones incompatibles
 ```
@@ -91,8 +93,11 @@ const createExpense = useMutation(
 - **Si a la app le falta algo de la API** (un campo, un procedure, un filtro), no hacer workarounds en la app: se agrega en `apps/api` siguiendo `apps/api/CLAUDE.md` (mismo repo, mismo commit o uno `feat(api)` aparte) y se actualiza la tabla de procedures.
 - URL de la API: `EXPO_PUBLIC_API_URL` si está definida; si no, en desarrollo usa `Constants.expoConfig.hostUri` (la IP de la máquina que sirve el bundle) en el puerto 3000 — funciona desde el teléfono en la misma red. Para desarrollar la app hay que tener la API corriendo (`bun run dev` desde la raíz levanta las dos).
 
-### Auth (pendiente de implementar en la app)
-- Login/signup/logout con `@supabase/supabase-js` (email + password) usando `EXPO_PUBLIC_SUPABASE_URL` y `EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY`. Supabase **solo** para auth, nunca para leer datos.
+### Auth (decidido; pendiente de implementar en la app)
+**Decisión:** la app hace login **directo contra Supabase Auth** con `@supabase/supabase-js`, **no** a través de nuestra API. Motivo: la librería ya resuelve guardar la sesión y **renovar el token** (dura 1 hora), registro y "olvidé mi contraseña"; reimplementarlo en la API es mucho código y la fuente típica de bugs (deslogueos). Los **datos** siguen pasando siempre por la API. No cambiar a "login vía API" sin rediscutirlo (ver `CLAUDE.md` raíz → "Decisiones de producto tomadas").
+
+- Login/signup/logout con `@supabase/supabase-js` (email + password) usando `EXPO_PUBLIC_SUPABASE_URL` y `EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY`. Supabase **solo** para auth, nunca para leer datos (`supabase.from(...)` está prohibido; además RLS lo bloquea).
+- Sesión persistida y con refresh automático: seguir la guía de Supabase para Expo/React Native de la versión instalada (storage de la sesión + `autoRefreshToken`, y pausar/reanudar el refresh según el estado de la app). Verificar en la doc actual, no de memoria.
 - Mandar el `access_token` de la sesión en `headers` del `httpBatchLink` de `src/lib/trpc.ts` (`Authorization: Bearer <token>`). Sin token, todo menos `health.ping` responde `UNAUTHORIZED`.
 - Después del login: `groups.list`. Para unirse a un grupo: `groups.preview` con el código → elegir participante sin cuenta o nombre nuevo → `groups.join`.
 
@@ -147,7 +152,51 @@ Ninguna pantalla puede quedar en blanco ni "colgada". Siempre contemplar:
 - [ ] Tiene los 4 estados (cargando, vacío, error, datos).
 - [ ] Mutations con `isPending`, invalidación y (si aplica) optimistic update.
 - [ ] Funciona en modo claro y oscuro, con teclado abierto y en pantallas chicas.
+- [ ] Tiene su test de contenido (ver "Testing"): un caso por estado + las interacciones principales.
+- [ ] Los elementos clave tienen `testID` (para Maestro).
 - [ ] `bun run check` pasa.
+
+## Testing
+
+Tres niveles. Ninguna pantalla se da por terminada sin el primero.
+
+| Nivel | Herramienta | Dónde | Corre en |
+|-------|-------------|-------|----------|
+| Unit (helpers, hooks, lógica de UI) | Jest (`jest-expo`) | `src/**/__tests__/*.test.ts` | `bun run check` / pre-commit |
+| **Contenido de pantallas** | Jest + React Native Testing Library + `renderWithApi` | `src/**/__tests__/*.test.tsx` | `bun run check` / pre-commit |
+| E2E (flujos reales en el dispositivo) | Maestro | `.maestro/*.yaml` | A mano (`bun run e2e`), no en el pre-commit |
+
+> **No usamos Playwright:** prueba la versión web, y la app que usamos es la nativa (teclado, gestos y navegación nativos). Tampoco snapshots: se verifica lo que el usuario ve, no el árbol renderizado.
+
+### Tests de contenido de pantallas (`renderWithApi`)
+`src/test/render.tsx` renderiza una pantalla con los mismos providers que la app pero contra una **API falsa**: un handler por procedure (`'groups.get': (input) => ({ ... })`). Ejemplo completo en `src/test/__tests__/render.test.tsx`.
+
+```tsx
+await renderWithApi(<GroupScreen />, {
+  'groups.get': () => fixtureGroup,
+  'balances.get': () => [],
+  'expenses.list': () => ({ items: [], nextCursor: null }),
+});
+expect(await screen.findByText('Todavía no hay gastos')).toBeOnTheScreen();
+```
+
+- **Siempre `await renderWithApi(...)`** (en RNTL v14 `render` es asíncrono).
+- Por cada pantalla con datos, un test por estado: **cargando** (`neverResolves`), **vacío**, **error** (`throw apiError('mensaje', 'CODE')`) y **con datos**.
+- Interacciones con `fireEvent` / `userEvent` de RNTL: completar el formulario, tocar el botón y verificar qué procedure se llamó y con qué input (el handler recibe el input).
+- Buscar como lo haría el usuario: `getByText`, `getByRole`, `getByLabelText`. `getByTestId` solo si no hay otra forma.
+- Los datos falsos tienen que respetar la forma real de la respuesta: tomarla de la tabla "Procedures tRPC" de `apps/api/CLAUDE.md` o tiparlos con `inferRouterOutputs<AppRouter>`.
+- Para pantallas que navegan, ver la sección de testing de Expo Router en la doc de la versión instalada.
+
+### E2E (Maestro)
+- Un flujo por recorrido principal: registrarse/login, crear grupo, unirse con código, agregar gasto, ver saldos, registrar pago. Empezar con `.maestro/smoke.yaml` (abre la app).
+- Elementos con `testID` estables (`expense-amount-input`, `save-expense-button`, …) para que los flujos no dependan de textos.
+- Requisitos: [Maestro CLI](https://maestro.mobile.dev) + Java, un emulador Android o simulador iOS con un **development build** de la app instalado (`appId: com.kachingga.app`; Expo Go no sirve), la API corriendo (`bun run dev`) y un usuario de prueba en **dev**. Los builds de EAS solo se lanzan si alguien lo pide.
+- Correr: `bun run e2e` desde `apps/mobile`. Todavía no se corrió nunca: el primer flujo real queda para cuando exista el login.
+
+### Notas de configuración
+- `jest` está configurado en `package.json` (`preset: jest-expo`). `transformIgnorePatterns` incluye `superjson`, `copy-anything` e `is-what` porque se publican solo como ESM: si un paquete nuevo rompe Jest con "Must use import to load ES Module", agregarlo ahí.
+- `tsconfig.json` declara `"types": ["jest"]`: desde TypeScript 6 los `@types/*` ya no se cargan solos.
+- En tests, `QueryClient` usa `gcTime: Infinity` (si no, Jest queda colgado esperando timers).
 
 ## Navegación y rutas
 
