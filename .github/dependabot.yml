@@ -1,0 +1,10 @@
+# Solo GitHub Actions: las dependencias de la app se actualizan con `bunx expo install`
+# (tienen que ser compatibles con el SDK de Expo), no con Dependabot.
+version: 2
+updates:
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: monthly
+    commit-message:
+      prefix: ci
