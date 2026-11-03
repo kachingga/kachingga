@@ -5,6 +5,7 @@ import type { inferRouterOutputs } from '@trpc/server';
 import type { AppRouter } from '@kachingga/api';
 import { currencies, expenseCategories } from '@kachingga/api/schemas';
 
+import { Spinner } from '@/components/spinner';
 import { useTRPC } from '@/lib/trpc';
 import {
   categoryLabels,
@@ -570,7 +571,7 @@ export function ExpenseForm() {
   });
 
   if (group.isPending || (isEdit && expense.isPending)) {
-    return <p className="p-6 text-center text-neutral-400">Cargando…</p>;
+    return <Spinner fullScreen />;
   }
   if (group.isError) return <p className="p-6 text-red-400">{group.error.message}</p>;
   if (isEdit && expense.isError) return <p className="p-6 text-red-400">{expense.error.message}</p>;

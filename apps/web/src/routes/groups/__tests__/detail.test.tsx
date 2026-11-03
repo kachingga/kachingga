@@ -52,7 +52,7 @@ describe('GroupDetail', () => {
       'balances.get': neverResolves,
       'expenses.list': neverResolves,
     });
-    expect(screen.getByText('Cargando…')).toBeInTheDocument();
+    expect(screen.getByRole('status', { name: 'Cargando' })).toBeInTheDocument();
   });
 
   it('shows group name and empty expense list', async () => {

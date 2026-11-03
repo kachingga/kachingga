@@ -32,7 +32,7 @@ describe('Filters', () => {
       'expenses.summary': neverResolves,
       'savedFilters.list': neverResolves,
     });
-    expect(screen.getByText('Cargando…')).toBeInTheDocument();
+    expect(screen.getByRole('status', { name: 'Cargando' })).toBeInTheDocument();
   });
 
   it('shows filter shortcuts', async () => {

@@ -3,6 +3,7 @@ import { useNavigate, useParams, useSearchParams } from 'react-router';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
 import { currencies } from '@kachingga/api/schemas';
+import { Spinner } from '@/components/spinner';
 import { useTRPC } from '@/lib/trpc';
 import {
   centsToDisplay,
@@ -295,7 +296,7 @@ export function Settlements() {
       )}
 
       {/* Lista de pagos */}
-      {settlements.isPending && <p className="text-center text-neutral-400">Cargando…</p>}
+      {settlements.isPending && <Spinner />}
       {settlements.isError && (
         <p className="text-center text-red-400">{settlements.error.message}</p>
       )}

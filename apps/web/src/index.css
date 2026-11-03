@@ -4,3 +4,23 @@ body {
   background-color: #000;
   color: #fff;
 }
+
+@keyframes slide-in-right {
+  from {
+    transform: translateX(100%);
+  }
+}
+
+@keyframes slide-in-left {
+  from {
+    transform: translateX(-100%);
+  }
+}
+
+.page-enter-right {
+  animation: slide-in-right 280ms ease-out;
+}
+
+.page-enter-left {
+  animation: slide-in-left 280ms ease-out;
+}

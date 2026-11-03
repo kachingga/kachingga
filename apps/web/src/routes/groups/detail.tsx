@@ -4,6 +4,7 @@ import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from '@tansta
 import type { inferRouterOutputs } from '@trpc/server';
 import type { AppRouter } from '@kachingga/api';
 
+import { Spinner } from '@/components/spinner';
 import { useTRPC } from '@/lib/trpc';
 import { categoryLabels, formatCents, formatDate } from '@/lib/format';
 
@@ -156,7 +157,7 @@ export function GroupDetail() {
   );
 
   if (group.isPending) {
-    return <p className="p-6 text-center text-neutral-400">Cargando…</p>;
+    return <Spinner fullScreen />;
   }
   if (group.isError) {
     return (
@@ -179,7 +180,7 @@ export function GroupDetail() {
     <main className="mx-auto min-h-dvh max-w-md pb-24">
       {/* Header */}
       <div className="flex items-center justify-between p-4">
-        <button onClick={() => navigate('/grupos')} className="text-neutral-400">
+        <button onClick={() => navigate(-1)} className="text-neutral-400">
           ←
         </button>
 
@@ -278,7 +279,7 @@ export function GroupDetail() {
 
       <div className="space-y-6 px-4">
         {/* Saldos */}
-        {balances.isPending && <p className="text-sm text-neutral-400">Cargando saldos…</p>}
+        {balances.isPending && <Spinner />}
         {balances.isError && <p className="text-sm text-red-400">{balances.error.message}</p>}
         {balances.isSuccess && balances.data.length > 0 && (
           <BalanceSection group={g} balances={balances.data} />
@@ -307,7 +308,7 @@ export function GroupDetail() {
         <div>
           <h2 className="mb-3 font-semibold">Gastos</h2>
 
-          {expenses.isPending && <p className="text-sm text-neutral-400">Cargando gastos…</p>}
+          {expenses.isPending && <Spinner />}
           {expenses.isError && <p className="text-sm text-red-400">{expenses.error.message}</p>}
 
           {expenses.isSuccess && allExpenses.length === 0 && (

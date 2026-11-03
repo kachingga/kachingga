@@ -11,15 +11,16 @@ export function RequireAuth() {
 
   if (session === undefined) {
     return (
-      <div className="flex min-h-dvh flex-col bg-black">
-        <main className="mx-auto w-full max-w-md flex-1 px-4 pb-32 pt-14">
-          <div className="mb-6 h-9 w-28 animate-pulse rounded-xl bg-neutral-800" />
-          <div className="space-y-3">
-            {[1, 2, 3].map((i) => (
-              <div key={i} className="h-20 animate-pulse rounded-3xl bg-neutral-800" />
-            ))}
-          </div>
-        </main>
+      <div className="flex min-h-dvh items-center justify-center bg-black">
+        <div className="flex gap-2">
+          {[0, 1, 2].map((i) => (
+            <div
+              key={i}
+              style={{ animationDelay: `${i * 150}ms` }}
+              className="h-2.5 w-2.5 animate-bounce rounded-full bg-neutral-500"
+            />
+          ))}
+        </div>
       </div>
     );
   }

@@ -1,6 +1,6 @@
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { Link, useNavigate } from 'react-router';
-import { useQuery } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
 import { useTRPC } from '@/lib/trpc';
 
@@ -22,18 +22,83 @@ function avatarColor(name: string) {
   return AVATAR_COLORS[Math.abs(hash) % AVATAR_COLORS.length];
 }
 
+function ArchiveIcon({ className }: { className?: string }) {
+  return (
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      viewBox="0 0 24 24"
+      className={className}
+      fill="currentColor"
+    >
+      <path
+        fillRule="evenodd"
+        d="M1 6a1 1 0 0 1 1-1h20a1 1 0 0 1 1 1v16a1 1 0 0 1-1 1H2a1 1 0 0 1-1-1V6Zm2 1v14h18V7H3Z"
+        clipRule="evenodd"
+      />
+      <path
+        fillRule="evenodd"
+        d="M2.564 1.649A1 1 0 0 1 3.5 1h17a1 1 0 0 1 .936.649l1.5 4A1 1 0 0 1 22 7H2a1 1 0 0 1-.936-1.351l1.5-4zM4.193 3l-.75 2h17.114l-.75-2H4.193zM9 9a1 1 0 0 1 1-1h3a1 1 0 0 1 1 1v4h2a1 1 0 0 1 .743 1.669l-4.5 5a1 1 0 0 1-1.486 0l-4.5-5A1 1 0 0 1 7 13h2V9zm2 1v4a1 1 0 0 1-1 1h-.755l2.255 2.505L13.755 15H13a1 1 0 0 1-1-1v-4h-1z"
+        clipRule="evenodd"
+      />
+    </svg>
+  );
+}
+
 export function GroupList() {
   const trpc = useTRPC();
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const [showArchived, setShowArchived] = useState(false);
   const [fabOpen, setFabOpen] = useState(false);
+  const [swipedId, setSwipedId] = useState<string | null>(null);
+  const touchStartX = useRef(0);
 
+  // When showing archived, fetch all and filter to only archived
   const groups = useQuery(trpc.groups.list.queryOptions({ includeArchived: showArchived }));
+  const displayGroups = showArchived
+    ? (groups.data ?? []).filter((g) => g.archivedAt)
+    : (groups.data ?? []);
+
+  const setArchived = useMutation(
+    trpc.groups.setArchived.mutationOptions({
+      onSuccess: () => {
+        void queryClient.invalidateQueries(trpc.groups.pathFilter());
+        setSwipedId(null);
+      },
+    }),
+  );
+
+  function handleTouchStart(e: React.TouchEvent) {
+    touchStartX.current = e.touches[0].clientX;
+  }
+
+  function handleTouchEnd(e: React.TouchEvent, groupId: string) {
+    const delta = touchStartX.current - e.changedTouches[0].clientX;
+    if (delta > 60) {
+      setSwipedId(groupId);
+    } else if (delta < -20) {
+      setSwipedId(null);
+    }
+  }
 
   return (
-    <div className="flex min-h-dvh flex-col bg-black">
+    <div className="flex min-h-dvh flex-col bg-black" onClick={() => swipedId && setSwipedId(null)}>
       <main className="mx-auto w-full max-w-md flex-1 px-4 pb-32 pt-14">
-        <h1 className="mb-6 text-3xl font-bold text-white">Grupos</h1>
+        <div className="mb-6 flex items-center justify-between">
+          <h1 className="text-3xl font-bold text-white">
+            {showArchived ? 'Archivados' : 'Grupos'}
+          </h1>
+          <button
+            onClick={() => {
+              setShowArchived(!showArchived);
+              setSwipedId(null);
+            }}
+            aria-label={showArchived ? 'Volver a grupos' : 'Ver archivados'}
+            className={`p-2 ${showArchived ? 'text-white' : 'text-neutral-500'}`}
+          >
+            <ArchiveIcon className="h-6 w-6" />
+          </button>
+        </div>
 
         {groups.isPending && (
           <div className="space-y-3">
@@ -55,20 +120,67 @@ export function GroupList() {
           </div>
         )}
 
-        {groups.isSuccess && groups.data.length === 0 && (
+        {groups.isSuccess && displayGroups.length === 0 && (
           <div className="py-16 text-center">
-            <p className="text-lg font-medium text-neutral-300">Todavía no tenés grupos</p>
-            <p className="mt-1 text-sm text-neutral-500">Creá uno o unite con un código.</p>
+            {showArchived ? (
+              <p className="text-lg font-medium text-neutral-300">No tenés grupos archivados</p>
+            ) : (
+              <>
+                <p className="text-lg font-medium text-neutral-300">Todavía no tenés grupos</p>
+                <p className="mt-1 text-sm text-neutral-500">Creá uno o unite con un código.</p>
+              </>
+            )}
           </div>
         )}
 
-        {groups.isSuccess && groups.data.length > 0 && (
+        {groups.isSuccess && displayGroups.length > 0 && (
           <ul className="space-y-3">
-            {groups.data.map((group) => (
-              <li key={group.id}>
+            {displayGroups.map((group) => (
+              <li
+                key={group.id}
+                className="relative overflow-hidden rounded-3xl"
+                onTouchStart={handleTouchStart}
+                onTouchEnd={(e) => handleTouchEnd(e, group.id)}
+              >
+                {/* Swipe actions (behind the card) */}
+                <div className="absolute inset-y-0 right-0 flex items-center">
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setArchived.mutate({ groupId: group.id, archived: !group.archivedAt });
+                    }}
+                    aria-label={group.archivedAt ? 'Desarchivar' : 'Archivar'}
+                    className="flex h-full w-20 flex-col items-center justify-center gap-1 bg-neutral-700"
+                  >
+                    <ArchiveIcon className="h-5 w-5 text-white" />
+                  </button>
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setSwipedId(null);
+                      navigate(`/grupos/${group.id}`);
+                    }}
+                    aria-label="Opciones"
+                    className="flex h-full w-20 flex-col items-center justify-center gap-1 rounded-r-3xl bg-neutral-600"
+                  >
+                    <span className="text-xl leading-none text-white">⋯</span>
+                  </button>
+                </div>
+
+                {/* Card (slides left on swipe) */}
                 <button
-                  onClick={() => navigate(`/grupos/${group.id}`)}
-                  className="flex w-full items-center gap-4 rounded-3xl bg-neutral-900 p-4 text-left active:bg-neutral-800"
+                  onClick={(e) => {
+                    if (swipedId === group.id) {
+                      e.stopPropagation();
+                      setSwipedId(null);
+                    } else {
+                      navigate(`/grupos/${group.id}`);
+                    }
+                  }}
+                  style={{
+                    transform: swipedId === group.id ? 'translateX(-160px)' : 'translateX(0)',
+                  }}
+                  className="relative z-10 flex w-full items-center gap-4 rounded-3xl bg-neutral-900 p-4 text-left transition-transform duration-200 active:bg-neutral-800"
                 >
                   <div
                     className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl ${avatarColor(group.name)}`}
@@ -83,7 +195,6 @@ export function GroupList() {
                       {group._count.participants}{' '}
                       {group._count.participants === 1 ? 'persona' : 'personas'} ·{' '}
                       {group.baseCurrency}
-                      {group.archivedAt ? ' · Archivado' : ''}
                     </p>
                   </div>
                   <span className="text-neutral-600">›</span>
@@ -91,15 +202,6 @@ export function GroupList() {
               </li>
             ))}
           </ul>
-        )}
-
-        {groups.isSuccess && (
-          <button
-            onClick={() => setShowArchived(!showArchived)}
-            className="mt-4 w-full py-2 text-sm text-neutral-600"
-          >
-            {showArchived ? 'Ocultar archivados' : 'Ver archivados'}
-          </button>
         )}
       </main>
 

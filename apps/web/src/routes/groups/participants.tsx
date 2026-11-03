@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useNavigate, useParams } from 'react-router';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
+import { Spinner } from '@/components/spinner';
 import { useTRPC } from '@/lib/trpc';
 
 export function Participants() {
@@ -58,7 +59,7 @@ export function Participants() {
     trpc.groups.regenerateInviteCode.mutationOptions({ onSuccess: invalidate }),
   );
 
-  if (group.isPending) return <p className="p-6 text-center text-neutral-400">Cargando…</p>;
+  if (group.isPending) return <Spinner fullScreen />;
   if (group.isError) return <p className="p-6 text-red-400">{group.error.message}</p>;
 
   const g = group.data;

@@ -1,6 +1,7 @@
 import { Link, useNavigate, useParams } from 'react-router';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
+import { Spinner } from '@/components/spinner';
 import { useTRPC } from '@/lib/trpc';
 import { categoryLabels, formatCents, formatDate } from '@/lib/format';
 
@@ -23,7 +24,7 @@ export function ExpenseDetail() {
   );
 
   if (expense.isPending) {
-    return <p className="p-6 text-center text-neutral-400">Cargando…</p>;
+    return <Spinner fullScreen />;
   }
   if (expense.isError) {
     return (

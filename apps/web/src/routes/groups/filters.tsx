@@ -3,6 +3,7 @@ import { useNavigate, useParams } from 'react-router';
 import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
 import { expenseCategories, type ExpenseFilters } from '@kachingga/api/schemas';
+import { Spinner } from '@/components/spinner';
 import { useTRPC } from '@/lib/trpc';
 import { categoryLabels, formatCents, formatDate, toDateInput } from '@/lib/format';
 
@@ -335,7 +336,7 @@ export function Filters() {
       {/* Gastos filtrados */}
       <div>
         <h2 className="mb-3 font-semibold">Gastos</h2>
-        {expenses.isPending && <p className="text-sm text-neutral-400">Cargando…</p>}
+        {expenses.isPending && <Spinner />}
         {expenses.isError && <p className="text-sm text-red-400">{expenses.error.message}</p>}
         {expenses.isSuccess && allExpenses.length === 0 && (
           <p className="py-6 text-center text-sm text-neutral-400">
