@@ -102,7 +102,7 @@ Precios en USD; a todo lo que se paga con tarjeta argentina en dólares se le su
 - **Pausas del plan gratis de Supabase:** si nadie la usa una semana, la app deja de andar hasta reactivarla desde el dashboard.
 - **Responsabilidad:** los datos del grupo dependen de nuestro código, backups y seguridad.
 - **Un solo pagador:** las cuentas (Railway, Apple) quedan a nombre de una persona.
-- **Publicarla** suma requisitos legales y de las stores (`PENDIENTES.md` → Lanzamiento → Fase 2).
+- **Publicarla** suma requisitos legales y de las stores (`lanzamiento.md` → "Fase 2").
 
 ---
 

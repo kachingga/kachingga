@@ -119,7 +119,7 @@ Lo personal **no se commitea**: configuración propia en `.claude/settings.local
 
 - **v1** — grupos, gastos, saldos, filtros, multimoneda y alias para cobrar. Ver [`V1.md`](V1.md).
 - **v2** — explicación de saldos y agente de gastos con IA. Ver [`V2.md`](V2.md).
-- Lanzamiento e infraestructura pendientes: [`PENDIENTES.md`](PENDIENTES.md).
+- Lo que falta (lanzamiento, infraestructura, propuestas): [issues de GitHub](https://github.com/kachingga/kachingga/issues), por milestone ([Fase 1 — Privada](https://github.com/kachingga/kachingga/milestone/1)). Contexto de las fases: [`docs/decisiones/lanzamiento.md`](docs/decisiones/lanzamiento.md).
 
 ## Documentación
 
@@ -138,8 +138,8 @@ El repo está documentado para que **cualquier persona y el Claude de cada uno t
 | [`V1.md`](V1.md) / [`V2.md`](V2.md) | Alcance de cada versión: qué entra, qué no, **pantallas** y roadmap con checkboxes | Cómo se implementa |
 | [`INFRA.md`](INFRA.md) | Qué servicios existen (Supabase, Railway, Expo, GitHub…), entornos dev/prod, **todas las variables de entorno y secretos** (nombres, nunca valores) | Pasos de deploy |
 | [`DEPLOY.md`](DEPLOY.md) | **Cómo** se hace cada cosa: deploy de la API, migraciones en prod, builds, updates | Inventario de servicios |
-| [`PENDIENTES.md`](PENDIENTES.md) | Lo que falta fuera del alcance de las versiones: **lanzamiento** (fase 1 con el grupo, fase 2 pública) e **infraestructura**. Cada ítem con su issue de GitHub | Cosas ya hechas (se borran) |
-| [`docs/decisiones/`](docs/decisiones/) | Decisiones investigadas, con fuentes y fecha: [`costos-y-alternativas.md`](docs/decisiones/costos-y-alternativas.md) (costos, web app vs. nativa vs. Tricount), [`mercado-pago.md`](docs/decisiones/mercado-pago.md) (qué se puede y qué no) | Tareas pendientes |
+| [Issues de GitHub](https://github.com/kachingga/kachingga/issues) (no es un archivo) | **Todo lo pendiente**: tareas, bugs, propuestas y decisiones a tomar, con labels y milestones ("Fase 1 — Privada", "Fase 2 — Pública"). Cómo usarlos: `CLAUDE.md` → "Issues, labels y milestones" | Alcance de una versión (va en `V1.md`), conocimiento investigado (va en `docs/decisiones/`) |
+| [`docs/decisiones/`](docs/decisiones/) | Decisiones investigadas, con fuentes y fecha: [`costos-y-alternativas.md`](docs/decisiones/costos-y-alternativas.md) (costos, web app vs. nativa vs. Tricount), [`mercado-pago.md`](docs/decisiones/mercado-pago.md) (qué se puede y qué no), [`lanzamiento.md`](docs/decisiones/lanzamiento.md) (fases y requisitos para lanzar) | Tareas pendientes (van en issues) |
 | `.env.sample` de cada app | Qué variables hacen falta y de dónde sale cada valor | Valores reales |
 | `.github/pull_request_template.md` | El checklist de cada PR | — |
 
@@ -162,13 +162,13 @@ El repo está documentado para que **cualquier persona y el Claude de cada uno t
 | El alcance o una pantalla | `V1.md` / `V2.md` (y se tilda el roadmap al terminar) |
 | Un servicio, una variable de entorno o un secreto | `INFRA.md` + el `.env.sample` que corresponda |
 | Cómo se deploya o se migra | `DEPLOY.md` |
-| Algo pendiente de lanzamiento o infra | `PENDIENTES.md` + un issue (`infra`, y `blocked` si depende de algo externo). Al terminarlo: se borra/tilda y se cierra el issue (`Closes #N` en el PR) |
+| Algo pendiente (tarea, bug, infra, lanzamiento) o una propuesta / decisión a tomar | Un issue de GitHub, con su label y milestone según `CLAUDE.md` → "Issues, labels y milestones". Al terminarlo: `Closes #N` en el PR |
 | Una decisión que requirió investigar (costos, alternativas, proveedores) | Un archivo en `docs/decisiones/` con fecha y fuentes |
 | Una convención del repo (commits, PRs, tooling) | `CLAUDE.md` |
 
 Reglas:
 - **Un dato vive en un solo lugar.** Si algo ya está escrito en otro archivo, se linkea en vez de copiarlo.
-- **Lo que se termina se saca de los pendientes**; lo que se decide queda escrito con el porqué, para no volver a discutirlo.
+- **Lo que se termina cierra su issue**; lo que se decide queda escrito con el porqué (en el issue y, si cambia una regla o convención, en el doc que corresponde), para no volver a discutirlo.
 - **Si el código contradice la documentación**, se avisa y se corrige uno de los dos en el mismo PR.
 - No crear archivos de documentación nuevos en la raíz sin necesidad: primero ver si entra en alguno de los de arriba.
 

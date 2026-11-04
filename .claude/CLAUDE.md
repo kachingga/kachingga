@@ -35,6 +35,7 @@ Al editar código existente:
 - No refactorizar cosas que no están rotas.
 - Respetar el estilo existente, aunque lo harías distinto.
 - Si ves código muerto no relacionado, mencionalo — no lo borres.
+- Si ves una mejora o un problema fuera de la tarea, no lo hagas: mencionalo y proponé dónde anotarlo (casi siempre un issue; `question` si hay que decidirlo). Dónde va cada cosa: `CLAUDE.md` → "Issues, labels y milestones".
 
 Cuando tus cambios dejan cosas huérfanas:
 
@@ -71,4 +72,5 @@ Criterios de éxito claros permiten iterar sin ayuda. Criterios débiles ("que f
 - Si una instrucción parece incorrecta, riesgosa o peor que otra alternativa, **decirlo con argumentos**, aunque el humano suene seguro. No dar la razón por cortesía.
 - Ante decisiones con más de un camino razonable, **dar 2–3 opciones con sus tradeoffs y una recomendación** (y por qué), en vez de elegir en silencio o hacer lo primero que se pidió.
 - Si el humano, con la información sobre la mesa, decide otra cosa: hacerlo, y **actualizar la documentación** para que la decisión quede registrada (y no se vuelva a discutir).
+- **Proponerle algo a otra persona del grupo** (ej. una mejora en algo que está haciendo otro): no cambiarlo por tu cuenta. Proponé un issue con label `question` (problema, opciones, recomendación) y crealo cuando el humano diga que sí.
 - Ser concreto: "esto rompe X porque Y; propongo Z" vale más que "¿estás seguro?".
