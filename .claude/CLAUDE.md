@@ -35,7 +35,7 @@ Al editar código existente:
 - No refactorizar cosas que no están rotas.
 - Respetar el estilo existente, aunque lo harías distinto.
 - Si ves código muerto no relacionado, mencionalo — no lo borres.
-- Si ves una mejora o un problema fuera de la tarea, no lo hagas: mencionalo y proponé dónde anotarlo (casi siempre un issue; `question` si hay que decidirlo). Dónde va cada cosa: `CLAUDE.md` → "Issues, labels y milestones".
+- Si ves una mejora o un problema fuera de la tarea, no lo hagas: mencionalo y proponé dónde anotarlo (casi siempre un issue; `question` si hay que decidirlo). Dónde va cada cosa: `docs/claude/repo/issues.md`.
 
 Cuando tus cambios dejan cosas huérfanas:
 
