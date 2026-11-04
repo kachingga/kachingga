@@ -2,46 +2,79 @@ import { useState } from 'react';
 import { useNavigate, useParams, useSearchParams } from 'react-router';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
+import type { inferRouterOutputs } from '@trpc/server';
+import type { AppRouter } from '@kachingga/api';
 import { currencies } from '@kachingga/api/schemas';
+import { ExchangeRateFields } from '@/components/exchange-rate-fields';
+import { useExchangeRate } from '@/lib/use-exchange-rate';
 import { Spinner } from '@/components/spinner';
 import { useTRPC } from '@/lib/trpc';
 import {
   centsToDisplay,
   currencyLabels,
+  dayToDate,
   formatCents,
   formatDate,
   parseCents,
-  todayInput,
+  today,
   type Currency,
 } from '@/lib/format';
 
+type GroupData = inferRouterOutputs<AppRouter>['groups']['get'];
+
 export function Settlements() {
   const { groupId } = useParams<{ groupId: string }>();
+  const navigate = useNavigate();
+  const trpc = useTRPC();
+
+  const group = useQuery(trpc.groups.get.queryOptions({ groupId: groupId! }));
+
+  if (group.isPending) return <Spinner fullScreen />;
+  if (group.isError) {
+    return (
+      <div className="p-6 text-center">
+        <p className="text-red-400">{group.error.message}</p>
+        <button onClick={() => navigate(-1)} className="mt-2 text-sm text-neutral-400 underline">
+          Volver
+        </button>
+      </div>
+    );
+  }
+  return <SettlementsBody groupId={groupId!} group={group.data} />;
+}
+
+function SettlementsBody({ groupId, group }: { groupId: string; group: GroupData }) {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const trpc = useTRPC();
   const queryClient = useQueryClient();
 
-  const group = useQuery(trpc.groups.get.queryOptions({ groupId: groupId! }));
-  const settlements = useQuery(trpc.settlements.list.queryOptions({ groupId: groupId! }));
+  const settlements = useQuery(trpc.settlements.list.queryOptions({ groupId }));
+
+  const baseCurrency = group.baseCurrency as Currency;
 
   // Pre-fill from query params (e.g. from "Marcar como pagado" on group detail)
   const prefillFrom = searchParams.get('from') ?? '';
   const prefillTo = searchParams.get('to') ?? '';
   const prefillAmountCents = searchParams.get('amount') ? Number(searchParams.get('amount')) : 0;
-  const prefillCurrency = searchParams.get('currency') ?? '';
-
-  const baseCurrency = (group.data?.baseCurrency ?? 'ARS') as Currency;
+  const prefillCurrency = (currencies as readonly string[]).includes(
+    searchParams.get('currency') ?? '',
+  )
+    ? (searchParams.get('currency') as Currency)
+    : baseCurrency;
 
   const [fromId, setFromId] = useState(prefillFrom);
   const [toId, setToId] = useState(prefillTo);
   const [amountInput, setAmountInput] = useState(
     prefillAmountCents > 0 ? centsToDisplay(prefillAmountCents) : '',
   );
-  const [currency, setCurrency] = useState<Currency>((prefillCurrency as Currency) || baseCurrency);
-  const [keepCurrency, setKeepCurrency] = useState(false);
-  const [exchangeRateInput, setExchangeRateInput] = useState('');
-  const [dateInput, setDateInput] = useState(todayInput());
+  const [currency, setCurrency] = useState<Currency>(prefillCurrency);
+  // A suggested transfer in a currency other than the base settles that currency's own balance.
+  const rate = useExchangeRate(baseCurrency, currency, {
+    exchangeRate: null,
+    keepCurrency: prefillCurrency !== baseCurrency,
+  });
+  const [dateInput, setDateInput] = useState(today());
   const [note, setNote] = useState('');
   const [formError, setFormError] = useState<string | null>(null);
   const [showForm, setShowForm] = useState(!!prefillFrom);
@@ -50,7 +83,7 @@ export function Settlements() {
     trpc.settlements.create.mutationOptions({
       onSuccess: () => {
         void queryClient.invalidateQueries(trpc.settlements.pathFilter());
-        void queryClient.invalidateQueries(trpc.balances.get.queryFilter({ groupId: groupId! }));
+        void queryClient.invalidateQueries(trpc.balances.get.queryFilter({ groupId }));
         setShowForm(false);
         setFormError(null);
         setFromId('');
@@ -66,7 +99,7 @@ export function Settlements() {
     trpc.settlements.delete.mutationOptions({
       onSuccess: () => {
         void queryClient.invalidateQueries(trpc.settlements.pathFilter());
-        void queryClient.invalidateQueries(trpc.balances.get.queryFilter({ groupId: groupId! }));
+        void queryClient.invalidateQueries(trpc.balances.get.queryFilter({ groupId }));
       },
     }),
   );
@@ -83,24 +116,25 @@ export function Settlements() {
       setFormError('Completá quién pagó y a quién');
       return;
     }
+    if (rate.missingRateError) {
+      setFormError(rate.missingRateError);
+      return;
+    }
     createSettlement.mutate({
-      groupId: groupId!,
+      groupId,
       fromId,
       toId,
       amountCents,
       currency,
-      exchangeRate:
-        currency !== baseCurrency && !keepCurrency && exchangeRateInput
-          ? parseFloat(exchangeRateInput)
-          : null,
-      keepCurrency: keepCurrency,
-      date: new Date(dateInput + 'T12:00:00'),
+      exchangeRate: rate.exchangeRate,
+      keepCurrency: currency !== baseCurrency && rate.keepCurrency,
+      date: dayToDate(dateInput),
       note: note.trim() || null,
     });
   }
 
-  const participants = group.data?.participants ?? [];
-  const isArchived = !!group.data?.archivedAt;
+  const participants = group.participants;
+  const isArchived = !!group.archivedAt;
 
   return (
     <main className="mx-auto min-h-dvh max-w-md p-6">
@@ -180,7 +214,7 @@ export function Settlements() {
                     onChange={(e) => setAmountInput(e.target.value)}
                     required
                     inputMode="decimal"
-                    placeholder="0.00"
+                    placeholder="0,00"
                     className="mt-1 w-full rounded-lg border border-neutral-700 bg-neutral-800 px-3 py-2 text-base text-white placeholder:text-neutral-600 focus:outline-none focus:ring-2 focus:ring-neutral-600"
                   />
                 </div>
@@ -195,7 +229,11 @@ export function Settlements() {
                   <select
                     id="sett-currency"
                     value={currency}
-                    onChange={(e) => setCurrency(e.target.value as Currency)}
+                    onChange={(e) => {
+                      const c = e.target.value as Currency;
+                      setCurrency(c);
+                      rate.resetFor(c);
+                    }}
                     className="mt-1 w-full rounded-lg border border-neutral-700 bg-neutral-800 px-2 py-2 text-sm text-white focus:outline-none focus:ring-2 focus:ring-neutral-600"
                   >
                     {currencies.map((c) => (
@@ -207,40 +245,7 @@ export function Settlements() {
                 </div>
               </div>
 
-              {currency !== baseCurrency && (
-                <div className="space-y-2">
-                  <div className="flex gap-2">
-                    <button
-                      type="button"
-                      onClick={() => setKeepCurrency(false)}
-                      className={`flex-1 rounded-lg py-1 text-sm ${!keepCurrency ? 'bg-white text-black' : 'border border-neutral-700 text-neutral-400'}`}
-                    >
-                      Convertir
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setKeepCurrency(true)}
-                      className={`flex-1 rounded-lg py-1 text-sm ${keepCurrency ? 'bg-white text-black' : 'border border-neutral-700 text-neutral-400'}`}
-                    >
-                      Mantener
-                    </button>
-                  </div>
-                  {!keepCurrency && (
-                    <div>
-                      <label className="block text-xs text-neutral-500">
-                        Tipo de cambio (1 {currency} en {baseCurrency})
-                      </label>
-                      <input
-                        value={exchangeRateInput}
-                        onChange={(e) => setExchangeRateInput(e.target.value)}
-                        inputMode="decimal"
-                        placeholder="0.00"
-                        className="mt-1 w-full rounded-lg border border-neutral-700 bg-neutral-800 px-3 py-2 text-base text-white placeholder:text-neutral-600 focus:outline-none focus:ring-2 focus:ring-neutral-600"
-                      />
-                    </div>
-                  )}
-                </div>
-              )}
+              <ExchangeRateFields rate={rate} amountCents={parseCents(amountInput)} />
 
               <div>
                 <label className="block text-sm font-medium text-neutral-400" htmlFor="sett-date">

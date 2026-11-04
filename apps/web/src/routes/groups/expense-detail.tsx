@@ -3,7 +3,13 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
 import { Spinner } from '@/components/spinner';
 import { useTRPC } from '@/lib/trpc';
-import { categoryLabels, formatCents, formatDate } from '@/lib/format';
+import {
+  categoryLabels,
+  decimalToDisplay,
+  formatCents,
+  formatDate,
+  splitTypeLabels,
+} from '@/lib/format';
 
 export function ExpenseDetail() {
   const { groupId, expenseId } = useParams<{ groupId: string; expenseId: string }>();
@@ -12,6 +18,8 @@ export function ExpenseDetail() {
   const queryClient = useQueryClient();
 
   const expense = useQuery(trpc.expenses.get.queryOptions({ expenseId: expenseId! }));
+  const group = useQuery(trpc.groups.get.queryOptions({ groupId: groupId! }));
+  const base = group.data?.baseCurrency;
 
   const deleteExpense = useMutation(
     trpc.expenses.delete.mutationOptions({
@@ -76,8 +84,18 @@ export function ExpenseDetail() {
 
         <div className="rounded-2xl bg-neutral-900 p-4">
           <p className="text-3xl font-bold">{formatCents(e.amountCents, e.currency)}</p>
-          {e.exchangeRate && e.currency !== e.currency && (
-            <p className="mt-1 text-sm text-neutral-400">Tipo de cambio: {e.exchangeRate}</p>
+          {base && e.exchangeRate !== null && (
+            <p className="mt-1 text-sm text-neutral-400">
+              ≈ {formatCents(Math.round(e.amountCents * e.exchangeRate), base)} · Tipo de cambio:{' '}
+              {e.currency === 'ARS'
+                ? `1 ${base} = ${decimalToDisplay(1 / e.exchangeRate)} ARS`
+                : `1 ${e.currency} = ${decimalToDisplay(e.exchangeRate)} ${base}`}
+            </p>
+          )}
+          {base && e.exchangeRate === null && e.currency !== base && (
+            <p className="mt-1 text-sm text-neutral-400">
+              Se mantiene en {e.currency} (saldo aparte)
+            </p>
           )}
         </div>
 
@@ -87,7 +105,9 @@ export function ExpenseDetail() {
         </div>
 
         <div>
-          <p className="mb-2 text-sm text-neutral-400">División ({e.splitType.toLowerCase()})</p>
+          <p className="mb-2 text-sm text-neutral-400">
+            División ({splitTypeLabels[e.splitType as keyof typeof splitTypeLabels]})
+          </p>
           <ul className="space-y-1">
             {e.splits.map((split) => (
               <li key={split.participantId} className="flex justify-between text-sm">

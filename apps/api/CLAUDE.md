@@ -119,6 +119,7 @@ Schema en `src/db/models/*.prisma`.
   - `currency != base` y `exchangeRate != null` → convertido (1 unidad = `exchangeRate` de la base)
   - `currency != base` y `exchangeRate == null` → "mantener moneda", saldo propio
 - En el input de la API eso se expresa con `currency`, `exchangeRate?` y `keepCurrency` (`resolveExchangeRate` decide qué se guarda; si falta el rate y no es `keepCurrency`, busca el blue).
+- **`date` de `Expense` y `Settlement` es un día del calendario**, no un instante: se guarda a las **12:00 UTC** de ese día y se lee siempre en UTC (`toISOString().slice(0, 10)`, como el export). Así todos ven el mismo día, estén en la zona horaria que estén. Los filtros por fecha van de 00:00 a 23:59:59.999 UTC. (Lo cargado antes al mediodía de Argentina, 15:00 UTC, cae en el mismo día.)
 - `userId` / `createdById` son ids de Supabase Auth (no hay tabla de usuarios propia).
 - Borrados lógicos con `deletedAt` en `Expense` y `Settlement`: **toda query de gastos/pagos filtra `deletedAt: null`**.
 

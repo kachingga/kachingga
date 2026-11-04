@@ -5,34 +5,27 @@ import type { inferRouterOutputs } from '@trpc/server';
 import type { AppRouter } from '@kachingga/api';
 import { currencies, expenseCategories } from '@kachingga/api/schemas';
 
+import { ExchangeRateFields } from '@/components/exchange-rate-fields';
+import { useExchangeRate } from '@/lib/use-exchange-rate';
 import { Spinner } from '@/components/spinner';
 import { useTRPC } from '@/lib/trpc';
 import {
   categoryLabels,
   centsToDisplay,
+  decimalToDisplay,
   currencyLabels,
+  dayToDate,
   formatCents,
   parseCents,
-  toDateInput,
-  todayInput,
+  parseDecimal,
+  toDay,
+  today,
   type Currency,
   type ExpenseCategory,
 } from '@/lib/format';
 
 type GroupData = inferRouterOutputs<AppRouter>['groups']['get'];
 type ExpenseData = inferRouterOutputs<AppRouter>['expenses']['get'];
-type RateSource = 'blue' | 'oficial' | 'manual';
-
-// Whether auto-suggest is possible: exactly one of (base, expense) currencies is ARS.
-function canAutoSuggest(base: string, expense: string) {
-  return (base === 'ARS') !== (expense === 'ARS') && base !== expense;
-}
-
-function defaultRateSource(base: string, expCurrency: string): RateSource {
-  if (base === expCurrency) return 'manual';
-  const foreign = base === 'ARS' ? expCurrency : base;
-  return foreign === 'USD' ? 'blue' : 'oficial';
-}
 
 // ─── Inner form (renders only when group + optional expense are ready) ────────
 
@@ -55,25 +48,25 @@ function ExpenseFormBody({ groupId, group, expenseId, expense }: FormProps) {
 
   // Initial values from existing expense or defaults
   const initCurrency = (expense?.currency ?? base) as Currency;
-  const initKeep = !!expense && expense.currency !== base && expense.exchangeRate === null;
-  const initRateSource: RateSource =
-    expense?.exchangeRate != null ? 'manual' : defaultRateSource(base, initCurrency);
 
   // Form state
   const [description, setDescription] = useState(expense?.description ?? '');
   const [category, setCategory] = useState<ExpenseCategory>(
     (expense?.category as ExpenseCategory) ?? 'OTHER',
   );
-  const [dateInput, setDateInput] = useState(expense ? toDateInput(expense.date) : todayInput());
+  const [dateInput, setDateInput] = useState(expense ? toDay(expense.date) : today());
   const [amountInput, setAmountInput] = useState(
     expense ? centsToDisplay(expense.amountCents) : '',
   );
   const [currency, setCurrency] = useState<Currency>(initCurrency);
   const [paidById, setPaidById] = useState(expense?.paidById ?? group.myParticipantId);
-  const [keepCurrency, setKeepCurrency] = useState(initKeep);
-  const [rateSource, setRateSource] = useState<RateSource>(initRateSource);
-  const [manualRate, setManualRate] = useState(
-    expense?.exchangeRate != null ? String(expense.exchangeRate) : '',
+  const rate = useExchangeRate(
+    base,
+    currency,
+    expense && {
+      exchangeRate: expense.exchangeRate,
+      keepCurrency: expense.currency !== base && expense.exchangeRate === null,
+    },
   );
   const [splitType, setSplitType] = useState<'EQUAL' | 'AMOUNT' | 'PERCENTAGE'>(
     (expense?.splitType as 'EQUAL' | 'AMOUNT' | 'PERCENTAGE') ?? 'EQUAL',
@@ -92,33 +85,12 @@ function ExpenseFormBody({ groupId, group, expenseId, expense }: FormProps) {
   const [percentShares, setPercentShares] = useState<Record<string, string>>(() => {
     if (expense?.splitType === 'PERCENTAGE') {
       return Object.fromEntries(
-        expense.splits.map((s) => [s.participantId, String(s.percentage ?? 0)]),
+        expense.splits.map((s) => [s.participantId, decimalToDisplay(s.percentage ?? 0)]),
       );
     }
     return Object.fromEntries(allIds.map((id) => [id, '']));
   });
   const [formError, setFormError] = useState<string | null>(null);
-
-  // Exchange rate query (auto-suggest)
-  const shouldFetchRate =
-    currency !== base && !keepCurrency && canAutoSuggest(base, currency) && rateSource !== 'manual';
-  const fetchCurrency = (base === 'ARS' ? currency : base) as Exclude<Currency, 'ARS'>;
-  const fetchSource = rateSource === 'blue' ? 'blue' : 'oficial';
-
-  const rateQuery = useQuery({
-    ...trpc.rates.get.queryOptions({ currency: fetchCurrency, source: fetchSource }),
-    enabled: shouldFetchRate,
-  });
-
-  // Compute the rate to display (and send to API)
-  function getDisplayRate(): string {
-    if (rateSource === 'manual') return manualRate;
-    if (!rateQuery.data) return '';
-    const mid = rateQuery.data.mid;
-    return (base === 'ARS' ? mid : 1 / mid).toFixed(4);
-  }
-
-  const displayRate = getDisplayRate();
 
   // Mutations
   const create = useMutation(
@@ -158,8 +130,8 @@ function ExpenseFormBody({ groupId, group, expenseId, expense }: FormProps) {
     return {
       type: 'PERCENTAGE' as const,
       shares: Object.entries(percentShares)
-        .filter(([, v]) => parseFloat(v) > 0)
-        .map(([participantId, v]) => ({ participantId, percentage: parseFloat(v) })),
+        .filter(([, v]) => (parseDecimal(v) ?? 0) > 0)
+        .map(([participantId, v]) => ({ participantId, percentage: parseDecimal(v)! })),
     };
   }
 
@@ -173,23 +145,19 @@ function ExpenseFormBody({ groupId, group, expenseId, expense }: FormProps) {
       return;
     }
 
-    const exchangeRateValue =
-      currency === base
-        ? undefined
-        : keepCurrency
-          ? undefined
-          : displayRate
-            ? parseFloat(displayRate)
-            : undefined;
+    if (rate.missingRateError) {
+      setFormError(rate.missingRateError);
+      return;
+    }
 
     const common = {
       description,
       category,
-      date: new Date(dateInput + 'T12:00:00'),
+      date: dayToDate(dateInput),
       amountCents,
       currency,
-      exchangeRate: exchangeRateValue ?? null,
-      keepCurrency,
+      exchangeRate: rate.exchangeRate,
+      keepCurrency: currency !== base && rate.keepCurrency,
       paidById,
       split: buildSplit(),
     };
@@ -205,7 +173,7 @@ function ExpenseFormBody({ groupId, group, expenseId, expense }: FormProps) {
 
   // Amount sums for live feedback
   const amountSumCents = Object.values(amountShares).reduce((s, v) => s + parseCents(v), 0);
-  const percentSum = Object.values(percentShares).reduce((s, v) => s + (parseFloat(v) || 0), 0);
+  const percentSum = Object.values(percentShares).reduce((s, v) => s + (parseDecimal(v) ?? 0), 0);
   const totalCents = parseCents(amountInput);
 
   return (
@@ -229,7 +197,7 @@ function ExpenseFormBody({ groupId, group, expenseId, expense }: FormProps) {
             onChange={(e) => setAmountInput(e.target.value)}
             required
             inputMode="decimal"
-            placeholder="0.00"
+            placeholder="0,00"
             className="mt-1 w-full rounded-lg border border-neutral-700 bg-neutral-900 px-3 py-2 text-base text-white placeholder:text-neutral-600 focus:outline-none focus:ring-2 focus:ring-neutral-600"
           />
         </div>
@@ -315,9 +283,7 @@ function ExpenseFormBody({ groupId, group, expenseId, expense }: FormProps) {
             onChange={(e) => {
               const c = e.target.value as Currency;
               setCurrency(c);
-              setKeepCurrency(false);
-              setRateSource(defaultRateSource(base, c));
-              setManualRate('');
+              rate.resetFor(c);
             }}
             className="mt-1 w-full rounded-lg border border-neutral-700 bg-neutral-900 px-3 py-2 text-base text-white focus:outline-none focus:ring-2 focus:ring-neutral-600"
           >
@@ -329,114 +295,7 @@ function ExpenseFormBody({ groupId, group, expenseId, expense }: FormProps) {
           </select>
         </div>
 
-        {/* Tipo de cambio (si la moneda no es la base) */}
-        {currency !== base && (
-          <div className="space-y-3 rounded-2xl bg-neutral-900 p-4">
-            <div className="flex gap-2">
-              <button
-                type="button"
-                onClick={() => setKeepCurrency(false)}
-                className={`flex-1 rounded-lg py-2 text-sm font-medium ${!keepCurrency ? 'bg-white text-black' : 'border border-neutral-700 text-neutral-400'}`}
-              >
-                Convertir a {base}
-              </button>
-              <button
-                type="button"
-                onClick={() => setKeepCurrency(true)}
-                className={`flex-1 rounded-lg py-2 text-sm font-medium ${keepCurrency ? 'bg-white text-black' : 'border border-neutral-700 text-neutral-400'}`}
-              >
-                Mantener en {currency}
-              </button>
-            </div>
-
-            {!keepCurrency && (
-              <>
-                {/* Selector de fuente del tipo de cambio */}
-                {canAutoSuggest(base, currency) && (
-                  <div className="flex gap-2">
-                    {currency === 'USD' || base === 'USD' ? (
-                      <>
-                        <button
-                          type="button"
-                          onClick={() => setRateSource('blue')}
-                          className={`rounded-lg px-3 py-1 text-xs ${rateSource === 'blue' ? 'bg-white text-black' : 'border border-neutral-700 text-neutral-400'}`}
-                        >
-                          Blue
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => setRateSource('oficial')}
-                          className={`rounded-lg px-3 py-1 text-xs ${rateSource === 'oficial' ? 'bg-white text-black' : 'border border-neutral-700 text-neutral-400'}`}
-                        >
-                          Oficial
-                        </button>
-                      </>
-                    ) : null}
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setRateSource('manual');
-                        setManualRate(displayRate);
-                      }}
-                      className={`rounded-lg px-3 py-1 text-xs ${rateSource === 'manual' ? 'bg-white text-black' : 'border border-neutral-700 text-neutral-400'}`}
-                    >
-                      A mano
-                    </button>
-                  </div>
-                )}
-
-                {/* Campo de tipo de cambio */}
-                <div>
-                  <label className="block text-xs text-neutral-500">
-                    1 {base === 'ARS' ? currency : base} ={' '}
-                    {rateQuery.isPending && rateSource !== 'manual' ? 'cargando…' : ''}
-                  </label>
-                  <div className="flex items-center gap-2">
-                    <input
-                      value={rateSource === 'manual' ? manualRate : displayRate}
-                      onChange={(e) => {
-                        if (rateSource === 'manual') setManualRate(e.target.value);
-                      }}
-                      readOnly={rateSource !== 'manual'}
-                      inputMode="decimal"
-                      placeholder="0.00"
-                      className="flex-1 rounded-lg border border-neutral-700 bg-neutral-800 px-3 py-2 text-base text-white placeholder:text-neutral-600 focus:outline-none focus:ring-2 focus:ring-neutral-600"
-                    />
-                    <span className="text-sm text-neutral-400">
-                      {base === 'ARS' ? base : 'ARS'}
-                    </span>
-                  </div>
-                  {displayRate && !keepCurrency && totalCents > 0 && (
-                    <p className="mt-1 text-xs text-neutral-400">
-                      ≈ {formatCents(Math.round(totalCents * parseFloat(displayRate)), base)}
-                    </p>
-                  )}
-                  {rateQuery.isError && (
-                    <p className="mt-1 text-xs text-red-400">
-                      No se pudo cargar la cotización. Usá &quot;A mano&quot;.
-                    </p>
-                  )}
-                </div>
-              </>
-            )}
-
-            {!canAutoSuggest(base, currency) && !keepCurrency && (
-              <div>
-                <label className="block text-xs text-neutral-500">
-                  Tipo de cambio (1 {currency} en {base})
-                </label>
-                <input
-                  value={manualRate}
-                  onChange={(e) => setManualRate(e.target.value)}
-                  required
-                  inputMode="decimal"
-                  placeholder="0.00"
-                  className="mt-1 w-full rounded-lg border border-neutral-700 bg-neutral-800 px-3 py-2 text-base text-white placeholder:text-neutral-600 focus:outline-none focus:ring-2 focus:ring-neutral-600"
-                />
-              </div>
-            )}
-          </div>
-        )}
+        <ExchangeRateFields rate={rate} amountCents={totalCents} />
 
         {/* División */}
         <div>
@@ -495,7 +354,7 @@ function ExpenseFormBody({ groupId, group, expenseId, expense }: FormProps) {
                     value={amountShares[p.id] ?? ''}
                     onChange={(e) => setAmountShares({ ...amountShares, [p.id]: e.target.value })}
                     inputMode="decimal"
-                    placeholder="0.00"
+                    placeholder="0,00"
                     className="w-24 rounded-lg border border-neutral-700 bg-neutral-900 px-2 py-1 text-right text-sm text-white placeholder:text-neutral-600 focus:outline-none focus:ring-2 focus:ring-neutral-600"
                   />
                 </div>

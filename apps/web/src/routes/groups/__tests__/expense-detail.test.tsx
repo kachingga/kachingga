@@ -54,4 +54,27 @@ describe('ExpenseDetail', () => {
     expect(screen.getByRole('link', { name: 'Editar' })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Borrar' })).toBeInTheDocument();
   });
+
+  it('shows the frozen exchange rate of a converted expense', async () => {
+    renderWithApi(<ExpenseDetail />, {
+      'expenses.get': () => ({
+        ...fixExpense,
+        amountCents: 2000,
+        currency: 'USD',
+        exchangeRate: 1555,
+      }),
+      'groups.get': () => ({ baseCurrency: 'ARS' }),
+    });
+    expect(await screen.findByText(/Tipo de cambio: 1 USD = 1555 ARS/)).toBeInTheDocument();
+    expect(screen.getByText(/31\.100,00/)).toBeInTheDocument();
+    expect(screen.getByText('División (partes iguales)')).toBeInTheDocument();
+  });
+
+  it('says when an expense keeps its currency', async () => {
+    renderWithApi(<ExpenseDetail />, {
+      'expenses.get': () => ({ ...fixExpense, currency: 'USD', exchangeRate: null }),
+      'groups.get': () => ({ baseCurrency: 'ARS' }),
+    });
+    expect(await screen.findByText('Se mantiene en USD (saldo aparte)')).toBeInTheDocument();
+  });
 });

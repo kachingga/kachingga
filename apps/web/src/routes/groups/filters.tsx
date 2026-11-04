@@ -5,7 +5,16 @@ import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from '@tansta
 import { expenseCategories, type ExpenseFilters } from '@kachingga/api/schemas';
 import { Spinner } from '@/components/spinner';
 import { useTRPC } from '@/lib/trpc';
-import { categoryLabels, formatCents, formatDate, toDateInput } from '@/lib/format';
+import {
+  categoryLabels,
+  endOfDay,
+  formatCents,
+  formatDate,
+  monthRange,
+  startOfDay,
+  toDay,
+  today,
+} from '@/lib/format';
 
 function triggerDownload(filename: string, mimeType: string, content: string) {
   const blob = new Blob([content], { type: mimeType });
@@ -82,10 +91,8 @@ export function Filters() {
   );
 
   function applyMonth() {
-    const now = new Date();
-    const first = new Date(now.getFullYear(), now.getMonth(), 1);
-    const last = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59);
-    setFilters((f) => ({ ...f, dateFrom: first, dateTo: last }));
+    const { from, to } = monthRange(today());
+    setFilters((f) => ({ ...f, dateFrom: startOfDay(from), dateTo: endOfDay(to) }));
   }
 
   const allExpenses = expenses.data?.pages.flatMap((p) => p.items) ?? [];
@@ -189,11 +196,11 @@ export function Filters() {
             <label className="block text-xs text-neutral-400">Desde</label>
             <input
               type="date"
-              value={filters.dateFrom ? toDateInput(filters.dateFrom) : ''}
+              value={filters.dateFrom ? toDay(filters.dateFrom) : ''}
               onChange={(e) =>
                 setFilters((f) => ({
                   ...f,
-                  dateFrom: e.target.value ? new Date(e.target.value + 'T00:00:00') : undefined,
+                  dateFrom: e.target.value ? startOfDay(e.target.value) : undefined,
                 }))
               }
               className="mt-1 w-full rounded-lg border border-neutral-700 bg-neutral-800 px-2 py-1 text-sm text-white focus:outline-none focus:ring-1 focus:ring-neutral-600"
@@ -203,11 +210,11 @@ export function Filters() {
             <label className="block text-xs text-neutral-400">Hasta</label>
             <input
               type="date"
-              value={filters.dateTo ? toDateInput(filters.dateTo) : ''}
+              value={filters.dateTo ? toDay(filters.dateTo) : ''}
               onChange={(e) =>
                 setFilters((f) => ({
                   ...f,
-                  dateTo: e.target.value ? new Date(e.target.value + 'T23:59:59') : undefined,
+                  dateTo: e.target.value ? endOfDay(e.target.value) : undefined,
                 }))
               }
               className="mt-1 w-full rounded-lg border border-neutral-700 bg-neutral-800 px-2 py-1 text-sm text-white focus:outline-none focus:ring-1 focus:ring-neutral-600"
