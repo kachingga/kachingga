@@ -52,7 +52,7 @@ Tipadas en `src/vite-env.d.ts`: si agregás una, sumala ahí, al `.env.sample` y
 src/
 ├── main.tsx                  # providers (ApiProvider) + RouterProvider
 ├── router.tsx                # todas las rutas
-├── routes/                   # una pantalla por archivo (hoy: home.tsx, placeholder)
+├── routes/                   # una pantalla por archivo (groups/ = todo lo de un grupo), tests en __tests__/
 ├── components/
 │   ├── api-provider.tsx      # tRPC + TanStack Query
 │   └── require-auth.tsx      # guard de rutas privadas → /login
@@ -127,7 +127,7 @@ const createExpense = useMutation(
 ### Login (Supabase Auth, email + password)
 - **Decisión:** el login va **directo contra Supabase** (`src/lib/auth.ts`), no por nuestra API; la librería guarda la sesión (localStorage) y **renueva el token** sola. Los datos siempre por la API.
 - `src/lib/trpc.ts` ya manda el token en cada pedido (`Authorization: Bearer`). Sin sesión, todo menos `health.ping` responde `UNAUTHORIZED`.
-- Falta hacer (Juan): pantallas de login / registro y proteger las rutas con `<RequireAuth />` en `src/router.tsx`. `useSession()` devuelve `undefined` mientras restaura la sesión (no mostrar nada), `null` sin sesión.
+- Las rutas privadas van dentro de `<RequireAuth />` en `src/router.tsx`. `useSession()` devuelve `undefined` mientras restaura la sesión (no mostrar nada), `null` sin sesión.
 - Después del login: `groups.list`. Unirse: `groups.preview` con el código → elegir participante sin cuenta o nombre nuevo → `groups.join`.
 
 ### Lo que hace cumplir el lint (falla el commit y el CI)
