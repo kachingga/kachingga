@@ -1,50 +1,55 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import {
-  centsToDisplay,
+  centsToNumeric,
   dayToDate,
   endOfDay,
+  formatCents,
   formatDate,
+  formatPlainAmount,
   monthRange,
-  parseCents,
-  parseDecimal,
+  numberSeparators,
   startOfDay,
+  toCents,
+  toNumber,
+  toNumeric,
   toDay,
   today,
 } from '@/lib/format';
 
-describe('parseDecimal / parseCents', () => {
-  it.each([
-    ['1500', 1500],
-    ['1.500', 1500],
-    ['1.500,50', 1500.5],
-    ['1.500.000', 1500000],
-    ['1500,5', 1500.5],
-    ['1500.50', 1500.5],
-    ['12.5', 12.5],
-    ['0.500', 0.5],
-    ['0,5', 0.5],
-    [',5', 0.5],
-    ['1,500.50', 1500.5],
-    [' 1.555 ', 1555],
-    ['0.000643', 0.000643],
-  ])('"%s" → %s', (input, expected) => {
-    expect(parseDecimal(input)).toBe(expected);
+describe('locale formatting', () => {
+  function asBrowser(language: string) {
+    Object.defineProperty(window.navigator, 'language', { value: language, configurable: true });
+  }
+  afterEach(() => asBrowser('es-AR'));
+
+  it('follows the browser language', () => {
+    expect(formatCents(150050, 'ARS')).toBe('$\u00a01.500,50');
+    expect(numberSeparators()).toEqual({ group: '.', decimal: ',' });
+    expect(formatPlainAmount(150050)).toBe('1500,50');
+
+    asBrowser('en-US');
+    expect(formatCents(150050, 'USD')).toBe('$1,500.50');
+    expect(numberSeparators()).toEqual({ group: ',', decimal: '.' });
+    expect(formatPlainAmount(150050)).toBe('1500.50');
+    expect(formatDate(dayToDate('2026-11-04'))).toBe('11/4/2026');
   });
 
-  it.each(['', 'abc', '1,5,5', '1.50.0', '-5', '1e3'])('"%s" is not a number', (input) => {
-    expect(parseDecimal(input)).toBeNull();
+  it('always shows debts with their cents', () => {
+    expect(formatCents(-777550, 'ARS')).toBe('-$\u00a07.775,50');
+    expect(formatCents(100, 'ARS')).toBe('$\u00a01,00');
   });
+});
 
-  it('turns Argentine amounts into cents', () => {
-    expect(parseCents('1.500')).toBe(150000);
-    expect(parseCents('1.500,50')).toBe(150050);
-    expect(parseCents('nada')).toBe(0);
-  });
-
-  it('round-trips what it shows in inputs', () => {
-    expect(centsToDisplay(150050)).toBe('1500,50');
-    expect(parseCents(centsToDisplay(150050))).toBe(150050);
+describe('normalized numbers', () => {
+  it('converts between numeric strings and cents', () => {
+    expect(toCents('1500.5')).toBe(150050);
+    expect(toCents('19.99')).toBe(1999);
+    expect(toCents('')).toBe(0);
+    expect(centsToNumeric(150050)).toBe('1500.5');
+    expect(toNumber('')).toBeNull();
+    expect(toNumber('0.000643')).toBe(0.000643);
+    expect(toNumeric(1 / 1555)).toBe('0.000643');
   });
 });
 

@@ -5,9 +5,9 @@ import { Spinner } from '@/components/spinner';
 import { useTRPC } from '@/lib/trpc';
 import {
   categoryLabels,
-  decimalToDisplay,
   formatCents,
   formatDate,
+  formatNumber,
   splitTypeLabels,
 } from '@/lib/format';
 
@@ -88,8 +88,8 @@ export function ExpenseDetail() {
             <p className="mt-1 text-sm text-neutral-400">
               ≈ {formatCents(Math.round(e.amountCents * e.exchangeRate), base)} · Tipo de cambio:{' '}
               {e.currency === 'ARS'
-                ? `1 ${base} = ${decimalToDisplay(1 / e.exchangeRate)} ARS`
-                : `1 ${e.currency} = ${decimalToDisplay(e.exchangeRate)} ${base}`}
+                ? `1 ${base} = ${formatNumber(1 / e.exchangeRate)} ARS`
+                : `1 ${e.currency} = ${formatNumber(e.exchangeRate)} ${base}`}
             </p>
           )}
           {base && e.exchangeRate === null && e.currency !== base && (

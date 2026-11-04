@@ -65,7 +65,7 @@ describe('ExpenseDetail', () => {
       }),
       'groups.get': () => ({ baseCurrency: 'ARS' }),
     });
-    expect(await screen.findByText(/Tipo de cambio: 1 USD = 1555 ARS/)).toBeInTheDocument();
+    expect(await screen.findByText(/Tipo de cambio: 1 USD = 1.555 ARS/)).toBeInTheDocument();
     expect(screen.getByText(/31\.100,00/)).toBeInTheDocument();
     expect(screen.getByText('División (partes iguales)')).toBeInTheDocument();
   });

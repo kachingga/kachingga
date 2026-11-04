@@ -20,6 +20,7 @@
     "@trpc/tanstack-react-query": "^11.23.0",
     "react": "19.3.0",
     "react-dom": "19.3.0",
+    "react-number-format": "5.4.4",
     "react-router": "^8.5.1",
     "superjson": "^2.2.6"
   },

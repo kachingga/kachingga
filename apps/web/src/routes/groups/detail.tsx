@@ -6,7 +6,7 @@ import type { AppRouter } from '@kachingga/api';
 
 import { Spinner } from '@/components/spinner';
 import { useTRPC } from '@/lib/trpc';
-import { categoryLabels, formatCents, formatDate } from '@/lib/format';
+import { categoryLabels, formatCents, formatDate, formatPlainAmount } from '@/lib/format';
 
 type GroupData = inferRouterOutputs<AppRouter>['groups']['get'];
 type BalancesData = inferRouterOutputs<AppRouter>['balances']['get'];
@@ -92,7 +92,7 @@ function BalanceSection({ group, balances }: { group: GroupData; balances: Balan
                           )}
                           <button
                             onClick={() =>
-                              void navigator.clipboard.writeText((t.amountCents / 100).toFixed(2))
+                              void navigator.clipboard.writeText(formatPlainAmount(t.amountCents))
                             }
                             className="rounded border border-neutral-700 px-3 py-1 text-xs text-neutral-300"
                           >

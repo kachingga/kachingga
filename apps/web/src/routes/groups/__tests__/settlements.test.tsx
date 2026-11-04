@@ -98,7 +98,7 @@ describe('Settlements', () => {
       },
       '/?from=p1&to=p2&amount=6000&currency=USD',
     );
-    expect(await screen.findByLabelText('Monto')).toHaveValue('60,00');
+    expect(await screen.findByLabelText('Monto')).toHaveValue('60');
     expect(screen.getByLabelText('Moneda')).toHaveValue('USD');
     await user.click(screen.getByRole('button', { name: 'Registrar' }));
 
@@ -138,6 +138,6 @@ describe('Settlements', () => {
     });
     await user.click(await screen.findByRole('button', { name: '+ Registrar pago' }));
     await user.selectOptions(screen.getByLabelText('Moneda'), 'USD');
-    expect(await screen.findByLabelText(/Tipo de cambio: 1 USD =/)).toHaveValue('1555');
+    expect(await screen.findByLabelText(/Tipo de cambio: 1 USD =/)).toHaveValue('1.555');
   });
 });

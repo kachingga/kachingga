@@ -6,18 +6,20 @@ import type { AppRouter } from '@kachingga/api';
 import { currencies, expenseCategories } from '@kachingga/api/schemas';
 
 import { ExchangeRateFields } from '@/components/exchange-rate-fields';
+import { NumberInput } from '@/components/number-input';
 import { useExchangeRate } from '@/lib/use-exchange-rate';
 import { Spinner } from '@/components/spinner';
 import { useTRPC } from '@/lib/trpc';
 import {
   categoryLabels,
-  centsToDisplay,
-  decimalToDisplay,
+  centsToNumeric,
   currencyLabels,
   dayToDate,
   formatCents,
-  parseCents,
-  parseDecimal,
+  formatNumber,
+  toCents,
+  toNumber,
+  toNumeric,
   toDay,
   today,
   type Currency,
@@ -56,7 +58,7 @@ function ExpenseFormBody({ groupId, group, expenseId, expense }: FormProps) {
   );
   const [dateInput, setDateInput] = useState(expense ? toDay(expense.date) : today());
   const [amountInput, setAmountInput] = useState(
-    expense ? centsToDisplay(expense.amountCents) : '',
+    expense ? centsToNumeric(expense.amountCents) : '',
   );
   const [currency, setCurrency] = useState<Currency>(initCurrency);
   const [paidById, setPaidById] = useState(expense?.paidById ?? group.myParticipantId);
@@ -77,7 +79,7 @@ function ExpenseFormBody({ groupId, group, expenseId, expense }: FormProps) {
   const [amountShares, setAmountShares] = useState<Record<string, string>>(() => {
     if (expense?.splitType === 'AMOUNT') {
       return Object.fromEntries(
-        expense.splits.map((s) => [s.participantId, centsToDisplay(s.amountCents)]),
+        expense.splits.map((s) => [s.participantId, centsToNumeric(s.amountCents)]),
       );
     }
     return Object.fromEntries(allIds.map((id) => [id, '']));
@@ -85,7 +87,7 @@ function ExpenseFormBody({ groupId, group, expenseId, expense }: FormProps) {
   const [percentShares, setPercentShares] = useState<Record<string, string>>(() => {
     if (expense?.splitType === 'PERCENTAGE') {
       return Object.fromEntries(
-        expense.splits.map((s) => [s.participantId, decimalToDisplay(s.percentage ?? 0)]),
+        expense.splits.map((s) => [s.participantId, toNumeric(s.percentage ?? 0)]),
       );
     }
     return Object.fromEntries(allIds.map((id) => [id, '']));
@@ -123,15 +125,15 @@ function ExpenseFormBody({ groupId, group, expenseId, expense }: FormProps) {
       return {
         type: 'AMOUNT' as const,
         shares: Object.entries(amountShares)
-          .filter(([, v]) => parseCents(v) > 0)
-          .map(([participantId, v]) => ({ participantId, amountCents: parseCents(v) })),
+          .filter(([, v]) => toCents(v) > 0)
+          .map(([participantId, v]) => ({ participantId, amountCents: toCents(v) })),
       };
     }
     return {
       type: 'PERCENTAGE' as const,
       shares: Object.entries(percentShares)
-        .filter(([, v]) => (parseDecimal(v) ?? 0) > 0)
-        .map(([participantId, v]) => ({ participantId, percentage: parseDecimal(v)! })),
+        .filter(([, v]) => (toNumber(v) ?? 0) > 0)
+        .map(([participantId, v]) => ({ participantId, percentage: toNumber(v)! })),
     };
   }
 
@@ -139,7 +141,7 @@ function ExpenseFormBody({ groupId, group, expenseId, expense }: FormProps) {
     e.preventDefault();
     setFormError(null);
 
-    const amountCents = parseCents(amountInput);
+    const amountCents = toCents(amountInput);
     if (amountCents <= 0) {
       setFormError('El monto tiene que ser mayor a cero');
       return;
@@ -172,9 +174,9 @@ function ExpenseFormBody({ groupId, group, expenseId, expense }: FormProps) {
   const isSaving = create.isPending || update.isPending;
 
   // Amount sums for live feedback
-  const amountSumCents = Object.values(amountShares).reduce((s, v) => s + parseCents(v), 0);
-  const percentSum = Object.values(percentShares).reduce((s, v) => s + (parseDecimal(v) ?? 0), 0);
-  const totalCents = parseCents(amountInput);
+  const amountSumCents = Object.values(amountShares).reduce((s, v) => s + toCents(v), 0);
+  const percentSum = Object.values(percentShares).reduce((s, v) => s + (toNumber(v) ?? 0), 0);
+  const totalCents = toCents(amountInput);
 
   return (
     <main className="mx-auto min-h-dvh max-w-md p-6 pb-12">
@@ -191,13 +193,12 @@ function ExpenseFormBody({ groupId, group, expenseId, expense }: FormProps) {
           <label className="block text-sm font-medium text-neutral-400" htmlFor="amount">
             Monto
           </label>
-          <input
+          <NumberInput
             id="amount"
             value={amountInput}
-            onChange={(e) => setAmountInput(e.target.value)}
+            onValueChange={setAmountInput}
             required
-            inputMode="decimal"
-            placeholder="0,00"
+            placeholder="0"
             className="mt-1 w-full rounded-lg border border-neutral-700 bg-neutral-900 px-3 py-2 text-base text-white placeholder:text-neutral-600 focus:outline-none focus:ring-2 focus:ring-neutral-600"
           />
         </div>
@@ -350,11 +351,11 @@ function ExpenseFormBody({ groupId, group, expenseId, expense }: FormProps) {
                     {p.name}
                     {p.isMe ? ' (yo)' : ''}
                   </span>
-                  <input
+                  <NumberInput
+                    aria-label={`Monto de ${p.name}`}
                     value={amountShares[p.id] ?? ''}
-                    onChange={(e) => setAmountShares({ ...amountShares, [p.id]: e.target.value })}
-                    inputMode="decimal"
-                    placeholder="0,00"
+                    onValueChange={(v) => setAmountShares({ ...amountShares, [p.id]: v })}
+                    placeholder="0"
                     className="w-24 rounded-lg border border-neutral-700 bg-neutral-900 px-2 py-1 text-right text-sm text-white placeholder:text-neutral-600 focus:outline-none focus:ring-2 focus:ring-neutral-600"
                   />
                 </div>
@@ -378,12 +379,10 @@ function ExpenseFormBody({ groupId, group, expenseId, expense }: FormProps) {
                     {p.isMe ? ' (yo)' : ''}
                   </span>
                   <div className="flex items-center gap-1">
-                    <input
+                    <NumberInput
+                      aria-label={`Porcentaje de ${p.name}`}
                       value={percentShares[p.id] ?? ''}
-                      onChange={(e) =>
-                        setPercentShares({ ...percentShares, [p.id]: e.target.value })
-                      }
-                      inputMode="decimal"
+                      onValueChange={(v) => setPercentShares({ ...percentShares, [p.id]: v })}
                       placeholder="0"
                       className="w-20 rounded-lg border border-neutral-700 bg-neutral-900 px-2 py-1 text-right text-sm text-white placeholder:text-neutral-600 focus:outline-none focus:ring-2 focus:ring-neutral-600"
                     />
@@ -394,9 +393,9 @@ function ExpenseFormBody({ groupId, group, expenseId, expense }: FormProps) {
               <p
                 className={`text-xs ${Math.abs(percentSum - 100) < 0.01 ? 'text-green-400' : 'text-neutral-400'}`}
               >
-                Total: {percentSum.toFixed(1)}% / 100%
+                Total: {formatNumber(percentSum, 2)}% / 100%
                 {Math.abs(percentSum - 100) >= 0.01 &&
-                  ` (faltan ${(100 - percentSum).toFixed(1)}%)`}
+                  ` (faltan ${formatNumber(100 - percentSum, 2)}%)`}
               </p>
             </div>
           )}

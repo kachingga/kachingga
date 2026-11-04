@@ -107,7 +107,7 @@ describe('ExpenseForm (amounts, dates and currencies)', () => {
     });
     await fillBasics(user, '20');
     await user.selectOptions(screen.getByLabelText('Moneda'), 'USD');
-    expect(await screen.findByDisplayValue('1555')).toBeInTheDocument();
+    expect(await screen.findByDisplayValue('1.555')).toBeInTheDocument();
     expect(screen.getByText('≈ $ 31.100,00')).toBeInTheDocument();
     await user.click(screen.getByRole('button', { name: 'Agregar gasto' }));
 
@@ -155,7 +155,7 @@ describe('ExpenseForm (amounts, dates and currencies)', () => {
     });
     await fillBasics(user, '31.100');
     await user.selectOptions(screen.getByLabelText('Moneda'), 'ARS');
-    expect(await screen.findByLabelText(/Tipo de cambio: 1 USD =/)).toHaveValue('1555');
+    expect(await screen.findByLabelText(/Tipo de cambio: 1 USD =/)).toHaveValue('1.555');
     await user.click(screen.getByRole('button', { name: 'Agregar gasto' }));
 
     await waitFor(() => expect(create.calls).toHaveLength(1));

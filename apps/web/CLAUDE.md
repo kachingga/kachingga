@@ -114,7 +114,8 @@ const createExpense = useMutation(
 - Toda la data viene de la API por tRPC (`useTRPC`). Solo `import type` desde `@kachingga/api`; los schemas Zod para formularios desde `@kachingga/api/schemas`.
 - No redefinir a mano tipos de inputs/outputs.
 - **Después de una mutation, invalidar** lo que afecta (gastos y pagos → `balances.get` y `expenses.summary`; participantes → `groups.get`).
-- **Montos en centavos enteros** (`amountCents`): convertir solo para mostrar y al leer inputs. Lo que escribe el usuario se lee con `parseCents` / `parseDecimal` (`src/lib/format.ts`), que entienden el formato argentino ("1.500,50", "1.500" = mil quinientos) y el punto decimal ("12.5"); nunca `parseFloat` directo.
+- **Idioma del navegador para mostrar, valores normalizados por detrás:** montos, números y fechas se muestran con el idioma del navegador (`getLocale()` en `src/lib/format.ts`: "1.500,50" en es-AR, "1,500.50" en en-US). Lo que se guarda en el estado y se manda a la API está siempre normalizado: números como string numérico (`"1500.5"`), plata en centavos, fechas como día del calendario.
+- **Montos en centavos enteros** (`amountCents`). Todo campo numérico (montos, porcentajes, tipo de cambio) usa **`<NumberInput>`** (`src/components/number-input.tsx`, sobre `react-number-format`): formatea mientras se escribe y devuelve el string normalizado; después `toCents` / `toNumber`. Solo el separador decimal del idioma escribe decimales (en es-AR, un "." tipeado por costumbre se ignora: "1.500" = mil quinientos). Nunca un `<input>` de texto con `parseFloat`.
 - **Tipo de cambio:** ya está resuelto en `useExchangeRate` (`src/lib/use-exchange-rate.ts`) + `<ExchangeRateFields>` (`src/components/`), que usan el formulario de gasto y el de pago. Al cargar un gasto o pago en otra moneda, precargar la sugerencia de `rates.get({ currency, source })` (`mid`), editable, y mandar el valor final como `exchangeRate`. En **USD**: selector **Blue** (default) / **Oficial** / **A mano**; en **EUR, BRL, UYU y CLP**: **Oficial** (default) / **A mano**. `rates.get` da 1 unidad en ARS: si la base del grupo es la moneda extranjera y el gasto es en ARS, usar `1 / mid`. Entre dos monedas extranjeras no hay sugerencia: solo a mano. Ofrecer también "mantener moneda" (`keepCurrency: true`). Cada gasto elige lo suyo (uno en oficial, otro en blue, otro mantenido en USD en el mismo grupo).
 - **Monedas:** los selectores (moneda base del grupo, moneda de gasto y pago) muestran **todas** las de `currencies` de `@kachingga/api/schemas` (ARS, USD, EUR, BRL, UYU, CLP), con su nombre en español. Nunca una lista a mano: si se agrega una moneda en la API, aparece sola.
 - **Alias para cobrar:** `groups.get` trae el alias de cada participante (`paymentAlias`, `paymentAliasSource`). Botones de copiar con `navigator.clipboard.writeText`.
@@ -191,7 +192,7 @@ La app la usamos nosotros todos los días, sobre todo en el celu: tiene que ser 
 - En divisiones por monto/porcentaje, mostrar en vivo cuánto falta para el total/100%.
 
 ### Plata, fechas y textos
-- Montos en **un solo helper** con `Intl.NumberFormat('es-AR', { style: 'currency', currency })`. Siempre mostrar la moneda.
+- Montos en **un solo helper** (`formatCents`, con `Intl.NumberFormat` en el idioma del navegador). Siempre mostrar la moneda. "Copiar monto" usa `formatPlainAmount` (sin separador de miles, para pegar en el banco).
 - Saldos con color **y** texto ("Debés $X" / "Te deben $X" / "Estás al día").
 - Copy en español argentino, corto y claro.
 

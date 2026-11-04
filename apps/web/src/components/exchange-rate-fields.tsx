@@ -1,5 +1,6 @@
 import { canAutoSuggest, type ExchangeRateState } from '@/lib/use-exchange-rate';
-import { decimalToDisplay, formatCents } from '@/lib/format';
+import { NumberInput } from '@/components/number-input';
+import { formatCents, toNumeric } from '@/lib/format';
 
 const chip = (active: boolean) =>
   `rounded-lg px-3 py-1 text-xs ${active ? 'bg-white text-black' : 'border border-neutral-700 text-neutral-400'}`;
@@ -19,11 +20,7 @@ export function ExchangeRateFields({
   const from = inverted ? base : currency;
   const to = inverted ? 'ARS' : base;
   const shown =
-    source === 'manual'
-      ? rate.manualRate
-      : rateQuery.data
-        ? decimalToDisplay(rateQuery.data.mid)
-        : '';
+    source === 'manual' ? rate.manualRate : rateQuery.data ? toNumeric(rateQuery.data.mid) : '';
 
   return (
     <div className="space-y-3 rounded-2xl bg-neutral-900 p-4">
@@ -80,13 +77,13 @@ export function ExchangeRateFields({
               {source !== 'manual' && rateQuery.isPending ? 'cargando…' : ''}
             </label>
             <div className="mt-1 flex items-center gap-2">
-              <input
+              <NumberInput
                 id="exchange-rate"
                 value={shown}
-                onChange={(e) => rate.setManualRate(e.target.value)}
+                onValueChange={rate.setManualRate}
+                decimals={6}
                 readOnly={source !== 'manual'}
-                inputMode="decimal"
-                placeholder="0,00"
+                placeholder="0"
                 className="flex-1 rounded-lg border border-neutral-700 bg-neutral-800 px-3 py-2 text-base text-white placeholder:text-neutral-600 focus:outline-none focus:ring-2 focus:ring-neutral-600"
               />
               <span className="text-sm text-neutral-400">{to}</span>

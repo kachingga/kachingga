@@ -3,63 +3,75 @@ import { currencies, expenseCategories } from '@kachingga/api/schemas';
 export type Currency = (typeof currencies)[number];
 export type ExpenseCategory = (typeof expenseCategories)[number];
 
-/** Format cents as a localized currency string (e.g. 150050 → "$1.500,50"). */
+// ─── Locale ───────────────────────────────────────────────────────────────────
+// Everything the user sees (amounts, numbers, dates) follows the browser's language: "1.500,50"
+// in es-AR, "1,500.50" in en-US. What the app keeps and sends is always normalized: numbers as
+// plain numeric strings ("1500.5") or cents (150050), dates as calendar days ("2026-11-04").
+
+/** The browser's language (es-AR as a fallback). */
+export function getLocale(): string {
+  return (typeof navigator !== 'undefined' && navigator.language) || 'es-AR';
+}
+
+/** Thousands and decimal separators of the browser's language. */
+export function numberSeparators(): { group: string; decimal: string } {
+  const parts = new Intl.NumberFormat(getLocale()).formatToParts(1234567.5);
+  return {
+    group: parts.find((p) => p.type === 'group')?.value ?? '.',
+    decimal: parts.find((p) => p.type === 'decimal')?.value ?? ',',
+  };
+}
+
+/** Format cents as a localized currency string (150050 → "$ 1.500,50" in es-AR). */
 export function formatCents(cents: number, currency: string): string {
-  return new Intl.NumberFormat('es-AR', {
+  return new Intl.NumberFormat(getLocale(), {
     style: 'currency',
     currency,
     minimumFractionDigits: 2,
   }).format(cents / 100);
 }
 
+/** A localized number, e.g. an exchange rate (1555.5 → "1.555,5" in es-AR). */
+export function formatNumber(value: number, maxDecimals = 4): string {
+  return new Intl.NumberFormat(getLocale(), { maximumFractionDigits: maxDecimals }).format(value);
+}
+
 /**
- * Parse a user-typed decimal number. Accepts the Argentine format ("1.500,50", "1.500", "0,5")
- * and a plain dot as decimal separator ("1500.50", "12.5"). Returns null if it isn't a number.
- *
- * Rules: with both separators, the last one is the decimal one. With only commas, a single
- * comma is decimal. With only dots, it's a thousands separator when there are several, or one
- * followed by exactly 3 digits after a non-zero integer part ("1.500" → 1500, "0.500" → 0.5).
+ * Cents as a plain localized amount to paste into a bank app: decimal separator of the
+ * browser's language, no thousands separator (150050 → "1500,50" in es-AR).
  */
-export function parseDecimal(value: string): number | null {
-  let s = value.trim().replace(/\s/g, '');
-  if (!/^\d[\d.,]*$/.test(s) && !/^[.,]\d+$/.test(s)) return null;
+export function formatPlainAmount(cents: number): string {
+  return new Intl.NumberFormat(getLocale(), {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+    useGrouping: false,
+  }).format(cents / 100);
+}
 
-  const lastDot = s.lastIndexOf('.');
-  const lastComma = s.lastIndexOf(',');
-  if (lastDot !== -1 && lastComma !== -1) {
-    const decimal = lastDot > lastComma ? '.' : ',';
-    const thousands = decimal === '.' ? ',' : '.';
-    s = s.split(thousands).join('').replace(decimal, '.');
-  } else if (lastComma !== -1) {
-    if (s.indexOf(',') !== lastComma) return null;
-    s = s.replace(',', '.');
-  } else if (lastDot !== -1) {
-    const isThousands =
-      s.indexOf('.') !== lastDot || (/^\d+\.\d{3}$/.test(s) && !s.startsWith('0.'));
-    if (isThousands) {
-      if (!/^\d{1,3}(\.\d{3})+$/.test(s)) return null;
-      s = s.split('.').join('');
-    }
-  }
+// ─── Normalized numbers (what number inputs hold) ───────────────────────────
+// <NumberInput> shows the number formatted while typing and hands back a normalized numeric
+// string ("1500.5", "" when empty). These convert between that and what the API uses.
 
-  const num = Number(s);
+/** A normalized numeric string as a number, or null if empty. */
+export function toNumber(value: string): number | null {
+  if (value.trim() === '') return null;
+  const num = Number(value);
   return Number.isFinite(num) ? num : null;
 }
 
-/** Parse a user-typed amount to cents ("1.500,50" → 150050). Returns 0 if invalid. */
-export function parseCents(value: string): number {
-  const num = parseDecimal(value);
-  return num === null ? 0 : Math.round(num * 100);
+/** A normalized numeric string as cents ("1500.5" → 150050); 0 if empty. */
+export function toCents(value: string): number {
+  return Math.round((toNumber(value) ?? 0) * 100);
 }
 
-/** Cents as an editable input value, Argentine style without thousands (12345 → "123,45"). */
-export function centsToDisplay(cents: number): string {
-  return (cents / 100).toFixed(2).replace('.', ',');
+/** Cents as a normalized numeric string (150050 → "1500.5"). */
+export function centsToNumeric(cents: number): string {
+  return String(cents / 100);
 }
 
-/** A decimal number as an editable input value (1555.5 → "1555,5", up to `maxDecimals`). */
-export function decimalToDisplay(value: number, maxDecimals = 4): string {
-  return String(Number(value.toFixed(maxDecimals))).replace('.', ',');
+/** A number as a normalized numeric string with at most `maxDecimals` (1/1555 → "0.000643"). */
+export function toNumeric(value: number, maxDecimals = 6): string {
+  return String(Number(value.toFixed(maxDecimals)));
 }
 
 // ─── Dates ────────────────────────────────────────────────────────────────────
@@ -107,9 +119,9 @@ export function monthRange(day: string): { from: string; to: string } {
   return { from: `${prefix}-01`, to: `${prefix}-${String(last).padStart(2, '0')}` };
 }
 
-/** Format a stored date as DD/MM/YYYY (its calendar day, see above). */
+/** Format a stored date in the browser's language (4/11/2026 in es-AR), on its calendar day. */
 export function formatDate(date: Date | string): string {
-  return new Intl.DateTimeFormat('es-AR', { timeZone: 'UTC' }).format(new Date(date));
+  return new Intl.DateTimeFormat(getLocale(), { timeZone: 'UTC' }).format(new Date(date));
 }
 
 export const categoryLabels: Record<ExpenseCategory, string> = {

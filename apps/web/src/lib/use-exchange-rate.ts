@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 
 import { useTRPC } from '@/lib/trpc';
-import { decimalToDisplay, parseDecimal, type Currency } from '@/lib/format';
+import { toNumber, toNumeric, type Currency } from '@/lib/format';
 
 type RateSource = 'blue' | 'oficial' | 'manual';
 
@@ -37,7 +37,7 @@ export function useExchangeRate(
   );
   const [manualRate, setManualRate] = useState(
     initial?.exchangeRate != null
-      ? decimalToDisplay(inverted ? 1 / initial.exchangeRate : initial.exchangeRate)
+      ? toNumeric(inverted ? 1 / initial.exchangeRate : initial.exchangeRate)
       : '',
   );
 
@@ -51,7 +51,7 @@ export function useExchangeRate(
     enabled: converting && source !== 'manual' && canAutoSuggest(base, currency),
   });
 
-  const shownRate = source === 'manual' ? parseDecimal(manualRate) : (rateQuery.data?.mid ?? null);
+  const shownRate = source === 'manual' ? toNumber(manualRate) : (rateQuery.data?.mid ?? null);
   const storedRate = shownRate && shownRate > 0 ? (inverted ? 1 / shownRate : shownRate) : null;
 
   return {
@@ -62,7 +62,7 @@ export function useExchangeRate(
     setKeepCurrency,
     source,
     setSource: (s: RateSource) => {
-      if (s === 'manual' && shownRate) setManualRate(decimalToDisplay(shownRate));
+      if (s === 'manual' && shownRate) setManualRate(toNumeric(shownRate));
       setSource(s);
     },
     manualRate,

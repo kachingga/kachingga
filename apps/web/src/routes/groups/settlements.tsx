@@ -6,16 +6,17 @@ import type { inferRouterOutputs } from '@trpc/server';
 import type { AppRouter } from '@kachingga/api';
 import { currencies } from '@kachingga/api/schemas';
 import { ExchangeRateFields } from '@/components/exchange-rate-fields';
+import { NumberInput } from '@/components/number-input';
 import { useExchangeRate } from '@/lib/use-exchange-rate';
 import { Spinner } from '@/components/spinner';
 import { useTRPC } from '@/lib/trpc';
 import {
-  centsToDisplay,
+  centsToNumeric,
   currencyLabels,
   dayToDate,
   formatCents,
   formatDate,
-  parseCents,
+  toCents,
   today,
   type Currency,
 } from '@/lib/format';
@@ -66,7 +67,7 @@ function SettlementsBody({ groupId, group }: { groupId: string; group: GroupData
   const [fromId, setFromId] = useState(prefillFrom);
   const [toId, setToId] = useState(prefillTo);
   const [amountInput, setAmountInput] = useState(
-    prefillAmountCents > 0 ? centsToDisplay(prefillAmountCents) : '',
+    prefillAmountCents > 0 ? centsToNumeric(prefillAmountCents) : '',
   );
   const [currency, setCurrency] = useState<Currency>(prefillCurrency);
   // A suggested transfer in a currency other than the base settles that currency's own balance.
@@ -107,7 +108,7 @@ function SettlementsBody({ groupId, group }: { groupId: string; group: GroupData
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setFormError(null);
-    const amountCents = parseCents(amountInput);
+    const amountCents = toCents(amountInput);
     if (amountCents <= 0) {
       setFormError('El monto tiene que ser mayor a cero');
       return;
@@ -208,13 +209,12 @@ function SettlementsBody({ groupId, group }: { groupId: string; group: GroupData
                   <label className="block text-sm font-medium text-neutral-400" htmlFor="amount">
                     Monto
                   </label>
-                  <input
+                  <NumberInput
                     id="amount"
                     value={amountInput}
-                    onChange={(e) => setAmountInput(e.target.value)}
+                    onValueChange={setAmountInput}
                     required
-                    inputMode="decimal"
-                    placeholder="0,00"
+                    placeholder="0"
                     className="mt-1 w-full rounded-lg border border-neutral-700 bg-neutral-800 px-3 py-2 text-base text-white placeholder:text-neutral-600 focus:outline-none focus:ring-2 focus:ring-neutral-600"
                   />
                 </div>
@@ -245,7 +245,7 @@ function SettlementsBody({ groupId, group }: { groupId: string; group: GroupData
                 </div>
               </div>
 
-              <ExchangeRateFields rate={rate} amountCents={parseCents(amountInput)} />
+              <ExchangeRateFields rate={rate} amountCents={toCents(amountInput)} />
 
               <div>
                 <label className="block text-sm font-medium text-neutral-400" htmlFor="sett-date">
