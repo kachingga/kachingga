@@ -1,4 +1,5 @@
-import { screen } from '@testing-library/react';
+import { screen, waitFor, within } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import { describe, expect, it } from 'vitest';
 
 import { neverResolves, renderWithApi } from '@/test/render';
@@ -76,5 +77,28 @@ describe('ExpenseDetail', () => {
       'groups.get': () => ({ baseCurrency: 'ARS' }),
     });
     expect(await screen.findByText('Se mantiene en USD (saldo aparte)')).toBeInTheDocument();
+  });
+
+  it('asks for confirmation with the app dialog before deleting', async () => {
+    const user = userEvent.setup();
+    const deleted: unknown[] = [];
+    renderWithApi(<ExpenseDetail />, {
+      'expenses.get': () => fixExpense,
+      'expenses.delete': (input) => {
+        deleted.push(input);
+        return { ok: true };
+      },
+    });
+    await user.click(await screen.findByRole('button', { name: 'Borrar' }));
+    const dialog = await screen.findByRole('alertdialog');
+    expect(dialog).toHaveTextContent('¿Borrar este gasto?');
+
+    await user.click(screen.getByRole('button', { name: 'Cancelar' }));
+    expect(deleted).toHaveLength(0);
+
+    await user.click(screen.getByRole('button', { name: 'Borrar' }));
+    const confirmDialog = await screen.findByRole('alertdialog');
+    await user.click(within(confirmDialog).getByRole('button', { name: 'Borrar' }));
+    await waitFor(() => expect(deleted).toEqual([{ expenseId: undefined }]));
   });
 });

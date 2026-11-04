@@ -10,7 +10,7 @@ export function Home() {
   return (
     <main className="mx-auto flex min-h-dvh max-w-md flex-col items-center justify-center gap-2 p-6 text-center">
       <h1 className="text-3xl font-semibold">Kachingga</h1>
-      <p className="text-sm text-neutral-500">
+      <p className="text-sm text-muted-foreground">
         {ping.isPending
           ? 'Conectando con la API…'
           : ping.isError

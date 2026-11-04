@@ -13,7 +13,7 @@
 | UI | React 19 + TypeScript (`strict`) |
 | Build / dev | Vite (`bun run dev` → http://localhost:5173) |
 | Estilos | Tailwind CSS v4 (`@import "tailwindcss"` en `src/index.css`) |
-| Componentes | shadcn/ui (todavía no inicializado: ver "Componentes") |
+| Componentes | shadcn/ui (estilo `radix-nova`, tema por defecto; ver "Componentes") |
 | Rutas | React Router v8 (`createBrowserRouter` en `src/router.tsx`) |
 | Datos | tRPC + TanStack Query (`src/lib/trpc.ts`) |
 | Login | Supabase Auth (`src/lib/supabase.ts`, `src/lib/auth.ts`) |
@@ -55,7 +55,9 @@ src/
 ├── router.tsx                # todas las rutas
 ├── routes/                   # una pantalla por archivo (groups/ = todo lo de un grupo), tests en __tests__/
 ├── components/
+│   ├── ui/                   # componentes de shadcn/ui (generados)
 │   ├── api-provider.tsx      # tRPC + TanStack Query
+│   ├── confirm-provider.tsx  # diálogo de useConfirm()
 │   └── require-auth.tsx      # guard de rutas privadas → /login
 ├── lib/
 │   ├── trpc.ts               # cliente tRPC tipado con AppRouter + token de Supabase
@@ -152,7 +154,18 @@ const createExpense = useMutation(
 
 ## Componentes (shadcn/ui)
 
-**Se usa shadcn/ui** (sobre Tailwind). Todavía no está inicializado: se inicializa con el tema por defecto (en curso, Galo) y después se ajustan las variables del tema con el diseño (ver `V1.md` → "Trabajo de la UI (web)"). Para hacerlo: `bunx shadcn@latest init` desde `apps/web` (Tailwind v4, alias `@/`), y después `bunx shadcn@latest add <componente>`. Los componentes generados en `src/components/ui/` no se editan a mano salvo para ajustar estilo.
+**Se usa shadcn/ui** (sobre Tailwind), inicializado con el **tema por defecto** (`components.json`, estilo `radix-nova`, base `neutral`). Agregar componentes: `bunx --bun shadcn@latest add <componente>` desde `apps/web`. Los generados viven en `src/components/ui/` y no se editan a mano salvo para ajustar estilo (excepción: `sonner.tsx` usa `theme="system"` en vez de `next-themes`).
+
+- **Colores, radios y tipografía = variables del tema** en `src/index.css` (`:root` para claro y `@media (prefers-color-scheme: dark)` para oscuro). **Nunca colores fijos** en las pantallas (`bg-neutral-900`, `text-white`…): usar los del tema (`bg-background`, `bg-card`, `bg-muted`, `text-foreground`, `text-muted-foreground`, `border-input`, `bg-primary text-primary-foreground`, `text-destructive`). Así el diseño se cambia en un solo lugar y funcionan claro y oscuro. (Excepción: los colores de los avatares de grupo.)
+- **Claro y oscuro siguen al sistema**: la variante `dark:` es `@media (prefers-color-scheme: dark)` (no hay toggle manual).
+- `cn` (paquete `cn`, reemplazo de `clsx` + `tailwind-merge`) para combinar clases.
+- El `tsconfig.json` raíz de la web repite el alias `@/*` para que el CLI de shadcn lo resuelva (sin eso escribe en una carpeta `@/` literal).
+
+**Componentes base (`src/components/`):**
+- `ErrorState` — mensaje de la API + **Reintentar** (`refetch`). En todo error de una query.
+- `useConfirm()` (`src/lib/use-confirm.ts`) + `<ConfirmProvider>` — confirmación con el diálogo de la app (`AlertDialog`), **nunca `confirm()` del navegador**: `if (await confirm({ title, description, confirmLabel, destructive }))`.
+- Toasts: `toast()` / `toast.error()` de `sonner` (el `<Toaster>` está en `main.tsx`).
+- `NumberInput`, `ExchangeRateFields`, `Spinner`; `Skeleton` en `src/components/ui/`.
 
 ## Sensación de app nativa
 
@@ -198,7 +211,7 @@ La app la usamos nosotros todos los días, sobre todo en el celu: tiene que ser 
 - Copy en español argentino, corto y claro.
 
 ### Visual y accesibilidad
-- Modo claro y oscuro (`dark:` de Tailwind, siguiendo la preferencia del sistema).
+- Modo claro y oscuro con las variables del tema de shadcn, siguiendo la preferencia del sistema (ver "Componentes").
 - HTML semántico (`button`, `label`, `nav`, `main`, headings), foco visible, contraste suficiente, `aria-label` en botones con solo ícono.
 
 ### Antes de dar una pantalla por terminada

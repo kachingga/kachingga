@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
 import { signOut, useSession } from '@/lib/auth';
+import { ErrorState } from '@/components/error-state';
 import { useTRPC } from '@/lib/trpc';
 
 export function Account() {
@@ -41,29 +42,31 @@ export function Account() {
   return (
     <main className="mx-auto min-h-dvh max-w-md p-6">
       <div className="mb-6 flex items-center gap-3">
-        <button onClick={() => navigate(-1)} aria-label="Volver" className="text-neutral-400">
+        <button onClick={() => navigate(-1)} aria-label="Volver" className="text-muted-foreground">
           ←
         </button>
         <h1 className="text-xl font-bold">Mi cuenta</h1>
       </div>
 
       <div className="space-y-6">
-        <div className="rounded-2xl bg-neutral-900 p-4">
-          <p className="text-sm text-neutral-400">Email</p>
+        <div className="rounded-2xl bg-card p-4">
+          <p className="text-sm text-muted-foreground">Email</p>
           <p className="mt-1 font-medium">{session?.user.email ?? '—'}</p>
         </div>
 
-        <div className="rounded-2xl bg-neutral-900 p-4">
-          <p className="mb-2 text-sm text-neutral-400">Alias / CVU para cobrar</p>
+        <div className="rounded-2xl bg-card p-4">
+          <p className="mb-2 text-sm text-muted-foreground">Alias / CVU para cobrar</p>
 
-          {profile.isPending && <p className="text-neutral-400">Cargando…</p>}
+          {profile.isPending && <p className="text-muted-foreground">Cargando…</p>}
 
-          {profile.isError && <p className="text-sm text-red-400">{profile.error.message}</p>}
+          {profile.isError && (
+            <ErrorState message={profile.error.message} onRetry={() => profile.refetch()} />
+          )}
 
           {profile.isSuccess && !editingAlias && (
             <div className="flex items-center justify-between">
               <p className="font-medium">{profile.data.paymentAlias ?? 'Sin alias'}</p>
-              <button onClick={startEdit} className="text-sm text-neutral-400 underline">
+              <button onClick={startEdit} className="text-sm text-muted-foreground underline">
                 {profile.data.paymentAlias ? 'Cambiar' : 'Agregar'}
               </button>
             </div>
@@ -75,20 +78,20 @@ export function Account() {
                 value={aliasInput}
                 onChange={(e) => setAliasInput(e.target.value)}
                 placeholder="alias.ejemplo o CVU de 22 dígitos"
-                className="w-full rounded-lg border border-neutral-700 bg-neutral-800 px-3 py-2 text-base text-white placeholder:text-neutral-600 focus:outline-none focus:ring-2 focus:ring-neutral-600"
+                className="w-full rounded-lg border border-input bg-muted px-3 py-2 text-base text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
               />
-              {aliasError && <p className="text-sm text-red-400">{aliasError}</p>}
+              {aliasError && <p className="text-sm text-destructive">{aliasError}</p>}
               <div className="flex gap-2">
                 <button
                   onClick={() => updateProfile.mutate({ paymentAlias: aliasInput || null })}
                   disabled={updateProfile.isPending}
-                  className="flex-1 rounded-lg bg-white py-2 font-medium text-black disabled:opacity-50"
+                  className="flex-1 rounded-lg bg-primary py-2 font-medium text-primary-foreground disabled:opacity-50"
                 >
                   {updateProfile.isPending ? 'Guardando…' : 'Guardar'}
                 </button>
                 <button
                   onClick={() => setEditingAlias(false)}
-                  className="flex-1 rounded-lg border border-neutral-700 py-2 text-neutral-300"
+                  className="flex-1 rounded-lg border border-input py-2 text-foreground"
                 >
                   Cancelar
                 </button>
@@ -96,14 +99,14 @@ export function Account() {
             </div>
           )}
 
-          <p className="mt-2 text-xs text-neutral-500">
+          <p className="mt-2 text-xs text-muted-foreground">
             Se usa en todos tus grupos para recibir transferencias.
           </p>
         </div>
 
         <button
           onClick={handleSignOut}
-          className="w-full rounded-lg border border-red-900/50 py-3 text-red-400"
+          className="w-full rounded-lg border border-destructive/40 py-3 text-destructive"
         >
           Cerrar sesión
         </button>

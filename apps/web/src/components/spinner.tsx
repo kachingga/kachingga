@@ -5,14 +5,14 @@ export function Spinner({ fullScreen }: { fullScreen?: boolean }) {
         <div
           key={i}
           style={{ animationDelay: `${i * 150}ms` }}
-          className="h-2.5 w-2.5 animate-bounce rounded-full bg-neutral-500"
+          className="h-2.5 w-2.5 animate-bounce rounded-full bg-muted-foreground"
         />
       ))}
     </div>
   );
 
   if (fullScreen) {
-    return <div className="flex min-h-dvh items-center justify-center bg-black">{dots}</div>;
+    return <div className="flex min-h-dvh items-center justify-center bg-background">{dots}</div>;
   }
 
   return <div className="flex justify-center py-8">{dots}</div>;

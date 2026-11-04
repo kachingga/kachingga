@@ -3,7 +3,7 @@ import { NumberInput } from '@/components/number-input';
 import { formatCents, toNumeric } from '@/lib/format';
 
 const chip = (active: boolean) =>
-  `rounded-lg px-3 py-1 text-xs ${active ? 'bg-white text-black' : 'border border-neutral-700 text-neutral-400'}`;
+  `rounded-lg px-3 py-1 text-xs ${active ? 'bg-primary text-primary-foreground' : 'border border-input text-muted-foreground'}`;
 
 export function ExchangeRateFields({
   rate,
@@ -23,19 +23,19 @@ export function ExchangeRateFields({
     source === 'manual' ? rate.manualRate : rateQuery.data ? toNumeric(rateQuery.data.mid) : '';
 
   return (
-    <div className="space-y-3 rounded-2xl bg-neutral-900 p-4">
+    <div className="space-y-3 rounded-2xl bg-card p-4">
       <div className="flex gap-2">
         <button
           type="button"
           onClick={() => rate.setKeepCurrency(false)}
-          className={`flex-1 rounded-lg py-2 text-sm font-medium ${!keepCurrency ? 'bg-white text-black' : 'border border-neutral-700 text-neutral-400'}`}
+          className={`flex-1 rounded-lg py-2 text-sm font-medium ${!keepCurrency ? 'bg-primary text-primary-foreground' : 'border border-input text-muted-foreground'}`}
         >
           Convertir a {base}
         </button>
         <button
           type="button"
           onClick={() => rate.setKeepCurrency(true)}
-          className={`flex-1 rounded-lg py-2 text-sm font-medium ${keepCurrency ? 'bg-white text-black' : 'border border-neutral-700 text-neutral-400'}`}
+          className={`flex-1 rounded-lg py-2 text-sm font-medium ${keepCurrency ? 'bg-primary text-primary-foreground' : 'border border-input text-muted-foreground'}`}
         >
           Mantener en {currency}
         </button>
@@ -72,7 +72,7 @@ export function ExchangeRateFields({
           )}
 
           <div>
-            <label className="block text-xs text-neutral-500" htmlFor="exchange-rate">
+            <label className="block text-xs text-muted-foreground" htmlFor="exchange-rate">
               Tipo de cambio: 1 {from} ={' '}
               {source !== 'manual' && rateQuery.isPending ? 'cargando…' : ''}
             </label>
@@ -84,17 +84,17 @@ export function ExchangeRateFields({
                 decimals={6}
                 readOnly={source !== 'manual'}
                 placeholder="0"
-                className="flex-1 rounded-lg border border-neutral-700 bg-neutral-800 px-3 py-2 text-base text-white placeholder:text-neutral-600 focus:outline-none focus:ring-2 focus:ring-neutral-600"
+                className="flex-1 rounded-lg border border-input bg-muted px-3 py-2 text-base text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
               />
-              <span className="text-sm text-neutral-400">{to}</span>
+              <span className="text-sm text-muted-foreground">{to}</span>
             </div>
             {rate.exchangeRate !== null && amountCents > 0 && (
-              <p className="mt-1 text-xs text-neutral-400">
+              <p className="mt-1 text-xs text-muted-foreground">
                 ≈ {formatCents(Math.round(amountCents * rate.exchangeRate), base)}
               </p>
             )}
             {source !== 'manual' && rateQuery.isError && (
-              <p className="mt-1 text-xs text-red-400">
+              <p className="mt-1 text-xs text-destructive">
                 No se pudo cargar la cotización. Usá &quot;A mano&quot;.
               </p>
             )}

@@ -2,14 +2,17 @@ import { useState } from 'react';
 import { useNavigate, useParams } from 'react-router';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
+import { ErrorState } from '@/components/error-state';
 import { Spinner } from '@/components/spinner';
 import { useTRPC } from '@/lib/trpc';
+import { useConfirm } from '@/lib/use-confirm';
 
 export function Participants() {
   const { groupId } = useParams<{ groupId: string }>();
   const navigate = useNavigate();
   const trpc = useTRPC();
   const queryClient = useQueryClient();
+  const confirm = useConfirm();
 
   const group = useQuery(trpc.groups.get.queryOptions({ groupId: groupId! }));
 
@@ -60,7 +63,13 @@ export function Participants() {
   );
 
   if (group.isPending) return <Spinner fullScreen />;
-  if (group.isError) return <p className="p-6 text-red-400">{group.error.message}</p>;
+  if (group.isError) {
+    return (
+      <main className="p-6">
+        <ErrorState message={group.error.message} onRetry={() => group.refetch()} />
+      </main>
+    );
+  }
 
   const g = group.data;
   const isArchived = !!g.archivedAt;
@@ -69,15 +78,15 @@ export function Participants() {
   return (
     <main className="mx-auto min-h-dvh max-w-md p-6">
       <div className="mb-6 flex items-center gap-3">
-        <button onClick={() => navigate(-1)} aria-label="Volver" className="text-neutral-400">
+        <button onClick={() => navigate(-1)} aria-label="Volver" className="text-muted-foreground">
           ←
         </button>
         <h1 className="text-xl font-bold">Participantes</h1>
       </div>
 
       {/* Código de invitación */}
-      <div className="mb-6 rounded-2xl bg-neutral-900 p-4">
-        <p className="mb-1 text-sm font-medium text-neutral-400">Código de invitación</p>
+      <div className="mb-6 rounded-2xl bg-card p-4">
+        <p className="mb-1 text-sm font-medium text-muted-foreground">Código de invitación</p>
         {showCode ? (
           <div className="space-y-2">
             <p className="py-2 text-center font-mono text-2xl font-bold tracking-widest">
@@ -86,18 +95,22 @@ export function Participants() {
             <div className="flex gap-2">
               <button
                 onClick={() => void navigator.clipboard.writeText(g.inviteCode)}
-                className="flex-1 rounded-lg border border-neutral-700 py-2 text-sm text-neutral-300"
+                className="flex-1 rounded-lg border border-input py-2 text-sm text-foreground"
               >
                 Copiar código
               </button>
               {!isArchived && (
                 <button
-                  onClick={() => {
-                    if (confirm('¿Regenerar el código? El anterior deja de funcionar.'))
-                      regenerateCode.mutate({ groupId: groupId! });
+                  onClick={async () => {
+                    const ok = await confirm({
+                      title: '¿Regenerar el código?',
+                      description: 'El código anterior deja de funcionar.',
+                      confirmLabel: 'Regenerar',
+                    });
+                    if (ok) regenerateCode.mutate({ groupId: groupId! });
                   }}
                   disabled={regenerateCode.isPending}
-                  className="flex-1 rounded-lg border border-neutral-700 py-2 text-sm text-neutral-400 disabled:opacity-50"
+                  className="flex-1 rounded-lg border border-input py-2 text-sm text-muted-foreground disabled:opacity-50"
                 >
                   Regenerar
                 </button>
@@ -105,7 +118,10 @@ export function Participants() {
             </div>
           </div>
         ) : (
-          <button onClick={() => setShowCode(true)} className="text-sm text-neutral-400 underline">
+          <button
+            onClick={() => setShowCode(true)}
+            className="text-sm text-muted-foreground underline"
+          >
             Ver código para compartir
           </button>
         )}
@@ -118,7 +134,7 @@ export function Participants() {
           const canRemove = !p.hasAccount;
 
           return (
-            <li key={p.id} className="rounded-2xl bg-neutral-900 p-3">
+            <li key={p.id} className="rounded-2xl bg-card p-3">
               {renamingId === p.id ? (
                 <form
                   className="flex gap-2"
@@ -131,7 +147,7 @@ export function Participants() {
                     value={renameValue}
                     onChange={(e) => setRenameValue(e.target.value)}
                     autoFocus
-                    className="flex-1 rounded-lg border border-neutral-700 bg-neutral-800 px-2 py-1 text-sm text-white focus:outline-none focus:ring-2 focus:ring-neutral-600"
+                    className="flex-1 rounded-lg border border-input bg-muted px-2 py-1 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
                   />
                   <button type="submit" disabled={rename.isPending} className="text-sm font-medium">
                     OK
@@ -139,7 +155,7 @@ export function Participants() {
                   <button
                     type="button"
                     onClick={() => setRenamingId(null)}
-                    className="text-sm text-neutral-400"
+                    className="text-sm text-muted-foreground"
                   >
                     ×
                   </button>
@@ -149,9 +165,9 @@ export function Participants() {
                   <div>
                     <p className="font-medium">
                       {p.name}
-                      {p.isMe && <span className="ml-2 text-xs text-neutral-500">yo</span>}
+                      {p.isMe && <span className="ml-2 text-xs text-muted-foreground">yo</span>}
                       {!p.hasAccount && (
-                        <span className="ml-2 text-xs text-neutral-500">sin cuenta</span>
+                        <span className="ml-2 text-xs text-muted-foreground">sin cuenta</span>
                       )}
                     </p>
 
@@ -172,7 +188,7 @@ export function Participants() {
                           onChange={(e) => setAliasValue(e.target.value)}
                           placeholder="alias o CBU"
                           autoFocus
-                          className="flex-1 rounded-lg border border-neutral-700 bg-neutral-800 px-2 py-1 text-sm text-white placeholder:text-neutral-600 focus:outline-none focus:ring-2 focus:ring-neutral-600"
+                          className="flex-1 rounded-lg border border-input bg-muted px-2 py-1 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
                         />
                         <button
                           type="submit"
@@ -184,13 +200,13 @@ export function Participants() {
                         <button
                           type="button"
                           onClick={() => setAliasingId(null)}
-                          className="text-xs text-neutral-400"
+                          className="text-xs text-muted-foreground"
                         >
                           ×
                         </button>
                       </form>
                     ) : (
-                      <p className="mt-1 text-xs text-neutral-500">
+                      <p className="mt-1 text-xs text-muted-foreground">
                         {p.paymentAlias ? (
                           <>
                             Alias: {p.paymentAlias}
@@ -221,18 +237,22 @@ export function Participants() {
                           setRenamingId(p.id);
                           setRenameValue(p.name);
                         }}
-                        className="text-xs text-neutral-400 underline"
+                        className="text-xs text-muted-foreground underline"
                       >
                         Renombrar
                       </button>
                       {canRemove && p.id !== myId && (
                         <button
-                          onClick={() => {
-                            if (confirm(`¿Quitar a ${p.name}?`))
-                              remove.mutate({ participantId: p.id });
+                          onClick={async () => {
+                            const ok = await confirm({
+                              title: `¿Quitar a ${p.name}?`,
+                              confirmLabel: 'Quitar',
+                              destructive: true,
+                            });
+                            if (ok) remove.mutate({ participantId: p.id });
                           }}
                           disabled={remove.isPending}
-                          className="text-xs text-red-400 underline disabled:opacity-50"
+                          className="text-xs text-destructive underline disabled:opacity-50"
                         >
                           Quitar
                         </button>
@@ -266,19 +286,19 @@ export function Participants() {
             onChange={(e) => setAddName(e.target.value)}
             required
             placeholder="Nombre (sin cuenta)"
-            className="flex-1 rounded-lg border border-neutral-700 bg-neutral-900 px-3 py-2 text-base text-white placeholder:text-neutral-600 focus:outline-none focus:ring-2 focus:ring-neutral-600"
+            className="flex-1 rounded-lg border border-input bg-card px-3 py-2 text-base text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
           />
           <button
             type="submit"
             disabled={addParticipant.isPending}
-            className="rounded-lg bg-white px-4 py-2 font-medium text-black disabled:opacity-50"
+            className="rounded-lg bg-primary px-4 py-2 font-medium text-primary-foreground disabled:opacity-50"
           >
             +
           </button>
         </form>
       )}
 
-      {error && <p className="mt-2 text-sm text-red-400">{error}</p>}
+      {error && <p className="mt-2 text-sm text-destructive">{error}</p>}
     </main>
   );
 }

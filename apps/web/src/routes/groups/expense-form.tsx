@@ -8,6 +8,7 @@ import { currencies, distributeCents, expenseCategories } from '@kachingga/api/s
 import { ExchangeRateFields } from '@/components/exchange-rate-fields';
 import { NumberInput } from '@/components/number-input';
 import { useExchangeRate } from '@/lib/use-exchange-rate';
+import { ErrorState } from '@/components/error-state';
 import { Spinner } from '@/components/spinner';
 import { useTRPC } from '@/lib/trpc';
 import {
@@ -191,7 +192,7 @@ function ExpenseFormBody({ groupId, group, expenseId, expense }: FormProps) {
   return (
     <main className="mx-auto min-h-dvh max-w-md p-6 pb-12">
       <div className="mb-6 flex items-center gap-3">
-        <button onClick={() => navigate(-1)} aria-label="Volver" className="text-neutral-400">
+        <button onClick={() => navigate(-1)} aria-label="Volver" className="text-muted-foreground">
           ←
         </button>
         <h1 className="text-xl font-bold">{isEdit ? 'Editar gasto' : 'Agregar gasto'}</h1>
@@ -200,7 +201,7 @@ function ExpenseFormBody({ groupId, group, expenseId, expense }: FormProps) {
       <form onSubmit={handleSubmit} className="space-y-5">
         {/* Monto */}
         <div>
-          <label className="block text-sm font-medium text-neutral-400" htmlFor="amount">
+          <label className="block text-sm font-medium text-muted-foreground" htmlFor="amount">
             Monto
           </label>
           <NumberInput
@@ -209,13 +210,13 @@ function ExpenseFormBody({ groupId, group, expenseId, expense }: FormProps) {
             onValueChange={setAmountInput}
             required
             placeholder="0"
-            className="mt-1 w-full rounded-lg border border-neutral-700 bg-neutral-900 px-3 py-2 text-base text-white placeholder:text-neutral-600 focus:outline-none focus:ring-2 focus:ring-neutral-600"
+            className="mt-1 w-full rounded-lg border border-input bg-card px-3 py-2 text-base text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
           />
         </div>
 
         {/* Descripción */}
         <div>
-          <label className="block text-sm font-medium text-neutral-400" htmlFor="description">
+          <label className="block text-sm font-medium text-muted-foreground" htmlFor="description">
             Descripción
           </label>
           <input
@@ -224,21 +225,21 @@ function ExpenseFormBody({ groupId, group, expenseId, expense }: FormProps) {
             onChange={(e) => setDescription(e.target.value)}
             required
             placeholder="Cena"
-            className="mt-1 w-full rounded-lg border border-neutral-700 bg-neutral-900 px-3 py-2 text-base text-white placeholder:text-neutral-600 focus:outline-none focus:ring-2 focus:ring-neutral-600"
+            className="mt-1 w-full rounded-lg border border-input bg-card px-3 py-2 text-base text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
           />
         </div>
 
         {/* Categoría y fecha */}
         <div className="grid grid-cols-2 gap-3">
           <div>
-            <label className="block text-sm font-medium text-neutral-400" htmlFor="category">
+            <label className="block text-sm font-medium text-muted-foreground" htmlFor="category">
               Categoría
             </label>
             <select
               id="category"
               value={category}
               onChange={(e) => setCategory(e.target.value as ExpenseCategory)}
-              className="mt-1 w-full rounded-lg border border-neutral-700 bg-neutral-900 px-3 py-2 text-base text-white focus:outline-none focus:ring-2 focus:ring-neutral-600"
+              className="mt-1 w-full rounded-lg border border-input bg-card px-3 py-2 text-base text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
             >
               {expenseCategories.map((c) => (
                 <option key={c} value={c}>
@@ -249,7 +250,7 @@ function ExpenseFormBody({ groupId, group, expenseId, expense }: FormProps) {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-neutral-400" htmlFor="date">
+            <label className="block text-sm font-medium text-muted-foreground" htmlFor="date">
               Fecha
             </label>
             <input
@@ -258,21 +259,21 @@ function ExpenseFormBody({ groupId, group, expenseId, expense }: FormProps) {
               value={dateInput}
               onChange={(e) => setDateInput(e.target.value)}
               required
-              className="mt-1 w-full rounded-lg border border-neutral-700 bg-neutral-900 px-3 py-2 text-base text-white focus:outline-none focus:ring-2 focus:ring-neutral-600"
+              className="mt-1 w-full rounded-lg border border-input bg-card px-3 py-2 text-base text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
             />
           </div>
         </div>
 
         {/* Quién pagó */}
         <div>
-          <label className="block text-sm font-medium text-neutral-400" htmlFor="paidBy">
+          <label className="block text-sm font-medium text-muted-foreground" htmlFor="paidBy">
             Quién pagó
           </label>
           <select
             id="paidBy"
             value={paidById}
             onChange={(e) => setPaidById(e.target.value)}
-            className="mt-1 w-full rounded-lg border border-neutral-700 bg-neutral-900 px-3 py-2 text-base text-white focus:outline-none focus:ring-2 focus:ring-neutral-600"
+            className="mt-1 w-full rounded-lg border border-input bg-card px-3 py-2 text-base text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
           >
             {participants.map((p) => (
               <option key={p.id} value={p.id}>
@@ -285,7 +286,7 @@ function ExpenseFormBody({ groupId, group, expenseId, expense }: FormProps) {
 
         {/* Moneda */}
         <div>
-          <label className="block text-sm font-medium text-neutral-400" htmlFor="currency">
+          <label className="block text-sm font-medium text-muted-foreground" htmlFor="currency">
             Moneda
           </label>
           <select
@@ -296,7 +297,7 @@ function ExpenseFormBody({ groupId, group, expenseId, expense }: FormProps) {
               setCurrency(c);
               rate.resetFor(c);
             }}
-            className="mt-1 w-full rounded-lg border border-neutral-700 bg-neutral-900 px-3 py-2 text-base text-white focus:outline-none focus:ring-2 focus:ring-neutral-600"
+            className="mt-1 w-full rounded-lg border border-input bg-card px-3 py-2 text-base text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
           >
             {currencies.map((c) => (
               <option key={c} value={c}>
@@ -310,14 +311,14 @@ function ExpenseFormBody({ groupId, group, expenseId, expense }: FormProps) {
 
         {/* División */}
         <div>
-          <label className="block text-sm font-medium text-neutral-400">Dividir</label>
+          <label className="block text-sm font-medium text-muted-foreground">Dividir</label>
           <div className="mt-1 flex gap-2">
             {(['EQUAL', 'AMOUNT', 'PERCENTAGE'] as const).map((t) => (
               <button
                 key={t}
                 type="button"
                 onClick={() => setSplitType(t)}
-                className={`flex-1 rounded-lg py-2 text-sm ${splitType === t ? 'bg-white text-black' : 'border border-neutral-700 text-neutral-400'}`}
+                className={`flex-1 rounded-lg py-2 text-sm ${splitType === t ? 'bg-primary text-primary-foreground' : 'border border-input text-muted-foreground'}`}
               >
                 {t === 'EQUAL' ? 'Igual' : t === 'AMOUNT' ? 'Por monto' : 'Por %'}
               </button>
@@ -344,7 +345,7 @@ function ExpenseFormBody({ groupId, group, expenseId, expense }: FormProps) {
                     {p.isMe ? ' (yo)' : ''}
                   </span>
                   {equalShares.has(p.id) && (
-                    <span className="ml-auto text-xs text-neutral-400">
+                    <span className="ml-auto text-xs text-muted-foreground">
                       {formatCents(equalShares.get(p.id)!, currency)}
                     </span>
                   )}
@@ -366,12 +367,12 @@ function ExpenseFormBody({ groupId, group, expenseId, expense }: FormProps) {
                     value={amountShares[p.id] ?? ''}
                     onValueChange={(v) => setAmountShares({ ...amountShares, [p.id]: v })}
                     placeholder="0"
-                    className="w-24 rounded-lg border border-neutral-700 bg-neutral-900 px-2 py-1 text-right text-sm text-white placeholder:text-neutral-600 focus:outline-none focus:ring-2 focus:ring-neutral-600"
+                    className="w-24 rounded-lg border border-input bg-card px-2 py-1 text-right text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
                   />
                 </div>
               ))}
               <p
-                className={`text-xs ${amountSumCents === totalCents ? 'text-green-400' : 'text-neutral-400'}`}
+                className={`text-xs ${amountSumCents === totalCents ? 'text-green-600 dark:text-green-400' : 'text-muted-foreground'}`}
               >
                 Suma: {formatCents(amountSumCents, currency)} / {formatCents(totalCents, currency)}
                 {amountSumCents !== totalCents &&
@@ -394,14 +395,14 @@ function ExpenseFormBody({ groupId, group, expenseId, expense }: FormProps) {
                       value={percentShares[p.id] ?? ''}
                       onValueChange={(v) => setPercentShares({ ...percentShares, [p.id]: v })}
                       placeholder="0"
-                      className="w-20 rounded-lg border border-neutral-700 bg-neutral-900 px-2 py-1 text-right text-sm text-white placeholder:text-neutral-600 focus:outline-none focus:ring-2 focus:ring-neutral-600"
+                      className="w-20 rounded-lg border border-input bg-card px-2 py-1 text-right text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
                     />
-                    <span className="text-sm text-neutral-400">%</span>
+                    <span className="text-sm text-muted-foreground">%</span>
                   </div>
                 </div>
               ))}
               <p
-                className={`text-xs ${Math.abs(percentSum - 100) < 0.01 ? 'text-green-400' : 'text-neutral-400'}`}
+                className={`text-xs ${Math.abs(percentSum - 100) < 0.01 ? 'text-green-600 dark:text-green-400' : 'text-muted-foreground'}`}
               >
                 Total: {formatNumber(percentSum, 2)}% / 100%
                 {Math.abs(percentSum - 100) >= 0.01 &&
@@ -411,12 +412,12 @@ function ExpenseFormBody({ groupId, group, expenseId, expense }: FormProps) {
           )}
         </div>
 
-        {formError && <p className="text-sm text-red-400">{formError}</p>}
+        {formError && <p className="text-sm text-destructive">{formError}</p>}
 
         <button
           type="submit"
           disabled={isSaving}
-          className="w-full rounded-lg bg-white py-3 font-medium text-black disabled:opacity-50"
+          className="w-full rounded-lg bg-primary py-3 font-medium text-primary-foreground disabled:opacity-50"
         >
           {isSaving ? 'Guardando…' : isEdit ? 'Guardar cambios' : 'Agregar gasto'}
         </button>
@@ -441,8 +442,20 @@ export function ExpenseForm() {
   if (group.isPending || (isEdit && expense.isPending)) {
     return <Spinner fullScreen />;
   }
-  if (group.isError) return <p className="p-6 text-red-400">{group.error.message}</p>;
-  if (isEdit && expense.isError) return <p className="p-6 text-red-400">{expense.error.message}</p>;
+  if (group.isError) {
+    return (
+      <main className="p-6">
+        <ErrorState message={group.error.message} onRetry={() => group.refetch()} />
+      </main>
+    );
+  }
+  if (isEdit && expense.isError) {
+    return (
+      <main className="p-6">
+        <ErrorState message={expense.error.message} onRetry={() => expense.refetch()} />
+      </main>
+    );
+  }
 
   return (
     <ExpenseFormBody
