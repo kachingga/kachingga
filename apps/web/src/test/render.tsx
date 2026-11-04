@@ -6,6 +6,7 @@ import { observable } from '@trpc/server/observable';
 import type { ReactElement } from 'react';
 import { MemoryRouter } from 'react-router';
 
+import { ConfirmProvider } from '@/components/confirm-provider';
 import { TRPCProvider } from '@/lib/trpc';
 
 // Fake API for screen tests: map a procedure path ("groups.get") to what it returns.
@@ -58,7 +59,9 @@ export function renderWithApi(ui: ReactElement, api: ApiHandlers = {}, route = '
   return render(
     <QueryClientProvider client={queryClient}>
       <TRPCProvider trpcClient={trpcClient} queryClient={queryClient}>
-        <MemoryRouter initialEntries={[route]}>{ui}</MemoryRouter>
+        <ConfirmProvider>
+          <MemoryRouter initialEntries={[route]}>{ui}</MemoryRouter>
+        </ConfirmProvider>
       </TRPCProvider>
     </QueryClientProvider>,
   );

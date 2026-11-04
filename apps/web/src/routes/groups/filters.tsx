@@ -3,6 +3,7 @@ import { useNavigate, useParams } from 'react-router';
 import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
 import { expenseCategories, type ExpenseFilters } from '@kachingga/api/schemas';
+import { ErrorState } from '@/components/error-state';
 import { Spinner } from '@/components/spinner';
 import { useTRPC } from '@/lib/trpc';
 import {
@@ -100,7 +101,7 @@ export function Filters() {
   return (
     <main className="mx-auto min-h-dvh max-w-md p-6">
       <div className="mb-4 flex items-center gap-3">
-        <button onClick={() => navigate(-1)} aria-label="Volver" className="text-neutral-400">
+        <button onClick={() => navigate(-1)} aria-label="Volver" className="text-muted-foreground">
           ←
         </button>
         <h1 className="text-xl font-bold">Filtros y totales</h1>
@@ -110,19 +111,19 @@ export function Filters() {
       <div className="mb-4 flex flex-wrap gap-2">
         <button
           onClick={() => myId && setFilters((f) => ({ ...f, involvedParticipantId: myId }))}
-          className="rounded-full border border-neutral-700 px-3 py-1 text-sm text-neutral-300"
+          className="rounded-full border border-input px-3 py-1 text-sm text-foreground"
         >
           Mis gastos
         </button>
         <button
           onClick={applyMonth}
-          className="rounded-full border border-neutral-700 px-3 py-1 text-sm text-neutral-300"
+          className="rounded-full border border-input px-3 py-1 text-sm text-foreground"
         >
           Este mes
         </button>
         <button
           onClick={() => setFilters({})}
-          className="rounded-full border border-neutral-700 px-3 py-1 text-sm text-neutral-400"
+          className="rounded-full border border-input px-3 py-1 text-sm text-muted-foreground"
         >
           Limpiar filtros
         </button>
@@ -134,7 +135,7 @@ export function Filters() {
           {savedFilters.data.map((sf) => (
             <div
               key={sf.id}
-              className="flex items-center gap-1 rounded-full border border-neutral-700 py-1 pl-3 pr-1"
+              className="flex items-center gap-1 rounded-full border border-input py-1 pl-3 pr-1"
             >
               <button onClick={() => setFilters(sf.filters)} className="text-sm">
                 {sf.name}
@@ -142,7 +143,7 @@ export function Filters() {
               <button
                 onClick={() => deleteFilter.mutate({ savedFilterId: sf.id })}
                 aria-label={`Borrar filtro ${sf.name}`}
-                className="px-1 text-xs text-neutral-500"
+                className="px-1 text-xs text-muted-foreground"
               >
                 ×
               </button>
@@ -152,14 +153,14 @@ export function Filters() {
       )}
 
       {/* Formulario de filtros */}
-      <div className="mb-6 space-y-3 rounded-2xl bg-neutral-900 p-4">
+      <div className="mb-6 space-y-3 rounded-2xl bg-card p-4">
         <div className="grid grid-cols-2 gap-3">
           <div>
-            <label className="block text-xs text-neutral-400">Quién pagó</label>
+            <label className="block text-xs text-muted-foreground">Quién pagó</label>
             <select
               value={filters.paidById ?? ''}
               onChange={(e) => setFilters((f) => ({ ...f, paidById: e.target.value || undefined }))}
-              className="mt-1 w-full rounded-lg border border-neutral-700 bg-neutral-800 px-2 py-1 text-sm text-white focus:outline-none focus:ring-1 focus:ring-neutral-600"
+              className="mt-1 w-full rounded-lg border border-input bg-muted px-2 py-1 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-ring"
             >
               <option value="">Todos</option>
               {participants.map((p) => (
@@ -170,7 +171,7 @@ export function Filters() {
             </select>
           </div>
           <div>
-            <label className="block text-xs text-neutral-400">Involucrado</label>
+            <label className="block text-xs text-muted-foreground">Involucrado</label>
             <select
               value={filters.involvedParticipantId ?? ''}
               onChange={(e) =>
@@ -179,7 +180,7 @@ export function Filters() {
                   involvedParticipantId: e.target.value || undefined,
                 }))
               }
-              className="mt-1 w-full rounded-lg border border-neutral-700 bg-neutral-800 px-2 py-1 text-sm text-white focus:outline-none focus:ring-1 focus:ring-neutral-600"
+              className="mt-1 w-full rounded-lg border border-input bg-muted px-2 py-1 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-ring"
             >
               <option value="">Todos</option>
               {participants.map((p) => (
@@ -193,7 +194,7 @@ export function Filters() {
 
         <div className="grid grid-cols-2 gap-3">
           <div>
-            <label className="block text-xs text-neutral-400">Desde</label>
+            <label className="block text-xs text-muted-foreground">Desde</label>
             <input
               type="date"
               value={filters.dateFrom ? toDay(filters.dateFrom) : ''}
@@ -203,11 +204,11 @@ export function Filters() {
                   dateFrom: e.target.value ? startOfDay(e.target.value) : undefined,
                 }))
               }
-              className="mt-1 w-full rounded-lg border border-neutral-700 bg-neutral-800 px-2 py-1 text-sm text-white focus:outline-none focus:ring-1 focus:ring-neutral-600"
+              className="mt-1 w-full rounded-lg border border-input bg-muted px-2 py-1 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-ring"
             />
           </div>
           <div>
-            <label className="block text-xs text-neutral-400">Hasta</label>
+            <label className="block text-xs text-muted-foreground">Hasta</label>
             <input
               type="date"
               value={filters.dateTo ? toDay(filters.dateTo) : ''}
@@ -217,23 +218,23 @@ export function Filters() {
                   dateTo: e.target.value ? endOfDay(e.target.value) : undefined,
                 }))
               }
-              className="mt-1 w-full rounded-lg border border-neutral-700 bg-neutral-800 px-2 py-1 text-sm text-white focus:outline-none focus:ring-1 focus:ring-neutral-600"
+              className="mt-1 w-full rounded-lg border border-input bg-muted px-2 py-1 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-ring"
             />
           </div>
         </div>
 
         <div>
-          <label className="block text-xs text-neutral-400">Descripción</label>
+          <label className="block text-xs text-muted-foreground">Descripción</label>
           <input
             value={filters.search ?? ''}
             onChange={(e) => setFilters((f) => ({ ...f, search: e.target.value || undefined }))}
             placeholder="Buscar…"
-            className="mt-1 w-full rounded-lg border border-neutral-700 bg-neutral-800 px-2 py-1 text-sm text-white placeholder:text-neutral-600 focus:outline-none focus:ring-1 focus:ring-neutral-600"
+            className="mt-1 w-full rounded-lg border border-input bg-muted px-2 py-1 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-ring"
           />
         </div>
 
         <div>
-          <label className="block text-xs text-neutral-400">Categorías</label>
+          <label className="block text-xs text-muted-foreground">Categorías</label>
           <div className="mt-1 flex flex-wrap gap-1">
             {expenseCategories.map((cat) => {
               const selected = filters.categories?.includes(cat) ?? false;
@@ -250,7 +251,7 @@ export function Filters() {
                       };
                     })
                   }
-                  className={`rounded-full px-2 py-1 text-xs ${selected ? 'bg-white text-black' : 'border border-neutral-700 text-neutral-400'}`}
+                  className={`rounded-full px-2 py-1 text-xs ${selected ? 'bg-primary text-primary-foreground' : 'border border-input text-muted-foreground'}`}
                 >
                   {categoryLabels[cat]}
                 </button>
@@ -260,12 +261,12 @@ export function Filters() {
         </div>
 
         {/* Guardar filtro */}
-        <div className="flex gap-2 border-t border-neutral-800 pt-3">
+        <div className="flex gap-2 border-t border-border pt-3">
           <input
             value={filterName}
             onChange={(e) => setFilterName(e.target.value)}
             placeholder="Nombre del filtro…"
-            className="flex-1 rounded-lg border border-neutral-700 bg-neutral-800 px-2 py-1 text-sm text-white placeholder:text-neutral-600 focus:outline-none focus:ring-1 focus:ring-neutral-600"
+            className="flex-1 rounded-lg border border-input bg-muted px-2 py-1 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-ring"
           />
           <button
             onClick={() => {
@@ -274,42 +275,44 @@ export function Filters() {
               }
             }}
             disabled={createFilter.isPending || !filterName.trim()}
-            className="rounded-lg bg-neutral-700 px-3 py-1 text-xs text-white disabled:opacity-50"
+            className="rounded-lg bg-secondary px-3 py-1 text-xs text-foreground disabled:opacity-50"
           >
             Guardar
           </button>
         </div>
-        {saveError && <p className="text-xs text-red-400">{saveError}</p>}
+        {saveError && <p className="text-xs text-destructive">{saveError}</p>}
       </div>
 
       {/* Totales */}
-      {summary.isPending && <p className="mb-4 text-sm text-neutral-400">Calculando totales…</p>}
+      {summary.isPending && (
+        <p className="mb-4 text-sm text-muted-foreground">Calculando totales…</p>
+      )}
       {summary.isSuccess && summary.data.length > 0 && (
         <div className="mb-6 space-y-2">
           <h2 className="font-semibold">Totales</h2>
           {summary.data.map((s) => (
-            <div key={s.currency} className="rounded-2xl bg-neutral-900 p-3 text-sm">
+            <div key={s.currency} className="rounded-2xl bg-card p-3 text-sm">
               <p className="font-medium">{s.currency}</p>
-              <div className="mt-1 grid grid-cols-3 gap-2 text-neutral-300">
+              <div className="mt-1 grid grid-cols-3 gap-2 text-foreground">
                 <div>
-                  <p className="text-xs text-neutral-500">Gastos ({s.count})</p>
+                  <p className="text-xs text-muted-foreground">Gastos ({s.count})</p>
                   <p>{formatCents(s.totalCents, s.currency)}</p>
                 </div>
                 <div>
-                  <p className="text-xs text-neutral-500">Mi parte</p>
+                  <p className="text-xs text-muted-foreground">Mi parte</p>
                   <p>{formatCents(s.myShareCents, s.currency)}</p>
                 </div>
                 <div>
-                  <p className="text-xs text-neutral-500">Pagué</p>
+                  <p className="text-xs text-muted-foreground">Pagué</p>
                   <p>{formatCents(s.myPaidCents, s.currency)}</p>
                 </div>
               </div>
               {s.byCategory.length > 0 && (
-                <div className="mt-2 space-y-1 border-t border-neutral-800 pt-2">
+                <div className="mt-2 space-y-1 border-t border-border pt-2">
                   {s.byCategory.map((bc) => (
                     <div
                       key={bc.category}
-                      className="flex justify-between text-xs text-neutral-500"
+                      className="flex justify-between text-xs text-muted-foreground"
                     >
                       <span>{categoryLabels[bc.category as keyof typeof categoryLabels]}</span>
                       <span>{formatCents(bc.totalCents, s.currency)}</span>
@@ -327,14 +330,14 @@ export function Filters() {
         <button
           onClick={() => void handleExport('csv')}
           disabled={exportingCsv}
-          className="flex-1 rounded-xl border border-neutral-700 py-2 text-sm text-neutral-300 disabled:opacity-50"
+          className="flex-1 rounded-xl border border-input py-2 text-sm text-foreground disabled:opacity-50"
         >
           {exportingCsv ? 'Exportando…' : 'Exportar CSV'}
         </button>
         <button
           onClick={() => void handleExport('json')}
           disabled={exportingJson}
-          className="flex-1 rounded-xl border border-neutral-700 py-2 text-sm text-neutral-300 disabled:opacity-50"
+          className="flex-1 rounded-xl border border-input py-2 text-sm text-foreground disabled:opacity-50"
         >
           {exportingJson ? 'Exportando…' : 'Exportar JSON'}
         </button>
@@ -344,21 +347,20 @@ export function Filters() {
       <div>
         <h2 className="mb-3 font-semibold">Gastos</h2>
         {expenses.isPending && <Spinner />}
-        {expenses.isError && <p className="text-sm text-red-400">{expenses.error.message}</p>}
+        {expenses.isError && (
+          <ErrorState message={expenses.error.message} onRetry={() => expenses.refetch()} />
+        )}
         {expenses.isSuccess && allExpenses.length === 0 && (
-          <p className="py-6 text-center text-sm text-neutral-400">
+          <p className="py-6 text-center text-sm text-muted-foreground">
             No hay gastos con estos filtros.
           </p>
         )}
         <ul className="space-y-2">
           {allExpenses.map((e) => (
-            <li
-              key={e.id}
-              className="flex items-center justify-between rounded-2xl bg-neutral-900 p-3"
-            >
+            <li key={e.id} className="flex items-center justify-between rounded-2xl bg-card p-3">
               <div className="min-w-0 flex-1">
                 <p className="truncate text-sm font-medium">{e.description}</p>
-                <p className="text-xs text-neutral-500">
+                <p className="text-xs text-muted-foreground">
                   {e.paidBy.name} · {formatDate(e.date)}
                 </p>
               </div>
@@ -370,7 +372,7 @@ export function Filters() {
           <button
             onClick={() => expenses.fetchNextPage()}
             disabled={expenses.isFetchingNextPage}
-            className="mt-4 w-full rounded-xl border border-neutral-700 py-2 text-sm text-neutral-400 disabled:opacity-50"
+            className="mt-4 w-full rounded-xl border border-input py-2 text-sm text-muted-foreground disabled:opacity-50"
           >
             {expenses.isFetchingNextPage ? 'Cargando…' : 'Cargar más'}
           </button>

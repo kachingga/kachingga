@@ -44,7 +44,7 @@ export function JoinGroup() {
   return (
     <main className="mx-auto min-h-dvh max-w-md p-6">
       <div className="mb-6 flex items-center gap-3">
-        <button onClick={() => navigate(-1)} aria-label="Volver" className="text-neutral-400">
+        <button onClick={() => navigate(-1)} aria-label="Volver" className="text-muted-foreground">
           ←
         </button>
         <h1 className="text-xl font-bold">Unirme con código</h1>
@@ -53,7 +53,7 @@ export function JoinGroup() {
       {!showPreview && (
         <form onSubmit={handleCodeSubmit} className="space-y-4">
           <div>
-            <label className="block text-sm font-medium text-neutral-400" htmlFor="code">
+            <label className="block text-sm font-medium text-muted-foreground" htmlFor="code">
               Código de invitación
             </label>
             <input
@@ -62,14 +62,14 @@ export function JoinGroup() {
               onChange={(e) => setCodeInput(e.target.value.toUpperCase())}
               required
               placeholder="AB3X7K2M"
-              className="mt-1 w-full rounded-lg border border-neutral-700 bg-neutral-900 px-3 py-2 text-center font-mono text-xl uppercase tracking-widest text-white placeholder:text-neutral-600 focus:outline-none focus:ring-2 focus:ring-neutral-600"
+              className="mt-1 w-full rounded-lg border border-input bg-card px-3 py-2 text-center font-mono text-xl uppercase tracking-widest text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
             />
           </div>
-          {preview.isError && <p className="text-sm text-red-400">{preview.error.message}</p>}
+          {preview.isError && <p className="text-sm text-destructive">{preview.error.message}</p>}
           <button
             type="submit"
             disabled={preview.isFetching}
-            className="w-full rounded-lg bg-white py-3 font-medium text-black disabled:opacity-50"
+            className="w-full rounded-lg bg-primary py-3 font-medium text-primary-foreground disabled:opacity-50"
           >
             {preview.isFetching ? 'Buscando…' : 'Buscar grupo'}
           </button>
@@ -77,19 +77,21 @@ export function JoinGroup() {
       )}
 
       {showPreview && preview.isPending && (
-        <p className="py-8 text-center text-neutral-400">Buscando grupo…</p>
+        <p className="py-8 text-center text-muted-foreground">Buscando grupo…</p>
       )}
 
       {showPreview && preview.isSuccess && (
         <div className="space-y-6">
-          <div className="rounded-2xl bg-neutral-900 p-4">
-            <p className="text-sm text-neutral-400">Vas a unirte a</p>
+          <div className="rounded-2xl bg-card p-4">
+            <p className="text-sm text-muted-foreground">Vas a unirte a</p>
             <p className="text-xl font-bold">{preview.data.name}</p>
-            <p className="text-sm text-neutral-400">Moneda base: {preview.data.baseCurrency}</p>
+            <p className="text-sm text-muted-foreground">
+              Moneda base: {preview.data.baseCurrency}
+            </p>
           </div>
 
           {preview.data.alreadyMember ? (
-            <p className="text-amber-400">Ya sos miembro de este grupo.</p>
+            <p className="text-amber-600 dark:text-amber-400">Ya sos miembro de este grupo.</p>
           ) : (
             <div className="space-y-4">
               <p className="font-medium">¿Quién sos?</p>
@@ -97,7 +99,7 @@ export function JoinGroup() {
               {preview.data.unclaimedParticipants.map((p) => (
                 <label
                   key={p.id}
-                  className="flex items-center gap-3 rounded-xl border border-neutral-700 bg-neutral-900 p-3"
+                  className="flex items-center gap-3 rounded-xl border border-input bg-card p-3"
                 >
                   <input
                     type="radio"
@@ -112,7 +114,7 @@ export function JoinGroup() {
                 </label>
               ))}
 
-              <label className="flex items-center gap-3 rounded-xl border border-neutral-700 bg-neutral-900 p-3">
+              <label className="flex items-center gap-3 rounded-xl border border-input bg-card p-3">
                 <input
                   type="radio"
                   name="who"
@@ -130,16 +132,16 @@ export function JoinGroup() {
                   value={newName}
                   onChange={(e) => setNewName(e.target.value)}
                   placeholder="¿Cómo te llamás?"
-                  className="w-full rounded-lg border border-neutral-700 bg-neutral-900 px-3 py-2 text-base text-white placeholder:text-neutral-600 focus:outline-none focus:ring-2 focus:ring-neutral-600"
+                  className="w-full rounded-lg border border-input bg-card px-3 py-2 text-base text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
                 />
               )}
 
-              {join.isError && <p className="text-sm text-red-400">{join.error.message}</p>}
+              {join.isError && <p className="text-sm text-destructive">{join.error.message}</p>}
 
               <button
                 onClick={handleJoin}
                 disabled={join.isPending || (joinAs === 'new' && !newName.trim())}
-                className="w-full rounded-lg bg-white py-3 font-medium text-black disabled:opacity-50"
+                className="w-full rounded-lg bg-primary py-3 font-medium text-primary-foreground disabled:opacity-50"
               >
                 {join.isPending ? 'Uniéndome…' : 'Unirme'}
               </button>
@@ -148,7 +150,7 @@ export function JoinGroup() {
 
           <button
             onClick={() => setSubmittedCode(null)}
-            className="w-full py-2 text-sm text-neutral-400 underline"
+            className="w-full py-2 text-sm text-muted-foreground underline"
           >
             Ingresar otro código
           </button>

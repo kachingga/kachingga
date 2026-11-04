@@ -8,8 +8,10 @@ import { currencies } from '@kachingga/api/schemas';
 import { ExchangeRateFields } from '@/components/exchange-rate-fields';
 import { NumberInput } from '@/components/number-input';
 import { useExchangeRate } from '@/lib/use-exchange-rate';
+import { ErrorState } from '@/components/error-state';
 import { Spinner } from '@/components/spinner';
 import { useTRPC } from '@/lib/trpc';
+import { useConfirm } from '@/lib/use-confirm';
 import {
   centsToNumeric,
   currencyLabels,
@@ -34,8 +36,11 @@ export function Settlements() {
   if (group.isError) {
     return (
       <div className="p-6 text-center">
-        <p className="text-red-400">{group.error.message}</p>
-        <button onClick={() => navigate(-1)} className="mt-2 text-sm text-neutral-400 underline">
+        <ErrorState message={group.error.message} onRetry={() => group.refetch()} />
+        <button
+          onClick={() => navigate(-1)}
+          className="mt-2 text-sm text-muted-foreground underline"
+        >
           Volver
         </button>
       </div>
@@ -49,6 +54,7 @@ function SettlementsBody({ groupId, group }: { groupId: string; group: GroupData
   const [searchParams] = useSearchParams();
   const trpc = useTRPC();
   const queryClient = useQueryClient();
+  const confirm = useConfirm();
 
   const settlements = useQuery(trpc.settlements.list.queryOptions({ groupId }));
 
@@ -140,7 +146,7 @@ function SettlementsBody({ groupId, group }: { groupId: string; group: GroupData
   return (
     <main className="mx-auto min-h-dvh max-w-md p-6">
       <div className="mb-6 flex items-center gap-3">
-        <button onClick={() => navigate(-1)} aria-label="Volver" className="text-neutral-400">
+        <button onClick={() => navigate(-1)} aria-label="Volver" className="text-muted-foreground">
           ←
         </button>
         <h1 className="text-xl font-bold">Pagos</h1>
@@ -152,17 +158,17 @@ function SettlementsBody({ groupId, group }: { groupId: string; group: GroupData
           {!showForm ? (
             <button
               onClick={() => setShowForm(true)}
-              className="w-full rounded-xl bg-white py-3 font-medium text-black"
+              className="w-full rounded-xl bg-primary py-3 font-medium text-primary-foreground"
             >
               + Registrar pago
             </button>
           ) : (
-            <form onSubmit={handleSubmit} className="space-y-4 rounded-2xl bg-neutral-900 p-4">
+            <form onSubmit={handleSubmit} className="space-y-4 rounded-2xl bg-card p-4">
               <h2 className="font-semibold">Registrar pago</h2>
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-sm font-medium text-neutral-400" htmlFor="from">
+                  <label className="block text-sm font-medium text-muted-foreground" htmlFor="from">
                     Quién pagó
                   </label>
                   <select
@@ -170,7 +176,7 @@ function SettlementsBody({ groupId, group }: { groupId: string; group: GroupData
                     value={fromId}
                     onChange={(e) => setFromId(e.target.value)}
                     required
-                    className="mt-1 w-full rounded-lg border border-neutral-700 bg-neutral-800 px-2 py-2 text-sm text-white focus:outline-none focus:ring-2 focus:ring-neutral-600"
+                    className="mt-1 w-full rounded-lg border border-input bg-muted px-2 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
                   >
                     <option value="">Elegir…</option>
                     {participants.map((p) => (
@@ -183,7 +189,7 @@ function SettlementsBody({ groupId, group }: { groupId: string; group: GroupData
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-neutral-400" htmlFor="to">
+                  <label className="block text-sm font-medium text-muted-foreground" htmlFor="to">
                     A quién
                   </label>
                   <select
@@ -191,7 +197,7 @@ function SettlementsBody({ groupId, group }: { groupId: string; group: GroupData
                     value={toId}
                     onChange={(e) => setToId(e.target.value)}
                     required
-                    className="mt-1 w-full rounded-lg border border-neutral-700 bg-neutral-800 px-2 py-2 text-sm text-white focus:outline-none focus:ring-2 focus:ring-neutral-600"
+                    className="mt-1 w-full rounded-lg border border-input bg-muted px-2 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
                   >
                     <option value="">Elegir…</option>
                     {participants.map((p) => (
@@ -206,7 +212,10 @@ function SettlementsBody({ groupId, group }: { groupId: string; group: GroupData
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-sm font-medium text-neutral-400" htmlFor="amount">
+                  <label
+                    className="block text-sm font-medium text-muted-foreground"
+                    htmlFor="amount"
+                  >
                     Monto
                   </label>
                   <NumberInput
@@ -215,13 +224,13 @@ function SettlementsBody({ groupId, group }: { groupId: string; group: GroupData
                     onValueChange={setAmountInput}
                     required
                     placeholder="0"
-                    className="mt-1 w-full rounded-lg border border-neutral-700 bg-neutral-800 px-3 py-2 text-base text-white placeholder:text-neutral-600 focus:outline-none focus:ring-2 focus:ring-neutral-600"
+                    className="mt-1 w-full rounded-lg border border-input bg-muted px-3 py-2 text-base text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
                   />
                 </div>
 
                 <div>
                   <label
-                    className="block text-sm font-medium text-neutral-400"
+                    className="block text-sm font-medium text-muted-foreground"
                     htmlFor="sett-currency"
                   >
                     Moneda
@@ -234,7 +243,7 @@ function SettlementsBody({ groupId, group }: { groupId: string; group: GroupData
                       setCurrency(c);
                       rate.resetFor(c);
                     }}
-                    className="mt-1 w-full rounded-lg border border-neutral-700 bg-neutral-800 px-2 py-2 text-sm text-white focus:outline-none focus:ring-2 focus:ring-neutral-600"
+                    className="mt-1 w-full rounded-lg border border-input bg-muted px-2 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
                   >
                     {currencies.map((c) => (
                       <option key={c} value={c}>
@@ -248,7 +257,10 @@ function SettlementsBody({ groupId, group }: { groupId: string; group: GroupData
               <ExchangeRateFields rate={rate} amountCents={toCents(amountInput)} />
 
               <div>
-                <label className="block text-sm font-medium text-neutral-400" htmlFor="sett-date">
+                <label
+                  className="block text-sm font-medium text-muted-foreground"
+                  htmlFor="sett-date"
+                >
                   Fecha
                 </label>
                 <input
@@ -257,12 +269,12 @@ function SettlementsBody({ groupId, group }: { groupId: string; group: GroupData
                   value={dateInput}
                   onChange={(e) => setDateInput(e.target.value)}
                   required
-                  className="mt-1 w-full rounded-lg border border-neutral-700 bg-neutral-800 px-3 py-2 text-base text-white focus:outline-none focus:ring-2 focus:ring-neutral-600"
+                  className="mt-1 w-full rounded-lg border border-input bg-muted px-3 py-2 text-base text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-neutral-400" htmlFor="note">
+                <label className="block text-sm font-medium text-muted-foreground" htmlFor="note">
                   Nota (opcional)
                 </label>
                 <input
@@ -270,17 +282,17 @@ function SettlementsBody({ groupId, group }: { groupId: string; group: GroupData
                   value={note}
                   onChange={(e) => setNote(e.target.value)}
                   placeholder="Transferencia del 5/12"
-                  className="mt-1 w-full rounded-lg border border-neutral-700 bg-neutral-800 px-3 py-2 text-base text-white placeholder:text-neutral-600 focus:outline-none focus:ring-2 focus:ring-neutral-600"
+                  className="mt-1 w-full rounded-lg border border-input bg-muted px-3 py-2 text-base text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
                 />
               </div>
 
-              {formError && <p className="text-sm text-red-400">{formError}</p>}
+              {formError && <p className="text-sm text-destructive">{formError}</p>}
 
               <div className="flex gap-2">
                 <button
                   type="submit"
                   disabled={createSettlement.isPending}
-                  className="flex-1 rounded-lg bg-white py-2 font-medium text-black disabled:opacity-50"
+                  className="flex-1 rounded-lg bg-primary py-2 font-medium text-primary-foreground disabled:opacity-50"
                 >
                   {createSettlement.isPending ? 'Guardando…' : 'Registrar'}
                 </button>
@@ -290,7 +302,7 @@ function SettlementsBody({ groupId, group }: { groupId: string; group: GroupData
                     setShowForm(false);
                     setFormError(null);
                   }}
-                  className="flex-1 rounded-lg border border-neutral-700 py-2 text-neutral-300"
+                  className="flex-1 rounded-lg border border-input py-2 text-foreground"
                 >
                   Cancelar
                 </button>
@@ -303,11 +315,11 @@ function SettlementsBody({ groupId, group }: { groupId: string; group: GroupData
       {/* Lista de pagos */}
       {settlements.isPending && <Spinner />}
       {settlements.isError && (
-        <p className="text-center text-red-400">{settlements.error.message}</p>
+        <ErrorState message={settlements.error.message} onRetry={() => settlements.refetch()} />
       )}
 
       {settlements.isSuccess && settlements.data.length === 0 && (
-        <p className="py-8 text-center text-sm text-neutral-400">
+        <p className="py-8 text-center text-sm text-muted-foreground">
           Todavía no hay pagos registrados.
         </p>
       )}
@@ -315,26 +327,28 @@ function SettlementsBody({ groupId, group }: { groupId: string; group: GroupData
       {settlements.isSuccess && settlements.data.length > 0 && (
         <ul className="space-y-2">
           {settlements.data.map((s) => (
-            <li
-              key={s.id}
-              className="flex items-center justify-between rounded-2xl bg-neutral-900 p-3"
-            >
+            <li key={s.id} className="flex items-center justify-between rounded-2xl bg-card p-3">
               <div>
                 <p className="text-sm font-medium">
                   {s.from.name} → {s.to.name}
                 </p>
-                <p className="text-xs text-neutral-400">
+                <p className="text-xs text-muted-foreground">
                   {formatCents(s.amountCents, s.currency)} · {formatDate(s.date)}
                   {s.note ? ` · ${s.note}` : ''}
                 </p>
               </div>
               {!isArchived && (
                 <button
-                  onClick={() => {
-                    if (confirm('¿Borrar este pago?'))
-                      deleteSettlement.mutate({ settlementId: s.id });
+                  onClick={async () => {
+                    const ok = await confirm({
+                      title: '¿Borrar este pago?',
+                      description: 'Deja de contar en los saldos.',
+                      confirmLabel: 'Borrar',
+                      destructive: true,
+                    });
+                    if (ok) deleteSettlement.mutate({ settlementId: s.id });
                   }}
-                  className="ml-2 text-xs text-red-400"
+                  className="ml-2 text-xs text-destructive"
                 >
                   Borrar
                 </button>

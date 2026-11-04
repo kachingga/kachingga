@@ -64,4 +64,10 @@ export default tseslint.config(
       ],
     },
   },
+  {
+    // shadcn/ui components are generated (`bunx shadcn add`) and export their variants next to
+    // the component; that only affects hot reload of those files.
+    files: ['src/components/ui/**'],
+    rules: { 'react-refresh/only-export-components': 'off' },
+  },
 );

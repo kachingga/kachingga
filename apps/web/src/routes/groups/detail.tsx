@@ -4,8 +4,10 @@ import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from '@tansta
 import type { inferRouterOutputs } from '@trpc/server';
 import type { AppRouter } from '@kachingga/api';
 
+import { ErrorState } from '@/components/error-state';
 import { Spinner } from '@/components/spinner';
 import { useTRPC } from '@/lib/trpc';
+import { useConfirm } from '@/lib/use-confirm';
 import { categoryLabels, formatCents, formatDate, formatPlainAmount } from '@/lib/format';
 
 type GroupData = inferRouterOutputs<AppRouter>['groups']['get'];
@@ -23,8 +25,8 @@ function BalanceSection({ group, balances }: { group: GroupData; balances: Balan
       {balances.map(({ currency, balances: bals, transfers }) => {
         const mine = bals.find((b) => b.participantId === group.myParticipantId);
         return (
-          <div key={currency} className="rounded-2xl bg-neutral-900 p-4">
-            <p className="mb-3 text-sm font-semibold text-neutral-400">{currency}</p>
+          <div key={currency} className="rounded-2xl bg-card p-4">
+            <p className="mb-3 text-sm font-semibold text-muted-foreground">{currency}</p>
 
             {mine && (
               <p className="mb-3 text-lg font-semibold">
@@ -38,8 +40,8 @@ function BalanceSection({ group, balances }: { group: GroupData; balances: Balan
 
             <div className="mb-3 space-y-1">
               {bals.map((b) => (
-                <p key={b.participantId} className="text-sm text-neutral-400">
-                  <span className="font-medium text-neutral-300">
+                <p key={b.participantId} className="text-sm text-muted-foreground">
+                  <span className="font-medium text-foreground">
                     {participantName(group, b.participantId)}
                   </span>
                   {': '}
@@ -53,8 +55,8 @@ function BalanceSection({ group, balances }: { group: GroupData; balances: Balan
             </div>
 
             {transfers.length > 0 && (
-              <div className="space-y-2 border-t border-neutral-800 pt-3">
-                <p className="text-xs font-medium text-neutral-500">Cómo quedar a mano</p>
+              <div className="space-y-2 border-t border-border pt-3">
+                <p className="text-xs font-medium text-muted-foreground">Cómo quedar a mano</p>
                 {transfers.map((t) => {
                   const isMyTransfer = t.fromId === group.myParticipantId;
                   const toParticipant = group.participants.find((p) => p.id === t.toId);
@@ -62,7 +64,7 @@ function BalanceSection({ group, balances }: { group: GroupData; balances: Balan
                   return (
                     <div
                       key={`${t.fromId}-${t.toId}`}
-                      className={`rounded-xl p-3 ${isMyTransfer ? 'bg-neutral-800' : ''}`}
+                      className={`rounded-xl p-3 ${isMyTransfer ? 'bg-muted' : ''}`}
                     >
                       <p className="text-sm">
                         <span className="font-medium">{participantName(group, t.fromId)}</span>
@@ -77,14 +79,14 @@ function BalanceSection({ group, balances }: { group: GroupData; balances: Balan
                         <div className="mt-2 flex flex-wrap gap-2">
                           {toParticipant?.paymentAlias && (
                             <>
-                              <p className="w-full text-xs text-neutral-400">
+                              <p className="w-full text-xs text-muted-foreground">
                                 Alias: {toParticipant.paymentAlias}
                               </p>
                               <button
                                 onClick={() =>
                                   void navigator.clipboard.writeText(toParticipant.paymentAlias!)
                                 }
-                                className="rounded border border-neutral-700 px-3 py-1 text-xs text-neutral-300"
+                                className="rounded border border-input px-3 py-1 text-xs text-foreground"
                               >
                                 Copiar alias
                               </button>
@@ -94,7 +96,7 @@ function BalanceSection({ group, balances }: { group: GroupData; balances: Balan
                             onClick={() =>
                               void navigator.clipboard.writeText(formatPlainAmount(t.amountCents))
                             }
-                            className="rounded border border-neutral-700 px-3 py-1 text-xs text-neutral-300"
+                            className="rounded border border-input px-3 py-1 text-xs text-foreground"
                           >
                             Copiar monto
                           </button>
@@ -104,7 +106,7 @@ function BalanceSection({ group, balances }: { group: GroupData; balances: Balan
                                 `/grupos/${group.id}/pagos?from=${t.fromId}&to=${t.toId}&amount=${t.amountCents}&currency=${currency}`,
                               )
                             }
-                            className="rounded bg-white px-3 py-1 text-xs text-black"
+                            className="rounded bg-primary px-3 py-1 text-xs text-primary-foreground"
                           >
                             Marcar como pagado
                           </button>
@@ -127,6 +129,7 @@ export function GroupDetail() {
   const navigate = useNavigate();
   const trpc = useTRPC();
   const queryClient = useQueryClient();
+  const confirm = useConfirm();
 
   const [showMenu, setShowMenu] = useState(false);
   const [renaming, setRenaming] = useState(false);
@@ -162,10 +165,10 @@ export function GroupDetail() {
   if (group.isError) {
     return (
       <div className="p-6 text-center">
-        <p className="text-red-400">{group.error.message}</p>
+        <ErrorState message={group.error.message} onRetry={() => group.refetch()} />
         <button
           onClick={() => navigate('/grupos')}
-          className="mt-2 text-sm text-neutral-400 underline"
+          className="mt-2 text-sm text-muted-foreground underline"
         >
           Volver a mis grupos
         </button>
@@ -180,7 +183,7 @@ export function GroupDetail() {
     <main className="mx-auto min-h-dvh max-w-md pb-24">
       {/* Header */}
       <div className="flex items-center justify-between p-4">
-        <button onClick={() => navigate(-1)} className="text-neutral-400">
+        <button onClick={() => navigate(-1)} className="text-muted-foreground">
           ←
         </button>
 
@@ -196,7 +199,7 @@ export function GroupDetail() {
               value={newName}
               onChange={(e) => setNewName(e.target.value)}
               autoFocus
-              className="flex-1 rounded border border-neutral-700 bg-neutral-900 px-2 py-1 text-sm text-white focus:outline-none"
+              className="flex-1 rounded border border-input bg-card px-2 py-1 text-sm text-foreground focus:outline-none"
             />
             <button type="submit" disabled={renameGroup.isPending} className="text-sm font-medium">
               Guardar
@@ -204,7 +207,7 @@ export function GroupDetail() {
             <button
               type="button"
               onClick={() => setRenaming(false)}
-              className="text-sm text-neutral-400"
+              className="text-sm text-muted-foreground"
             >
               ×
             </button>
@@ -212,24 +215,24 @@ export function GroupDetail() {
         ) : (
           <div className="flex-1 px-2">
             <h1 className="font-bold">{g.name}</h1>
-            <p className="text-xs text-neutral-500">
+            <p className="text-xs text-muted-foreground">
               {g.baseCurrency}
               {g.archivedAt ? ' · Archivado' : ''}
             </p>
           </div>
         )}
 
-        <button onClick={() => setShowMenu(!showMenu)} className="p-2 text-neutral-400">
+        <button onClick={() => setShowMenu(!showMenu)} className="p-2 text-muted-foreground">
           ⋯
         </button>
       </div>
 
       {/* Menu */}
       {showMenu && (
-        <div className="mx-4 mb-2 rounded-2xl border border-neutral-800 bg-neutral-900 p-2 shadow-sm">
+        <div className="mx-4 mb-2 rounded-2xl border border-border bg-card p-2 shadow-sm">
           <Link
             to={`/grupos/${groupId}/participantes`}
-            className="block rounded-xl px-3 py-2 text-sm hover:bg-neutral-800"
+            className="block rounded-xl px-3 py-2 text-sm hover:bg-accent"
           >
             Participantes
           </Link>
@@ -238,7 +241,7 @@ export function GroupDetail() {
               void navigator.clipboard.writeText(g.inviteCode);
               setShowMenu(false);
             }}
-            className="block w-full rounded-xl px-3 py-2 text-left text-sm hover:bg-neutral-800"
+            className="block w-full rounded-xl px-3 py-2 text-left text-sm hover:bg-accent"
           >
             Copiar código de invitación ({g.inviteCode})
           </button>
@@ -248,18 +251,22 @@ export function GroupDetail() {
               setRenaming(true);
               setShowMenu(false);
             }}
-            className="block w-full rounded-xl px-3 py-2 text-left text-sm hover:bg-neutral-800"
+            className="block w-full rounded-xl px-3 py-2 text-left text-sm hover:bg-accent"
           >
             Renombrar grupo
           </button>
           {!g.archivedAt ? (
             <button
-              onClick={() => {
-                if (confirm('¿Archivar este grupo?'))
-                  setArchived.mutate({ groupId: groupId!, archived: true });
+              onClick={async () => {
                 setShowMenu(false);
+                const ok = await confirm({
+                  title: '¿Archivar este grupo?',
+                  description: 'Se puede ver pero no modificar hasta desarchivarlo.',
+                  confirmLabel: 'Archivar',
+                });
+                if (ok) setArchived.mutate({ groupId: groupId!, archived: true });
               }}
-              className="block w-full rounded-xl px-3 py-2 text-left text-sm text-neutral-500 hover:bg-neutral-800"
+              className="block w-full rounded-xl px-3 py-2 text-left text-sm text-muted-foreground hover:bg-accent"
             >
               Archivar grupo
             </button>
@@ -269,7 +276,7 @@ export function GroupDetail() {
                 setArchived.mutate({ groupId: groupId!, archived: false });
                 setShowMenu(false);
               }}
-              className="block w-full rounded-xl px-3 py-2 text-left text-sm hover:bg-neutral-800"
+              className="block w-full rounded-xl px-3 py-2 text-left text-sm hover:bg-accent"
             >
               Desarchivar grupo
             </button>
@@ -280,25 +287,27 @@ export function GroupDetail() {
       <div className="space-y-6 px-4">
         {/* Saldos */}
         {balances.isPending && <Spinner />}
-        {balances.isError && <p className="text-sm text-red-400">{balances.error.message}</p>}
+        {balances.isError && (
+          <ErrorState message={balances.error.message} onRetry={() => balances.refetch()} />
+        )}
         {balances.isSuccess && balances.data.length > 0 && (
           <BalanceSection group={g} balances={balances.data} />
         )}
         {balances.isSuccess && balances.data.length === 0 && (
-          <p className="text-sm text-neutral-400">Sin saldos todavía.</p>
+          <p className="text-sm text-muted-foreground">Sin saldos todavía.</p>
         )}
 
         {/* Links de acción */}
         <div className="flex gap-2">
           <Link
             to={`/grupos/${groupId}/pagos`}
-            className="flex-1 rounded-xl border border-neutral-800 py-2 text-center text-sm text-neutral-300"
+            className="flex-1 rounded-xl border border-border py-2 text-center text-sm text-foreground"
           >
             Pagos
           </Link>
           <Link
             to={`/grupos/${groupId}/filtros`}
-            className="flex-1 rounded-xl border border-neutral-800 py-2 text-center text-sm text-neutral-300"
+            className="flex-1 rounded-xl border border-border py-2 text-center text-sm text-foreground"
           >
             Filtros y totales
           </Link>
@@ -309,10 +318,12 @@ export function GroupDetail() {
           <h2 className="mb-3 font-semibold">Gastos</h2>
 
           {expenses.isPending && <Spinner />}
-          {expenses.isError && <p className="text-sm text-red-400">{expenses.error.message}</p>}
+          {expenses.isError && (
+            <ErrorState message={expenses.error.message} onRetry={() => expenses.refetch()} />
+          )}
 
           {expenses.isSuccess && allExpenses.length === 0 && (
-            <p className="py-6 text-center text-sm text-neutral-400">
+            <p className="py-6 text-center text-sm text-muted-foreground">
               Todavía no hay gastos.{' '}
               <Link to={`/grupos/${groupId}/gastos/nuevo`} className="underline">
                 Agregar uno
@@ -327,11 +338,11 @@ export function GroupDetail() {
                 <li key={expense.id}>
                   <Link
                     to={`/grupos/${groupId}/gastos/${expense.id}`}
-                    className="flex items-center justify-between rounded-2xl bg-neutral-900 p-3 active:bg-neutral-800"
+                    className="flex items-center justify-between rounded-2xl bg-card p-3 active:bg-accent"
                   >
                     <div className="min-w-0 flex-1">
                       <p className="truncate font-medium">{expense.description}</p>
-                      <p className="text-xs text-neutral-500">
+                      <p className="text-xs text-muted-foreground">
                         {categoryLabels[expense.category as keyof typeof categoryLabels]} ·{' '}
                         {expense.paidBy.name} · {formatDate(expense.date)}
                       </p>
@@ -341,7 +352,7 @@ export function GroupDetail() {
                         {formatCents(expense.amountCents, expense.currency)}
                       </p>
                       {myShare && (
-                        <p className="text-xs text-neutral-500">
+                        <p className="text-xs text-muted-foreground">
                           yo: {formatCents(myShare.amountCents, expense.currency)}
                         </p>
                       )}
@@ -356,7 +367,7 @@ export function GroupDetail() {
             <button
               onClick={() => expenses.fetchNextPage()}
               disabled={expenses.isFetchingNextPage}
-              className="mt-4 w-full rounded-xl border border-neutral-800 py-2 text-sm text-neutral-400 disabled:opacity-50"
+              className="mt-4 w-full rounded-xl border border-border py-2 text-sm text-muted-foreground disabled:opacity-50"
             >
               {expenses.isFetchingNextPage ? 'Cargando…' : 'Cargar más'}
             </button>
@@ -369,7 +380,7 @@ export function GroupDetail() {
         <div className="fixed bottom-6 left-0 right-0 flex justify-center">
           <Link
             to={`/grupos/${groupId}/gastos/nuevo`}
-            className="rounded-full bg-white px-6 py-3 font-medium text-black shadow-lg"
+            className="rounded-full bg-primary px-6 py-3 font-medium text-primary-foreground shadow-lg"
           >
             + Agregar gasto
           </Link>

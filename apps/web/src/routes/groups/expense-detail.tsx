@@ -1,8 +1,10 @@
 import { Link, useNavigate, useParams } from 'react-router';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
+import { ErrorState } from '@/components/error-state';
 import { Spinner } from '@/components/spinner';
 import { useTRPC } from '@/lib/trpc';
+import { useConfirm } from '@/lib/use-confirm';
 import {
   categoryLabels,
   formatCents,
@@ -16,6 +18,7 @@ export function ExpenseDetail() {
   const navigate = useNavigate();
   const trpc = useTRPC();
   const queryClient = useQueryClient();
+  const confirm = useConfirm();
 
   const expense = useQuery(trpc.expenses.get.queryOptions({ expenseId: expenseId! }));
   const group = useQuery(trpc.groups.get.queryOptions({ groupId: groupId! }));
@@ -37,8 +40,11 @@ export function ExpenseDetail() {
   if (expense.isError) {
     return (
       <div className="p-6 text-center">
-        <p className="text-red-400">{expense.error.message}</p>
-        <button onClick={() => navigate(-1)} className="mt-2 text-sm text-neutral-400 underline">
+        <ErrorState message={expense.error.message} onRetry={() => expense.refetch()} />
+        <button
+          onClick={() => navigate(-1)}
+          className="mt-2 text-sm text-muted-foreground underline"
+        >
           Volver
         </button>
       </div>
@@ -50,24 +56,28 @@ export function ExpenseDetail() {
   return (
     <main className="mx-auto min-h-dvh max-w-md p-6">
       <div className="mb-6 flex items-center justify-between">
-        <button onClick={() => navigate(-1)} aria-label="Volver" className="text-neutral-400">
+        <button onClick={() => navigate(-1)} aria-label="Volver" className="text-muted-foreground">
           ←
         </button>
         <div className="flex gap-3">
           <Link
             to={`/grupos/${groupId}/gastos/${expenseId}/editar`}
-            className="text-sm text-neutral-400 underline"
+            className="text-sm text-muted-foreground underline"
           >
             Editar
           </Link>
           <button
-            onClick={() => {
-              if (confirm('¿Borrar este gasto?')) {
-                deleteExpense.mutate({ expenseId: expenseId! });
-              }
+            onClick={async () => {
+              const ok = await confirm({
+                title: '¿Borrar este gasto?',
+                description: 'Deja de contar en los saldos.',
+                confirmLabel: 'Borrar',
+                destructive: true,
+              });
+              if (ok) deleteExpense.mutate({ expenseId: expenseId! });
             }}
             disabled={deleteExpense.isPending}
-            className="text-sm text-red-400 disabled:opacity-50"
+            className="text-sm text-destructive disabled:opacity-50"
           >
             {deleteExpense.isPending ? 'Borrando…' : 'Borrar'}
           </button>
@@ -77,15 +87,15 @@ export function ExpenseDetail() {
       <div className="space-y-5">
         <div>
           <h1 className="text-2xl font-bold">{e.description}</h1>
-          <p className="mt-1 text-neutral-400">
+          <p className="mt-1 text-muted-foreground">
             {categoryLabels[e.category as keyof typeof categoryLabels]} · {formatDate(e.date)}
           </p>
         </div>
 
-        <div className="rounded-2xl bg-neutral-900 p-4">
+        <div className="rounded-2xl bg-card p-4">
           <p className="text-3xl font-bold">{formatCents(e.amountCents, e.currency)}</p>
           {base && e.exchangeRate !== null && (
-            <p className="mt-1 text-sm text-neutral-400">
+            <p className="mt-1 text-sm text-muted-foreground">
               ≈ {formatCents(Math.round(e.amountCents * e.exchangeRate), base)} · Tipo de cambio:{' '}
               {e.currency === 'ARS'
                 ? `1 ${base} = ${formatNumber(1 / e.exchangeRate)} ARS`
@@ -93,29 +103,29 @@ export function ExpenseDetail() {
             </p>
           )}
           {base && e.exchangeRate === null && e.currency !== base && (
-            <p className="mt-1 text-sm text-neutral-400">
+            <p className="mt-1 text-sm text-muted-foreground">
               Se mantiene en {e.currency} (saldo aparte)
             </p>
           )}
         </div>
 
         <div>
-          <p className="text-sm text-neutral-400">Pagó</p>
+          <p className="text-sm text-muted-foreground">Pagó</p>
           <p className="font-medium">{e.paidBy.name}</p>
         </div>
 
         <div>
-          <p className="mb-2 text-sm text-neutral-400">
+          <p className="mb-2 text-sm text-muted-foreground">
             División ({splitTypeLabels[e.splitType as keyof typeof splitTypeLabels]})
           </p>
           <ul className="space-y-1">
             {e.splits.map((split) => (
               <li key={split.participantId} className="flex justify-between text-sm">
-                <span className="text-neutral-300">{split.participant.name}</span>
+                <span className="text-foreground">{split.participant.name}</span>
                 <span className="font-medium">
                   {formatCents(split.amountCents, e.currency)}
                   {split.percentage != null && (
-                    <span className="text-neutral-400"> ({split.percentage}%)</span>
+                    <span className="text-muted-foreground"> ({split.percentage}%)</span>
                   )}
                 </span>
               </li>

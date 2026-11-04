@@ -11,13 +11,13 @@ export function RequireAuth() {
 
   if (session === undefined) {
     return (
-      <div className="flex min-h-dvh items-center justify-center bg-black">
+      <div className="flex min-h-dvh items-center justify-center bg-background">
         <div className="flex gap-2">
           {[0, 1, 2].map((i) => (
             <div
               key={i}
               style={{ animationDelay: `${i * 150}ms` }}
-              className="h-2.5 w-2.5 animate-bounce rounded-full bg-neutral-500"
+              className="h-2.5 w-2.5 animate-bounce rounded-full bg-muted-foreground"
             />
           ))}
         </div>

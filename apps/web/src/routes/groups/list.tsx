@@ -2,6 +2,7 @@ import { useRef, useState } from 'react';
 import { Link, useNavigate } from 'react-router';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
+import { ErrorState } from '@/components/error-state';
 import { useTRPC } from '@/lib/trpc';
 
 // Deterministic avatar color from group name
@@ -82,10 +83,13 @@ export function GroupList() {
   }
 
   return (
-    <div className="flex min-h-dvh flex-col bg-black" onClick={() => swipedId && setSwipedId(null)}>
+    <div
+      className="flex min-h-dvh flex-col bg-background"
+      onClick={() => swipedId && setSwipedId(null)}
+    >
       <main className="mx-auto w-full max-w-md flex-1 px-4 pb-32 pt-14">
         <div className="mb-6 flex items-center justify-between">
-          <h1 className="text-3xl font-bold text-white">
+          <h1 className="text-3xl font-bold text-foreground">
             {showArchived ? 'Archivados' : 'Grupos'}
           </h1>
           <button
@@ -94,7 +98,7 @@ export function GroupList() {
               setSwipedId(null);
             }}
             aria-label={showArchived ? 'Volver a grupos' : 'Ver archivados'}
-            className={`p-2 ${showArchived ? 'text-white' : 'text-neutral-500'}`}
+            className={`p-2 ${showArchived ? 'text-foreground' : 'text-muted-foreground'}`}
           >
             <ArchiveIcon className="h-6 w-6" />
           </button>
@@ -103,31 +107,25 @@ export function GroupList() {
         {groups.isPending && (
           <div className="space-y-3">
             {[1, 2, 3].map((i) => (
-              <div key={i} className="h-20 animate-pulse rounded-3xl bg-neutral-800" />
+              <div key={i} className="h-20 animate-pulse rounded-3xl bg-muted" />
             ))}
           </div>
         )}
 
         {groups.isError && (
-          <div className="py-12 text-center">
-            <p className="text-red-400">{groups.error.message}</p>
-            <button
-              onClick={() => groups.refetch()}
-              className="mt-3 text-sm text-neutral-400 underline"
-            >
-              Reintentar
-            </button>
-          </div>
+          <ErrorState message={groups.error.message} onRetry={() => groups.refetch()} />
         )}
 
         {groups.isSuccess && displayGroups.length === 0 && (
           <div className="py-16 text-center">
             {showArchived ? (
-              <p className="text-lg font-medium text-neutral-300">No tenés grupos archivados</p>
+              <p className="text-lg font-medium text-foreground">No tenés grupos archivados</p>
             ) : (
               <>
-                <p className="text-lg font-medium text-neutral-300">Todavía no tenés grupos</p>
-                <p className="mt-1 text-sm text-neutral-500">Creá uno o unite con un código.</p>
+                <p className="text-lg font-medium text-foreground">Todavía no tenés grupos</p>
+                <p className="mt-1 text-sm text-muted-foreground">
+                  Creá uno o unite con un código.
+                </p>
               </>
             )}
           </div>
@@ -150,9 +148,9 @@ export function GroupList() {
                       setArchived.mutate({ groupId: group.id, archived: !group.archivedAt });
                     }}
                     aria-label={group.archivedAt ? 'Desarchivar' : 'Archivar'}
-                    className="flex h-full w-20 flex-col items-center justify-center gap-1 bg-neutral-700"
+                    className="flex h-full w-20 flex-col items-center justify-center gap-1 bg-secondary"
                   >
-                    <ArchiveIcon className="h-5 w-5 text-white" />
+                    <ArchiveIcon className="h-5 w-5 text-foreground" />
                   </button>
                   <button
                     onClick={(e) => {
@@ -161,9 +159,9 @@ export function GroupList() {
                       navigate(`/grupos/${group.id}`);
                     }}
                     aria-label="Opciones"
-                    className="flex h-full w-20 flex-col items-center justify-center gap-1 rounded-r-3xl bg-neutral-600"
+                    className="flex h-full w-20 flex-col items-center justify-center gap-1 rounded-r-3xl bg-accent"
                   >
-                    <span className="text-xl leading-none text-white">⋯</span>
+                    <span className="text-xl leading-none text-foreground">⋯</span>
                   </button>
                 </div>
 
@@ -180,7 +178,7 @@ export function GroupList() {
                   style={{
                     transform: swipedId === group.id ? 'translateX(-160px)' : 'translateX(0)',
                   }}
-                  className="relative z-10 flex w-full items-center gap-4 rounded-3xl bg-neutral-900 p-4 text-left transition-transform duration-200 active:bg-neutral-800"
+                  className="relative z-10 flex w-full items-center gap-4 rounded-3xl bg-card p-4 text-left transition-transform duration-200 active:bg-accent"
                 >
                   <div
                     className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl ${avatarColor(group.name)}`}
@@ -190,14 +188,14 @@ export function GroupList() {
                     </span>
                   </div>
                   <div className="min-w-0 flex-1">
-                    <p className="truncate font-semibold text-white">{group.name}</p>
-                    <p className="text-sm text-neutral-400">
+                    <p className="truncate font-semibold text-foreground">{group.name}</p>
+                    <p className="text-sm text-muted-foreground">
                       {group._count.participants}{' '}
                       {group._count.participants === 1 ? 'persona' : 'personas'} ·{' '}
                       {group.baseCurrency}
                     </p>
                   </div>
-                  <span className="text-neutral-600">›</span>
+                  <span className="text-muted-foreground">›</span>
                 </button>
               </li>
             ))}
@@ -213,14 +211,14 @@ export function GroupList() {
             <Link
               to="/grupos/unirme"
               onClick={() => setFabOpen(false)}
-              className="whitespace-nowrap rounded-2xl bg-neutral-800 px-5 py-3 text-sm font-medium text-white shadow-lg"
+              className="whitespace-nowrap rounded-2xl bg-muted px-5 py-3 text-sm font-medium text-foreground shadow-lg"
             >
               Unirme con código
             </Link>
             <Link
               to="/grupos/crear"
               onClick={() => setFabOpen(false)}
-              className="whitespace-nowrap rounded-2xl bg-white px-5 py-3 text-sm font-medium text-black shadow-lg"
+              className="whitespace-nowrap rounded-2xl bg-primary px-5 py-3 text-sm font-medium text-primary-foreground shadow-lg"
             >
               Crear grupo
             </Link>
@@ -229,31 +227,31 @@ export function GroupList() {
       )}
 
       {/* Bottom nav */}
-      <nav className="fixed bottom-0 left-0 right-0 z-10 border-t border-neutral-800 bg-black pb-safe">
+      <nav className="fixed bottom-0 left-0 right-0 z-10 border-t border-border bg-background pb-safe">
         <div className="mx-auto flex max-w-md items-center justify-around px-4 pt-2 pb-4">
           <button className="flex flex-col items-center gap-1">
-            <svg className="h-6 w-6 text-white" fill="currentColor" viewBox="0 0 24 24">
+            <svg className="h-6 w-6 text-foreground" fill="currentColor" viewBox="0 0 24 24">
               <path d="M3 6h18v2H3V6zm0 5h18v2H3v-2zm0 5h18v2H3v-2z" />
             </svg>
-            <span className="text-xs font-medium text-white">Grupos</span>
+            <span className="text-xs font-medium text-foreground">Grupos</span>
           </button>
 
           <button
             onClick={() => setFabOpen(!fabOpen)}
-            className="flex h-14 w-14 items-center justify-center rounded-full bg-white shadow-lg"
+            className="flex h-14 w-14 items-center justify-center rounded-full bg-primary shadow-lg"
           >
             <span
-              className={`text-2xl font-light text-black transition-transform duration-200 ${fabOpen ? 'rotate-45' : ''}`}
+              className={`text-2xl font-light text-primary-foreground transition-transform duration-200 ${fabOpen ? 'rotate-45' : ''}`}
             >
               +
             </span>
           </button>
 
           <Link to="/cuenta" className="flex flex-col items-center gap-1">
-            <svg className="h-6 w-6 text-neutral-500" fill="currentColor" viewBox="0 0 24 24">
+            <svg className="h-6 w-6 text-muted-foreground" fill="currentColor" viewBox="0 0 24 24">
               <path d="M12 12c2.7 0 4.8-2.1 4.8-4.8S14.7 2.4 12 2.4 7.2 4.5 7.2 7.2 9.3 12 12 12zm0 2.4c-3.2 0-9.6 1.6-9.6 4.8v2.4h19.2v-2.4c0-3.2-6.4-4.8-9.6-4.8z" />
             </svg>
-            <span className="text-xs text-neutral-500">Perfil</span>
+            <span className="text-xs text-muted-foreground">Perfil</span>
           </Link>
         </div>
       </nav>

@@ -23,11 +23,11 @@ export function Login() {
   return (
     <main className="mx-auto flex min-h-dvh max-w-md flex-col justify-center p-6">
       <h1 className="mb-2 text-3xl font-bold">Kachingga</h1>
-      <p className="mb-8 text-neutral-400">Iniciá sesión para continuar</p>
+      <p className="mb-8 text-muted-foreground">Iniciá sesión para continuar</p>
 
       <form onSubmit={handleSubmit} className="space-y-4">
         <div>
-          <label className="block text-sm font-medium text-neutral-400" htmlFor="email">
+          <label className="block text-sm font-medium text-muted-foreground" htmlFor="email">
             Email
           </label>
           <input
@@ -38,12 +38,12 @@ export function Login() {
             required
             autoComplete="email"
             inputMode="email"
-            className="mt-1 w-full rounded-lg border border-neutral-700 bg-neutral-900 px-3 py-2 text-base text-white placeholder:text-neutral-600 focus:outline-none focus:ring-2 focus:ring-neutral-600"
+            className="mt-1 w-full rounded-lg border border-input bg-card px-3 py-2 text-base text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
           />
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-neutral-400" htmlFor="password">
+          <label className="block text-sm font-medium text-muted-foreground" htmlFor="password">
             Contraseña
           </label>
           <input
@@ -53,24 +53,24 @@ export function Login() {
             onChange={(e) => setPassword(e.target.value)}
             required
             autoComplete="current-password"
-            className="mt-1 w-full rounded-lg border border-neutral-700 bg-neutral-900 px-3 py-2 text-base text-white placeholder:text-neutral-600 focus:outline-none focus:ring-2 focus:ring-neutral-600"
+            className="mt-1 w-full rounded-lg border border-input bg-card px-3 py-2 text-base text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
           />
         </div>
 
-        {error && <p className="text-sm text-red-400">{error}</p>}
+        {error && <p className="text-sm text-destructive">{error}</p>}
 
         <button
           type="submit"
           disabled={loading}
-          className="w-full rounded-lg bg-white py-3 font-medium text-black disabled:opacity-50"
+          className="w-full rounded-lg bg-primary py-3 font-medium text-primary-foreground disabled:opacity-50"
         >
           {loading ? 'Entrando…' : 'Entrar'}
         </button>
       </form>
 
-      <p className="mt-6 text-center text-sm text-neutral-400">
+      <p className="mt-6 text-center text-sm text-muted-foreground">
         ¿No tenés cuenta?{' '}
-        <Link to="/registro" className="font-medium text-white underline">
+        <Link to="/registro" className="font-medium text-foreground underline">
           Crear cuenta
         </Link>
       </p>

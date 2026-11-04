@@ -1,4 +1,5 @@
 import { screen } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import { describe, expect, it } from 'vitest';
 
 import { apiError, neverResolves, renderWithApi } from '@/test/render';
@@ -51,5 +52,19 @@ describe('GroupList', () => {
   it('shows bottom nav', () => {
     renderWithApi(<GroupList />, { 'groups.list': neverResolves });
     expect(screen.getByText('Perfil')).toBeInTheDocument();
+  });
+
+  it('retries after an error', async () => {
+    const user = userEvent.setup();
+    let calls = 0;
+    renderWithApi(<GroupList />, {
+      'groups.list': () => {
+        calls += 1;
+        if (calls === 1) throw apiError('Error de red');
+        return [];
+      },
+    });
+    await user.click(await screen.findByRole('button', { name: 'Reintentar' }));
+    expect(await screen.findByText('Todavía no tenés grupos')).toBeInTheDocument();
   });
 });
