@@ -150,7 +150,7 @@ const createExpense = useMutation(
 - `useMemo` / `useCallback` solo si hay un problema de performance medido (esta app no tiene React Compiler).
 - Componentes chicos; lógica reutilizable en hooks; formateo en `src/lib/`.
 - **Componentes base primero:** antes de la segunda pantalla, armar las piezas que se repiten (los 4 estados de una query, botón con estado de carga, texto de monto) y usarlas en todas.
-- **Rutas con carga diferida** (`lazy` de React Router) cuando las pantallas crezcan: hoy el bundle pesa ~170 kB comprimido (Supabase + React + router + tRPC).
+- **Sin rutas con carga diferida (`lazy`) por ahora — medido (nov 2026):** el bundle pesa ~260 kB comprimido, y las pantallas son solo ~8% del total. El resto es lo que comparten todas: `react-dom` (26%), Supabase (~25%, casi todo realtime/storage/postgrest que no usamos), `react-router` (12%) y `zod` (11%). Partir las rutas ahorraría muy poco y sumaría un pedido la primera vez que se abre cada pantalla. Lo que sí rinde: el service worker de la PWA (#18), que guarda la app para que abra al instante, y achicar Supabase a solo auth. Revisarlo si las pantallas pasan a ser una parte grande del bundle.
 
 ## Componentes (shadcn/ui)
 
@@ -176,7 +176,7 @@ Una web nunca se siente 100% nativa en iPhone: los gestos del sistema (deslizar 
 - **Comportamiento de app:** sin rebote ni "pull to refresh" del navegador donde no corresponde (`overscroll-behavior`), sin selección de texto ni resaltado gris al tocar en controles (`-webkit-tap-highlight-color: transparent`, `user-select` donde aplique), `100dvh` para alturas, zonas seguras con `env(safe-area-inset-*)`.
 - **Inputs:** texto de **16 px o más** (si no, Safari en iPhone hace zoom al enfocar), `inputMode` correcto (`decimal` para montos), `autocomplete` en login.
 - **Gestos propios** donde suman (ej. deslizar un gasto para borrarlo), siempre con alternativa con botón.
-- **Arranque rápido:** bundle chico (rutas con `lazy`), y con la PWA (#18) un service worker que guarde la app para abrir al instante.
+- **Arranque rápido:** bundle chico (ver "React" → carga diferida) y, con la PWA (#18), un service worker que guarde la app para abrir al instante.
 - **Instalada:** con el manifest (#18) se abre a pantalla completa, sin barra del navegador.
 
 ## UI / UX — estándar de calidad
@@ -196,7 +196,8 @@ La app la usamos nosotros todos los días, sobre todo en el celu: tiene que ser 
 
 ### Acciones y feedback
 - Botones de envío deshabilitados + indicador mientras la mutation está en curso (`isPending`); nunca doble envío.
-- Optimistic updates en lo frecuente (agregar/borrar gasto, marcar pago); si falla, revertir y avisar.
+- **Optimistic updates** en lo frecuente (hechos: agregar, editar y borrar gasto; registrar y borrar pago). Patrón: `onMutate` cancela las queries, guarda lo anterior y escribe en la cache lo que devolvería la API (`buildExpense` / `buildSettlement` de `src/lib/optimistic.ts`, con id provisorio: `isTemp(id)` → se muestra atenuado y sin link); `onError` restaura y avisa con un toast; `onSettled` invalida. Si el formulario ya se cerró, el toast ofrece **"Revisar"**, que lo reabre con lo cargado (router state `draft`). Validar en el form lo mismo que la API, para no mostrar como guardado algo que después se rechaza.
+- **Precarga:** `usePrefetch()` + `prefetchOn()` (`src/lib/use-prefetch.ts`) en los links a otra pantalla (al tocar, pasar el mouse o enfocar). Al abrir un gasto desde la lista, su detalle sale de la cache de la lista (ya trae todo).
 - Confirmación antes de lo destructivo (borrar gasto/pago, quitar participante, archivar).
 - Confirmar éxitos de forma breve y no bloqueante (toast).
 

@@ -1,4 +1,4 @@
-import { screen } from '@testing-library/react';
+import { fireEvent, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it } from 'vitest';
 
@@ -66,5 +66,31 @@ describe('GroupList', () => {
     });
     await user.click(await screen.findByRole('button', { name: 'Reintentar' }));
     expect(await screen.findByText('Todavía no tenés grupos')).toBeInTheDocument();
+  });
+
+  it('preloads a group when touching its card, before opening it', async () => {
+    const loaded: string[] = [];
+    const record = (path: string) => (input: unknown) => {
+      loaded.push(`${path} ${JSON.stringify(input)}`);
+      return new Promise(() => {});
+    };
+    renderWithApi(<GroupList />, {
+      'groups.list': () => fixGroups,
+      'groups.get': record('groups.get'),
+      'balances.get': record('balances.get'),
+      'expenses.list': record('expenses.list'),
+    });
+    const card = await screen.findByRole('button', { name: /Viaje a Floripa/ });
+    fireEvent.pointerDown(card);
+
+    await waitFor(() =>
+      expect(loaded).toEqual(
+        expect.arrayContaining([
+          'groups.get {"groupId":"g1"}',
+          'balances.get {"groupId":"g1"}',
+          expect.stringContaining('expenses.list {"groupId":"g1"'),
+        ]),
+      ),
+    );
   });
 });

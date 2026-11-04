@@ -7,6 +7,7 @@ import type { AppRouter } from '@kachingga/api';
 import { ErrorState } from '@/components/error-state';
 import { BalancesSkeleton, ExpenseListSkeleton, GroupSkeleton } from '@/components/skeletons';
 import { useTRPC } from '@/lib/trpc';
+import { prefetchOn, usePrefetch } from '@/lib/use-prefetch';
 import { isTemp } from '@/lib/optimistic';
 import { useConfirm } from '@/lib/use-confirm';
 import { categoryLabels, formatCents, formatDate, formatPlainAmount } from '@/lib/format';
@@ -20,6 +21,7 @@ function participantName(group: GroupData, id: string) {
 
 function BalanceSection({ group, balances }: { group: GroupData; balances: BalancesData }) {
   const navigate = useNavigate();
+  const prefetch = usePrefetch();
 
   return (
     <div className="space-y-4">
@@ -102,6 +104,7 @@ function BalanceSection({ group, balances }: { group: GroupData; balances: Balan
                             Copiar monto
                           </button>
                           <button
+                            {...prefetchOn(() => prefetch.settlements(group.id))}
                             onClick={() =>
                               navigate(
                                 `/grupos/${group.id}/pagos?from=${t.fromId}&to=${t.toId}&amount=${t.amountCents}&currency=${currency}`,
@@ -131,6 +134,7 @@ export function GroupDetail() {
   const trpc = useTRPC();
   const queryClient = useQueryClient();
   const confirm = useConfirm();
+  const prefetch = usePrefetch();
 
   const [showMenu, setShowMenu] = useState(false);
   const [renaming, setRenaming] = useState(false);
@@ -302,12 +306,14 @@ export function GroupDetail() {
         <div className="flex gap-2">
           <Link
             to={`/grupos/${groupId}/pagos`}
+            {...prefetchOn(() => prefetch.settlements(groupId!))}
             className="flex-1 rounded-xl border border-border py-2 text-center text-sm text-foreground"
           >
             Pagos
           </Link>
           <Link
             to={`/grupos/${groupId}/filtros`}
+            {...prefetchOn(() => prefetch.filters(groupId!))}
             className="flex-1 rounded-xl border border-border py-2 text-center text-sm text-foreground"
           >
             Filtros y totales
