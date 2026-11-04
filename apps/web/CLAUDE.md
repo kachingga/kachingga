@@ -26,6 +26,7 @@ Desde `apps/web` (o `bun run web` desde la raíz; `bun run dev` en la raíz leva
 
 ```bash
 bun run dev          # Vite en :5173 (necesita la API corriendo: `bun run api` desde la raíz)
+                     # Desde el celu (misma Wi-Fi): `bun run dev:celu` en la raíz y abrir la URL "Network" que imprime Vite
                      # Login con datos cargados: juan.demo@example.com (contraseña: SEED_USER_PASSWORD de apps/api/.env)
 bun run build        # typecheck + build de producción en dist/
 bun run preview      # sirve el build
@@ -41,7 +42,7 @@ Antes de dar una tarea por terminada: `bun run check` desde la raíz (lo corre e
 
 Copiar `.env.sample` a `.env` (valores de **dev**). Todo lo `VITE_*` queda **dentro del JavaScript que baja el navegador: es público**. Nunca secretos.
 
-- `VITE_API_URL` — la API (local: `http://localhost:3000`; prod: la URL de Railway).
+- `VITE_API_URL` — la API. **Local: vacía**: la web llama a `/trpc` en su mismo origen y Vite (`dev` y `preview`) lo reenvía a la API en `localhost:3000` (`vite.config.ts`). Así no hay CORS y funciona desde un celu en la misma Wi-Fi. Prod: la URL de Railway.
 - `VITE_SUPABASE_URL` / `VITE_SUPABASE_PUBLISHABLE_KEY` — solo para login y sesión.
 
 Tipadas en `src/vite-env.d.ts`: si agregás una, sumala ahí, al `.env.sample` y a `INFRA.md`.
@@ -262,7 +263,8 @@ Vercel (estático): ver `DEPLOY.md`. La API tiene que permitir la URL de Vercel 
 - `tsconfig.app.json` sin `baseUrl` (TS 6 lo rechaza); el alias `@/` está en `paths` y en `vite.config.ts`.
 - La web typechequea archivos de la API (vía `AppRouter`): si la API importa algo que acá no resuelve, se rompe el typecheck de la web.
 - `src/lib/supabase.ts` es el único archivo que importa Supabase (lint).
-- CORS: la API permite por defecto `http://localhost:5173` y `:4173`; si cambiás el puerto, cambiá también `CORS_ORIGINS` en `apps/api/.env`.
+- CORS: en local no interviene (el proxy de Vite hace que todo sea del mismo origen). Solo importa en prod (la URL de Vercel en `CORS_ORIGINS`) o si alguien apunta `VITE_API_URL` directo a la API.
+- **Probar en el celu:** `bun run dev:celu` (raíz) expone la web en la red local (`KACHINGGA_LAN=1` → `server.host`). Por defecto solo escucha en `localhost`.
 - En tests, `QueryClient` usa `gcTime: Infinity` (si no, quedan timers colgados).
 - **Los tests no pueden depender de `.env`** (corren en el CI y en el pre-commit de todos): `vite.config.ts` → `test.env` les da valores fijos a las `VITE_*`. Si agregás una variable que se lee al importar un módulo, sumala ahí también.
 

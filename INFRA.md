@@ -54,7 +54,7 @@ Actualizar este archivo con los valores reales después de cada setup.
 
 | Variable | Descripción |
 |----------|-------------|
-| `VITE_API_URL` | URL de la API en Railway |
+| `VITE_API_URL` | URL de la API en Railway. En local va vacía (Vite reenvía `/trpc` a la API) |
 | `VITE_SUPABASE_URL` | `https://<project>.supabase.co` (prod) |
 | `VITE_SUPABASE_PUBLISHABLE_KEY` | Clave **publishable** de Supabase (prod) — pública, solo para auth |
 

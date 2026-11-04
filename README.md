@@ -70,6 +70,7 @@ cd kachingga
 bun install                              # instala dependencias y activa los hooks (husky)
 bun run api                              # API en :3000 (en otra terminal:)
 bun run web                              # web en http://localhost:5173
+bun run dev:celu                         # API + web, con la web visible desde el celu (misma Wi-Fi)
 ```
 
 Solo si vas a tocar la app nativa: `cd apps/mobile && bunx eas-cli login` (una vez) y `bun run mobile`.

@@ -7,6 +7,7 @@
   "scripts": {
     "prepare": "husky",
     "dev": "bun --filter '@kachingga/api' --filter '@kachingga/web' dev",
+    "dev:celu": "KACHINGGA_LAN=1 bun run dev",
     "typecheck": "bun --filter '@kachingga/api' --filter '@kachingga/web' typecheck",
     "test": "bun --filter '@kachingga/api' --filter '@kachingga/web' test",
     "lint": "bun --filter '@kachingga/api' --filter '@kachingga/web' lint",
