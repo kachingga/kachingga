@@ -105,7 +105,7 @@ export function GroupList() {
         </div>
 
         {groups.isPending && (
-          <div className="space-y-3">
+          <div role="status" aria-label="Cargando" className="space-y-3">
             {[1, 2, 3].map((i) => (
               <div key={i} className="h-20 animate-pulse rounded-3xl bg-muted" />
             ))}

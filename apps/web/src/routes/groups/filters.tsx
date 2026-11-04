@@ -4,7 +4,7 @@ import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from '@tansta
 
 import { expenseCategories, type ExpenseFilters } from '@kachingga/api/schemas';
 import { ErrorState } from '@/components/error-state';
-import { Spinner } from '@/components/spinner';
+import { ExpenseListSkeleton } from '@/components/skeletons';
 import { useTRPC } from '@/lib/trpc';
 import {
   categoryLabels,
@@ -346,7 +346,7 @@ export function Filters() {
       {/* Gastos filtrados */}
       <div>
         <h2 className="mb-3 font-semibold">Gastos</h2>
-        {expenses.isPending && <Spinner />}
+        {expenses.isPending && <ExpenseListSkeleton />}
         {expenses.isError && (
           <ErrorState message={expenses.error.message} onRetry={() => expenses.refetch()} />
         )}

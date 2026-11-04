@@ -9,7 +9,7 @@ import { ExchangeRateFields } from '@/components/exchange-rate-fields';
 import { NumberInput } from '@/components/number-input';
 import { useExchangeRate } from '@/lib/use-exchange-rate';
 import { ErrorState } from '@/components/error-state';
-import { Spinner } from '@/components/spinner';
+import { FormSkeleton } from '@/components/skeletons';
 import { useTRPC } from '@/lib/trpc';
 import {
   categoryLabels,
@@ -440,7 +440,7 @@ export function ExpenseForm() {
   });
 
   if (group.isPending || (isEdit && expense.isPending)) {
-    return <Spinner fullScreen />;
+    return <FormSkeleton />;
   }
   if (group.isError) {
     return (

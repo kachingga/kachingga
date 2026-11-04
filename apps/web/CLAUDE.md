@@ -165,7 +165,7 @@ const createExpense = useMutation(
 - `ErrorState` — mensaje de la API + **Reintentar** (`refetch`). En todo error de una query.
 - `useConfirm()` (`src/lib/use-confirm.ts`) + `<ConfirmProvider>` — confirmación con el diálogo de la app (`AlertDialog`), **nunca `confirm()` del navegador**: `if (await confirm({ title, description, confirmLabel, destructive }))`.
 - Toasts: `toast()` / `toast.error()` de `sonner` (el `<Toaster>` está en `main.tsx`).
-- `NumberInput`, `ExchangeRateFields`, `Spinner`; `Skeleton` en `src/components/ui/`.
+- `NumberInput`, `ExchangeRateFields`; skeletons con la forma de cada pantalla en `skeletons.tsx` (sobre `Skeleton` de `src/components/ui/`). **Nunca un spinner suelto** para cargar datos.
 
 ## Sensación de app nativa
 

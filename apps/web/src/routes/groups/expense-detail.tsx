@@ -2,7 +2,7 @@ import { Link, useNavigate, useParams } from 'react-router';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
 import { ErrorState } from '@/components/error-state';
-import { Spinner } from '@/components/spinner';
+import { ExpenseDetailSkeleton } from '@/components/skeletons';
 import { useTRPC } from '@/lib/trpc';
 import { useConfirm } from '@/lib/use-confirm';
 import {
@@ -35,7 +35,7 @@ export function ExpenseDetail() {
   );
 
   if (expense.isPending) {
-    return <Spinner fullScreen />;
+    return <ExpenseDetailSkeleton />;
   }
   if (expense.isError) {
     return (

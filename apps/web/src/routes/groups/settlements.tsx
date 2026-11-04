@@ -9,7 +9,7 @@ import { ExchangeRateFields } from '@/components/exchange-rate-fields';
 import { NumberInput } from '@/components/number-input';
 import { useExchangeRate } from '@/lib/use-exchange-rate';
 import { ErrorState } from '@/components/error-state';
-import { Spinner } from '@/components/spinner';
+import { ListScreenSkeleton, RowsSkeleton } from '@/components/skeletons';
 import { useTRPC } from '@/lib/trpc';
 import { useConfirm } from '@/lib/use-confirm';
 import {
@@ -32,7 +32,7 @@ export function Settlements() {
 
   const group = useQuery(trpc.groups.get.queryOptions({ groupId: groupId! }));
 
-  if (group.isPending) return <Spinner fullScreen />;
+  if (group.isPending) return <ListScreenSkeleton />;
   if (group.isError) {
     return (
       <div className="p-6 text-center">
@@ -313,7 +313,7 @@ function SettlementsBody({ groupId, group }: { groupId: string; group: GroupData
       )}
 
       {/* Lista de pagos */}
-      {settlements.isPending && <Spinner />}
+      {settlements.isPending && <RowsSkeleton />}
       {settlements.isError && (
         <ErrorState message={settlements.error.message} onRetry={() => settlements.refetch()} />
       )}

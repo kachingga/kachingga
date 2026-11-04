@@ -5,7 +5,7 @@ import type { inferRouterOutputs } from '@trpc/server';
 import type { AppRouter } from '@kachingga/api';
 
 import { ErrorState } from '@/components/error-state';
-import { Spinner } from '@/components/spinner';
+import { BalancesSkeleton, ExpenseListSkeleton, GroupSkeleton } from '@/components/skeletons';
 import { useTRPC } from '@/lib/trpc';
 import { useConfirm } from '@/lib/use-confirm';
 import { categoryLabels, formatCents, formatDate, formatPlainAmount } from '@/lib/format';
@@ -160,7 +160,7 @@ export function GroupDetail() {
   );
 
   if (group.isPending) {
-    return <Spinner fullScreen />;
+    return <GroupSkeleton />;
   }
   if (group.isError) {
     return (
@@ -286,7 +286,7 @@ export function GroupDetail() {
 
       <div className="space-y-6 px-4">
         {/* Saldos */}
-        {balances.isPending && <Spinner />}
+        {balances.isPending && <BalancesSkeleton />}
         {balances.isError && (
           <ErrorState message={balances.error.message} onRetry={() => balances.refetch()} />
         )}
@@ -317,7 +317,7 @@ export function GroupDetail() {
         <div>
           <h2 className="mb-3 font-semibold">Gastos</h2>
 
-          {expenses.isPending && <Spinner />}
+          {expenses.isPending && <ExpenseListSkeleton />}
           {expenses.isError && (
             <ErrorState message={expenses.error.message} onRetry={() => expenses.refetch()} />
           )}
