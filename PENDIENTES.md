@@ -21,7 +21,7 @@ Todo lo que falta **fuera del código de las versiones** (el alcance de producto
 
 **Bloqueantes:**
 - [x] **Decidir el front**: web app mobile-first (`apps/web`) — `docs/decisiones/costos-y-alternativas.md`.
-- [ ] **Terminar la UI de la V1** en `apps/web` (Galo y Juan; reparto en `V1.md` → "Trabajo de la UI (web)").
+- [ ] **Terminar la UI de la V1** en `apps/web` (en curso y por hacer en `V1.md` → "Trabajo de la UI (web)").
 - [ ] **API en Railway** (producción) — [#5](https://github.com/kachingga/kachingga/issues/5). Bloqueado por presupuesto (Hobby, USD 5/mes).
 
 **Puesta en marcha (web app)** — pasos en `DEPLOY.md`:
