@@ -5,6 +5,7 @@ import { toast } from 'sonner';
 import { ErrorState } from '@/components/error-state';
 import { ExpenseDetailSkeleton } from '@/components/skeletons';
 import { useTRPC } from '@/lib/trpc';
+import { useGoBack } from '@/lib/use-go-back';
 import { useConfirm } from '@/lib/use-confirm';
 import {
   categoryLabels,
@@ -17,6 +18,7 @@ import {
 export function ExpenseDetail() {
   const { groupId, expenseId } = useParams<{ groupId: string; expenseId: string }>();
   const navigate = useNavigate();
+  const goBack = useGoBack();
   const trpc = useTRPC();
   const queryClient = useQueryClient();
   const confirm = useConfirm();
@@ -43,7 +45,7 @@ export function ExpenseDetail() {
               }
             : old,
         );
-        navigate(`/grupos/${groupId}`, { replace: true });
+        goBack(`/grupos/${groupId}`);
         return { previous };
       },
       onError: (err, _input, context) => {

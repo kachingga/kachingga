@@ -223,7 +223,11 @@ onSettled: () => { /* invalidar la lista y lo que calcula la API (saldos, totale
 Una web nunca se siente 100% nativa en iPhone: los gestos del sistema (deslizar desde el borde para volver), la física del scroll y del teclado, los haptics (Safari no los permite) y el arranque instantáneo son del sistema operativo. Pero se puede acercar mucho, y es parte del estándar:
 
 - **Que nada espere:** actualizaciones optimistas en lo frecuente, **precargar** los datos de la próxima pantalla (`queryClient.prefetchQuery` al tocar o al pasar por un link), skeletons con la forma real, cero saltos de layout.
-- **Transiciones** entre pantallas y al abrir hojas/modales: View Transitions API (`viewTransition` de React Router; Safari 18+) o una librería de animaciones. Cortas (150–250 ms) y que no bloqueen.
+- **Transiciones entre pantallas** (`src/components/animated-layout.tsx` + `index.css`): cada navegación remonta la pantalla (`key={location.key}`) y una animación CSS (`transform`, 280 ms) la hace entrar desde la derecha al avanzar y desde la izquierda al volver. "Volver" = `POP` (atrás del navegador, `navigate(-1)`) o una navegación con `state: { back: true }` (`BackState`).
+  - **Para cerrar una pantalla** (guardar o borrar y volver a donde estaba) usar **`useGoBack()(fallback)`** (`src/lib/use-go-back.ts`), no `navigate(ruta)`: si se abrió desde la app hace `navigate(-1)` (anima como volver y no duplica la pantalla en el historial); si se abrió por un link directo, va a `fallback` igual animando como volver.
+  - Con **"reducir movimiento"** del sistema (`prefers-reduced-motion`) no hay animación.
+  - Solo se anima la pantalla que entra (la vieja desaparece de golpe). Reemplazarlas por la View Transitions API es opcional y está para evaluar con la PWA instalada en un iPhone: #35.
+- **Hojas y modales:** animación corta (150–250 ms) que no bloquee (los de shadcn ya la traen).
 - **Comportamiento de app:** sin rebote ni "pull to refresh" del navegador donde no corresponde (`overscroll-behavior`), sin selección de texto ni resaltado gris al tocar en controles (`-webkit-tap-highlight-color: transparent`, `user-select` donde aplique), `100dvh` para alturas, zonas seguras con `env(safe-area-inset-*)`.
 - **Inputs:** texto de **16 px o más** (si no, Safari en iPhone hace zoom al enfocar), `inputMode` correcto (`decimal` para montos), `autocomplete` en login.
 - **Gestos propios** donde suman (ej. deslizar un gasto para borrarlo), siempre con alternativa con botón.

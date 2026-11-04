@@ -12,6 +12,7 @@ import { useExchangeRate } from '@/lib/use-exchange-rate';
 import { ErrorState } from '@/components/error-state';
 import { FormSkeleton } from '@/components/skeletons';
 import { useTRPC } from '@/lib/trpc';
+import { useGoBack } from '@/lib/use-go-back';
 import { buildExpense, byDateDesc, tempId, type Expense } from '@/lib/optimistic';
 import {
   categoryLabels,
@@ -43,6 +44,7 @@ interface FormProps {
 
 function ExpenseFormBody({ groupId, group, expenseId, expense }: FormProps) {
   const navigate = useNavigate();
+  const goBack = useGoBack();
   const trpc = useTRPC();
   const queryClient = useQueryClient();
 
@@ -123,7 +125,7 @@ function ExpenseFormBody({ groupId, group, expenseId, expense }: FormProps) {
               }
             : old,
         );
-        navigate(`/grupos/${groupId}`, { replace: true });
+        goBack(`/grupos/${groupId}`);
         return { previous, draft };
       },
       onError: (err, _input, context) => {
@@ -164,7 +166,7 @@ function ExpenseFormBody({ groupId, group, expenseId, expense }: FormProps) {
               }
             : old,
         );
-        navigate(`/grupos/${groupId}/gastos/${id}`, { replace: true });
+        goBack(`/grupos/${groupId}/gastos/${id}`);
         return { previous, draft, detailKey };
       },
       onError: (err, _input, context) => {
