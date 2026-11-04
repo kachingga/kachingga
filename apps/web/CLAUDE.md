@@ -51,21 +51,31 @@ Tipadas en `src/vite-env.d.ts`: si agregás una, sumala ahí, al `.env.sample` y
 
 ```
 src/
-├── main.tsx                  # providers (ApiProvider) + RouterProvider
+├── main.tsx                  # providers (ApiProvider, ConfirmProvider, Toaster) + RouterProvider
 ├── router.tsx                # todas las rutas
+├── index.css                 # Tailwind + variables del tema de shadcn (claro / oscuro): el diseño vive acá
 ├── routes/                   # una pantalla por archivo (groups/ = todo lo de un grupo), tests en __tests__/
 ├── components/
-│   ├── ui/                   # componentes de shadcn/ui (generados)
+│   ├── ui/                   # componentes de shadcn/ui (generados con el CLI)
 │   ├── api-provider.tsx      # tRPC + TanStack Query
 │   ├── confirm-provider.tsx  # diálogo de useConfirm()
+│   ├── error-state.tsx       # error de una query + Reintentar
+│   ├── skeletons.tsx         # carga con la forma de cada pantalla
+│   ├── number-input.tsx      # campo numérico formateado en el idioma del navegador
+│   ├── exchange-rate-fields.tsx # convertir / mantener moneda y tipo de cambio (gasto y pago)
 │   └── require-auth.tsx      # guard de rutas privadas → /login
 ├── lib/
 │   ├── trpc.ts               # cliente tRPC tipado con AppRouter + token de Supabase
 │   ├── supabase.ts           # ÚNICO archivo que importa Supabase
-│   └── auth.ts               # signIn / signUp / signOut / useSession / getAccessToken
+│   ├── auth.ts               # signIn / signUp / signOut / useSession / getAccessToken
+│   ├── format.ts             # idioma, montos, números normalizados, fechas como día del calendario
+│   ├── use-exchange-rate.ts  # estado del tipo de cambio (sugerido / a mano / mantener)
+│   ├── optimistic.ts         # gasto / pago provisorio para optimistic updates (ver "Datos y cache")
+│   ├── use-prefetch.ts       # precarga de la próxima pantalla (ver "Datos y cache")
+│   └── use-confirm.ts        # confirmaciones con el diálogo de la app
 └── test/
-    ├── setup.ts              # jest-dom + cleanup
-    └── render.tsx            # renderWithApi (API falsa)
+    ├── setup.ts              # jest-dom, cleanup, idioma es-AR y stubs de jsdom (matchMedia, pointer capture)
+    └── render.tsx            # renderWithApi (API falsa + providers de la app)
 e2e/                          # Playwright
 ```
 
@@ -142,6 +152,47 @@ const createExpense = useMutation(
 
 ---
 
+## Datos y cache (TanStack Query)
+
+**Leer antes de tocar cualquier query, mutation, optimistic update o precarga.**
+
+### Cómo funciona la cache
+- TanStack Query guarda en memoria un mapa **query key → datos + estado**. Cada `useQuery` observa una entrada. tRPC arma la key con el procedure y el input (`[['groups','get'], { input: { groupId }, type: 'query' }]`), así que **dos inputs distintos son dos entradas distintas**: `{ groupId }` y `{ groupId, filters: {} }` no comparten datos.
+- Al montar, si la key ya tiene datos se muestran **en el acto**. Con `staleTime` 0 (el default) además se revalida en segundo plano y la pantalla se actualiza sola (*stale-while-revalidate*). Si hay un pedido en vuelo con la misma key, no se hace otro (deduplicación).
+- `queryClient.setQueryData(key, data)` escribe en la cache: todo lo que observa esa key se re-renderiza como si viniera del server. `invalidateQueries(...)` marca como vieja: lo montado se pide ya, lo demás al usarse. Lo que nadie observa se borra a los 5 min (`gcTime`).
+- **Saldos, transferencias y totales los calcula la API**: nunca se recalculan en el front ni se escriben a mano en la cache; después de tocar gastos o pagos se invalidan (`balances.get`, `expenses.summary`).
+- `expenses.list` es una *infinite query*: en la cache es `{ pages: [{ items, nextCursor }], pageParams }`, no un array.
+
+### Optimistic updates (hechos: agregar / editar / borrar gasto, registrar / borrar pago)
+Ciclo de una mutation: `onMutate` (antes del pedido; lo que devuelve es el `context`) → pedido → `onSuccess` / `onError(err, input, context)` → `onSettled` (siempre).
+
+```tsx
+onMutate: async (input) => {
+  await queryClient.cancelQueries({ queryKey: listKey });   // que un refetch en vuelo no pise lo optimista
+  const previous = queryClient.getQueryData(listKey);        // foto para deshacer
+  queryClient.setQueryData(listKey, (old) => /* cómo quedaría */);
+  return { previous };
+},
+onError: (err, _input, context) => {
+  if (context) queryClient.setQueryData(listKey, context.previous);  // deshacer
+  toast.error(`No se …: ${err.message}`);
+},
+onSettled: () => { /* invalidar la lista y lo que calcula la API (saldos, totales) */ },
+```
+
+- **Lo nuevo se arma con la forma exacta que devuelve la API**: `buildExpense` / `buildSettlement` (`src/lib/optimistic.ts`), con el mismo reparto de centavos (`distributeCents`). Llevan un **id provisorio** (`tempId()`); `isTemp(id)` → se muestra atenuado ("Guardando…") y **sin link ni acciones** (todavía no existe en el server). Al invalidar, llega el real y lo reemplaza.
+- **Callbacks siempre en `useMutation(trpc.x.mutationOptions({ … }))`**, no en `mutate(input, { … })`: los primeros corren aunque el componente ya se haya desmontado (el formulario se cierra en `onMutate`); los segundos se pierden.
+- **Si falla con el formulario ya cerrado**, el toast ofrece **"Revisar"**: navega al form con el gasto armado en el *router state* (`{ draft }`) y el form lo toma como valores iniciales (`key={location.key}` para que se monte de nuevo). No se pierde lo cargado.
+- **Validar en el form lo mismo que la API** (montos que suman el total, 100%, al menos una persona, personas distintas en un pago) antes de mandar: mostrar algo como guardado y que después se rechace es peor que esperar. Para `onError` queda lo que el front no puede saber (sin conexión, grupo archivado por otro).
+- **Limitación conocida:** la foto es de toda la lista. Con dos mutations seguidas sobre la misma lista, si la primera falla, el rollback puede deshacer un momento la segunda; `onSettled` lo corrige con lo que dice el server.
+- Mutation nueva frecuente → mismo patrón + test de "se ve al instante" y de "si falla, se deshace" (ejemplos en `settlements.test.tsx` y `expense-form.test.tsx`).
+
+### Precarga
+- `usePrefetch()` (`src/lib/use-prefetch.ts`) hace `prefetchQuery` / `prefetchInfiniteQuery` de lo que va a pedir la próxima pantalla; `prefetchOn(load)` lo engancha a `onPointerDown` (el dedo toca: ~100–150 ms antes del `click`), `onMouseEnter` y `onFocus`. Hoy: tarjeta de grupo, "Pagos", "Filtros" y "Marcar como pagado".
+- **Los inputs tienen que ser idénticos a los de la pantalla** (si no, es otra key y la precarga no sirve). Pantalla nueva o input cambiado → actualizar `usePrefetch` y su test (`list.test.tsx` verifica los inputs exactos).
+- La precarga usa `staleTime: 10_000` para no repetir pedidos al pasar el mouse varias veces; la pantalla igual revalida al montar.
+- **Sembrar en vez de pedir:** si ya tenemos los datos de la próxima pantalla, copiarlos con `setQueryData`. Ej.: `expenses.list` y `expenses.get` devuelven lo mismo por gasto (mismo `include` en la API), así que al tocar un gasto su detalle sale de la lista sin pedido. Si la API cambia uno de los dos, revisar esto.
+
 ## React
 
 - Respetar las **Reglas de React** (componentes y hooks puros, no mutar props/estado, hooks siempre en el mismo orden).
@@ -196,8 +247,7 @@ La app la usamos nosotros todos los días, sobre todo en el celu: tiene que ser 
 
 ### Acciones y feedback
 - Botones de envío deshabilitados + indicador mientras la mutation está en curso (`isPending`); nunca doble envío.
-- **Optimistic updates** en lo frecuente (hechos: agregar, editar y borrar gasto; registrar y borrar pago). Patrón: `onMutate` cancela las queries, guarda lo anterior y escribe en la cache lo que devolvería la API (`buildExpense` / `buildSettlement` de `src/lib/optimistic.ts`, con id provisorio: `isTemp(id)` → se muestra atenuado y sin link); `onError` restaura y avisa con un toast; `onSettled` invalida. Si el formulario ya se cerró, el toast ofrece **"Revisar"**, que lo reabre con lo cargado (router state `draft`). Validar en el form lo mismo que la API, para no mostrar como guardado algo que después se rechaza.
-- **Precarga:** `usePrefetch()` + `prefetchOn()` (`src/lib/use-prefetch.ts`) en los links a otra pantalla (al tocar, pasar el mouse o enfocar). Al abrir un gasto desde la lista, su detalle sale de la cache de la lista (ya trae todo).
+- **Optimistic updates** en lo frecuente y **precarga** de la próxima pantalla: cómo funcionan y cómo sumarlos en "Datos y cache (TanStack Query)".
 - Confirmación antes de lo destructivo (borrar gasto/pago, quitar participante, archivar).
 - Confirmar éxitos de forma breve y no bloqueante (toast).
 

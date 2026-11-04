@@ -29,6 +29,10 @@ Proyecto de **Kachingga**, una organización de amigos (repo: `github.com/kachin
 |-------|--------------|
 | Cualquier feature | "Reglas de negocio" (abajo) + `V1.md` (si está en alcance) |
 | Pantallas / UI de la app | `V1.md` → **"Pantallas"** + `apps/web/CLAUDE.md` → **"UI / UX — estándar de calidad"** y **"Cómo usar la API"** |
+| Queries, mutations, optimistic updates o precarga en la web | `apps/web/CLAUDE.md` → **"Datos y cache (TanStack Query)"** |
+| Colores, tema, componentes de la web | `apps/web/CLAUDE.md` → **"Componentes (shadcn/ui)"** (nunca colores fijos: variables del tema) |
+| Montos, números o fechas en la web | `apps/web/CLAUDE.md` → **"Reglas"** (idioma del navegador, valores normalizados, día del calendario) |
+| Probar la web desde el celu | `bun run dev:celu` (ver `apps/web/CLAUDE.md` → "Env") |
 | Lógica, endpoints o datos de la API | `apps/api/CLAUDE.md` → "Procedures tRPC", "Modelo de datos", "Dónde vive cada regla de negocio" |
 | A la app le falta algo de la API | Se agrega en `apps/api` (mismo repo) siguiendo `apps/api/CLAUDE.md`; nunca workarounds en la app |
 | Cambios de base de datos | `apps/api/CLAUDE.md` → "Migraciones — reglas" + `DEPLOY.md` |
