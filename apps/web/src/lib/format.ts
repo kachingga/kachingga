@@ -8,9 +8,15 @@ export type ExpenseCategory = (typeof expenseCategories)[number];
 // in es-AR, "1,500.50" in en-US. What the app keeps and sends is always normalized: numbers as
 // plain numeric strings ("1500.5") or cents (150050), dates as calendar days ("2026-11-04").
 
-/** The browser's language (es-AR as a fallback). */
+/**
+ * The browser's language (es-AR as a fallback). Spanish without a country ("es") or generic Latin
+ * American Spanish ("es-419", what Chrome reports for Argentina) don't say which number format to
+ * use, and es-419 writes "1,500.5": those go as es-AR, the app's main audience. A specific
+ * country (es-MX, es-ES, en-US…) is respected.
+ */
 export function getLocale(): string {
-  return (typeof navigator !== 'undefined' && navigator.language) || 'es-AR';
+  const language = (typeof navigator !== 'undefined' && navigator.language) || 'es-AR';
+  return /^es(-419)?$/i.test(language) ? 'es-AR' : language;
 }
 
 /** Thousands and decimal separators of the browser's language. */
