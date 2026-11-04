@@ -151,7 +151,7 @@ const createExpense = useMutation(
 
 ## Componentes (shadcn/ui)
 
-**Se usa shadcn/ui** (sobre Tailwind). Todavía no está inicializado: es parte del trabajo de diseño de Juan (ver `V1.md` → "Trabajo de la UI (web)"). Para hacerlo: `bunx shadcn@latest init` desde `apps/web` (Tailwind v4, alias `@/`), y después `bunx shadcn@latest add <componente>`. Los componentes generados en `src/components/ui/` no se editan a mano salvo para ajustar estilo.
+**Se usa shadcn/ui** (sobre Tailwind). Todavía no está inicializado: se inicializa con el tema por defecto (en curso, Galo) y después se ajustan las variables del tema con el diseño (ver `V1.md` → "Trabajo de la UI (web)"). Para hacerlo: `bunx shadcn@latest init` desde `apps/web` (Tailwind v4, alias `@/`), y después `bunx shadcn@latest add <componente>`. Los componentes generados en `src/components/ui/` no se editan a mano salvo para ajustar estilo.
 
 ## Sensación de app nativa
 
