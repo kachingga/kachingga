@@ -180,3 +180,17 @@ describe('ExpenseForm (amounts, dates and currencies)', () => {
     expect(create.calls).toHaveLength(0);
   });
 });
+
+describe('ExpenseForm (equal split preview)', () => {
+  it('shows the same cents as the API: $4 among 3 is 1,34 / 1,33 / 1,33', async () => {
+    const user = userEvent.setup();
+    const third = { ...fixGroup.participants[1]!, id: 'p3', name: 'Román' };
+    renderWithApi(<ExpenseForm />, {
+      'groups.get': () => ({ ...fixGroup, participants: [...fixGroup.participants, third] }),
+    });
+    await user.type(await screen.findByLabelText('Monto'), '4');
+
+    expect(screen.getByText('$ 1,34')).toBeInTheDocument();
+    expect(screen.getAllByText('$ 1,33')).toHaveLength(2);
+  });
+});

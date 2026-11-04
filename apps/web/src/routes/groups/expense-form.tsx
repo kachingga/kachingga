@@ -3,7 +3,7 @@ import { useNavigate, useParams } from 'react-router';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import type { inferRouterOutputs } from '@trpc/server';
 import type { AppRouter } from '@kachingga/api';
-import { currencies, expenseCategories } from '@kachingga/api/schemas';
+import { currencies, distributeCents, expenseCategories } from '@kachingga/api/schemas';
 
 import { ExchangeRateFields } from '@/components/exchange-rate-fields';
 import { NumberInput } from '@/components/number-input';
@@ -119,7 +119,7 @@ function ExpenseFormBody({ groupId, group, expenseId, expense }: FormProps) {
 
   function buildSplit() {
     if (splitType === 'EQUAL') {
-      return { type: 'EQUAL' as const, participantIds: equalIds };
+      return { type: 'EQUAL' as const, participantIds: equalIdsInOrder };
     }
     if (splitType === 'AMOUNT') {
       return {
@@ -177,6 +177,16 @@ function ExpenseFormBody({ groupId, group, expenseId, expense }: FormProps) {
   const amountSumCents = Object.values(amountShares).reduce((s, v) => s + toCents(v), 0);
   const percentSum = Object.values(percentShares).reduce((s, v) => s + (toNumber(v) ?? 0), 0);
   const totalCents = toCents(amountInput);
+  // Same split as the API (leftover cents to the first ones, in the group's order).
+  const equalIdsInOrder = allIds.filter((id) => equalIds.includes(id));
+  const equalShares = new Map(
+    totalCents > 0 && equalIdsInOrder.length > 0
+      ? distributeCents(
+          totalCents,
+          equalIdsInOrder.map(() => 1),
+        ).map((cents, i) => [equalIdsInOrder[i]!, cents])
+      : [],
+  );
 
   return (
     <main className="mx-auto min-h-dvh max-w-md p-6 pb-12">
@@ -333,9 +343,9 @@ function ExpenseFormBody({ groupId, group, expenseId, expense }: FormProps) {
                     {p.name}
                     {p.isMe ? ' (yo)' : ''}
                   </span>
-                  {equalIds.includes(p.id) && totalCents > 0 && equalIds.length > 0 && (
+                  {equalShares.has(p.id) && (
                     <span className="ml-auto text-xs text-neutral-400">
-                      {formatCents(Math.round(totalCents / equalIds.length), currency)}
+                      {formatCents(equalShares.get(p.id)!, currency)}
                     </span>
                   )}
                 </label>

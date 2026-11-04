@@ -1,29 +1,13 @@
 import { TRPCError } from '@trpc/server'
 
+import { distributeCents as distribute } from '../schemas'
+
 export type SplitInput =
   | { type: 'EQUAL'; participantIds: string[] }
   | { type: 'AMOUNT'; shares: { participantId: string; amountCents: number }[] }
   | { type: 'PERCENTAGE'; shares: { participantId: string; percentage: number }[] }
 
 export type ResolvedSplit = { participantId: string; amountCents: number; percentage: number | null }
-
-// Spreads `total` across `weights` proportionally, in whole cents, always adding up to `total`.
-// Leftover cents go to the largest fractional remainders (ties: input order).
-function distribute(total: number, weights: number[]): number[] {
-  const weightSum = weights.reduce((a, b) => a + b, 0)
-  const exact = weights.map((w) => (total * w) / weightSum)
-  const floors = exact.map(Math.floor)
-  let leftover = total - floors.reduce((a, b) => a + b, 0)
-  const order = exact
-    .map((value, index) => ({ index, remainder: value - floors[index]! }))
-    .sort((a, b) => b.remainder - a.remainder || a.index - b.index)
-  for (const { index } of order) {
-    if (leftover === 0) break
-    floors[index]! += 1
-    leftover -= 1
-  }
-  return floors
-}
 
 function assertUnique(ids: string[]) {
   if (ids.length === 0) throw new TRPCError({ code: 'BAD_REQUEST', message: 'El gasto tiene que dividirse entre al menos una persona' })

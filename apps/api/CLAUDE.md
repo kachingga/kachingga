@@ -88,7 +88,7 @@ scripts/seed.ts           # implementación de db:seed
 | Regla (ver raíz) | Código |
 |------------------|--------|
 | Acceso a grupos, grupos archivados | `lib/access.ts` (`requireMembership` lectura, `requireActiveGroup` escritura) |
-| División y redondeo | `lib/splits.ts` |
+| División y redondeo | `lib/splits.ts` (el reparto de centavos, `distributeCents`, vive en `schemas.ts` para que la web muestre lo mismo) |
 | Multimoneda (qué saldo, qué tipo de cambio) | `lib/balances.ts` (`balanceCurrency`) + `lib/rates.ts` (`resolveExchangeRate`) |
 | Saldos y transferencias mínimas | `lib/balances.ts` |
 | Filtros | `buildExpenseWhere` en `routers/expenses.ts` |
