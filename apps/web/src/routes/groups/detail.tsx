@@ -7,6 +7,7 @@ import type { AppRouter } from '@kachingga/api';
 import { ErrorState } from '@/components/error-state';
 import { BalancesSkeleton, ExpenseListSkeleton, GroupSkeleton } from '@/components/skeletons';
 import { useTRPC } from '@/lib/trpc';
+import { isTemp } from '@/lib/optimistic';
 import { useConfirm } from '@/lib/use-confirm';
 import { categoryLabels, formatCents, formatDate, formatPlainAmount } from '@/lib/format';
 
@@ -334,30 +335,53 @@ export function GroupDetail() {
           <ul className="space-y-2">
             {allExpenses.map((expense) => {
               const myShare = expense.splits.find((s) => s.participantId === g.myParticipantId);
+              const saving = isTemp(expense.id);
+              const content = (
+                <>
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate font-medium">{expense.description}</p>
+                    <p className="text-xs text-muted-foreground">
+                      {saving
+                        ? 'Guardando…'
+                        : `${categoryLabels[expense.category as keyof typeof categoryLabels]} · ${expense.paidBy.name} · ${formatDate(expense.date)}`}
+                    </p>
+                  </div>
+                  <div className="ml-3 text-right">
+                    <p className="font-semibold">
+                      {formatCents(expense.amountCents, expense.currency)}
+                    </p>
+                    {myShare && (
+                      <p className="text-xs text-muted-foreground">
+                        yo: {formatCents(myShare.amountCents, expense.currency)}
+                      </p>
+                    )}
+                  </div>
+                </>
+              );
               return (
                 <li key={expense.id}>
-                  <Link
-                    to={`/grupos/${groupId}/gastos/${expense.id}`}
-                    className="flex items-center justify-between rounded-2xl bg-card p-3 active:bg-accent"
-                  >
-                    <div className="min-w-0 flex-1">
-                      <p className="truncate font-medium">{expense.description}</p>
-                      <p className="text-xs text-muted-foreground">
-                        {categoryLabels[expense.category as keyof typeof categoryLabels]} ·{' '}
-                        {expense.paidBy.name} · {formatDate(expense.date)}
-                      </p>
+                  {saving ? (
+                    <div
+                      aria-busy="true"
+                      className="flex items-center justify-between rounded-2xl bg-card p-3 opacity-60"
+                    >
+                      {content}
                     </div>
-                    <div className="ml-3 text-right">
-                      <p className="font-semibold">
-                        {formatCents(expense.amountCents, expense.currency)}
-                      </p>
-                      {myShare && (
-                        <p className="text-xs text-muted-foreground">
-                          yo: {formatCents(myShare.amountCents, expense.currency)}
-                        </p>
-                      )}
-                    </div>
-                  </Link>
+                  ) : (
+                    <Link
+                      to={`/grupos/${groupId}/gastos/${expense.id}`}
+                      // Preload: the list already has the whole expense, so its detail opens instantly.
+                      onClick={() =>
+                        queryClient.setQueryData(
+                          trpc.expenses.get.queryKey({ expenseId: expense.id }),
+                          (cached) => cached ?? expense,
+                        )
+                      }
+                      className="flex items-center justify-between rounded-2xl bg-card p-3 active:bg-accent"
+                    >
+                      {content}
+                    </Link>
+                  )}
                 </li>
               );
             })}

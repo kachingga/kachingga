@@ -117,4 +117,28 @@ describe('GroupDetail', () => {
     });
     expect(await screen.findByText('Cena en el porto')).toBeInTheDocument();
   });
+
+  it('shows an expense that is still being saved, without a link to it', async () => {
+    const saving = {
+      id: 'temp-1',
+      description: 'Pizza',
+      category: 'FOOD',
+      date: new Date('2026-11-04T12:00:00Z'),
+      amountCents: 300000,
+      currency: 'ARS',
+      exchangeRate: null,
+      splitType: 'EQUAL',
+      paidById: 'p1',
+      paidBy: { id: 'p1', name: 'Juan' },
+      splits: [],
+    };
+    renderWithApi(<GroupDetail />, {
+      'groups.get': () => fixGroup,
+      'balances.get': () => fixBalances,
+      'expenses.list': () => ({ items: [saving], nextCursor: null }),
+    });
+    expect(await screen.findByText('Pizza')).toBeInTheDocument();
+    expect(screen.getByText('Guardando…')).toBeInTheDocument();
+    expect(screen.queryByRole('link', { name: /Pizza/ })).not.toBeInTheDocument();
+  });
 });

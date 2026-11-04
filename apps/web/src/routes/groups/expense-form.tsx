@@ -1,5 +1,6 @@
 import { useState } from 'react';
-import { useNavigate, useParams } from 'react-router';
+import { useLocation, useNavigate, useParams } from 'react-router';
+import { toast } from 'sonner';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import type { inferRouterOutputs } from '@trpc/server';
 import type { AppRouter } from '@kachingga/api';
@@ -11,6 +12,7 @@ import { useExchangeRate } from '@/lib/use-exchange-rate';
 import { ErrorState } from '@/components/error-state';
 import { FormSkeleton } from '@/components/skeletons';
 import { useTRPC } from '@/lib/trpc';
+import { buildExpense, byDateDesc, tempId, type Expense } from '@/lib/optimistic';
 import {
   categoryLabels,
   centsToNumeric,
@@ -95,26 +97,90 @@ function ExpenseFormBody({ groupId, group, expenseId, expense }: FormProps) {
   });
   const [formError, setFormError] = useState<string | null>(null);
 
-  // Mutations
+  // Mutations: optimistic. The form closes right away showing the expense as saved; if the API
+  // rejects it, it's taken back and a toast offers to reopen the form with what was entered.
+  const listKey = trpc.expenses.list.infiniteQueryKey({ groupId });
+  const refresh = () => {
+    void queryClient.invalidateQueries(trpc.expenses.pathFilter());
+    void queryClient.invalidateQueries(trpc.balances.get.queryFilter({ groupId }));
+  };
+  const reopen = (path: string, draft: Expense) =>
+    navigate(path, { state: { draft } satisfies FormState });
+
   const create = useMutation(
     trpc.expenses.create.mutationOptions({
-      onSuccess: () => {
-        void queryClient.invalidateQueries(trpc.expenses.pathFilter());
-        void queryClient.invalidateQueries(trpc.balances.get.queryFilter({ groupId }));
-        navigate(`/grupos/${groupId}`);
+      onMutate: async (input) => {
+        await queryClient.cancelQueries({ queryKey: listKey });
+        const previous = queryClient.getQueryData(listKey);
+        const draft = buildExpense(input, group, tempId());
+        queryClient.setQueryData(listKey, (old) =>
+          old
+            ? {
+                ...old,
+                pages: old.pages.map((page, i) =>
+                  i === 0 ? { ...page, items: byDateDesc([draft, ...page.items]) } : page,
+                ),
+              }
+            : old,
+        );
+        navigate(`/grupos/${groupId}`, { replace: true });
+        return { previous, draft };
       },
-      onError: (err) => setFormError(err.message),
+      onError: (err, _input, context) => {
+        if (!context) return;
+        queryClient.setQueryData(listKey, context.previous);
+        toast.error(`No se guardó "${context.draft.description}": ${err.message}`, {
+          duration: 10_000,
+          action: {
+            label: 'Revisar',
+            onClick: () => reopen(`/grupos/${groupId}/gastos/nuevo`, context.draft),
+          },
+        });
+      },
+      onSettled: refresh,
     }),
   );
 
   const update = useMutation(
     trpc.expenses.update.mutationOptions({
-      onSuccess: () => {
-        void queryClient.invalidateQueries(trpc.expenses.pathFilter());
-        void queryClient.invalidateQueries(trpc.balances.get.queryFilter({ groupId }));
-        navigate(`/grupos/${groupId}/gastos/${expenseId}`);
+      onMutate: async ({ expenseId: id, ...input }) => {
+        const detailKey = trpc.expenses.get.queryKey({ expenseId: id });
+        await queryClient.cancelQueries({ queryKey: detailKey });
+        await queryClient.cancelQueries({ queryKey: listKey });
+        const previous = {
+          detail: queryClient.getQueryData(detailKey),
+          list: queryClient.getQueryData(listKey),
+        };
+        const draft = buildExpense({ ...input }, group, id, expense);
+        queryClient.setQueryData(detailKey, draft);
+        queryClient.setQueryData(listKey, (old) =>
+          old
+            ? {
+                ...old,
+                pages: old.pages.map((page) => ({
+                  ...page,
+                  items: page.items.map((item) => (item.id === id ? draft : item)),
+                })),
+              }
+            : old,
+        );
+        navigate(`/grupos/${groupId}/gastos/${id}`, { replace: true });
+        return { previous, draft, detailKey };
       },
-      onError: (err) => setFormError(err.message),
+      onError: (err, _input, context) => {
+        if (!context) return;
+        queryClient.setQueryData(context.detailKey, context.previous.detail);
+        queryClient.setQueryData(listKey, context.previous.list);
+        toast.error(`No se guardaron los cambios: ${err.message}`, {
+          duration: 10_000,
+          action: {
+            label: 'Revisar',
+            onClick: () =>
+              reopen(`/grupos/${groupId}/gastos/${context.draft.id}/editar`, context.draft),
+          },
+        });
+      },
+      onSettled: refresh,
     }),
   );
 
@@ -145,6 +211,18 @@ function ExpenseFormBody({ groupId, group, expenseId, expense }: FormProps) {
     const amountCents = toCents(amountInput);
     if (amountCents <= 0) {
       setFormError('El monto tiene que ser mayor a cero');
+      return;
+    }
+
+    // Same checks as the API, so an expense shown as saved isn't rejected afterwards.
+    const splitError =
+      splitType === 'EQUAL'
+        ? equalIdsInOrder.length === 0 && 'Elegí al menos una persona para dividir'
+        : splitType === 'AMOUNT'
+          ? amountSumCents !== amountCents && 'La suma de los montos no coincide con el total'
+          : Math.abs(percentSum - 100) > 0.001 && 'Los porcentajes tienen que sumar 100';
+    if (splitError) {
+      setFormError(splitError);
       return;
     }
 
@@ -428,8 +506,15 @@ function ExpenseFormBody({ groupId, group, expenseId, expense }: FormProps) {
 
 // ─── Outer loader ─────────────────────────────────────────────────────────────
 
+/** Router state to reopen the form with what was entered (when saving failed). */
+interface FormState {
+  draft: Expense;
+}
+
 export function ExpenseForm() {
   const { groupId, expenseId } = useParams<{ groupId: string; expenseId: string }>();
+  const location = useLocation();
+  const draft = (location.state as FormState | null)?.draft;
   const isEdit = !!expenseId;
   const trpc = useTRPC();
 
@@ -459,10 +544,11 @@ export function ExpenseForm() {
 
   return (
     <ExpenseFormBody
+      key={location.key}
       groupId={groupId!}
       group={group.data}
       expenseId={expenseId}
-      expense={isEdit ? expense.data : undefined}
+      expense={draft ?? (isEdit ? expense.data : undefined)}
     />
   );
 }

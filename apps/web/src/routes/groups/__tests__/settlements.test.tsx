@@ -1,8 +1,8 @@
-import { screen, waitFor } from '@testing-library/react';
+import { screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it } from 'vitest';
 
-import { neverResolves, renderWithApi } from '@/test/render';
+import { apiError, neverResolves, renderWithApi } from '@/test/render';
 import { Settlements } from '@/routes/groups/settlements';
 
 const fixGroup = {
@@ -139,5 +139,58 @@ describe('Settlements', () => {
     await user.click(await screen.findByRole('button', { name: '+ Registrar pago' }));
     await user.selectOptions(screen.getByLabelText('Moneda'), 'USD');
     expect(await screen.findByLabelText(/Tipo de cambio: 1 USD =/)).toHaveValue('1.555');
+  });
+
+  const fixSettlement = {
+    id: 's1',
+    fromId: 'p2',
+    toId: 'p1',
+    amountCents: 500000,
+    currency: 'ARS',
+    exchangeRate: null,
+    date: new Date('2026-11-01T12:00:00Z'),
+    note: null,
+    deletedAt: null,
+    groupId: 'g1',
+    createdById: 'u1',
+    from: { id: 'p2', name: 'Tuke' },
+    to: { id: 'p1', name: 'Juan' },
+  };
+
+  it('removes a payment right away when deleting it', async () => {
+    const user = userEvent.setup();
+    renderWithApi(<Settlements />, {
+      'groups.get': () => fixGroup,
+      'settlements.list': () => [fixSettlement],
+      'settlements.delete': neverResolves,
+    });
+    await user.click(await screen.findByRole('button', { name: 'Borrar' }));
+    await user.click(
+      within(await screen.findByRole('alertdialog')).getByRole('button', { name: 'Borrar' }),
+    );
+    await waitFor(() => expect(screen.queryByText('Tuke → Juan')).not.toBeInTheDocument());
+  });
+
+  it('shows a new payment right away and reopens the form if saving fails', async () => {
+    const user = userEvent.setup();
+    let reject: (e: unknown) => void = () => {};
+    renderWithApi(
+      <Settlements />,
+      {
+        'groups.get': () => fixGroup,
+        'settlements.list': () => [],
+        'settlements.create': () => new Promise((_, r) => (reject = r)),
+      },
+      '/?from=p1&to=p2&amount=6000&currency=ARS',
+    );
+    await user.click(await screen.findByRole('button', { name: 'Registrar' }));
+
+    expect(await screen.findByText('Juan → Tuke')).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Registrar' })).not.toBeInTheDocument();
+
+    reject(apiError('El grupo está archivado'));
+    expect(await screen.findByRole('button', { name: 'Registrar' })).toBeInTheDocument();
+    expect(screen.queryByText('Juan → Tuke')).not.toBeInTheDocument();
+    expect(screen.getByLabelText('Monto')).toHaveValue('60');
   });
 });
