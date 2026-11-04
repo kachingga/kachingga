@@ -3,7 +3,7 @@ import { useNavigate, useParams } from 'react-router';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
 import { ErrorState } from '@/components/error-state';
-import { Spinner } from '@/components/spinner';
+import { ListScreenSkeleton } from '@/components/skeletons';
 import { useTRPC } from '@/lib/trpc';
 import { useConfirm } from '@/lib/use-confirm';
 
@@ -62,7 +62,7 @@ export function Participants() {
     trpc.groups.regenerateInviteCode.mutationOptions({ onSuccess: invalidate }),
   );
 
-  if (group.isPending) return <Spinner fullScreen />;
+  if (group.isPending) return <ListScreenSkeleton />;
   if (group.isError) {
     return (
       <main className="p-6">

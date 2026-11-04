@@ -4,7 +4,7 @@ import { describe, expect, it } from 'vitest';
 
 import { dayToDate, today } from '@/lib/format';
 
-import { neverResolves, renderWithApi } from '@/test/render';
+import { apiError, neverResolves, renderWithApi } from '@/test/render';
 import { ExpenseForm } from '@/routes/groups/expense-form';
 
 const fixGroup = {
@@ -192,5 +192,46 @@ describe('ExpenseForm (equal split preview)', () => {
 
     expect(screen.getByText('$ 1,34')).toBeInTheDocument();
     expect(screen.getAllByText('$ 1,33')).toHaveLength(2);
+  });
+});
+
+describe('ExpenseForm (optimistic save)', () => {
+  it('if saving fails, a toast offers to reopen the form with what was entered', async () => {
+    const user = userEvent.setup();
+    renderWithApi(<ExpenseForm />, {
+      'groups.get': () => fixGroup,
+      'expenses.create': () => {
+        throw apiError('Se cayó la conexión');
+      },
+    });
+    await user.type(await screen.findByLabelText('Monto'), '1500');
+    await user.type(screen.getByLabelText('Descripción'), 'Cena');
+    await user.click(screen.getByRole('button', { name: 'Agregar gasto' }));
+
+    expect(await screen.findByText('No se guardó "Cena": Se cayó la conexión')).toBeInTheDocument();
+    await user.clear(screen.getByLabelText('Descripción'));
+    await user.click(screen.getByRole('button', { name: 'Revisar' }));
+
+    expect(await screen.findByDisplayValue('Cena')).toBeInTheDocument();
+    expect(screen.getByLabelText('Monto')).toHaveValue('1.500');
+  });
+
+  it("doesn't save a split by amount that doesn't add up", async () => {
+    const user = userEvent.setup();
+    const calls: unknown[] = [];
+    renderWithApi(<ExpenseForm />, {
+      'groups.get': () => fixGroup,
+      'expenses.create': (input) => calls.push(input),
+    });
+    await user.type(await screen.findByLabelText('Monto'), '100');
+    await user.type(screen.getByLabelText('Descripción'), 'Cena');
+    await user.click(screen.getByRole('button', { name: 'Por monto' }));
+    await user.type(screen.getByLabelText('Monto de Juan'), '60');
+    await user.click(screen.getByRole('button', { name: 'Agregar gasto' }));
+
+    expect(
+      await screen.findByText('La suma de los montos no coincide con el total'),
+    ).toBeInTheDocument();
+    expect(calls).toHaveLength(0);
   });
 });

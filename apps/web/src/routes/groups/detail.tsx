@@ -5,8 +5,10 @@ import type { inferRouterOutputs } from '@trpc/server';
 import type { AppRouter } from '@kachingga/api';
 
 import { ErrorState } from '@/components/error-state';
-import { Spinner } from '@/components/spinner';
+import { BalancesSkeleton, ExpenseListSkeleton, GroupSkeleton } from '@/components/skeletons';
 import { useTRPC } from '@/lib/trpc';
+import { prefetchOn, usePrefetch } from '@/lib/use-prefetch';
+import { isTemp } from '@/lib/optimistic';
 import { useConfirm } from '@/lib/use-confirm';
 import { categoryLabels, formatCents, formatDate, formatPlainAmount } from '@/lib/format';
 
@@ -19,6 +21,7 @@ function participantName(group: GroupData, id: string) {
 
 function BalanceSection({ group, balances }: { group: GroupData; balances: BalancesData }) {
   const navigate = useNavigate();
+  const prefetch = usePrefetch();
 
   return (
     <div className="space-y-4">
@@ -101,6 +104,7 @@ function BalanceSection({ group, balances }: { group: GroupData; balances: Balan
                             Copiar monto
                           </button>
                           <button
+                            {...prefetchOn(() => prefetch.settlements(group.id))}
                             onClick={() =>
                               navigate(
                                 `/grupos/${group.id}/pagos?from=${t.fromId}&to=${t.toId}&amount=${t.amountCents}&currency=${currency}`,
@@ -130,6 +134,7 @@ export function GroupDetail() {
   const trpc = useTRPC();
   const queryClient = useQueryClient();
   const confirm = useConfirm();
+  const prefetch = usePrefetch();
 
   const [showMenu, setShowMenu] = useState(false);
   const [renaming, setRenaming] = useState(false);
@@ -160,7 +165,7 @@ export function GroupDetail() {
   );
 
   if (group.isPending) {
-    return <Spinner fullScreen />;
+    return <GroupSkeleton />;
   }
   if (group.isError) {
     return (
@@ -286,7 +291,7 @@ export function GroupDetail() {
 
       <div className="space-y-6 px-4">
         {/* Saldos */}
-        {balances.isPending && <Spinner />}
+        {balances.isPending && <BalancesSkeleton />}
         {balances.isError && (
           <ErrorState message={balances.error.message} onRetry={() => balances.refetch()} />
         )}
@@ -301,12 +306,14 @@ export function GroupDetail() {
         <div className="flex gap-2">
           <Link
             to={`/grupos/${groupId}/pagos`}
+            {...prefetchOn(() => prefetch.settlements(groupId!))}
             className="flex-1 rounded-xl border border-border py-2 text-center text-sm text-foreground"
           >
             Pagos
           </Link>
           <Link
             to={`/grupos/${groupId}/filtros`}
+            {...prefetchOn(() => prefetch.filters(groupId!))}
             className="flex-1 rounded-xl border border-border py-2 text-center text-sm text-foreground"
           >
             Filtros y totales
@@ -317,7 +324,7 @@ export function GroupDetail() {
         <div>
           <h2 className="mb-3 font-semibold">Gastos</h2>
 
-          {expenses.isPending && <Spinner />}
+          {expenses.isPending && <ExpenseListSkeleton />}
           {expenses.isError && (
             <ErrorState message={expenses.error.message} onRetry={() => expenses.refetch()} />
           )}
@@ -334,30 +341,53 @@ export function GroupDetail() {
           <ul className="space-y-2">
             {allExpenses.map((expense) => {
               const myShare = expense.splits.find((s) => s.participantId === g.myParticipantId);
+              const saving = isTemp(expense.id);
+              const content = (
+                <>
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate font-medium">{expense.description}</p>
+                    <p className="text-xs text-muted-foreground">
+                      {saving
+                        ? 'Guardando…'
+                        : `${categoryLabels[expense.category as keyof typeof categoryLabels]} · ${expense.paidBy.name} · ${formatDate(expense.date)}`}
+                    </p>
+                  </div>
+                  <div className="ml-3 text-right">
+                    <p className="font-semibold">
+                      {formatCents(expense.amountCents, expense.currency)}
+                    </p>
+                    {myShare && (
+                      <p className="text-xs text-muted-foreground">
+                        yo: {formatCents(myShare.amountCents, expense.currency)}
+                      </p>
+                    )}
+                  </div>
+                </>
+              );
               return (
                 <li key={expense.id}>
-                  <Link
-                    to={`/grupos/${groupId}/gastos/${expense.id}`}
-                    className="flex items-center justify-between rounded-2xl bg-card p-3 active:bg-accent"
-                  >
-                    <div className="min-w-0 flex-1">
-                      <p className="truncate font-medium">{expense.description}</p>
-                      <p className="text-xs text-muted-foreground">
-                        {categoryLabels[expense.category as keyof typeof categoryLabels]} ·{' '}
-                        {expense.paidBy.name} · {formatDate(expense.date)}
-                      </p>
+                  {saving ? (
+                    <div
+                      aria-busy="true"
+                      className="flex items-center justify-between rounded-2xl bg-card p-3 opacity-60"
+                    >
+                      {content}
                     </div>
-                    <div className="ml-3 text-right">
-                      <p className="font-semibold">
-                        {formatCents(expense.amountCents, expense.currency)}
-                      </p>
-                      {myShare && (
-                        <p className="text-xs text-muted-foreground">
-                          yo: {formatCents(myShare.amountCents, expense.currency)}
-                        </p>
-                      )}
-                    </div>
-                  </Link>
+                  ) : (
+                    <Link
+                      to={`/grupos/${groupId}/gastos/${expense.id}`}
+                      // Preload: the list already has the whole expense, so its detail opens instantly.
+                      onClick={() =>
+                        queryClient.setQueryData(
+                          trpc.expenses.get.queryKey({ expenseId: expense.id }),
+                          (cached) => cached ?? expense,
+                        )
+                      }
+                      className="flex items-center justify-between rounded-2xl bg-card p-3 active:bg-accent"
+                    >
+                      {content}
+                    </Link>
+                  )}
                 </li>
               );
             })}

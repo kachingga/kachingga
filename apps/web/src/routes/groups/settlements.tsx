@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useNavigate, useParams, useSearchParams } from 'react-router';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { toast } from 'sonner';
 
 import type { inferRouterOutputs } from '@trpc/server';
 import type { AppRouter } from '@kachingga/api';
@@ -9,8 +10,9 @@ import { ExchangeRateFields } from '@/components/exchange-rate-fields';
 import { NumberInput } from '@/components/number-input';
 import { useExchangeRate } from '@/lib/use-exchange-rate';
 import { ErrorState } from '@/components/error-state';
-import { Spinner } from '@/components/spinner';
+import { ListScreenSkeleton, RowsSkeleton } from '@/components/skeletons';
 import { useTRPC } from '@/lib/trpc';
+import { buildSettlement, byDateDesc, isTemp } from '@/lib/optimistic';
 import { useConfirm } from '@/lib/use-confirm';
 import {
   centsToNumeric,
@@ -32,7 +34,7 @@ export function Settlements() {
 
   const group = useQuery(trpc.groups.get.queryOptions({ groupId: groupId! }));
 
-  if (group.isPending) return <Spinner fullScreen />;
+  if (group.isPending) return <ListScreenSkeleton />;
   if (group.isError) {
     return (
       <div className="p-6 text-center">
@@ -86,28 +88,54 @@ function SettlementsBody({ groupId, group }: { groupId: string; group: GroupData
   const [formError, setFormError] = useState<string | null>(null);
   const [showForm, setShowForm] = useState(!!prefillFrom);
 
+  // Optimistic: the payment shows up in the list right away and the form closes. If the API
+  // rejects it, it's taken out and the form opens again with what was entered.
+  const listKey = trpc.settlements.list.queryKey({ groupId });
+  const refresh = () => {
+    void queryClient.invalidateQueries(trpc.settlements.pathFilter());
+    void queryClient.invalidateQueries(trpc.balances.get.queryFilter({ groupId }));
+  };
+
   const createSettlement = useMutation(
     trpc.settlements.create.mutationOptions({
-      onSuccess: () => {
-        void queryClient.invalidateQueries(trpc.settlements.pathFilter());
-        void queryClient.invalidateQueries(trpc.balances.get.queryFilter({ groupId }));
+      onMutate: async (input) => {
+        await queryClient.cancelQueries({ queryKey: listKey });
+        const previous = queryClient.getQueryData(listKey);
+        queryClient.setQueryData(listKey, (old) =>
+          byDateDesc([buildSettlement(input, group), ...(old ?? [])]),
+        );
         setShowForm(false);
-        setFormError(null);
+        return { previous };
+      },
+      onSuccess: () => {
         setFromId('');
         setToId('');
         setAmountInput('');
         setNote('');
       },
-      onError: (err) => setFormError(err.message),
+      onError: (err, _input, context) => {
+        if (context) queryClient.setQueryData(listKey, context.previous);
+        setShowForm(true);
+        setFormError(err.message);
+        toast.error(`No se registró el pago: ${err.message}`);
+      },
+      onSettled: refresh,
     }),
   );
 
   const deleteSettlement = useMutation(
     trpc.settlements.delete.mutationOptions({
-      onSuccess: () => {
-        void queryClient.invalidateQueries(trpc.settlements.pathFilter());
-        void queryClient.invalidateQueries(trpc.balances.get.queryFilter({ groupId }));
+      onMutate: async ({ settlementId }) => {
+        await queryClient.cancelQueries({ queryKey: listKey });
+        const previous = queryClient.getQueryData(listKey);
+        queryClient.setQueryData(listKey, (old) => old?.filter((s) => s.id !== settlementId));
+        return { previous };
       },
+      onError: (err, _input, context) => {
+        if (context) queryClient.setQueryData(listKey, context.previous);
+        toast.error(`No se borró el pago: ${err.message}`);
+      },
+      onSettled: refresh,
     }),
   );
 
@@ -121,6 +149,10 @@ function SettlementsBody({ groupId, group }: { groupId: string; group: GroupData
     }
     if (!fromId || !toId) {
       setFormError('Completá quién pagó y a quién');
+      return;
+    }
+    if (fromId === toId) {
+      setFormError('Tiene que ser entre dos personas distintas');
       return;
     }
     if (rate.missingRateError) {
@@ -313,7 +345,7 @@ function SettlementsBody({ groupId, group }: { groupId: string; group: GroupData
       )}
 
       {/* Lista de pagos */}
-      {settlements.isPending && <Spinner />}
+      {settlements.isPending && <RowsSkeleton />}
       {settlements.isError && (
         <ErrorState message={settlements.error.message} onRetry={() => settlements.refetch()} />
       )}
@@ -327,7 +359,11 @@ function SettlementsBody({ groupId, group }: { groupId: string; group: GroupData
       {settlements.isSuccess && settlements.data.length > 0 && (
         <ul className="space-y-2">
           {settlements.data.map((s) => (
-            <li key={s.id} className="flex items-center justify-between rounded-2xl bg-card p-3">
+            <li
+              key={s.id}
+              aria-busy={isTemp(s.id) || undefined}
+              className={`flex items-center justify-between rounded-2xl bg-card p-3 ${isTemp(s.id) ? 'opacity-60' : ''}`}
+            >
               <div>
                 <p className="text-sm font-medium">
                   {s.from.name} → {s.to.name}
@@ -337,7 +373,7 @@ function SettlementsBody({ groupId, group }: { groupId: string; group: GroupData
                   {s.note ? ` · ${s.note}` : ''}
                 </p>
               </div>
-              {!isArchived && (
+              {!isArchived && !isTemp(s.id) && (
                 <button
                   onClick={async () => {
                     const ok = await confirm({

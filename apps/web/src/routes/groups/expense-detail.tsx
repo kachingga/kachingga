@@ -1,8 +1,9 @@
 import { Link, useNavigate, useParams } from 'react-router';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { toast } from 'sonner';
 
 import { ErrorState } from '@/components/error-state';
-import { Spinner } from '@/components/spinner';
+import { ExpenseDetailSkeleton } from '@/components/skeletons';
 import { useTRPC } from '@/lib/trpc';
 import { useConfirm } from '@/lib/use-confirm';
 import {
@@ -24,18 +25,44 @@ export function ExpenseDetail() {
   const group = useQuery(trpc.groups.get.queryOptions({ groupId: groupId! }));
   const base = group.data?.baseCurrency;
 
+  // Optimistic: back to the group right away, without the expense; put back if it fails.
+  const listKey = trpc.expenses.list.infiniteQueryKey({ groupId: groupId! });
   const deleteExpense = useMutation(
     trpc.expenses.delete.mutationOptions({
-      onSuccess: () => {
+      onMutate: async ({ expenseId: id }) => {
+        await queryClient.cancelQueries({ queryKey: listKey });
+        const previous = queryClient.getQueryData(listKey);
+        queryClient.setQueryData(listKey, (old) =>
+          old
+            ? {
+                ...old,
+                pages: old.pages.map((page) => ({
+                  ...page,
+                  items: page.items.filter((item) => item.id !== id),
+                })),
+              }
+            : old,
+        );
+        navigate(`/grupos/${groupId}`, { replace: true });
+        return { previous };
+      },
+      onError: (err, _input, context) => {
+        if (context) queryClient.setQueryData(listKey, context.previous);
+        toast.error(`No se borró el gasto: ${err.message}`);
+      },
+      onSuccess: () =>
+        queryClient.removeQueries({
+          queryKey: trpc.expenses.get.queryKey({ expenseId: expenseId! }),
+        }),
+      onSettled: () => {
         void queryClient.invalidateQueries(trpc.expenses.pathFilter());
         void queryClient.invalidateQueries(trpc.balances.get.queryFilter({ groupId: groupId! }));
-        navigate(`/grupos/${groupId}`);
       },
     }),
   );
 
   if (expense.isPending) {
-    return <Spinner fullScreen />;
+    return <ExpenseDetailSkeleton />;
   }
   if (expense.isError) {
     return (

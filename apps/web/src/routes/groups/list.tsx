@@ -4,6 +4,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
 import { ErrorState } from '@/components/error-state';
 import { useTRPC } from '@/lib/trpc';
+import { prefetchOn, usePrefetch } from '@/lib/use-prefetch';
 
 // Deterministic avatar color from group name
 const AVATAR_COLORS = [
@@ -49,6 +50,7 @@ export function GroupList() {
   const trpc = useTRPC();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
+  const prefetch = usePrefetch();
   const [showArchived, setShowArchived] = useState(false);
   const [fabOpen, setFabOpen] = useState(false);
   const [swipedId, setSwipedId] = useState<string | null>(null);
@@ -105,7 +107,7 @@ export function GroupList() {
         </div>
 
         {groups.isPending && (
-          <div className="space-y-3">
+          <div role="status" aria-label="Cargando" className="space-y-3">
             {[1, 2, 3].map((i) => (
               <div key={i} className="h-20 animate-pulse rounded-3xl bg-muted" />
             ))}
@@ -167,6 +169,7 @@ export function GroupList() {
 
                 {/* Card (slides left on swipe) */}
                 <button
+                  {...prefetchOn(() => prefetch.group(group.id))}
                   onClick={(e) => {
                     if (swipedId === group.id) {
                       e.stopPropagation();

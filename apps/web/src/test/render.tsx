@@ -7,6 +7,7 @@ import type { ReactElement } from 'react';
 import { MemoryRouter } from 'react-router';
 
 import { ConfirmProvider } from '@/components/confirm-provider';
+import { Toaster } from '@/components/ui/sonner';
 import { TRPCProvider } from '@/lib/trpc';
 
 // Fake API for screen tests: map a procedure path ("groups.get") to what it returns.
@@ -61,6 +62,7 @@ export function renderWithApi(ui: ReactElement, api: ApiHandlers = {}, route = '
       <TRPCProvider trpcClient={trpcClient} queryClient={queryClient}>
         <ConfirmProvider>
           <MemoryRouter initialEntries={[route]}>{ui}</MemoryRouter>
+          <Toaster />
         </ConfirmProvider>
       </TRPCProvider>
     </QueryClientProvider>,

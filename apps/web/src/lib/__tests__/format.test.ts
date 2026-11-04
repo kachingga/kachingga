@@ -35,6 +35,16 @@ describe('locale formatting', () => {
     expect(formatDate(dayToDate('2026-11-04'))).toBe('11/4/2026');
   });
 
+  it('uses the Argentine format for Spanish without a country or es-419 (Chrome in Argentina)', () => {
+    for (const language of ['es-419', 'es']) {
+      asBrowser(language);
+      expect(numberSeparators()).toEqual({ group: '.', decimal: ',' });
+      expect(formatCents(150050, 'ARS')).toBe('$\u00a01.500,50');
+    }
+    asBrowser('es-MX');
+    expect(numberSeparators()).toEqual({ group: ',', decimal: '.' });
+  });
+
   it('always shows debts with their cents', () => {
     expect(formatCents(-777550, 'ARS')).toBe('-$\u00a07.775,50');
     expect(formatCents(100, 'ARS')).toBe('$\u00a01,00');
