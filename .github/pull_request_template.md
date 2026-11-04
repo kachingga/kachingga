@@ -3,6 +3,7 @@
 ## Qué cambia
 
 <!-- Qué y por qué, en 2-3 líneas. Si toca una regla de negocio, cuál. -->
+<!-- Si resuelve un issue: "Closes #N". Si deja algo pendiente: proponer su issue (CLAUDE.md → "Issues, labels y milestones"). -->
 
 ## Checklist
 

@@ -1,6 +1,6 @@
 # Kachingga — App para dividir gastos en grupo
 
-Proyecto de **Kachingga**, una organización de amigos (repo: `github.com/kachingga/kachingga`). **Hoy es para uso propio del grupo**: cada uno la usa en su celu y siempre en la última versión. El front es una **web app mobile-first** (`apps/web`: se usa en el celu y también en la compu); `apps/mobile` (Expo) queda como alternativa nativa por si algún día se hace (decisión en `docs/decisiones/costos-y-alternativas.md`). **A futuro se podría publicar** (ver `PENDIENTES.md` → Lanzamiento → Fase 2): no tomar decisiones que lo hagan imposible, pero tampoco construir cosas para usuarios públicos antes de tiempo.
+Proyecto de **Kachingga**, una organización de amigos (repo: `github.com/kachingga/kachingga`). **Hoy es para uso propio del grupo**: cada uno la usa en su celu y siempre en la última versión. El front es una **web app mobile-first** (`apps/web`: se usa en el celu y también en la compu); `apps/mobile` (Expo) queda como alternativa nativa por si algún día se hace (decisión en `docs/decisiones/costos-y-alternativas.md`). **A futuro se podría publicar** (ver `docs/decisiones/lanzamiento.md` → "Fase 2"): no tomar decisiones que lo hagan imposible, pero tampoco construir cosas para usuarios públicos antes de tiempo.
 
 ---
 
@@ -16,11 +16,11 @@ Proyecto de **Kachingga**, una organización de amigos (repo: `github.com/kachin
 | **`apps/mobile/CLAUDE.md`** | Lo técnico de la app nativa (Expo, alternativa por si algún día se hace) |
 | **`V1.md` / `V2.md`** | Alcance de cada versión: qué entra, pantallas y roadmap |
 | **`INFRA.md` / `DEPLOY.md`** | Qué servicios y variables existen / cómo se deploya |
-| **`PENDIENTES.md`** | Lanzamiento e infraestructura pendientes (cada ítem con su issue) |
-| **`docs/decisiones/`** | Decisiones investigadas: costos y alternativas de front, Mercado Pago |
+| **GitHub Issues** (no un archivo) | **Todo lo pendiente**: tareas, bugs, propuestas y decisiones a tomar, agrupados por milestone. Ver "Issues, labels y milestones" (abajo) |
+| **`docs/decisiones/`** | Decisiones investigadas: costos y alternativas de front, Mercado Pago, fases de lanzamiento |
 
 - Antes de implementar cualquier feature, leer **"Reglas de negocio"** de este archivo. Si el código contradice una regla de negocio, gana la regla (y se avisa).
-- **Un dato vive en un solo lugar.** Si cambia una regla de negocio → acá; un detalle técnico → el `CLAUDE.md` de la app; algo pendiente → `PENDIENTES.md` + issue; una decisión investigada → `docs/decisiones/`.
+- **Un dato vive en un solo lugar.** Si cambia una regla de negocio → acá; un detalle técnico → el `CLAUDE.md` de la app; algo pendiente → un issue de GitHub (ver "Issues, labels y milestones"); una decisión investigada → `docs/decisiones/`.
 - Lo personal de cada uno va en `CLAUDE.local.md` / `.claude/settings.local.json` (gitignoreados), nunca acá.
 
 ### Dónde buscar según la tarea
@@ -37,7 +37,8 @@ Proyecto de **Kachingga**, una organización de amigos (repo: `github.com/kachin
 | A la app le falta algo de la API | Se agrega en `apps/api` (mismo repo) siguiendo `apps/api/CLAUDE.md`; nunca workarounds en la app |
 | Cambios de base de datos | `apps/api/CLAUDE.md` → "Migraciones — reglas" + `DEPLOY.md` |
 | Deploy, builds, variables de entorno | `DEPLOY.md` + `INFRA.md` |
-| Qué falta para que todos la usen / publicarla / infra pendiente | `PENDIENTES.md` (y los issues `infra`) |
+| Qué falta para que todos la usen / publicarla / infra pendiente | Issues del milestone **"Fase 1 — Privada"** (`gh issue list --milestone "Fase 1 — Privada"`) + `docs/decisiones/lanzamiento.md` |
+| Proponer una mejora, anotar algo pendiente o dejar una decisión para otro | "Issues, labels y milestones" (abajo): dónde va cada cosa |
 | Costos, front nativo vs. web, Tricount | `docs/decisiones/costos-y-alternativas.md` |
 | Mercado Pago | `docs/decisiones/mercado-pago.md` (no es parte de ninguna versión) |
 | Conflictos de git | "Trabajo en paralelo y conflictos" (abajo) + "Conflictos" del `CLAUDE.md` de cada app |
@@ -147,7 +148,7 @@ Proyecto de **Kachingga**, una organización de amigos (repo: `github.com/kachin
 - Exporta solo gastos: los pagos manuales no son gastos y no se incluyen.
 - Cualquier miembro puede exportar los gastos de su grupo.
 ### Decisiones de producto tomadas
-- Grupo de amigos, uso propio → sin roles ni permisos finos dentro de un grupo. *(A revisar antes de publicarla: `PENDIENTES.md` → Lanzamiento → Fase 2.)*
+- Grupo de amigos, uso propio → sin roles ni permisos finos dentro de un grupo. *(A revisar antes de publicarla: `docs/decisiones/lanzamiento.md` → "Fase 2".)*
 - **Front: web app mobile-first** (front en Vercel, API en Railway), instalable en el celu desde el navegador ("Agregar a inicio"). Sin cuenta de Apple ni stores. La app nativa (Expo) queda como alternativa: si algún día se hace, iPhone por TestFlight (cuenta de Apple Developer) y Android por APK.
 - Saldar deudas es siempre manual (el pago se hace fuera de la app). **No hay integración con Mercado Pago**: pagar de una persona a otra desde la app sin comisiones no es posible (ver `docs/decisiones/mercado-pago.md`). El agente con IA es v2.
 - Dólar de referencia: **blue promedio** por defecto; se puede elegir el oficial o cargar uno a mano en cada gasto o pago. Las demás monedas, con su oficial sugerido.
@@ -219,7 +220,6 @@ kachingga/
 ├── CLAUDE.md
 ├── V1.md / V2.md
 ├── INFRA.md / DEPLOY.md
-├── PENDIENTES.md
 ├── docs/decisiones/     # costos-y-alternativas.md, mercado-pago.md
 └── package.json             # workspaces + scripts globales
 ```
@@ -275,7 +275,7 @@ Para cualquier tarea, en cualquier parte del repo. Claude no dice "listo" hasta 
 2. **Tiene tests** según el `CLAUDE.md` de la app tocada (API: integración por procedure; web/mobile: contenido por estado de cada pantalla).
 3. **No rompe ninguna regla de "Seguridad"**; si agrega o cambia un procedure, está cubierto en `authorization.test.ts`.
 4. **`bun run check` pasa** (typecheck + tests + lint). Nunca `--no-verify` ni desactivar reglas para que pase.
-5. **Docs actualizados en el lugar correcto:** regla de negocio nueva → acá; procedure o modelo → `apps/api/CLAUDE.md`; pantalla o roadmap → `V1.md`; decisión técnica → el `CLAUDE.md` de la app; servicios, variables o secretos → `INFRA.md`; cómo deployar → `DEPLOY.md`; decisión investigada (costos, alternativas) → `docs/decisiones/`. **Si la tarea completa (o deja a medias) algo de `PENDIENTES.md`, actualizarlo** junto con su issue: lo terminado se borra (o se tilda) y queda documentado donde corresponde; lo nuevo pendiente se agrega con su issue. Un dato vive en un solo lugar (guía completa: `README.md` → "Documentación").
+5. **Docs actualizados en el lugar correcto:** regla de negocio nueva → acá; procedure o modelo → `apps/api/CLAUDE.md`; pantalla o roadmap → `V1.md`; decisión técnica → el `CLAUDE.md` de la app; servicios, variables o secretos → `INFRA.md`; cómo deployar → `DEPLOY.md`; decisión investigada (costos, alternativas) → `docs/decisiones/`. **Si la tarea resuelve un issue**, el PR dice `Closes #N` y lo que haya que saber queda documentado donde corresponde; **si deja algo pendiente**, se avisa y se propone su issue (ver "Issues, labels y milestones"). Si toca un ítem de la checklist de UI de `V1.md`, se tilda ahí. Un dato vive en un solo lugar (guía completa: `README.md` → "Documentación").
 6. **En una branch con su PR** (título en formato Conventional Commits), con el checklist de la plantilla completo. Mergear solo si el usuario lo pide.
 7. **Se dijo qué quedó sin hacer o sin verificar** (ej. "no lo probé en un teléfono real").
 
@@ -366,6 +366,24 @@ gh pr create --fill                            # título = Conventional Commit (
 - Mantener los PRs chicos y de un tema (una pantalla, un procedure, un fix).
 - Claude: crear la branch y el PR; **mergear solo si el usuario lo pide** (`gh pr merge --squash` cuando el CI esté en verde).
 
-### Issues
-- Lo pendiente se trackea en **GitHub Issues** (labels: `infra` para infraestructura/CI/deploy, `blocked` si depende de algo externo). Cada ítem de `PENDIENTES.md` tiene su issue y viceversa.
-- Un PR que resuelve un issue lo dice en la descripción (`Closes #N`) para que se cierre solo al mergear; al cerrar un issue de infra, sacarlo de `PENDIENTES.md` (ver "Cuándo una tarea está terminada").
+### Issues, labels y milestones — dónde va cada cosa
+
+**Todo lo pendiente vive en GitHub Issues** (no hay un archivo de pendientes). Para ver qué falta: `gh issue list` (filtrar con `--milestone "Fase 1 — Privada"`, `--label question`, `--label blocked`…).
+
+| Qué es | Dónde va |
+|--------|----------|
+| **Tarea decidida** (feature, infra, deploy, bug) | Issue con label de tipo: `enhancement`, `infra` o `bug`. Con qué falta, pasos o dónde están, y **"Listo cuando:"** |
+| **Propuesta o mejora todavía no decidida** (ej. Claude ve algo que se podría hacer mejor en lo que está haciendo otro del grupo) | Issue con label **`question`**: el problema, 2–3 opciones con sus tradeoffs y una recomendación. Sin milestone hasta decidir |
+| **Decisión pendiente** que bloquea algo (ej. "¿registro abierto o a mano?") | Issue `question`, en el milestone de la fase que bloquea |
+| Algo que **depende de otro issue o de algo externo** (presupuesto, una cuenta) | Label **`blocked`** + "**Bloqueado por:** #N" (o el motivo) en el cuerpo |
+| Algo que **solo aplica a la app nativa** (Expo, EAS, stores) | Label **`app-nativa`**: no se hace mientras el front sea la web (quizás nunca, ver #20). Sin milestone |
+| Algo que hace falta para **lanzar** | Milestone **"Fase 1 — Privada"** (que el grupo la use) o **"Fase 2 — Pública (futuro)"**. Contexto de las fases: `docs/decisiones/lanzamiento.md` |
+| **Ítem chico de UI de la V1** (un detalle de una pantalla) | Checklist de `V1.md` → "Trabajo de la UI (web)" → "Por hacer". Si es grande o independiente: issue propio, linkeado desde ahí (ej. #18) |
+| Alcance de una versión (qué entra) | `V1.md` / `V2.md`, no un issue |
+| Conocimiento investigado (costos, requisitos, alternativas) | `docs/decisiones/`, no un issue |
+
+**Reglas:**
+- **Claude no crea, edita ni cierra issues, labels o milestones por su cuenta**: el repo es público y lo ve todo el grupo. Propone en el chat qué crearía y dónde (título, label, milestone), y lo crea cuando el humano dice que sí. Lo mismo para proponerle algo a otro: issue `question`, nunca un cambio sin hablarlo.
+- **Al decidir un `question`**: se cierra con la decisión escrita en un comentario. Si genera trabajo, se crea el issue de la tarea (o el ítem en `V1.md`). Si cambia una regla o una convención, se actualiza el doc que corresponde (`CLAUDE.md`, el de la app, `docs/decisiones/`).
+- **Un PR que resuelve un issue** lo dice en la descripción (`Closes #N`), para que se cierre solo al mergear.
+- **No duplicar:** antes de crear un issue, buscar si ya existe (`gh issue list --search "…"`). El contenido de un issue no se copia en los docs: se linkea.
