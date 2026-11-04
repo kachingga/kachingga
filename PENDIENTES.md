@@ -26,7 +26,7 @@ Todo lo que falta **fuera del código de las versiones** (el alcance de producto
 
 **Puesta en marcha (web app)** — pasos en `DEPLOY.md`:
 1. [ ] API en Railway con las variables de `apps/api/.env.prod` y su URL en `INFRA.md` — [#5](https://github.com/kachingga/kachingga/issues/5).
-2. [ ] Web en Vercel con las variables `VITE_*` de prod; su URL en `INFRA.md` y en `CORS_ORIGINS` de Railway.
+2. [ ] Web en Vercel con las variables `VITE_*` de prod; su URL en `INFRA.md` y en `CORS_ORIGINS` de Railway — [#34](https://github.com/kachingga/kachingga/issues/34).
 3. [ ] Hacerla instalable (PWA) — [#18](https://github.com/kachingga/kachingga/issues/18).
 4. [ ] Cada uno la abre en el celu y la agrega a la pantalla de inicio (iPhone: Safari → Compartir → "Agregar a inicio").
 5. [ ] Cada uno se registra **en prod** (las cuentas de dev no sirven en prod).
