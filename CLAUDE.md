@@ -231,6 +231,7 @@ Desde la raíz (corren en `api` y `web` con `bun --filter`; **`apps/mobile` qued
 ```bash
 bun install          # instala todo, activa husky y genera el cliente de Prisma
 bun run dev          # levanta API (:3000) y web (:5173)
+bun run dev:celu     # lo mismo, con la web visible desde el celu en la misma Wi-Fi
 bun run api          # solo la API
 bun run web          # solo la web (necesita la API)
 bun run mobile       # solo Expo (app nativa, sin uso hoy)
