@@ -38,7 +38,7 @@ Varias decisiones de producto se tomaron pensando en un grupo de amigos y hay qu
 ### Producto y operación con usuarios desconocidos
 - **Revisar decisiones "para amigos"**: todos con los mismos permisos (sin admin), cualquiera edita o borra cualquier gasto, el código de invitación como única barrera (`CLAUDE.md` → "Decisiones de producto tomadas").
 - Servidor de mail propio (SMTP) en Supabase.
-- Límites contra abuso más finos: por usuario (no solo por IP), store compartido si hay varias instancias de la API, y los límites de registro de Supabase. (Ya hay límite por IP: `apps/api/CLAUDE.md` → "Seguridad".)
+- Límites contra abuso más finos: por usuario (no solo por IP), store compartido si hay varias instancias de la API, y los límites de registro de Supabase. (Ya hay límite por IP: `docs/claude/api/seguridad.md`.)
 - Reporte de errores en la web y en la API (ej. Sentry).
 - Costos al crecer (Supabase, Railway, Vercel —Hobby es solo no comercial—, EAS).
 - Requisitos legales de datos personales en Argentina.

@@ -16,11 +16,13 @@ Proyecto de **Kachingga**, una organización de amigos (repo: `github.com/kachin
 | **`apps/mobile/CLAUDE.md`** | Lo técnico de la app nativa (Expo, alternativa por si algún día se hace) |
 | **`V1.md` / `V2.md`** | Alcance de cada versión: qué entra, pantallas y roadmap |
 | **`INFRA.md` / `DEPLOY.md`** | Qué servicios y variables existen / cómo se deploya |
-| **GitHub Issues** (no un archivo) | **Todo lo pendiente**: tareas, bugs, propuestas y decisiones a tomar, agrupados por milestone. Ver "Issues, labels y milestones" (abajo) |
+| **GitHub Issues** (no un archivo) | **Todo lo pendiente**: tareas, bugs, propuestas y decisiones a tomar, agrupados por milestone. Ver "Issues" (abajo) |
+| **`docs/claude/`** | **Cómo está hecha cada cosa por dentro** (explicaciones, ejemplos, el porqué). Se lee **antes de tocar** ese tema, según el índice "Antes de tocar…" de cada `CLAUDE.md`. Ver `docs/claude/README.md` |
 | **`docs/decisiones/`** | Decisiones investigadas: costos y alternativas de front, Mercado Pago, fases de lanzamiento |
 
 - Antes de implementar cualquier feature, leer **"Reglas de negocio"** de este archivo. Si el código contradice una regla de negocio, gana la regla (y se avisa).
-- **Un dato vive en un solo lugar.** Si cambia una regla de negocio → acá; un detalle técnico → el `CLAUDE.md` de la app; algo pendiente → un issue de GitHub (ver "Issues, labels y milestones"); una decisión investigada → `docs/decisiones/`.
+- **Un dato vive en un solo lugar.** Si cambia una regla de negocio → acá; un detalle técnico → el `CLAUDE.md` de la app; algo pendiente → un issue de GitHub (ver "Issues"); una decisión investigada → `docs/decisiones/`.
+- **Los `CLAUDE.md` tienen las reglas cortas que valen siempre; el detalle técnico vive en `docs/claude/`.** Antes de tocar un tema, leer su doc (índices: "Dónde buscar según la tarea", abajo, y "Antes de tocar…" del `CLAUDE.md` de cada app). **Si cambiás cómo funciona algo que describe un doc, actualizalo en el mismo PR.** `bun run check` falla si un doc menciona un archivo que ya no existe o si un doc de `docs/claude/` no está linkeado.
 - Lo personal de cada uno va en `CLAUDE.local.md` / `.claude/settings.local.json` (gitignoreados), nunca acá.
 
 ### Dónde buscar según la tarea
@@ -28,21 +30,22 @@ Proyecto de **Kachingga**, una organización de amigos (repo: `github.com/kachin
 | Tarea | Leer primero |
 |-------|--------------|
 | Cualquier feature | "Reglas de negocio" (abajo) + `V1.md` (si está en alcance) |
-| Pantallas / UI de la app | `V1.md` → **"Pantallas"** + `apps/web/CLAUDE.md` → **"UI / UX — estándar de calidad"** y **"Cómo usar la API"** |
-| Queries, mutations, optimistic updates o precarga en la web | `apps/web/CLAUDE.md` → **"Datos y cache (TanStack Query)"** |
-| Colores, tema, componentes de la web | `apps/web/CLAUDE.md` → **"Componentes (shadcn/ui)"** (nunca colores fijos: variables del tema) |
-| Montos, números o fechas en la web | `apps/web/CLAUDE.md` → **"Reglas"** (idioma del navegador, valores normalizados, día del calendario) |
-| Probar la web desde el celu | `bun run dev:celu` (ver `apps/web/CLAUDE.md` → "Env") |
-| Lógica, endpoints o datos de la API | `apps/api/CLAUDE.md` → "Procedures tRPC", "Modelo de datos", "Dónde vive cada regla de negocio" |
+| Pantallas / UI de la app | `V1.md` → **"Pantallas"** + `apps/web/CLAUDE.md` (reglas + índice "Antes de tocar…") → `docs/claude/web/ui-ux.md` y `docs/claude/web/usar-la-api.md` |
+| Queries, mutations, optimistic updates o precarga en la web | `docs/claude/web/datos-y-cache.md` |
+| Colores, tema, componentes de la web | `docs/claude/web/componentes-y-tema.md` (nunca colores fijos: variables del tema) |
+| Montos, números o fechas en la web | `docs/claude/web/plata-y-fechas.md` (idioma del navegador, valores normalizados, día del calendario) |
+| Probar la web desde el celu | `bun run dev:celu` (ver `docs/claude/web/usar-la-api.md` → "En local: proxy de Vite") |
+| Lógica, endpoints o datos de la API | `apps/api/CLAUDE.md` (reglas + índice) → `docs/claude/api/contrato.md` (modelo, procedures, dónde vive cada regla) |
 | A la app le falta algo de la API | Se agrega en `apps/api` (mismo repo) siguiendo `apps/api/CLAUDE.md`; nunca workarounds en la app |
 | Cambios de base de datos | `apps/api/CLAUDE.md` → "Migraciones — reglas" + `DEPLOY.md` |
 | Deploy, builds, variables de entorno | `DEPLOY.md` + `INFRA.md` |
 | Qué falta para que todos la usen / publicarla / infra pendiente | Issues del milestone **"Fase 1 — Privada"** (`gh issue list --milestone "Fase 1 — Privada"`) + `docs/decisiones/lanzamiento.md` |
-| Proponer una mejora, anotar algo pendiente o dejar una decisión para otro | "Issues, labels y milestones" (abajo): dónde va cada cosa |
+| Proponer una mejora, anotar algo pendiente o dejar una decisión para otro | "Issues" (abajo) + `docs/claude/repo/issues.md` (qué label y milestone lleva cada cosa) |
 | Costos, front nativo vs. web, Tricount | `docs/decisiones/costos-y-alternativas.md` |
 | Mercado Pago | `docs/decisiones/mercado-pago.md` (no es parte de ninguna versión) |
-| Conflictos de git | "Trabajo en paralelo y conflictos" (abajo) + "Conflictos" del `CLAUDE.md` de cada app |
-| Cualquier cosa que toque permisos, login, secretos o datos de otros | "Seguridad" (abajo) + `apps/api/CLAUDE.md` → "Seguridad" |
+| Conflictos de git, rebases, PRs | `docs/claude/repo/git-prs-y-conflictos.md` + "Conflictos" del `CLAUDE.md` de cada app |
+| Hooks, `package.json`, `bunfig.toml`, Prettier, versiones de TS / React | `docs/claude/repo/tooling.md` |
+| Cualquier cosa que toque permisos, login, secretos o datos de otros | "Seguridad" (abajo) + checklist de `apps/api/CLAUDE.md` + `docs/claude/api/seguridad.md` |
 | Saber si una tarea está terminada | "Cuándo una tarea está terminada" (abajo) + plantilla de PR (`.github/pull_request_template.md`) |
 
 > **Alcance:** v1 = todo lo de `V1.md`; v2 = explicación de saldos y agente con IA (`V2.md`). Si una tarea toca la v2, frená y preguntá antes de implementarlo. Mercado Pago **no es parte de ninguna versión** (`docs/decisiones/mercado-pago.md`).
@@ -192,7 +195,7 @@ Web (Vercel) ──tRPC + token de Supabase──▶ API (Hono, Railway) ──P
 
 ## Seguridad — reglas para todos
 
-**Nadie (persona o Claude) mergea algo que rompa esto.** Detalle de cómo está implementado y checklist por procedure: `apps/api/CLAUDE.md` → "Seguridad".
+**Nadie (persona o Claude) mergea algo que rompa esto.** Checklist por procedure: `apps/api/CLAUDE.md`; cómo está implementado: `docs/claude/api/seguridad.md`.
 
 - **Un usuario solo ve y toca los grupos de los que es miembro.** Todo procedure que toca un grupo chequea pertenencia en la API; el front nunca es la barrera. A quien no es miembro se le responde "no encontrado" (no se revela que el grupo existe).
 - **Lo personal es personal:** el alias de una persona con cuenta solo lo cambia ella; perfil y filtros guardados, solo el dueño.
@@ -217,10 +220,13 @@ kachingga/
 │   ├── api/                 # @kachingga/api — Hono + tRPC + Prisma (ver apps/api/CLAUDE.md)
 │   ├── web/                 # @kachingga/web — React + Vite, front principal (ver apps/web/CLAUDE.md)
 │   └── mobile/              # @kachingga/mobile — Expo, alternativa nativa (ver apps/mobile/CLAUDE.md)
+├── docs/
+│   ├── claude/              # cómo está hecha cada cosa por dentro (repo/, web/, api/); ver su README
+│   └── decisiones/          # decisiones investigadas: costos, Mercado Pago, lanzamiento
+├── scripts/check-docs.ts    # chequeo de docs (parte de bun run check)
 ├── CLAUDE.md
 ├── V1.md / V2.md
 ├── INFRA.md / DEPLOY.md
-├── docs/decisiones/     # costos-y-alternativas.md, mercado-pago.md
 └── package.json             # workspaces + scripts globales
 ```
 
@@ -243,7 +249,8 @@ bun run typecheck    # tsc en api y web
 bun run test         # tests: api (unit + integración con PGlite), y web (Vitest)
 bun run lint         # ESLint en web
 bun run format       # formatea todo con Prettier (correrlo antes de commitear)
-bun run check        # formato + typecheck + test + lint — lo mismo que corre el pre-commit y el CI
+bun run docs:check   # que los docs no mencionen archivos que ya no existen (ver docs/claude/README.md)
+bun run check        # docs + formato + typecheck + test + lint — lo mismo que corre el pre-commit y el CI
 ```
 
 > **`apps/mobile` no se chequea:** el código queda por si algún día se hace la app nativa, pero no corre en `bun run check`, en el pre-commit ni en el CI (sin Jest, typecheck, lint, Expo doctor ni Maestro). Si se retoma, volver a sumarlo a los scripts raíz y al CI. Mientras tanto, no invertir tiempo en mantenerlo.
@@ -259,11 +266,7 @@ Cada app tiene un `.env.sample` commiteado que dice qué variables hacen falta y
 > Claude: nunca correr nada contra **prod** (`db:migrate:prod`, scripts con `.env.prod`) salvo que el usuario lo pida explícitamente. **Nunca resetear la contraseña de una base de Supabase** ni sugerirlo como solución: rompe el `.env` de todos. Para armar un `.env`, guiar con la tabla de `README.md` → "Armar los `.env`"; la contraseña de la base se le pide a Galo.
 
 ### Tooling del monorepo — no romper
-- **Husky** se activa con `prepare` en `bun install`. `pre-commit` corre `bun run check`; `commit-msg` valida Conventional Commits y deja pasar `Merge`, `Revert`, `fixup!`, `squash!` y `amend!`; `post-checkout`, `post-merge` y `post-rewrite` regeneran el cliente de Prisma (sin frenar nunca a git).
-- `bunfig.toml` usa `linker = "hoisted"` (todo en el `node_modules` raíz). Viene así desde el setup de Expo; no cambiarlo sin probar que Metro siga resolviendo.
-- `bun --filter '*' <script>` corre solo en los workspaces que tienen ese script.
-- **Prettier** (versión fija en la raíz) con config por app que respeta su estilo: API sin `;` y líneas de hasta 140 (`apps/api/.prettierrc`), web y mobile con `;` y 100 (`apps/mobile/.prettierrc`). `.prettierignore` excluye generados, migraciones y markdown. Si `check` falla por formato: `bun run format`. No discutir estilo: lo decide Prettier.
-- **TypeScript `~6.0.3` y React `19.3.0` en todos los workspaces** (los del SDK 58 de Expo): web y mobile typechequean archivos de la API y comparten `node_modules`, así que tienen que ir juntos.
+- Husky (`pre-commit` = `bun run check`, `commit-msg` = Conventional Commits, hooks que regeneran Prisma), `bunfig.toml` con `linker = "hoisted"`, Prettier con config por app (si falla el formato: `bun run format`; no discutir estilo), **TypeScript `~6.0.3` y React `19.3.0` en todos los workspaces**. Detalle y por qué: **`docs/claude/repo/tooling.md`** (leerlo antes de tocar hooks, `package.json`, `bunfig.toml`, Prettier o versiones).
 
 ---
 
@@ -275,7 +278,7 @@ Para cualquier tarea, en cualquier parte del repo. Claude no dice "listo" hasta 
 2. **Tiene tests** según el `CLAUDE.md` de la app tocada (API: integración por procedure; web/mobile: contenido por estado de cada pantalla).
 3. **No rompe ninguna regla de "Seguridad"**; si agrega o cambia un procedure, está cubierto en `authorization.test.ts`.
 4. **`bun run check` pasa** (typecheck + tests + lint). Nunca `--no-verify` ni desactivar reglas para que pase.
-5. **Docs actualizados en el lugar correcto:** regla de negocio nueva → acá; procedure o modelo → `apps/api/CLAUDE.md`; pantalla o roadmap → `V1.md`; decisión técnica → el `CLAUDE.md` de la app; servicios, variables o secretos → `INFRA.md`; cómo deployar → `DEPLOY.md`; decisión investigada (costos, alternativas) → `docs/decisiones/`. **Si la tarea resuelve un issue**, el PR dice `Closes #N` y lo que haya que saber queda documentado donde corresponde; **si deja algo pendiente**, se avisa y se propone su issue (ver "Issues, labels y milestones"). Si toca un ítem de la checklist de UI de `V1.md`, se tilda ahí. Un dato vive en un solo lugar (guía completa: `README.md` → "Documentación").
+5. **Docs actualizados en el lugar correcto:** regla de negocio nueva → acá; procedure o modelo → `docs/claude/api/contrato.md`; pantalla o roadmap → `V1.md`; cómo funciona algo técnico → su doc en `docs/claude/` (y, si es una regla que no se puede romper, una línea en el `CLAUDE.md` de la app); **si tocaste algo que aparece en un índice "Antes de tocar…", revisá que su doc siga diciendo la verdad**; servicios, variables o secretos → `INFRA.md`; cómo deployar → `DEPLOY.md`; decisión investigada (costos, alternativas) → `docs/decisiones/`. **Si la tarea resuelve un issue**, el PR dice `Closes #N` y lo que haya que saber queda documentado donde corresponde; **si deja algo pendiente**, se avisa y se propone su issue (ver "Issues"). Si toca un ítem de la checklist de UI de `V1.md`, se tilda ahí. Un dato vive en un solo lugar (guía completa: `README.md` → "Documentación").
 6. **En una branch con su PR** (título en formato Conventional Commits), con el checklist de la plantilla completo. Mergear solo si el usuario lo pide.
 7. **Se dijo qué quedó sin hacer o sin verificar** (ej. "no lo probé en un teléfono real").
 
@@ -283,29 +286,9 @@ Para cualquier tarea, en cualquier parte del repo. Claude no dice "listo" hasta 
 
 ## Trabajo en paralelo y conflictos
 
-Somos varios trabajando a la vez.
-
-### Antes de empezar y antes de pushear
-```bash
-git pull --rebase origin main
-bun install          # por si cambiaron dependencias o hooks (el cliente de Prisma lo regeneran los hooks de git)
-bun run check
-```
-
-> **Cliente de Prisma al cambiar de branch:** el cliente generado no está en git, así que al cambiar de branch puede quedar con el schema de la otra (síntoma: fallan todos los tests de integración juntos, o el typecheck dice que no existe un modelo/campo). Los hooks de husky `post-checkout`, `post-merge` y `post-rewrite` lo regeneran solos. Si igual pasa: `bun run --cwd apps/api db:generate`. **`bun install` no alcanza**: si no hay dependencias nuevas, no vuelve a correr el `postinstall`.
-
-### Si tenés trabajo local viejo
-1. Commitealo en una branch (`git switch -c feat/<lo-que-sea>`). Si el hook rechaza el mensaje, usá `type(scope): ...`.
-2. `git rebase origin/main` (o `merge`) y resolvé los conflictos como abajo.
-3. `bun install && bun run check` antes de pushear.
-
-### Cómo resolver conflictos por archivo
-- **`bun.lock`:** nunca a mano. Quedarse con la de `main` (`git checkout --theirs bun.lock` en un merge, `--ours` en un rebase), `bun install` para regenerarlo y `git add bun.lock`.
-- **`package.json` (cualquiera):** combinar las dos listas de dependencias y scripts. En mobile, si quedan versiones raras, `bunx expo install --fix`. Después `bun install`.
-- **`CLAUDE.md`, `V1.md` y docs:** combinar ambos textos respetando la regla de "dónde va cada cosa".
-- **Archivos de cada app:** ver "Conflictos" en `apps/api/CLAUDE.md`, `apps/web/CLAUDE.md` y `apps/mobile/CLAUDE.md` (migraciones, `app.json`, `_layout.tsx`, `router.ts`…).
-
-Después de cualquier conflicto: `bun install && bun run check`. Si falla, se arregla antes de commitear — **nunca** `--no-verify`.
+Somos varios trabajando a la vez. **Antes de empezar y antes de pushear:** `git pull --rebase origin main && bun install && bun run check`.
+- **`bun.lock` nunca a mano** (quedarse con el de `main` y `bun install`). Después de cualquier conflicto: `bun install && bun run check`; si falla, se arregla antes de commitear.
+- Cómo resolver cada tipo de conflicto, trabajo local viejo, el cliente de Prisma al cambiar de branch: **`docs/claude/repo/git-prs-y-conflictos.md`** (leerlo ante cualquier conflicto o rebase) + "Conflictos" del `CLAUDE.md` de cada app.
 
 ---
 
@@ -334,56 +317,19 @@ Reglas para Claude:
 
 ---
 
-## Flujo de trabajo: branches y Pull Requests
+## Branches y Pull Requests
 
-**`main` está protegido en GitHub: no se puede pushear directo (ni los admins).** Todo cambio entra por PR.
+- **`main` está protegido: todo entra por PR**, con el CI en verde ("Typecheck, tests y lint" = `bun run check`, "Migraciones al día con el schema", "Formato de commits y título del PR").
+- Branch `feat/…`, `fix/…`, `chore/…` o `docs/…`; título del PR en Conventional Commits (queda como el commit en `main`: se mergea con **squash**).
+- PRs chicos y de un tema. Label `e2e` en los que cambian un recorrido crítico.
+- Si el PR queda atrás de `main`: **rebase, nunca merge** (`gh pr update-branch <n> --rebase`).
+- **Claude: crear la branch y el PR; mergear solo si el usuario lo pide** (`gh pr merge --squash` con el CI en verde).
+- Comandos, CI colgado, PRs apilados y demás detalle: **`docs/claude/repo/git-prs-y-conflictos.md`**.
 
-```bash
-git switch main && git pull --rebase origin main
-git switch -c feat/<descripcion-corta>        # o fix/…, chore/…, docs/…
-# … commits con formato Conventional Commits …
-git push -u origin HEAD
-gh pr create --fill                            # título = Conventional Commit (ej. "feat(web): pantalla de grupos")
-```
+## Issues
 
-- Para mergear, el CI (`.github/workflows/ci.yml`) tiene que pasar entero:
-  - **"Typecheck, tests y lint"** — `bun run check` (formato + typecheck + tests + lint).
-  - **"Migraciones al día con el schema"** — aplica todas las migraciones en un Postgres vacío y falla si el schema de Prisma tiene cambios sin migración.
-  - **"Formato de commits y título del PR"** — Conventional Commits.
-- **E2E** (`.github/workflows/e2e.yml`, no obligatorio): Playwright en la web (celular y compu). Corre a mano o en PRs con la label `e2e` — ponérsela a los PRs que cambian recorridos críticos (ver "Testing" en `apps/web/CLAUDE.md`).
-- Dependabot abre PRs mensuales solo para las GitHub Actions (las dependencias de las apps se actualizan a mano).
-- Se mergea solo con **squash**: el título del PR queda como el commit en `main`, por eso tiene que respetar el formato. La branch se borra sola al mergear.
-- **El PR tiene que estar al día con `main`** para poder mergearse (GitHub lo marca como *BEHIND* si entró otro PR antes). Se actualiza **siempre con rebase, nunca con merge** (el historial de `main` es lineal):
-  ```bash
-  gh pr update-branch <número> --rebase          # desde GitHub, sin tocar tu copia local
-  # o en local:
-  git fetch origin && git rebase origin/main     # resolver conflictos según "Trabajo en paralelo y conflictos"
-  git push --force-with-lease                    # solo sobre TU branch, nunca sobre main
-  ```
-  Después del rebase el CI corre de nuevo y hay que esperar a que pase.
-- Resultado: **un PR = un commit en `main`**, con el título del PR como mensaje.
-- No hace falta aprobación de otro para mergear (somos pocos), pero conviene avisar al grupo en PRs grandes.
-- Mantener los PRs chicos y de un tema (una pantalla, un procedure, un fix).
-- Claude: crear la branch y el PR; **mergear solo si el usuario lo pide** (`gh pr merge --squash` cuando el CI esté en verde).
-
-### Issues, labels y milestones — dónde va cada cosa
-
-**Todo lo pendiente vive en GitHub Issues** (no hay un archivo de pendientes). Para ver qué falta: `gh issue list` (filtrar con `--milestone "Fase 1 — Privada"`, `--label question`, `--label blocked`…).
-
-| Qué es | Dónde va |
-|--------|----------|
-| **Tarea decidida** (feature, infra, deploy, bug) | Issue con label de tipo: `enhancement`, `infra` o `bug`. Con qué falta, pasos o dónde están, y **"Listo cuando:"** |
-| **Propuesta o mejora todavía no decidida** (ej. Claude ve algo que se podría hacer mejor en lo que está haciendo otro del grupo) | Issue con label **`question`**: el problema, 2–3 opciones con sus tradeoffs y una recomendación. Sin milestone hasta decidir |
-| **Decisión pendiente** que bloquea algo (ej. "¿registro abierto o a mano?") | Issue `question`, en el milestone de la fase que bloquea |
-| Algo que **depende de otro issue o de algo externo** (presupuesto, una cuenta) | Label **`blocked`** + "**Bloqueado por:** #N" (o el motivo) en el cuerpo |
-| Algo que **solo aplica a la app nativa** (Expo, EAS, stores) | Label **`app-nativa`**: no se hace mientras el front sea la web (quizás nunca, ver #20). Sin milestone |
-| Algo que hace falta para **lanzar** | Milestone **"Fase 1 — Privada"** (que el grupo la use) o **"Fase 2 — Pública (futuro)"**. Contexto de las fases: `docs/decisiones/lanzamiento.md` |
-| **Ítem chico de UI de la V1** (un detalle de una pantalla) | Checklist de `V1.md` → "Trabajo de la UI (web)" → "Por hacer". Si es grande o independiente: issue propio, linkeado desde ahí (ej. #18) |
-| Alcance de una versión (qué entra) | `V1.md` / `V2.md`, no un issue |
-| Conocimiento investigado (costos, requisitos, alternativas) | `docs/decisiones/`, no un issue |
-
-**Reglas:**
-- **Claude no crea, edita ni cierra issues, labels o milestones por su cuenta**: el repo es público y lo ve todo el grupo. Propone en el chat qué crearía y dónde (título, label, milestone), y lo crea cuando el humano dice que sí. Lo mismo para proponerle algo a otro: issue `question`, nunca un cambio sin hablarlo.
-- **Al decidir un `question`**: se cierra con la decisión escrita en un comentario. Si genera trabajo, se crea el issue de la tarea (o el ítem en `V1.md`). Si cambia una regla o una convención, se actualiza el doc que corresponde (`CLAUDE.md`, el de la app, `docs/decisiones/`).
-- **Un PR que resuelve un issue** lo dice en la descripción (`Closes #N`), para que se cierre solo al mergear.
-- **No duplicar:** antes de crear un issue, buscar si ya existe (`gh issue list --search "…"`). El contenido de un issue no se copia en los docs: se linkea.
+**Todo lo pendiente vive en GitHub Issues** (no hay archivo de pendientes): tareas, bugs, propuestas y decisiones a tomar, con milestones "Fase 1 — Privada" y "Fase 2 — Pública (futuro)". Para ver qué falta: `gh issue list`.
+- **Claude no crea, edita ni cierra issues, labels o milestones por su cuenta** (el repo es público y lo ve todo el grupo): propone en el chat qué crearía y dónde, y lo crea cuando el humano dice que sí.
+- **Proponerle una mejora a otro del grupo** = issue con label `question` (problema, opciones, recomendación); nunca cambiar lo suyo sin hablarlo.
+- Un PR que resuelve un issue lo dice en la descripción (`Closes #N`).
+- **Qué label o milestone lleva cada cosa** (tarea, propuesta, decisión, bloqueo, lanzamiento, solo app nativa, ítem de UI): **`docs/claude/repo/issues.md`** — leerlo antes de proponer o crear un issue.

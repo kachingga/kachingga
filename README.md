@@ -96,11 +96,11 @@ Los samples ya traen el ref, el host y las URLs de dev. Solo hay que completar:
 
 > ⚠️ **Nunca resetear la contraseña de la base** desde el dashboard: deja sin conexión a todos los demás (y, en prod, a Railway). Si se perdió, avisar al grupo antes.
 
-Después: `bun run api` + `bun run web` (o `bun run dev`, que levanta las dos). Para entrar con datos ya cargados: **`juan.demo@example.com`** con la contraseña de `SEED_USER_PASSWORD`. Si los datos de prueba se rompieron, `bun run --cwd apps/api db:seed` los vuelve a crear (ver `apps/api/CLAUDE.md` → "Datos de prueba"). También te podés registrar con tu mail (cada base tiene sus propios usuarios).
+Después: `bun run api` + `bun run web` (o `bun run dev`, que levanta las dos). Para entrar con datos ya cargados: **`juan.demo@example.com`** con la contraseña de `SEED_USER_PASSWORD`. Si los datos de prueba se rompieron, `bun run --cwd apps/api db:seed` los vuelve a crear (ver `docs/claude/api/datos-de-prueba.md`). También te podés registrar con tu mail (cada base tiene sus propios usuarios).
 
 Cada commit corre automáticamente typecheck, tests y lint (`bun run check`) y valida el formato del mensaje.
 
-**`main` está protegido:** se trabaja en una branch y se entra por Pull Request, que se mergea con squash cuando el CI pasa. Detalle en [`CLAUDE.md`](CLAUDE.md) → "Flujo de trabajo".
+**`main` está protegido:** se trabaja en una branch y se entra por Pull Request, que se mergea con squash cuando el CI pasa. Detalle en [`CLAUDE.md`](CLAUDE.md) → "Branches y Pull Requests".
 
 > **¿Tenías cambios locales de antes de este setup?** Commitealos en una branch y seguí "Trabajo en paralelo y conflictos" en [`CLAUDE.md`](CLAUDE.md) para traer `main` sin romper nada (o pedile a Claude que lo haga: ya conoce esas reglas).
 
@@ -132,13 +132,14 @@ El repo está documentado para que **cualquier persona y el Claude de cada uno t
 | [`README.md`](README.md) | Qué es la app, onboarding (accesos, setup, `.env`) y esta guía de documentación | Reglas de negocio o detalles técnicos |
 | [`CLAUDE.md`](CLAUDE.md) | **Reglas de negocio y decisiones de producto** (grupos, gastos, monedas, saldos, pagos, alias, filtros) y reglas de todo el repo: stack, arquitectura, comandos, commits, PRs, conflictos, cuándo una tarea está terminada | Detalles de una app (van en su `CLAUDE.md`), pendientes, investigaciones |
 | [`.claude/CLAUDE.md`](.claude/CLAUDE.md) | Cómo se comporta Claude: pensar antes de codear, simplicidad, cambios quirúrgicos, cuestionar y dar opciones | Nada del proyecto |
-| [`apps/api/CLAUDE.md`](apps/api/CLAUDE.md) | Todo lo técnico de la API: modelo de datos, **tabla de procedures**, dónde vive cada regla en el código, migraciones, notas técnicas, tests | Reglas de negocio (se referencian, no se copian) |
-| [`apps/web/CLAUDE.md`](apps/web/CLAUDE.md) | Todo lo técnico del front web (el principal): cómo usar la API, login, estándar de UI/UX, React, testing, deploy | Ídem |
+| [`apps/api/CLAUDE.md`](apps/api/CLAUDE.md) | Lo técnico de la API que vale **siempre**: reglas cortas, checklist de seguridad por procedure, migraciones, notas de "no romper", y el índice **"Antes de tocar… → leé…"** | Reglas de negocio (se referencian, no se copian); explicaciones largas (van en `docs/claude/api/`) |
+| [`apps/web/CLAUDE.md`](apps/web/CLAUDE.md) | Lo técnico del front web (el principal) que vale **siempre**: reglas cortas, lo que nunca se hace, comandos, env, y el índice **"Antes de tocar… → leé…"** | Ídem (explicaciones en `docs/claude/web/`) |
 | [`apps/mobile/CLAUDE.md`](apps/mobile/CLAUDE.md) | Todo lo técnico de la app nativa (alternativa): cómo usar la API, estándar de UI/UX, React, testing, EAS, notas técnicas | Ídem |
 | [`V1.md`](V1.md) / [`V2.md`](V2.md) | Alcance de cada versión: qué entra, qué no, **pantallas** y roadmap con checkboxes | Cómo se implementa |
 | [`INFRA.md`](INFRA.md) | Qué servicios existen (Supabase, Railway, Expo, GitHub…), entornos dev/prod, **todas las variables de entorno y secretos** (nombres, nunca valores) | Pasos de deploy |
 | [`DEPLOY.md`](DEPLOY.md) | **Cómo** se hace cada cosa: deploy de la API, migraciones en prod, builds, updates | Inventario de servicios |
-| [Issues de GitHub](https://github.com/kachingga/kachingga/issues) (no es un archivo) | **Todo lo pendiente**: tareas, bugs, propuestas y decisiones a tomar, con labels y milestones ("Fase 1 — Privada", "Fase 2 — Pública"). Cómo usarlos: `CLAUDE.md` → "Issues, labels y milestones" | Alcance de una versión (va en `V1.md`), conocimiento investigado (va en `docs/decisiones/`) |
+| [Issues de GitHub](https://github.com/kachingga/kachingga/issues) (no es un archivo) | **Todo lo pendiente**: tareas, bugs, propuestas y decisiones a tomar, con labels y milestones ("Fase 1 — Privada", "Fase 2 — Pública"). Cómo usarlos: [`docs/claude/repo/issues.md`](docs/claude/repo/issues.md) | Alcance de una versión (va en `V1.md`), conocimiento investigado (va en `docs/decisiones/`) |
+| [`docs/claude/`](docs/claude/README.md) | **Cómo está hecha cada cosa por dentro**: explicaciones, ejemplos y el porqué (`repo/`: git, PRs, issues, tooling; `web/`: datos y cache, plata y fechas, componentes, transiciones, UI/UX, tests; `api/`: contrato, seguridad, tests, seed). Cada doc dice a qué aplica y se lee antes de tocar ese tema | Reglas que valen siempre (van en los `CLAUDE.md`), reglas de negocio, pendientes |
 | [`docs/decisiones/`](docs/decisiones/) | Decisiones investigadas, con fuentes y fecha: [`costos-y-alternativas.md`](docs/decisiones/costos-y-alternativas.md) (costos, web app vs. nativa vs. Tricount), [`mercado-pago.md`](docs/decisiones/mercado-pago.md) (qué se puede y qué no), [`lanzamiento.md`](docs/decisiones/lanzamiento.md) (fases y requisitos para lanzar) | Tareas pendientes (van en issues) |
 | `.env.sample` de cada app | Qué variables hacen falta y de dónde sale cada valor | Valores reales |
 | `.github/pull_request_template.md` | El checklist de cada PR | — |
@@ -148,7 +149,8 @@ El repo está documentado para que **cualquier persona y el Claude de cada uno t
 - **Al empezar en el repo:** este README (onboarding) → `CLAUDE.md` → el `CLAUDE.md` de la app en la que vas a trabajar.
 - **Antes de cualquier feature:** "Reglas de negocio" de `CLAUDE.md` y el alcance en `V1.md`.
 - **Para una tarea puntual:** la tabla "Dónde buscar según la tarea" de `CLAUDE.md` dice qué leer.
-- **Claude** carga `CLAUDE.md`, `.claude/CLAUDE.md` y el `CLAUDE.md` de la app automáticamente; el resto lo lee cuando la tarea lo pide.
+- **Antes de tocar un tema técnico:** el índice "Antes de tocar… → leé…" del `CLAUDE.md` de la app (o "Dónde buscar según la tarea" del raíz) dice qué doc de `docs/claude/` leer.
+- **Claude** carga `CLAUDE.md`, `.claude/CLAUDE.md` y el `CLAUDE.md` de la app automáticamente (por eso son cortos); los docs de `docs/claude/` los lee cuando la tarea toca su tema.
 
 ### Cómo actualizarlos (personas y Claude)
 
@@ -157,12 +159,12 @@ El repo está documentado para que **cualquier persona y el Claude de cada uno t
 | Si cambia… | Se actualiza… |
 |------------|---------------|
 | Una regla de negocio (cómo funciona algo para el usuario) | `CLAUDE.md` → "Reglas de negocio" |
-| Un procedure, el modelo de datos o algo técnico de la API | `apps/api/CLAUDE.md` (tabla de procedures, modelo, notas) |
-| Algo técnico del front | `apps/web/CLAUDE.md` (o `apps/mobile/CLAUDE.md` si es la app nativa) |
+| Un procedure o el modelo de datos | `docs/claude/api/contrato.md` |
+| Cómo funciona algo técnico (web o API) | Su doc en `docs/claude/` (el índice "Antes de tocar…" del `CLAUDE.md` de la app dice cuál). Si es una regla que no se puede romper, además una línea en ese `CLAUDE.md`. Doc nuevo → linkearlo desde el índice (si no, `bun run check` falla). App nativa: `apps/mobile/CLAUDE.md` |
 | El alcance o una pantalla | `V1.md` / `V2.md` (y se tilda el roadmap al terminar) |
 | Un servicio, una variable de entorno o un secreto | `INFRA.md` + el `.env.sample` que corresponda |
 | Cómo se deploya o se migra | `DEPLOY.md` |
-| Algo pendiente (tarea, bug, infra, lanzamiento) o una propuesta / decisión a tomar | Un issue de GitHub, con su label y milestone según `CLAUDE.md` → "Issues, labels y milestones". Al terminarlo: `Closes #N` en el PR |
+| Algo pendiente (tarea, bug, infra, lanzamiento) o una propuesta / decisión a tomar | Un issue de GitHub, con su label y milestone según [`docs/claude/repo/issues.md`](docs/claude/repo/issues.md). Al terminarlo: `Closes #N` en el PR |
 | Una decisión que requirió investigar (costos, alternativas, proveedores) | Un archivo en `docs/decisiones/` con fecha y fuentes |
 | Una convención del repo (commits, PRs, tooling) | `CLAUDE.md` |
 
