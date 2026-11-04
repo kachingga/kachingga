@@ -67,11 +67,12 @@ const juan = as('juan')
 const tuke = as('tuke')
 const roman = as('roman')
 
-// Noon, n days ago (relative to today, so "este mes" filters always have data).
+// 12:00 UTC n days ago (dates are calendar days, see "Modelo de datos"), relative to today so
+// "este mes" filters always have data.
 const daysAgo = (n: number) => {
   const d = new Date()
-  d.setDate(d.getDate() - n)
-  d.setHours(12, 0, 0, 0)
+  d.setUTCDate(d.getUTCDate() - n)
+  d.setUTCHours(12, 0, 0, 0)
   return d
 }
 const ars = (pesos: number) => pesos * 100

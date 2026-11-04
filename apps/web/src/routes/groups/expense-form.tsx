@@ -3,36 +3,31 @@ import { useNavigate, useParams } from 'react-router';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import type { inferRouterOutputs } from '@trpc/server';
 import type { AppRouter } from '@kachingga/api';
-import { currencies, expenseCategories } from '@kachingga/api/schemas';
+import { currencies, distributeCents, expenseCategories } from '@kachingga/api/schemas';
 
+import { ExchangeRateFields } from '@/components/exchange-rate-fields';
+import { NumberInput } from '@/components/number-input';
+import { useExchangeRate } from '@/lib/use-exchange-rate';
 import { Spinner } from '@/components/spinner';
 import { useTRPC } from '@/lib/trpc';
 import {
   categoryLabels,
-  centsToDisplay,
+  centsToNumeric,
   currencyLabels,
+  dayToDate,
   formatCents,
-  parseCents,
-  toDateInput,
-  todayInput,
+  formatNumber,
+  toCents,
+  toNumber,
+  toNumeric,
+  toDay,
+  today,
   type Currency,
   type ExpenseCategory,
 } from '@/lib/format';
 
 type GroupData = inferRouterOutputs<AppRouter>['groups']['get'];
 type ExpenseData = inferRouterOutputs<AppRouter>['expenses']['get'];
-type RateSource = 'blue' | 'oficial' | 'manual';
-
-// Whether auto-suggest is possible: exactly one of (base, expense) currencies is ARS.
-function canAutoSuggest(base: string, expense: string) {
-  return (base === 'ARS') !== (expense === 'ARS') && base !== expense;
-}
-
-function defaultRateSource(base: string, expCurrency: string): RateSource {
-  if (base === expCurrency) return 'manual';
-  const foreign = base === 'ARS' ? expCurrency : base;
-  return foreign === 'USD' ? 'blue' : 'oficial';
-}
 
 // ─── Inner form (renders only when group + optional expense are ready) ────────
 
@@ -55,25 +50,25 @@ function ExpenseFormBody({ groupId, group, expenseId, expense }: FormProps) {
 
   // Initial values from existing expense or defaults
   const initCurrency = (expense?.currency ?? base) as Currency;
-  const initKeep = !!expense && expense.currency !== base && expense.exchangeRate === null;
-  const initRateSource: RateSource =
-    expense?.exchangeRate != null ? 'manual' : defaultRateSource(base, initCurrency);
 
   // Form state
   const [description, setDescription] = useState(expense?.description ?? '');
   const [category, setCategory] = useState<ExpenseCategory>(
     (expense?.category as ExpenseCategory) ?? 'OTHER',
   );
-  const [dateInput, setDateInput] = useState(expense ? toDateInput(expense.date) : todayInput());
+  const [dateInput, setDateInput] = useState(expense ? toDay(expense.date) : today());
   const [amountInput, setAmountInput] = useState(
-    expense ? centsToDisplay(expense.amountCents) : '',
+    expense ? centsToNumeric(expense.amountCents) : '',
   );
   const [currency, setCurrency] = useState<Currency>(initCurrency);
   const [paidById, setPaidById] = useState(expense?.paidById ?? group.myParticipantId);
-  const [keepCurrency, setKeepCurrency] = useState(initKeep);
-  const [rateSource, setRateSource] = useState<RateSource>(initRateSource);
-  const [manualRate, setManualRate] = useState(
-    expense?.exchangeRate != null ? String(expense.exchangeRate) : '',
+  const rate = useExchangeRate(
+    base,
+    currency,
+    expense && {
+      exchangeRate: expense.exchangeRate,
+      keepCurrency: expense.currency !== base && expense.exchangeRate === null,
+    },
   );
   const [splitType, setSplitType] = useState<'EQUAL' | 'AMOUNT' | 'PERCENTAGE'>(
     (expense?.splitType as 'EQUAL' | 'AMOUNT' | 'PERCENTAGE') ?? 'EQUAL',
@@ -84,7 +79,7 @@ function ExpenseFormBody({ groupId, group, expenseId, expense }: FormProps) {
   const [amountShares, setAmountShares] = useState<Record<string, string>>(() => {
     if (expense?.splitType === 'AMOUNT') {
       return Object.fromEntries(
-        expense.splits.map((s) => [s.participantId, centsToDisplay(s.amountCents)]),
+        expense.splits.map((s) => [s.participantId, centsToNumeric(s.amountCents)]),
       );
     }
     return Object.fromEntries(allIds.map((id) => [id, '']));
@@ -92,33 +87,12 @@ function ExpenseFormBody({ groupId, group, expenseId, expense }: FormProps) {
   const [percentShares, setPercentShares] = useState<Record<string, string>>(() => {
     if (expense?.splitType === 'PERCENTAGE') {
       return Object.fromEntries(
-        expense.splits.map((s) => [s.participantId, String(s.percentage ?? 0)]),
+        expense.splits.map((s) => [s.participantId, toNumeric(s.percentage ?? 0)]),
       );
     }
     return Object.fromEntries(allIds.map((id) => [id, '']));
   });
   const [formError, setFormError] = useState<string | null>(null);
-
-  // Exchange rate query (auto-suggest)
-  const shouldFetchRate =
-    currency !== base && !keepCurrency && canAutoSuggest(base, currency) && rateSource !== 'manual';
-  const fetchCurrency = (base === 'ARS' ? currency : base) as Exclude<Currency, 'ARS'>;
-  const fetchSource = rateSource === 'blue' ? 'blue' : 'oficial';
-
-  const rateQuery = useQuery({
-    ...trpc.rates.get.queryOptions({ currency: fetchCurrency, source: fetchSource }),
-    enabled: shouldFetchRate,
-  });
-
-  // Compute the rate to display (and send to API)
-  function getDisplayRate(): string {
-    if (rateSource === 'manual') return manualRate;
-    if (!rateQuery.data) return '';
-    const mid = rateQuery.data.mid;
-    return (base === 'ARS' ? mid : 1 / mid).toFixed(4);
-  }
-
-  const displayRate = getDisplayRate();
 
   // Mutations
   const create = useMutation(
@@ -145,21 +119,21 @@ function ExpenseFormBody({ groupId, group, expenseId, expense }: FormProps) {
 
   function buildSplit() {
     if (splitType === 'EQUAL') {
-      return { type: 'EQUAL' as const, participantIds: equalIds };
+      return { type: 'EQUAL' as const, participantIds: equalIdsInOrder };
     }
     if (splitType === 'AMOUNT') {
       return {
         type: 'AMOUNT' as const,
         shares: Object.entries(amountShares)
-          .filter(([, v]) => parseCents(v) > 0)
-          .map(([participantId, v]) => ({ participantId, amountCents: parseCents(v) })),
+          .filter(([, v]) => toCents(v) > 0)
+          .map(([participantId, v]) => ({ participantId, amountCents: toCents(v) })),
       };
     }
     return {
       type: 'PERCENTAGE' as const,
       shares: Object.entries(percentShares)
-        .filter(([, v]) => parseFloat(v) > 0)
-        .map(([participantId, v]) => ({ participantId, percentage: parseFloat(v) })),
+        .filter(([, v]) => (toNumber(v) ?? 0) > 0)
+        .map(([participantId, v]) => ({ participantId, percentage: toNumber(v)! })),
     };
   }
 
@@ -167,29 +141,25 @@ function ExpenseFormBody({ groupId, group, expenseId, expense }: FormProps) {
     e.preventDefault();
     setFormError(null);
 
-    const amountCents = parseCents(amountInput);
+    const amountCents = toCents(amountInput);
     if (amountCents <= 0) {
       setFormError('El monto tiene que ser mayor a cero');
       return;
     }
 
-    const exchangeRateValue =
-      currency === base
-        ? undefined
-        : keepCurrency
-          ? undefined
-          : displayRate
-            ? parseFloat(displayRate)
-            : undefined;
+    if (rate.missingRateError) {
+      setFormError(rate.missingRateError);
+      return;
+    }
 
     const common = {
       description,
       category,
-      date: new Date(dateInput + 'T12:00:00'),
+      date: dayToDate(dateInput),
       amountCents,
       currency,
-      exchangeRate: exchangeRateValue ?? null,
-      keepCurrency,
+      exchangeRate: rate.exchangeRate,
+      keepCurrency: currency !== base && rate.keepCurrency,
       paidById,
       split: buildSplit(),
     };
@@ -204,9 +174,19 @@ function ExpenseFormBody({ groupId, group, expenseId, expense }: FormProps) {
   const isSaving = create.isPending || update.isPending;
 
   // Amount sums for live feedback
-  const amountSumCents = Object.values(amountShares).reduce((s, v) => s + parseCents(v), 0);
-  const percentSum = Object.values(percentShares).reduce((s, v) => s + (parseFloat(v) || 0), 0);
-  const totalCents = parseCents(amountInput);
+  const amountSumCents = Object.values(amountShares).reduce((s, v) => s + toCents(v), 0);
+  const percentSum = Object.values(percentShares).reduce((s, v) => s + (toNumber(v) ?? 0), 0);
+  const totalCents = toCents(amountInput);
+  // Same split as the API (leftover cents to the first ones, in the group's order).
+  const equalIdsInOrder = allIds.filter((id) => equalIds.includes(id));
+  const equalShares = new Map(
+    totalCents > 0 && equalIdsInOrder.length > 0
+      ? distributeCents(
+          totalCents,
+          equalIdsInOrder.map(() => 1),
+        ).map((cents, i) => [equalIdsInOrder[i]!, cents])
+      : [],
+  );
 
   return (
     <main className="mx-auto min-h-dvh max-w-md p-6 pb-12">
@@ -223,13 +203,12 @@ function ExpenseFormBody({ groupId, group, expenseId, expense }: FormProps) {
           <label className="block text-sm font-medium text-neutral-400" htmlFor="amount">
             Monto
           </label>
-          <input
+          <NumberInput
             id="amount"
             value={amountInput}
-            onChange={(e) => setAmountInput(e.target.value)}
+            onValueChange={setAmountInput}
             required
-            inputMode="decimal"
-            placeholder="0.00"
+            placeholder="0"
             className="mt-1 w-full rounded-lg border border-neutral-700 bg-neutral-900 px-3 py-2 text-base text-white placeholder:text-neutral-600 focus:outline-none focus:ring-2 focus:ring-neutral-600"
           />
         </div>
@@ -315,9 +294,7 @@ function ExpenseFormBody({ groupId, group, expenseId, expense }: FormProps) {
             onChange={(e) => {
               const c = e.target.value as Currency;
               setCurrency(c);
-              setKeepCurrency(false);
-              setRateSource(defaultRateSource(base, c));
-              setManualRate('');
+              rate.resetFor(c);
             }}
             className="mt-1 w-full rounded-lg border border-neutral-700 bg-neutral-900 px-3 py-2 text-base text-white focus:outline-none focus:ring-2 focus:ring-neutral-600"
           >
@@ -329,114 +306,7 @@ function ExpenseFormBody({ groupId, group, expenseId, expense }: FormProps) {
           </select>
         </div>
 
-        {/* Tipo de cambio (si la moneda no es la base) */}
-        {currency !== base && (
-          <div className="space-y-3 rounded-2xl bg-neutral-900 p-4">
-            <div className="flex gap-2">
-              <button
-                type="button"
-                onClick={() => setKeepCurrency(false)}
-                className={`flex-1 rounded-lg py-2 text-sm font-medium ${!keepCurrency ? 'bg-white text-black' : 'border border-neutral-700 text-neutral-400'}`}
-              >
-                Convertir a {base}
-              </button>
-              <button
-                type="button"
-                onClick={() => setKeepCurrency(true)}
-                className={`flex-1 rounded-lg py-2 text-sm font-medium ${keepCurrency ? 'bg-white text-black' : 'border border-neutral-700 text-neutral-400'}`}
-              >
-                Mantener en {currency}
-              </button>
-            </div>
-
-            {!keepCurrency && (
-              <>
-                {/* Selector de fuente del tipo de cambio */}
-                {canAutoSuggest(base, currency) && (
-                  <div className="flex gap-2">
-                    {currency === 'USD' || base === 'USD' ? (
-                      <>
-                        <button
-                          type="button"
-                          onClick={() => setRateSource('blue')}
-                          className={`rounded-lg px-3 py-1 text-xs ${rateSource === 'blue' ? 'bg-white text-black' : 'border border-neutral-700 text-neutral-400'}`}
-                        >
-                          Blue
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => setRateSource('oficial')}
-                          className={`rounded-lg px-3 py-1 text-xs ${rateSource === 'oficial' ? 'bg-white text-black' : 'border border-neutral-700 text-neutral-400'}`}
-                        >
-                          Oficial
-                        </button>
-                      </>
-                    ) : null}
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setRateSource('manual');
-                        setManualRate(displayRate);
-                      }}
-                      className={`rounded-lg px-3 py-1 text-xs ${rateSource === 'manual' ? 'bg-white text-black' : 'border border-neutral-700 text-neutral-400'}`}
-                    >
-                      A mano
-                    </button>
-                  </div>
-                )}
-
-                {/* Campo de tipo de cambio */}
-                <div>
-                  <label className="block text-xs text-neutral-500">
-                    1 {base === 'ARS' ? currency : base} ={' '}
-                    {rateQuery.isPending && rateSource !== 'manual' ? 'cargando…' : ''}
-                  </label>
-                  <div className="flex items-center gap-2">
-                    <input
-                      value={rateSource === 'manual' ? manualRate : displayRate}
-                      onChange={(e) => {
-                        if (rateSource === 'manual') setManualRate(e.target.value);
-                      }}
-                      readOnly={rateSource !== 'manual'}
-                      inputMode="decimal"
-                      placeholder="0.00"
-                      className="flex-1 rounded-lg border border-neutral-700 bg-neutral-800 px-3 py-2 text-base text-white placeholder:text-neutral-600 focus:outline-none focus:ring-2 focus:ring-neutral-600"
-                    />
-                    <span className="text-sm text-neutral-400">
-                      {base === 'ARS' ? base : 'ARS'}
-                    </span>
-                  </div>
-                  {displayRate && !keepCurrency && totalCents > 0 && (
-                    <p className="mt-1 text-xs text-neutral-400">
-                      ≈ {formatCents(Math.round(totalCents * parseFloat(displayRate)), base)}
-                    </p>
-                  )}
-                  {rateQuery.isError && (
-                    <p className="mt-1 text-xs text-red-400">
-                      No se pudo cargar la cotización. Usá &quot;A mano&quot;.
-                    </p>
-                  )}
-                </div>
-              </>
-            )}
-
-            {!canAutoSuggest(base, currency) && !keepCurrency && (
-              <div>
-                <label className="block text-xs text-neutral-500">
-                  Tipo de cambio (1 {currency} en {base})
-                </label>
-                <input
-                  value={manualRate}
-                  onChange={(e) => setManualRate(e.target.value)}
-                  required
-                  inputMode="decimal"
-                  placeholder="0.00"
-                  className="mt-1 w-full rounded-lg border border-neutral-700 bg-neutral-800 px-3 py-2 text-base text-white placeholder:text-neutral-600 focus:outline-none focus:ring-2 focus:ring-neutral-600"
-                />
-              </div>
-            )}
-          </div>
-        )}
+        <ExchangeRateFields rate={rate} amountCents={totalCents} />
 
         {/* División */}
         <div>
@@ -473,9 +343,9 @@ function ExpenseFormBody({ groupId, group, expenseId, expense }: FormProps) {
                     {p.name}
                     {p.isMe ? ' (yo)' : ''}
                   </span>
-                  {equalIds.includes(p.id) && totalCents > 0 && equalIds.length > 0 && (
+                  {equalShares.has(p.id) && (
                     <span className="ml-auto text-xs text-neutral-400">
-                      {formatCents(Math.round(totalCents / equalIds.length), currency)}
+                      {formatCents(equalShares.get(p.id)!, currency)}
                     </span>
                   )}
                 </label>
@@ -491,11 +361,11 @@ function ExpenseFormBody({ groupId, group, expenseId, expense }: FormProps) {
                     {p.name}
                     {p.isMe ? ' (yo)' : ''}
                   </span>
-                  <input
+                  <NumberInput
+                    aria-label={`Monto de ${p.name}`}
                     value={amountShares[p.id] ?? ''}
-                    onChange={(e) => setAmountShares({ ...amountShares, [p.id]: e.target.value })}
-                    inputMode="decimal"
-                    placeholder="0.00"
+                    onValueChange={(v) => setAmountShares({ ...amountShares, [p.id]: v })}
+                    placeholder="0"
                     className="w-24 rounded-lg border border-neutral-700 bg-neutral-900 px-2 py-1 text-right text-sm text-white placeholder:text-neutral-600 focus:outline-none focus:ring-2 focus:ring-neutral-600"
                   />
                 </div>
@@ -519,12 +389,10 @@ function ExpenseFormBody({ groupId, group, expenseId, expense }: FormProps) {
                     {p.isMe ? ' (yo)' : ''}
                   </span>
                   <div className="flex items-center gap-1">
-                    <input
+                    <NumberInput
+                      aria-label={`Porcentaje de ${p.name}`}
                       value={percentShares[p.id] ?? ''}
-                      onChange={(e) =>
-                        setPercentShares({ ...percentShares, [p.id]: e.target.value })
-                      }
-                      inputMode="decimal"
+                      onValueChange={(v) => setPercentShares({ ...percentShares, [p.id]: v })}
                       placeholder="0"
                       className="w-20 rounded-lg border border-neutral-700 bg-neutral-900 px-2 py-1 text-right text-sm text-white placeholder:text-neutral-600 focus:outline-none focus:ring-2 focus:ring-neutral-600"
                     />
@@ -535,9 +403,9 @@ function ExpenseFormBody({ groupId, group, expenseId, expense }: FormProps) {
               <p
                 className={`text-xs ${Math.abs(percentSum - 100) < 0.01 ? 'text-green-400' : 'text-neutral-400'}`}
               >
-                Total: {percentSum.toFixed(1)}% / 100%
+                Total: {formatNumber(percentSum, 2)}% / 100%
                 {Math.abs(percentSum - 100) >= 0.01 &&
-                  ` (faltan ${(100 - percentSum).toFixed(1)}%)`}
+                  ` (faltan ${formatNumber(100 - percentSum, 2)}%)`}
               </p>
             </div>
           )}

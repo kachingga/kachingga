@@ -89,3 +89,22 @@ export type SettlementInput = z.input<typeof settlementInput>
 export type ExpenseFilters = z.infer<typeof expenseFilters>
 export type SplitInput = z.infer<typeof splitInput>
 export type RateSource = z.infer<typeof rateSource>
+
+// Shared with the app so its previews match what gets stored ("Redondeo" in the root CLAUDE.md).
+// Spreads `total` across `weights` proportionally, in whole cents, always adding up to `total`.
+// Leftover cents go to the largest fractional remainders (ties: input order).
+export function distributeCents(total: number, weights: number[]): number[] {
+  const weightSum = weights.reduce((a, b) => a + b, 0)
+  const exact = weights.map((w) => (total * w) / weightSum)
+  const floors = exact.map(Math.floor)
+  let leftover = total - floors.reduce((a, b) => a + b, 0)
+  const order = exact
+    .map((value, index) => ({ index, remainder: value - floors[index]! }))
+    .sort((a, b) => b.remainder - a.remainder || a.index - b.index)
+  for (const { index } of order) {
+    if (leftover === 0) break
+    floors[index]! += 1
+    leftover -= 1
+  }
+  return floors
+}
