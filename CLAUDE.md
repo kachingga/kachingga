@@ -376,6 +376,7 @@ gh pr create --fill                            # título = Conventional Commit (
 | **Propuesta o mejora todavía no decidida** (ej. Claude ve algo que se podría hacer mejor en lo que está haciendo otro del grupo) | Issue con label **`question`**: el problema, 2–3 opciones con sus tradeoffs y una recomendación. Sin milestone hasta decidir |
 | **Decisión pendiente** que bloquea algo (ej. "¿registro abierto o a mano?") | Issue `question`, en el milestone de la fase que bloquea |
 | Algo que **depende de otro issue o de algo externo** (presupuesto, una cuenta) | Label **`blocked`** + "**Bloqueado por:** #N" (o el motivo) en el cuerpo |
+| Algo que **solo aplica a la app nativa** (Expo, EAS, stores) | Label **`app-nativa`**: no se hace mientras el front sea la web (quizás nunca, ver #20). Sin milestone |
 | Algo que hace falta para **lanzar** | Milestone **"Fase 1 — Privada"** (que el grupo la use) o **"Fase 2 — Pública (futuro)"**. Contexto de las fases: `docs/decisiones/lanzamiento.md` |
 | **Ítem chico de UI de la V1** (un detalle de una pantalla) | Checklist de `V1.md` → "Trabajo de la UI (web)" → "Por hacer". Si es grande o independiente: issue propio, linkeado desde ahí (ej. #18) |
 | Alcance de una versión (qué entra) | `V1.md` / `V2.md`, no un issue |
