@@ -4,7 +4,7 @@
 
 **Front principal de Kachingga**: web app **mobile-first** (se usa en el celu, también en la compu), instalable desde el navegador ("Agregar a inicio").
 
-**Stack:** React 19 + TypeScript (`strict`) · Vite · Tailwind CSS v4 · shadcn/ui · React Router v8 (`createBrowserRouter` en `src/router.tsx`) · tRPC + TanStack Query (`src/lib/trpc.ts`) · Supabase Auth solo para login · Vitest + Testing Library + Playwright · Vercel (estático; la API va aparte, en Railway).
+**Stack:** React 19 + TypeScript (`strict`) · Vite · Tailwind CSS v4 · shadcn/ui · React Router v8 (`createBrowserRouter` en `src/router.tsx`) · tRPC + TanStack Query (`src/lib/trpc.ts`) · Supabase Auth solo para login · Vitest + Testing Library + Playwright · Railway (estático, con `server.ts`; la API es otro servicio).
 
 ## Antes de tocar… → leé (y actualizalo si cambiás cómo funciona)
 
@@ -100,7 +100,7 @@ e2e/                          # Playwright
 - **TypeScript `~6.0.3`** y React **19.3.0 exacto** (las mismas versiones que mobile): con `node_modules` compartido, versiones distintas de React rompen todo.
 - `tsconfig.app.json` sin `baseUrl` (TS 6 lo rechaza); el alias `@/` está en `paths`, en `vite.config.ts` y en `tsconfig.json` (para el CLI de shadcn).
 - La web typechequea archivos de la API (vía `AppRouter`): si la API importa algo que acá no resuelve, se rompe el typecheck de la web.
-- Deploy: Vercel (estático), ver `DEPLOY.md`. La API tiene que permitir la URL de Vercel en `CORS_ORIGINS`.
+- Deploy: servicio `web` en Railway (`railway.json`): buildea con Vite y `server.ts` sirve `dist` (rutas → `index.html`, cache largo en `/assets/*`). Las `VITE_*` se leen **al buildear**: cambiarlas en Railway requiere un deploy nuevo. La API de cada entorno tiene que permitir la URL de su web en `CORS_ORIGINS`. Ver `DEPLOY.md`.
 
 ## Conflictos (web)
 

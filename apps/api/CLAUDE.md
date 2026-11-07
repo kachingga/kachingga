@@ -53,8 +53,8 @@ bun run db:seed                  # datos de prueba en DEV
 ### Migraciones — reglas
 - Nunca correr `prisma db push`, `prisma migrate reset`, `prisma migrate dev` ni `prisma db execute` contra la base. No existe `db:migrate:dev` a propósito (puede pedir resetear la base).
 - Nunca tocar a mano la tabla `_prisma_migrations` ni el schema desde el SQL editor de Supabase.
-- **Dos bases:** `kachingga-dev` (`.env`) para todo lo local y `kachingga` (`.env.prod`) para producción. Todo comando de DB sin `:prod` va contra **dev**.
-- Flujo: cambiar `src/db/models/*.prisma` → `db:migrate:new <nombre>` → **revisar el SQL** → `db:migrate:deploy` (dev) → probar → `db:migrate:prod` → push (ver `DEPLOY.md`).
+- **Dos bases:** `kachingga-dev` (`.env`) para todo lo local **y para staging**, y `kachingga` (`.env.prod`) para producción. Todo comando de DB sin `:prod` va contra **dev**.
+- Flujo: cambiar `src/db/models/*.prisma` → `db:migrate:new <nombre>` → **revisar el SQL** → `db:migrate:deploy` (dev, que es también staging) → probar → mergear (deploya a staging) → `db:migrate:prod` → promover a producción (ver `DEPLOY.md`).
 - **Nunca correr `db:migrate:prod` sin que la migración esté probada en dev**, y nunca sin que el usuario lo pida explícitamente.
 - Toda tabla nueva lleva `ENABLE ROW LEVEL SECURITY` (lo agrega `db:migrate:new`; si escribís SQL a mano, agregalo vos).
 - Nunca editar ni borrar una migración que ya está en `main`.

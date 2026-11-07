@@ -4,38 +4,34 @@
 
 | Servicio | Proveedor | Cómo se deploya |
 |----------|-----------|-----------------|
-| API | Railway | Auto-deploy en push a `main` |
-| **Web (front principal)** | Vercel | Auto-deploy en push a `main`; preview por cada PR |
+| API y web — **staging** | Railway, entorno `staging` | Automático en cada merge a `main` (espera el CI) |
+| API y web — **prod** | Railway, entorno `production` | Desde la branch `production`, con el workflow "Promover a producción" |
 | App mobile (binario, alternativa nativa) | EAS Build | Manual, solo cuando cambia código nativo |
 | App mobile (JS, alternativa nativa) | EAS Update | En cada push a `main` (OTA) |
+
+URLs, variables y bases de cada entorno: `INFRA.md`.
 
 ---
 
 ## Setup inicial (una vez)
 
-### 1. Railway — API
+### 1. Railway — proyecto, entornos y servicios
 
-1. [railway.app](https://railway.app) → New Project → Deploy from GitHub repo → `kachingga/kachingga`
-2. **Root Directory:** vacío (raíz del repo) — así Railway usa el `bun.lock` del monorepo
-3. **Start Command:** `bun run --cwd apps/api start` (el `bun install` ya corre `prisma generate` por el postinstall)
-4. **Watch Paths:** `apps/api/**` y `bun.lock` — para no redeployar la API por cambios solo de la app
-5. **Healthcheck Path:** `/health`
-   - **Verificar el límite de pedidos por IP:** la API toma la IP del **último** valor de `X-Forwarded-For`. En el primer deploy, confirmar que Railway lo setea así (ej. loguear temporalmente el header en un pedido y comparar con tu IP pública). Si no, ajustar `clientIp` en `apps/api/src/lib/rateLimit.ts`.
-6. Agregar las variables de entorno (ver `INFRA.md`), incluida `CORS_ORIGINS` con la URL de Vercel (se completa después del paso 2)
-7. Deploy y copiar el dominio a `INFRA.md`
+1. Proyecto `kachingga` en Railway (cuenta de Galo, plan Hobby) con dos entornos: **`production`** y **`staging`**.
+2. Dos servicios conectados a `kachingga/kachingga`, **`api`** y **`web`**. En cada uno:
+   - **Root Directory:** vacío (raíz del repo), así se usa el `bun.lock` del monorepo (la web necesita los tipos de la API y el cliente de Prisma generado).
+   - **Config file path:** `apps/api/railway.json` o `apps/web/railway.json`. Ahí está el resto (build, arranque, watch paths, healthcheck): cambiarlo en el archivo, no en el dashboard.
+   - **Branch:** `main` en `staging`, `production` en `production`, con **"Wait for CI"** activado.
+3. **Variables** de cada servicio y entorno: `INFRA.md` → "Variables de entorno". Staging usa la base `kachingga-dev` (valores de `apps/api/.env` / `apps/web/.env`, salvo las URLs); prod, la base `kachingga` (`apps/api/.env.prod`). En la API, `NODE_ENV=production` en los dos.
+4. **Dominios:** en cada servicio y entorno, *Settings → Networking → Custom Domain* (`kachingga.com`, `api.kachingga.com`, `staging.kachingga.com`, `api-staging.kachingga.com`). Railway da un CNAME por dominio: cargarlo en Cloudflare → DNS en modo **"DNS only"** (nube gris), así Railway emite el certificado.
+5. **URLs de auth en Supabase** (Site URL y Redirect URLs de cada base): `INFRA.md` → "Supabase".
+6. **Verificar el límite de pedidos por IP:** la API toma la IP del **último** valor de `X-Forwarded-For`. En el primer deploy, confirmar que Railway lo setea así (ej. loguear temporalmente el header en un pedido y comparar con tu IP pública). Si no, ajustar `clientIp` en `apps/api/src/lib/rateLimit.ts`.
+7. **Branch `production`** creada desde `main`, con protección contra force-push y borrado.
+8. Comprobar: `GET /health` de cada API responde, y en cada web se puede registrar, loguear y cargar un gasto.
 
-### 2. Vercel — Web
+> La web se sirve con `apps/web/server.ts` (Bun): archivos de `apps/web/dist`, todas las rutas a `index.html` (las resuelve React Router) y cache largo en `/assets/*` (tienen hash en el nombre). Las `VITE_*` se leen al buildear: si se cambian en Railway, hay que redeployar `web`.
 
-> Todavía no se deployó nunca: el `vercel.json` está armado pero sin probar contra Vercel. Verificarlo en el primer deploy.
-
-1. [vercel.com](https://vercel.com) → Add New → Project → importar `kachingga/kachingga`.
-2. **Root Directory:** vacío (raíz del repo). Toma la configuración del `vercel.json` de la raíz: instala el monorepo con Bun (la web necesita los tipos de la API y el cliente de Prisma generado), buildea `apps/web` y sirve `apps/web/dist`, mandando todas las rutas a `index.html` (las resuelve React Router).
-3. **Variables de entorno** (Production): `VITE_API_URL` (URL de Railway), `VITE_SUPABASE_URL` y `VITE_SUPABASE_PUBLISHABLE_KEY` **de prod** (ver `INFRA.md`).
-4. Deploy y copiar el dominio a `INFRA.md`.
-5. En Railway, poner ese dominio en `CORS_ORIGINS` (si no, el navegador bloquea los pedidos a la API).
-6. En cada PR, Vercel publica un *preview* con su propia URL: para que funcione contra la API habría que sumarla a `CORS_ORIGINS` (o no usar los previews contra prod).
-
-### 3. EAS — App mobile (solo si se hace la app nativa)
+### 2. EAS — App mobile (solo si se hace la app nativa)
 
 ✅ Hecho: proyecto vinculado a la org `kachingga` en expo.dev, `eas.json` creado y EAS Update configurado (`expo-updates`, `runtimeVersion` con política `fingerprint`).
 
@@ -55,7 +51,7 @@ Perfiles de `eas.json`:
 
 > `runtimeVersion` usa la política `fingerprint`: EAS calcula un hash del código nativo. Si cambia (librería nativa nueva, plugin, SDK), los builds viejos dejan de recibir updates y hay que hacer un build nuevo.
 
-### 4. Instalar la app nativa en cada teléfono (solo si se hace la app nativa)
+### 3. Instalar la app nativa en cada teléfono (solo si se hace la app nativa)
 
 Contexto en `docs/decisiones/lanzamiento.md` → "Fase 1" (issues #12 y #6). **Los builds solo se lanzan cuando alguien lo pide explícitamente.**
 
@@ -80,34 +76,36 @@ Después, en App Store Connect → la app → TestFlight → *Internal Testing*:
 
 ## Deploys habituales
 
-### Cambios en la API (sin cambios de schema)
+### Staging — automático
 
-Push a `main` → Railway deploya solo.
+Mergear un PR a `main` → Railway espera el CI y deploya en **staging** solo lo que cambió (watch paths de cada `railway.json`). Se prueba en `https://staging.kachingga.com`.
 
-### Cambios en la API (con cambios de schema)
+### Pasar a prod — "Promover a producción"
 
-**Siempre migrar prod antes de pushear el código nuevo.** El código nuevo espera el schema nuevo.
+1. Probar en staging.
+2. Si hay **migraciones nuevas**: `bun run --cwd apps/api db:migrate:prod` (prod antes que el código nuevo: el código espera el schema nuevo).
+3. GitHub → Actions → **"Promover a producción"** → *Run workflow* (o `gh workflow run promote.yml`). Hace avanzar `production` hasta `main` (solo fast-forward: nunca reescribe historia) y Railway deploya prod.
+4. Comprobar `https://api.kachingga.com/health` y abrir `https://kachingga.com`. Todos ven la versión nueva al recargar (o al volver a abrir la app desde la pantalla de inicio).
+
+### Cambios de schema
 
 1. Cambiar el schema (`apps/api/src/db/models/*.prisma`) y generar la migración contra **dev**:
    ```bash
    cd apps/api
    bun run db:migrate:new <nombre>   # genera el SQL sin tocar la base
    ```
-2. Revisar el SQL, aplicarlo en **dev** y probar:
+2. Revisar el SQL, aplicarlo en **dev** (que es también la base de staging) y probar:
    ```bash
-   bun run db:migrate:deploy         # dev (.env)
+   bun run db:migrate:deploy         # dev / staging (.env)
    ```
-3. Aplicarlo en **prod**:
+   Hacerlo **antes de mergear** el PR que la usa, así staging arranca con el schema nuevo.
+3. Mergear → staging.
+4. Antes de promover: aplicarla en **prod** y recién ahí "Promover a producción":
    ```bash
    bun run db:migrate:prod           # prod (.env.prod)
    ```
-4. Pushear a `main` → Railway deploya el código nuevo con el schema ya actualizado
 
-Nunca usar `prisma migrate reset` ni `prisma db push` contra prod.
-
-### Cambios en la web — automático
-
-Mergear a `main` → Vercel deploya solo. Todos ven la versión nueva al recargar (o al volver a abrir la app desde la pantalla de inicio).
+Nunca usar `prisma migrate reset` ni `prisma db push` contra ninguna base.
 
 ### Cambios en la app nativa (solo JS/TS/assets) — automático
 
@@ -129,8 +127,8 @@ Si se agrega una librería nativa, se cambia `app.json`/plugins o se sube el SDK
 
 Recién tiene sentido cuando haya algo que reciba los updates. En orden:
 
-1. **API en Railway** deployada (ver "Setup inicial" → Railway) y su URL en `INFRA.md`.
-2. **Variables de prod en EAS**, entorno `production` (las usan el build `preview` y los updates): `EXPO_PUBLIC_API_URL` (URL de Railway), `EXPO_PUBLIC_SUPABASE_URL` y `EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY` de prod (valores en `apps/mobile/.env.prod`). Desde expo.dev → proyecto → Environment variables, o `bunx eas-cli env:create --environment production`.
+1. **API en Railway** deployada (ver "Setup inicial" → Railway).
+2. **Variables de prod en EAS**, entorno `production` (las usan el build `preview` y los updates): `EXPO_PUBLIC_API_URL` (`https://api.kachingga.com`), `EXPO_PUBLIC_SUPABASE_URL` y `EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY` de prod (valores en `apps/mobile/.env.prod`). Desde expo.dev → proyecto → Environment variables, o `bunx eas-cli env:create --environment production`.
 3. **Primer build `preview`** instalado en los teléfonos (solo cuando alguien lo pida).
 4. **Token:** expo.dev → org `kachingga` → Settings → Access tokens (idealmente de un *robot user*) → guardarlo como secret de GitHub: `gh secret set EXPO_TOKEN --repo kachingga/kachingga`.
 5. Probar con Actions → "EAS Update" → *Run workflow*, y después cerrar el issue #6.
@@ -139,6 +137,6 @@ Recién tiene sentido cuando haya algo que reciba los updates. En orden:
 
 ## Rollback
 
-- **API:** Railway guarda el historial — rollback desde el dashboard.
+- **API y web:** Railway guarda el historial de cada servicio y entorno — *Redeploy* de un deploy anterior desde el dashboard. Si el problema ya está en `main`, revertirlo con un PR (`revert`) y volver a promover.
 - **App (OTA):** `bunx eas-cli update:republish` de un update anterior, o `eas update:rollback`.
 - **Base de datos:** las migraciones son append-only. Si una rompe algo, se arregla con otra migración.

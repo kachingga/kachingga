@@ -1,0 +1,12 @@
+{
+  "$schema": "https://railway.com/railway.schema.json",
+  "build": {
+    "builder": "RAILPACK",
+    "watchPatterns": ["apps/api/**", "bun.lock", "package.json"]
+  },
+  "deploy": {
+    "startCommand": "bun run --cwd apps/api start",
+    "healthcheckPath": "/health",
+    "restartPolicyType": "ON_FAILURE"
+  }
+}

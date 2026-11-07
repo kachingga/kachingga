@@ -35,7 +35,7 @@ El agente explica cómo se llegó a cada saldo, desglosando los gastos que lo co
 
 | Capa | Tecnología |
 |------|------------|
-| Web (front principal) | React + Vite + Tailwind, mobile-first, en Vercel |
+| Web (front principal) | React + Vite + Tailwind, mobile-first, en Railway |
 | Mobile (alternativa nativa) | React Native (Expo) |
 | Backend | TypeScript con Hono y Bun, hosteado en Railway |
 | API | tRPC (tipado de punta a punta entre app y backend) |
@@ -50,9 +50,8 @@ El agente explica cómo se llegó a cada saldo, desglosando los gastos que lo co
 Pedir invitación a:
 - Org de GitHub `kachingga`
 - Org de Supabase `kachingga` (proyectos `kachingga-dev` para desarrollo y `kachingga` para producción)
-- Proyecto de Railway
+- Proyecto de Railway `kachingga` (opcional: hoy lo maneja Galo)
 - Org de Expo `kachingga` (solo si se trabaja en la app nativa)
-- Proyecto de Vercel (cuando se deploye la web)
 
 ### 2. Herramientas
 

@@ -28,6 +28,6 @@ export default defineConfig({
       VITE_SUPABASE_URL: 'https://test.supabase.co',
       VITE_SUPABASE_PUBLISHABLE_KEY: 'sb_publishable_test',
     },
-    include: ['src/**/*.test.{ts,tsx}'],
+    include: ['src/**/*.test.{ts,tsx}', 'server.test.ts'],
   },
 });
