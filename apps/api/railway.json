@@ -7,6 +7,11 @@
   "deploy": {
     "startCommand": "bun run --cwd apps/api start",
     "healthcheckPath": "/health",
-    "restartPolicyType": "ON_FAILURE"
+    "restartPolicyType": "ON_FAILURE",
+    "multiRegionConfig": {
+      "us-east4-eqdc4a": {
+        "numReplicas": 1
+      }
+    }
   }
 }

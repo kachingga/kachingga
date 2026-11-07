@@ -8,6 +8,11 @@
   "deploy": {
     "startCommand": "bun apps/web/server.ts",
     "healthcheckPath": "/",
-    "restartPolicyType": "ON_FAILURE"
+    "restartPolicyType": "ON_FAILURE",
+    "multiRegionConfig": {
+      "us-east4-eqdc4a": {
+        "numReplicas": 1
+      }
+    }
   }
 }
