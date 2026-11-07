@@ -20,7 +20,17 @@ URLs, variables y bases de cada entorno: `INFRA.md`.
 1. Proyecto `kachingga` en Railway (cuenta de Galo, plan Hobby) con dos entornos: **`production`** y **`staging`**.
 2. Dos servicios conectados a `kachingga/kachingga`, **`api`** y **`web`**. En cada uno:
    - **Root Directory:** vacío (raíz del repo), así se usa el `bun.lock` del monorepo (la web necesita los tipos de la API y el cliente de Prisma generado).
-   - **Config file path:** `apps/api/railway.json` o `apps/web/railway.json`. Ahí está el resto (build, arranque, watch paths, healthcheck y región: US East, cerca de la base de Supabase): cambiarlo en el archivo, no en el dashboard.
+   - **Settings** (iguales en los dos entornos; región **US East**, cerca de la base de Supabase; restart *On failure*):
+
+     | | `api` | `web` |
+     |---|---|---|
+     | Build command | — (el `bun install` ya genera Prisma) | `bun run --cwd apps/web build` |
+     | Start command | `bun run --cwd apps/api start` | `bun apps/web/server.ts` |
+     | Healthcheck | `/health` | `/` |
+     | Watch paths | `apps/api/**`, `bun.lock`, `package.json` | `apps/web/**`, `apps/api/src/**`, `bun.lock`, `package.json` |
+
+     > Están en el dashboard, no en el repo: Railway deprecó los `railway.json` (*Config as Code*) y no los acepta en servicios nuevos. Su reemplazo es `.railway/railway.ts` (*Infrastructure as Code*); si algún día se quiere la config en el repo, es por ahí.
+   - **GitHub:** la app de Railway instalada en la org `kachingga` con acceso al repo (si no, Railway no puede deployar solo en cada push).
    - **Branch:** `main` en `staging`, `production` en `production`, con **"Wait for CI"** activado.
 3. **Variables** de cada servicio y entorno: `INFRA.md` → "Variables de entorno". Staging usa la base `kachingga-dev` (valores de `apps/api/.env` / `apps/web/.env`, salvo las URLs); prod, la base `kachingga` (`apps/api/.env.prod`). En la API, `NODE_ENV=production` en los dos.
 4. **Dominios:** en cada servicio y entorno, *Settings → Networking → Custom Domain* (`kachingga.com`, `api.kachingga.com`, `staging.kachingga.com`, `api-staging.kachingga.com`). Railway da un CNAME por dominio: cargarlo en Cloudflare → DNS en modo **"DNS only"** (nube gris), así Railway emite el certificado.
@@ -78,7 +88,7 @@ Después, en App Store Connect → la app → TestFlight → *Internal Testing*:
 
 ### Staging — automático
 
-Mergear un PR a `main` → Railway espera el CI y deploya en **staging** solo lo que cambió (watch paths de cada `railway.json`). Se prueba en `https://staging.kachingga.com`.
+Mergear un PR a `main` → Railway espera el CI y deploya en **staging** solo lo que cambió (watch paths de cada servicio). Se prueba en `https://staging.kachingga.com`.
 
 ### Pasar a prod — "Promover a producción"
 
