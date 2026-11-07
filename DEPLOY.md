@@ -31,6 +31,8 @@ URLs, variables y bases de cada entorno: `INFRA.md`.
 
      > Están en el dashboard, no en el repo: Railway deprecó los `railway.json` (*Config as Code*) y no los acepta en servicios nuevos. Su reemplazo es `.railway/railway.ts` (*Infrastructure as Code*); si algún día se quiere la config en el repo, es por ahí.
    - **GitHub:** la app de Railway instalada en la org `kachingga` con acceso al repo (si no, Railway no puede deployar solo en cada push).
+   - **Ojo al conectar el repo a un servicio:** Railway crea el trigger de deploy en **todos** los entornos, también `production`, con la branch que hayas elegido. Después revisar en cada entorno que la branch sea la correcta (`main` en staging, `production` en prod) y que "Wait for CI" esté activado.
+   - **Versión de Bun:** Railway (Railpack) usa la última que encuentra (hoy 1.4.x); el CI usa la fijada en `.github/workflows/ci.yml` (1.3.12). Si algo anda en el CI y no en Railway (o al revés), empezar por ahí.
    - **Branch:** `main` en `staging`, `production` en `production`, con **"Wait for CI"** activado.
 3. **Variables** de cada servicio y entorno: `INFRA.md` → "Variables de entorno". Staging usa la base `staging-kachingga` (valores de `apps/api/.env` / `apps/web/.env`, salvo las URLs); prod, la base `kachingga` (`apps/api/.env.prod`). En la API, `NODE_ENV=production` en los dos.
 4. **Dominios:** en cada servicio y entorno, *Settings → Networking → Custom Domain* (`kachingga.com`, `api.kachingga.com`, `staging.kachingga.com`, `api-staging.kachingga.com`). Railway da un CNAME por dominio: cargarlo en Cloudflare → DNS en modo **"DNS only"** (nube gris), así Railway emite el certificado.
