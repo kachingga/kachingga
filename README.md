@@ -49,7 +49,7 @@ El agente explica cómo se llegó a cada saldo, desglosando los gastos que lo co
 
 Pedir invitación a:
 - Org de GitHub `kachingga`
-- Org de Supabase `kachingga` (proyectos `kachingga-dev` para desarrollo y `kachingga` para producción)
+- Org de Supabase `kachingga` (proyectos `staging-kachingga` para desarrollo y `kachingga` para producción)
 - Proyecto de Railway `kachingga` (opcional: hoy lo maneja Galo)
 - Org de Expo `kachingga` (solo si se trabaja en la app nativa)
 
@@ -76,7 +76,7 @@ Solo si vas a tocar la app nativa: `cd apps/mobile && bunx eas-cli login` (una v
 
 ### 4. Armar los `.env` (dev)
 
-Para desarrollar solo hacen falta los de **dev** (proyecto `kachingga-dev`). El `.env.prod` lo necesita únicamente quien vaya a migrar producción.
+Para desarrollar solo hacen falta los de **dev** (proyecto `staging-kachingga`). El `.env.prod` lo necesita únicamente quien vaya a migrar producción.
 
 ```bash
 cp apps/api/.env.sample apps/api/.env
@@ -89,9 +89,9 @@ Los samples ya traen el ref, el host y las URLs de dev. Solo hay que completar:
 | Variable | Archivo | De dónde sale |
 |----------|---------|---------------|
 | `<DB_PASSWORD>` (en `DATABASE_URL` y `DIRECT_URL`) | `apps/api/.env` | **Pedírsela a Galo** (por privado o gestor de contraseñas). Supabase **no la muestra** en el dashboard |
-| `SUPABASE_SECRET_KEY` | `apps/api/.env` | Supabase → `kachingga-dev` → Project Settings → API Keys → Secret key (o `supabase projects api-keys --project-ref nraoqdaplvvsakvtlcam --reveal`) |
+| `SUPABASE_SECRET_KEY` | `apps/api/.env` | Supabase → `staging-kachingga` → Project Settings → API Keys → Secret key (o `supabase projects api-keys --project-ref nraoqdaplvvsakvtlcam --reveal`) |
 | `SEED_USER_PASSWORD` | `apps/api/.env` | **Pedírsela a Galo**. Es la contraseña de los usuarios de prueba (`juan.demo@example.com`, etc.) |
-| `VITE_SUPABASE_PUBLISHABLE_KEY` (y `EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY` en mobile) | `apps/web/.env` (y `apps/mobile/.env`) | Supabase → `kachingga-dev` → Project Settings → API Keys → Publishable key |
+| `VITE_SUPABASE_PUBLISHABLE_KEY` (y `EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY` en mobile) | `apps/web/.env` (y `apps/mobile/.env`) | Supabase → `staging-kachingga` → Project Settings → API Keys → Publishable key |
 
 > ⚠️ **Nunca resetear la contraseña de la base** desde el dashboard: deja sin conexión a todos los demás (y, en prod, a Railway). Si se perdió, avisar al grupo antes.
 

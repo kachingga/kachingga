@@ -53,7 +53,7 @@ bun run db:seed                  # datos de prueba en DEV
 ### Migraciones — reglas
 - Nunca correr `prisma db push`, `prisma migrate reset`, `prisma migrate dev` ni `prisma db execute` contra la base. No existe `db:migrate:dev` a propósito (puede pedir resetear la base).
 - Nunca tocar a mano la tabla `_prisma_migrations` ni el schema desde el SQL editor de Supabase.
-- **Dos bases:** `kachingga-dev` (`.env`) para todo lo local **y para staging**, y `kachingga` (`.env.prod`) para producción. Todo comando de DB sin `:prod` va contra **dev**.
+- **Dos bases:** `staging-kachingga` (`.env`) para todo lo local **y para staging**, y `kachingga` (`.env.prod`) para producción. Todo comando de DB sin `:prod` va contra **dev**.
 - Flujo: cambiar `src/db/models/*.prisma` → `db:migrate:new <nombre>` → **revisar el SQL** → `db:migrate:deploy` (dev, que es también staging) → probar → mergear (deploya a staging) → `db:migrate:prod` → promover a producción (ver `DEPLOY.md`).
 - **Nunca correr `db:migrate:prod` sin que la migración esté probada en dev**, y nunca sin que el usuario lo pida explícitamente.
 - Toda tabla nueva lleva `ENABLE ROW LEVEL SECURITY` (lo agrega `db:migrate:new`; si escribís SQL a mano, agregalo vos).
@@ -62,7 +62,7 @@ bun run db:seed                  # datos de prueba en DEV
 
 ## Env
 
-- **`.env` → DEV** (`kachingga-dev`, ref `nraoqdaplvvsakvtlcam`): lo usan `bun run dev`, los scripts de DB y Prisma Studio.
+- **`.env` → DEV** (`staging-kachingga`, ref `nraoqdaplvvsakvtlcam`): lo usan `bun run dev`, los scripts de DB y Prisma Studio.
 - **`.env.prod` → PROD** (`kachingga`, ref `czrkjokurbmbbvobvmxd`): solo para `db:migrate:prod` y como referencia de las variables de Railway. `.env.prod` no lo carga nadie salvo `prisma.config.ts` cuando `PRISMA_ENV_FILE=.env.prod`.
 - Ambos gitignoreados; cada línea del `.env.sample` dice de dónde sale el valor. Bun carga `.env` solo. Variables: `DATABASE_URL` (transaction pooler, 6543), `DIRECT_URL` (session pooler, 5432, migraciones), `SUPABASE_URL`, `SUPABASE_SECRET_KEY`, `PORT`, `CORS_ORIGINS`, `SEED_USER_PASSWORD` (solo dev).
 
