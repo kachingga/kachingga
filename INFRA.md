@@ -8,7 +8,7 @@
 | **Web (front principal)** | Railway (proyecto `kachingga`, servicio `web`) | railway.com/dashboard | Prod `https://kachingga.com` · staging `https://staging.kachingga.com` |
 | Dominio y DNS | Cloudflare (Registrar + DNS) | dash.cloudflare.com | `kachingga.com`, con renovación automática |
 | Base de datos **PROD** | Supabase (`kachingga`) | supabase.com/dashboard/project/czrkjokurbmbbvobvmxd | `https://czrkjokurbmbbvobvmxd.supabase.co` (ref `czrkjokurbmbbvobvmxd`) |
-| Base de datos **DEV** | Supabase (`kachingga-dev`) | supabase.com/dashboard/project/nraoqdaplvvsakvtlcam | `https://nraoqdaplvvsakvtlcam.supabase.co` (ref `nraoqdaplvvsakvtlcam`) |
+| Base de datos **DEV** | Supabase (`staging-kachingga`) | supabase.com/dashboard/project/nraoqdaplvvsakvtlcam | `https://nraoqdaplvvsakvtlcam.supabase.co` (ref `nraoqdaplvvsakvtlcam`) |
 | Auth | Supabase Auth | supabase.com/dashboard → Authentication | — |
 | Builds mobile (alternativa nativa) | EAS (Expo) | expo.dev/accounts/kachingga/projects/kachingga | Org `kachingga`, project ID `49f7728b-7782-46e5-8a8a-491bb590bfe1` |
 | Updates OTA | EAS Update (canal `main`) | expo.dev | Automático al mergear a `main` (`.github/workflows/eas-update.yml`), inactivo hasta configurar `EXPO_TOKEN` |
@@ -24,8 +24,8 @@ Actualizar este archivo con los valores reales después de cada setup.
 
 | Entorno | Supabase | API | Web | Se deploya desde |
 |---------|----------|-----|-----|------------------|
-| **DEV** (local) | `kachingga-dev` (nraoqdaplvvsakvtlcam) | `bun run api` con `apps/api/.env` | `bun run web` con `apps/web/.env` | — |
-| **STAGING** | `kachingga-dev` (la misma que DEV) | Railway, entorno `staging` (variables = `apps/api/.env`, salvo `CORS_ORIGINS`) | Railway, entorno `staging` | `main`, en cada merge |
+| **DEV** (local) | `staging-kachingga` (nraoqdaplvvsakvtlcam) | `bun run api` con `apps/api/.env` | `bun run web` con `apps/web/.env` | — |
+| **STAGING** | `staging-kachingga` (la misma que DEV) | Railway, entorno `staging` (variables = `apps/api/.env`, salvo `CORS_ORIGINS`) | Railway, entorno `staging` | `main`, en cada merge |
 | **PROD** | `kachingga` (czrkjokurbmbbvobvmxd) | Railway, entorno `production` (variables = `apps/api/.env.prod`) | Railway, entorno `production` | branch `production` (workflow "Promover a producción") |
 
 - Cada base tiene **sus propios usuarios**: para probar en dev o staging hay que registrarse ahí (las cuentas de dev sirven en staging, no en prod).
@@ -34,7 +34,7 @@ Actualizar este archivo con los valores reales después de cada setup.
 
 ### Plan de Supabase
 - Hoy la org `kachingga` está en **Pro** (los dos proyectos se cobran por uso de cómputo).
-- Plan: pasar la org `dear-cred` a Pro y la org `kachingga` a **Free**. El límite gratis es de 2 proyectos activos por persona (sumando todas las orgs Free donde sos Owner/Admin), justo `kachingga` + `kachingga-dev`.
+- Plan: pasar la org `dear-cred` a Pro y la org `kachingga` a **Free**. El límite gratis es de 2 proyectos activos por persona (sumando todas las orgs Free donde sos Owner/Admin), justo `kachingga` + `staging-kachingga`.
 - En Free, un proyecto **se pausa solo tras ~1 semana sin uso**; se reactiva desde el dashboard. Si prod se pausa, la app deja de funcionar hasta reactivarlo.
 
 ## Variables de entorno
@@ -85,7 +85,7 @@ Mismas variables en los dos entornos, con los valores de su base (staging = `app
 ### Archivos locales (gitignoreados, nunca commitear)
 
 - `apps/api/.env` — variables de desarrollo de la API
-- `apps/api/.env` / `apps/web/.env` / `apps/mobile/.env` — **DEV** (`kachingga-dev`). Lo que usa todo lo local
+- `apps/api/.env` / `apps/web/.env` / `apps/mobile/.env` — **DEV** (`staging-kachingga`). Lo que usa todo lo local
 - `apps/api/.env.prod` / `apps/mobile/.env.prod` — **PROD** (`kachingga`). Solo para `db:migrate:prod` y como referencia de las variables de Railway y EAS
 - `apps/mobile/.env.local` — variables de desarrollo de la app
 
@@ -94,7 +94,7 @@ Mismas variables en los dos entornos, con los valores de su base (staging = `app
 ## Supabase
 
 - **Auth:** email + password. Habilitar el provider "Email" en Authentication → Providers. Decidir si se deja abierto el signup o se crean los usuarios a mano desde el dashboard.
-- **URLs de auth** (Authentication → URL Configuration), para que los links de los mails (confirmar, recuperar contraseña) vuelvan a la web correcta: en `kachingga`, *Site URL* `https://kachingga.com`; en `kachingga-dev`, *Site URL* `http://localhost:5173` y `https://staging.kachingga.com` en *Redirect URLs*.
+- **URLs de auth** (Authentication → URL Configuration), para que los links de los mails (confirmar, recuperar contraseña) vuelvan a la web correcta: en `kachingga`, *Site URL* `https://kachingga.com`; en `staging-kachingga`, *Site URL* `http://localhost:5173` y `https://staging.kachingga.com` en *Redirect URLs*.
 - **Base de datos:** el schema se maneja solo con migraciones de Prisma — nunca modificarlo a mano desde el SQL editor.
 - **Claves:** usar las claves nuevas (`sb_publishable_...` / `sb_secret_...`), no las JWT legacy (`anon` / `service_role`). Se ven en Project Settings → API Keys (o con `supabase projects api-keys --project-ref <ref> --reveal`; sin `--reveal` la secret sale enmascarada).
 - **Contraseñas de las bases:** Supabase solo las muestra al crear el proyecto; después **no se pueden ver**, solo resetear. Las tiene Galo y se pasan por privado / gestor de contraseñas. **Nunca resetearlas** sin avisar: rompe el `.env` de todos y, en prod, Railway.

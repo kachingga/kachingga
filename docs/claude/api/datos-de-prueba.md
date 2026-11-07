@@ -13,5 +13,5 @@
   - **Cumple de Román:** vacío.
 - **Correrlo de nuevo** borra los grupos donde participa algún usuario de prueba y los vuelve a crear. Las fechas son relativas a hoy (a las 12:00 UTC, como toda fecha de gasto), así que "este mes" siempre tiene datos. Si te uniste con tu cuenta a un grupo de prueba, eso también se borra.
 - **La base de dev es compartida**: lo que cargues o borres probando lo ven todos.
-- **Solo corre contra dev:** frena si `SUPABASE_URL` o `DATABASE_URL` no son de `kachingga-dev`. Nunca adaptarlo para prod.
+- **Solo corre contra dev:** frena si `SUPABASE_URL` o `DATABASE_URL` no son de `staging-kachingga`. Nunca adaptarlo para prod.
 - Si cambia una regla de negocio o un procedure que usa, actualizarlo (si no, falla al correrlo).
