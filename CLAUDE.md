@@ -1,6 +1,6 @@
 # Kachingga — App para dividir gastos en grupo
 
-Proyecto de **Kachingga**, una organización de amigos (repo: `github.com/kachingga/kachingga`). **Hoy es para uso propio del grupo**: cada uno la usa en su celu y siempre en la última versión. El front es una **web app mobile-first** (`apps/web`: se usa en el celu y también en la compu); `apps/mobile` (Expo) queda como alternativa nativa por si algún día se hace (decisión en `docs/decisiones/costos-y-alternativas.md`). **A futuro se podría publicar** (ver `docs/decisiones/lanzamiento.md` → "Fase 2"): no tomar decisiones que lo hagan imposible, pero tampoco construir cosas para usuarios públicos antes de tiempo.
+Proyecto de **Kachingga**, una organización de amigos (repo: `github.com/kachingga/kachingga`). **Hoy es para uso propio del grupo**: cada uno la usa en su celu y siempre en la última versión. El front es una **web app mobile-first** (`apps/web`: se usa en el celu y también en la compu; en `kachingga.com`); `apps/mobile` (Expo) queda como alternativa nativa por si algún día se hace (decisión en `docs/decisiones/costos-y-alternativas.md`). **A futuro se podría publicar** (ver `docs/decisiones/lanzamiento.md` → "Fase 2"): no tomar decisiones que lo hagan imposible, pero tampoco construir cosas para usuarios públicos antes de tiempo.
 
 ---
 
@@ -152,7 +152,7 @@ Proyecto de **Kachingga**, una organización de amigos (repo: `github.com/kachin
 - Cualquier miembro puede exportar los gastos de su grupo.
 ### Decisiones de producto tomadas
 - Grupo de amigos, uso propio → sin roles ni permisos finos dentro de un grupo. *(A revisar antes de publicarla: `docs/decisiones/lanzamiento.md` → "Fase 2".)*
-- **Front: web app mobile-first** (front en Vercel, API en Railway), instalable en el celu desde el navegador ("Agregar a inicio"). Sin cuenta de Apple ni stores. La app nativa (Expo) queda como alternativa: si algún día se hace, iPhone por TestFlight (cuenta de Apple Developer) y Android por APK.
+- **Front: web app mobile-first** (web y API en Railway, con dominio propio `kachingga.com`), instalable en el celu desde el navegador ("Agregar a inicio"). Sin cuenta de Apple ni stores. La app nativa (Expo) queda como alternativa: si algún día se hace, iPhone por TestFlight (cuenta de Apple Developer) y Android por APK.
 - Saldar deudas es siempre manual (el pago se hace fuera de la app). **No hay integración con Mercado Pago**: pagar de una persona a otra desde la app sin comisiones no es posible (ver `docs/decisiones/mercado-pago.md`). El agente con IA es v2.
 - Dólar de referencia: **blue promedio** por defecto; se puede elegir el oficial o cargar uno a mano en cada gasto o pago. Las demás monedas, con su oficial sugerido.
 - Los tipos de cambio quedan "congelados" en cada gasto/pago al cargarlo.
@@ -166,7 +166,7 @@ Proyecto de **Kachingga**, una organización de amigos (repo: `github.com/kachin
 | Capa | Tecnología |
 |------|------------|
 | Runtime / package manager | Bun (monorepo con workspaces) |
-| **Web (front principal)** | React 19 + Vite + Tailwind + React Router, hosteada en Vercel |
+| **Web (front principal)** | React 19 + Vite + Tailwind + React Router, hosteada en Railway (server estático de Bun) |
 | Mobile (alternativa nativa) | React Native con Expo (SDK 58) + Expo Router; EAS Build + EAS Update |
 | Backend | Hono + TypeScript sobre Bun, hosteado en Railway |
 | API (contrato app ↔ backend) | tRPC + Zod, con TanStack Query en la app |
@@ -180,7 +180,7 @@ Proyecto de **Kachingga**, una organización de amigos (repo: `github.com/kachin
 ## Arquitectura general
 
 ```
-Web (Vercel) ──tRPC + token de Supabase──▶ API (Hono, Railway) ──Prisma──▶ PostgreSQL (Supabase)
+Web (Railway) ──tRPC + token de Supabase──▶ API (Hono, Railway) ──Prisma──▶ PostgreSQL (Supabase)
      │                                        │
      └── Supabase Auth (solo login/sesión)    └── valida el token con Supabase
 ```
@@ -201,7 +201,7 @@ Web (Vercel) ──tRPC + token de Supabase──▶ API (Hono, Railway) ──P
 - **Lo personal es personal:** el alias de una persona con cuenta solo lo cambia ella; perfil y filtros guardados, solo el dueño.
 - **El test `authorization.test.ts` cubre todos los procedures**: un procedure nuevo no pasa el CI hasta que se agrega ahí (como atacable o con el motivo por el que no toca un grupo).
 - **Los datos solo por la API.** El front usa Supabase únicamente para el login; RLS bloquea cualquier otro acceso a la base.
-- **Secretos:** nunca en el código, en los `.env.sample`, en issues, PRs ni en el chat. Solo en `.env` / `.env.prod` locales (gitignoreados), en Railway y en Vercel. Lo que empieza con `VITE_` / `EXPO_PUBLIC_` es **público** (va dentro de la app): nunca un secreto ahí. GitHub escanea los pushes y bloquea si detecta una clave.
+- **Secretos:** nunca en el código, en los `.env.sample`, en issues, PRs ni en el chat. Solo en `.env` / `.env.prod` locales (gitignoreados) y en Railway. Lo que empieza con `VITE_` / `EXPO_PUBLIC_` es **público** (va dentro de la app): nunca un secreto ahí. GitHub escanea los pushes y bloquea si detecta una clave.
 - **Si se filtra un secreto:** avisar al grupo, **rotarlo** (generar uno nuevo en Supabase / Railway / Expo) y actualizarlo en todos lados. Borrarlo del historial no alcanza: el repo es público.
 - **Límite de pedidos por IP** en la API (más estricto en códigos de invitación y export). Un procedure caro o adivinable lleva su límite.
 - **Validar todo lo que entra** (Zod en la API) y no mostrar errores internos al usuario.
@@ -261,7 +261,7 @@ bun run check        # docs + formato + typecheck + test + lint — lo mismo que
 
 ### Variables de entorno
 
-Cada app tiene un `.env.sample` commiteado que dice qué variables hacen falta y de dónde sale cada valor. **Hay dos entornos:** `.env` → **DEV** (Supabase `kachingga-dev`), que es lo que usa todo lo local; `.env.prod` → **PROD** (Supabase `kachingga`), solo para migrar producción y como referencia de Railway/EAS. Ambos gitignoreados. Detalle en `INFRA.md` → "Entornos". Si agregás una variable, sumala al `.env.sample` y a `INFRA.md`.
+Cada app tiene un `.env.sample` commiteado que dice qué variables hacen falta y de dónde sale cada valor. **Hay dos bases:** `.env` → **DEV** (Supabase `kachingga-dev`), que es lo que usa todo lo local y también **staging**; `.env.prod` → **PROD** (Supabase `kachingga`), solo para migrar producción y como referencia de Railway/EAS. Ambos gitignoreados. Detalle en `INFRA.md` → "Entornos". Si agregás una variable, sumala al `.env.sample` y a `INFRA.md`.
 
 > Claude: nunca correr nada contra **prod** (`db:migrate:prod`, scripts con `.env.prod`) salvo que el usuario lo pida explícitamente. **Nunca resetear la contraseña de una base de Supabase** ni sugerirlo como solución: rompe el `.env` de todos. Para armar un `.env`, guiar con la tabla de `README.md` → "Armar los `.env`"; la contraseña de la base se le pide a Galo.
 
@@ -324,6 +324,7 @@ Reglas para Claude:
 - PRs chicos y de un tema. Label `e2e` en los que cambian un recorrido crítico.
 - Si el PR queda atrás de `main`: **rebase, nunca merge** (`gh pr update-branch <n> --rebase`).
 - **Claude: crear la branch y el PR; mergear solo si el usuario lo pide** (`gh pr merge --squash` con el CI en verde).
+- **`main` → staging, `production` → prod:** cada merge a `main` se deploya solo en **staging** (`staging.kachingga.com`). Prod (`kachingga.com`) se deploya desde la branch `production`, que solo avanza con el workflow **"Promover a producción"** (fast-forward hasta `main`; sin force-push). Antes: probar en staging y, si hay migraciones, `db:migrate:prod`. Claude no promueve a prod sin que el usuario lo pida. Detalle: `DEPLOY.md`.
 - Comandos, CI colgado, PRs apilados y demás detalle: **`docs/claude/repo/git-prs-y-conflictos.md`**.
 
 ## Issues

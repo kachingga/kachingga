@@ -2,13 +2,13 @@
 
 Decisión: con qué front seguir y cuánto cuesta cada camino, frente a volver a **Tricount**. Investigado el 3/11/2026; los precios cambian, así que antes de pagar algo conviene confirmarlo en la página oficial (links al final).
 
-**Estado: decidido → opción C**, web app nueva con React + Vite (`apps/web`), front en Vercel y API en Railway. `apps/mobile` (Expo) queda como alternativa nativa por si algún día se hace.
+**Estado: decidido → opción C**, web app nueva con React + Vite (`apps/web`). **Web y API en Railway** (el front iba a ir a Vercel; se cambió el 7/11/2026, ver "Hosting de la web: Railway en vez de Vercel"). `apps/mobile` (Expo) queda como alternativa nativa por si algún día se hace.
 
 ---
 
 ## TL;DR
 
-- **Web app mobile-first (PWA):** se usa desde el navegador en el celu y en la compu; en el iPhone se "instala" agregándola a la pantalla de inicio. **Sin cuenta de Apple ni stores.** ~**USD 5/mes** (front gratis en Vercel + API en Railway + Supabase Free).
+- **Web app mobile-first (PWA):** se usa desde el navegador en el celu y en la compu; en el iPhone se "instala" agregándola a la pantalla de inicio. **Sin cuenta de Apple ni stores.** ~**USD 5/mes** (web y API en Railway + Supabase Free).
 - **App nativa:** ~**USD 13/mes** (Railway + cuenta de Apple), más mantenimiento (builds de TestFlight que vencen, SDKs de Expo).
 - **Tricount:** gratis, sin publicidad y sin límites, y ya funciona. Lo que no tiene es lo nuestro: dólar blue automático, deudas en USD, alias para cobrar, filtros con totales.
 - **Hoy Supabase está en Pro (~USD 35/mes):** con cualquier opción hay que bajarlo a Free.
@@ -44,19 +44,24 @@ Decisión: con qué front seguir y cuánto cuesta cada camino, frente a volver a
 - **Datos:** igual que hoy → tRPC + TanStack Query contra la API, tipos de punta a punta, schemas Zod compartidos (`@kachingga/api/schemas`).
 - **Login:** Supabase Auth con email + password desde el front, igual que la decisión actual.
 - **Hosting — elegido por el grupo:**
-  - **Front en Vercel** (Hobby, gratis; sitio estático).
-  - **API en Railway como servidor dedicado** (un proceso Bun siempre prendido, como está armado hoy; USD 5/mes del plan Hobby).
+  - **Web y API en Railway**, cada una como un servicio: la API es un proceso Bun siempre prendido y la web un server estático chico de Bun (USD 5/mes del plan Hobby, que incluye USD 5 de uso).
+  - Dos entornos, staging y prod, con dominio propio (`kachingga.com`).
   - **Supabase Free** (prod + dev).
-- **Alternativa gratis (si algún día hace falta): API también en Vercel**, como *funciones*. Total USD 0, pero se pierde:
+- **Alternativa gratis (si algún día hace falta): web y API en Vercel**, la API como *funciones*. Total USD 0, pero se pierde:
   - **Arranque en frío:** la API no está siempre prendida; el primer pedido después de un rato tarda más.
   - **Límite de tiempo por pedido** (hasta 5 minutos en Hobby): puede molestar con el agente de IA (V2).
   - **Conexiones a la base más delicadas:** cada función abre las suyas; hay que usar siempre el pooler de Supabase.
   - **Nada en segundo plano:** sin tareas programadas ni cachés en memoria (ej. la del dólar blue).
   - **Logs cortos** (1 hora en Hobby) y menos control del entorno.
   - Hay que adaptar la API (hoy está pensada como servidor Bun).
-- **Ojo:** Vercel Hobby es **solo para uso personal, no comercial**. Si la app algún día es un negocio, el front pasa a Pro (USD 20/usuario/mes) o a otro hosting.
+  - Además, Vercel Hobby es **solo para uso personal, no comercial**.
 - **Qué se pierde frente a nativa:** en iPhone la instalación es manual (Safari → Compartir → "Agregar a inicio"); las notificaciones push en iPhone funcionan solo si está agregada a la pantalla de inicio (iOS 16.4+) y con menos opciones; sin haptics ni algunos componentes nativos.
 - **Cambios en el repo si se elige:** reemplazar `apps/mobile` por `apps/web`, cambiar el CI (Playwright en vez de Maestro, sin EAS Update ni Expo doctor) y reescribir `apps/mobile/CLAUDE.md` como `apps/web/CLAUDE.md`. Las reglas de negocio, `V1.md` y la API no cambian.
+
+### Hosting de la web: Railway en vez de Vercel (decidido el 7/11/2026)
+- **Por qué:** menos servicios (un solo proyecto, dashboard y factura), **la web y la API se deployan juntas** y esperando el CI (Vercel no espera al CI: la web podía salir aunque fallara y quedar desfasada de la API), y es el mismo setup que Galo ya maneja en otro proyecto. Con dominio propio queda `kachingga.com` / `api.kachingga.com`.
+- **Qué se pierde:** los *previews* por PR de Vercel (en Railway habría que armar entornos por PR, que cuestan uso; se prueba en local con `bun run dev:celu` y en staging) y su CDN (Railway sirve desde una región: solo pesa en la primera carga, porque después la PWA guarda la app en el celu).
+- **Costo:** el servicio `web` es un contenedor más que suma un poco de uso al plan Hobby (estimado: centavos a ~USD 1/mes; medirlo después del primer mes).
 
 ---
 
@@ -66,13 +71,13 @@ Precios en USD; a todo lo que se paga con tarjeta argentina en dólares se le su
 
 | Servicio | Para qué | Plan | Costo | ¿Hace falta? |
 |----------|----------|------|-------|--------------|
-| **Railway** | API (servidor dedicado) | Hobby | **USD 5/mes** (incluye USD 5 de uso) — estimado por Galo: **~ARS 10.000/mes** con impuestos | ✅ En todas las opciones (el plan Free da USD 1/mes de uso: no alcanza para tenerla prendida todo el mes) |
-| **Vercel** | Front de la web app | Hobby | **USD 0** (uso personal, no comercial) | Solo web app |
+| **Railway** | Web + API (staging y prod) | Hobby | **USD 5/mes** (incluye USD 5 de uso) — estimado por Galo: **~ARS 10.000/mes** con impuestos | ✅ En todas las opciones (el plan Free da USD 1/mes de uso: no alcanza para tenerla prendida todo el mes) |
 | **Supabase** | Base de datos + login | Free (hasta 2 proyectos: prod + dev) | **USD 0** — pero **se pausa tras 1 semana sin uso** (la app deja de andar hasta reactivarlo) | ✅ Free alcanza |
 | **Supabase hoy** | — | **Pro** (org `kachingga`) | **USD 25/mes + USD 10/mes** por el segundo proyecto = **USD 35/mes** | ❌ Pasarla a Free |
 | **Apple Developer** | App nativa en iPhone (TestFlight) | Individual | **USD 99/año** (~USD 8,25/mes) | Solo app nativa (Expo Go sirve solo para desarrollar) |
 | **Google Play** | Publicar en Android | — | **USD 25** (una vez) | Solo para publicar (entre nosotros alcanza el APK) |
 | **Expo / EAS** | Builds y updates OTA | Free | **USD 0**: 15 builds Android + 15 iOS, 1.000 usuarios/mes de updates | Solo app nativa |
+| **Dominio** `kachingga.com` | URL fija de la web (la PWA instalada queda atada al dominio) | Cloudflare Registrar | **~USD 10–11/año** (precio de costo) | ✅ Antes de invitar al grupo |
 | **GitHub** | Repo y CI | Free | **USD 0** (repo público: Actions sin costo) | ✅ |
 | **Agente de IA (V2)** | Preguntas en lenguaje natural | API de Claude | **~USD 1/mes** con Haiku 5.5 (~300 preguntas/mes); ~USD 22/mes con Sonnet 5.5 | Cuando exista la V2 |
 
@@ -80,8 +85,8 @@ Precios en USD; a todo lo que se paga con tarjeta argentina en dólares se le su
 
 | Escenario | USD/mes | Por persona (5) |
 |-----------|---------|-----------------|
-| **Web app** (Railway + Vercel Free + Supabase Free) | **~5** | ~1 |
-| Web app con la API en Vercel | 0 | 0 |
+| **Web app** (Railway + Supabase Free + dominio ~USD 1/mes) | **~6** | ~1,20 |
+| Web app con todo en Vercel | 0 | 0 |
 | App nativa entre nosotros (Railway + Apple + Supabase Free) | ~13,25 | ~2,65 |
 | **Como está hoy** (Supabase Pro + lo anterior) | +35 | — |
 | App publicada en las stores (estimado: Supabase Pro para que no se pause, Google Play, mail, dominio) | ~40+ | — |

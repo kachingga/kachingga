@@ -63,4 +63,4 @@ const createExpense = useMutation(
 
 ## En local: proxy de Vite
 
-`VITE_API_URL` va **vacía** en local: la web llama a `/trpc` en su mismo origen y Vite (`dev` y `preview`) lo reenvía a la API en `localhost:3000` (`vite.config.ts`). Así no hay CORS y funciona desde un celu en la misma Wi-Fi (`bun run dev:celu` expone la web en la red local con `KACHINGGA_LAN=1` → `server.host`; por defecto solo `localhost`). En prod, `VITE_API_URL` = URL de Railway y CORS sí importa (la URL de Vercel en `CORS_ORIGINS`).
+`VITE_API_URL` va **vacía** en local: la web llama a `/trpc` en su mismo origen y Vite (`dev` y `preview`) lo reenvía a la API en `localhost:3000` (`vite.config.ts`). Así no hay CORS y funciona desde un celu en la misma Wi-Fi (`bun run dev:celu` expone la web en la red local con `KACHINGGA_LAN=1` → `server.host`; por defecto solo `localhost`). En staging y prod, `VITE_API_URL` = la API de ese entorno (`https://api-staging.kachingga.com` / `https://api.kachingga.com`) y CORS sí importa (la URL de la web en `CORS_ORIGINS`).
