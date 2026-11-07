@@ -35,7 +35,7 @@ URLs, variables y bases de cada entorno: `INFRA.md`.
 3. **Variables** de cada servicio y entorno: `INFRA.md` → "Variables de entorno". Staging usa la base `kachingga-dev` (valores de `apps/api/.env` / `apps/web/.env`, salvo las URLs); prod, la base `kachingga` (`apps/api/.env.prod`). En la API, `NODE_ENV=production` en los dos.
 4. **Dominios:** en cada servicio y entorno, *Settings → Networking → Custom Domain* (`kachingga.com`, `api.kachingga.com`, `staging.kachingga.com`, `api-staging.kachingga.com`). Railway da un CNAME por dominio: cargarlo en Cloudflare → DNS en modo **"DNS only"** (nube gris), así Railway emite el certificado.
 5. **URLs de auth en Supabase** (Site URL y Redirect URLs de cada base): `INFRA.md` → "Supabase".
-6. **Verificar el límite de pedidos por IP:** la API toma la IP del **último** valor de `X-Forwarded-For`. En el primer deploy, confirmar que Railway lo setea así (ej. loguear temporalmente el header en un pedido y comparar con tu IP pública). Si no, ajustar `clientIp` en `apps/api/src/lib/rateLimit.ts`.
+6. **Límite de pedidos por IP** ✅ verificado en staging (nov 2026): la API toma el **último** valor de `X-Forwarded-For`, que en Railway es la IP real del cliente. Un `X-Forwarded-For` falso no esquiva el límite (25 pedidos a `groups.preview`, cada uno con otro valor, cortan en 429). Si Railway cambia cómo arma el header, ajustar `clientIp` en `apps/api/src/lib/rateLimit.ts`.
 7. **Branch `production`** creada desde `main`, con protección contra force-push y borrado.
 8. Comprobar: `GET /health` de cada API responde, y en cada web se puede registrar, loguear y cargar un gasto.
 
