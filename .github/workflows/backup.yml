@@ -1,0 +1,60 @@
+# Weekly backup of the production database (schemas public + auth), encrypted.
+# The repo is public and anyone signed in to GitHub can download artifacts, so the dump is
+# streamed straight into gpg: nothing unencrypted is ever written, even on the runner.
+# Restore steps: DEPLOY.md → "Backups".
+name: Backup semanal de prod
+
+on:
+  schedule:
+    - cron: '0 6 * * 1' # Mondays 06:00 UTC
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: backup
+  cancel-in-progress: false
+
+jobs:
+  backup:
+    name: pg_dump cifrado
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Check secrets
+        env:
+          BACKUP_DATABASE_URL: ${{ secrets.BACKUP_DATABASE_URL }}
+          BACKUP_PASSPHRASE: ${{ secrets.BACKUP_PASSPHRASE }}
+        run: |
+          if [ -z "$BACKUP_DATABASE_URL" ] || [ -z "$BACKUP_PASSPHRASE" ]; then
+            echo "::error::Faltan los secrets BACKUP_DATABASE_URL y/o BACKUP_PASSPHRASE (DEPLOY.md → Backups)."
+            exit 1
+          fi
+
+      - name: Dump and encrypt
+        id: dump
+        env:
+          BACKUP_DATABASE_URL: ${{ secrets.BACKUP_DATABASE_URL }}
+          BACKUP_PASSPHRASE: ${{ secrets.BACKUP_PASSPHRASE }}
+        run: |
+          set -euo pipefail
+          name="kachingga-prod-$(date -u +%Y-%m-%d)"
+          mkdir -p out
+          # pg_dump 17 can dump older servers. The URL goes in as an env var, never as an argument.
+          docker run --rm -e BACKUP_DATABASE_URL postgres:17 \
+            sh -c 'pg_dump "$BACKUP_DATABASE_URL" -Fc --schema=public --schema=auth --no-owner --no-privileges' \
+            | gpg --batch --yes --pinentry-mode loopback --passphrase-fd 3 \
+                --symmetric --cipher-algo AES256 -o "out/$name.dump.gpg" 3<<<"$BACKUP_PASSPHRASE"
+          size=$(stat -c %s "out/$name.dump.gpg")
+          echo "Backup: $name.dump.gpg ($size bytes)"
+          # An empty or tiny file means the dump didn't really work.
+          [ "$size" -gt 1000 ] || { echo "::error::El backup quedó demasiado chico ($size bytes)."; exit 1; }
+          echo "name=$name" >> "$GITHUB_OUTPUT"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ${{ steps.dump.outputs.name }}
+          path: out/*.dump.gpg
+          retention-days: 90
+          if-no-files-found: error

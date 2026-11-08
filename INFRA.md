@@ -12,7 +12,7 @@
 | Auth | Supabase Auth | supabase.com/dashboard → Authentication | — |
 | Builds mobile (alternativa nativa) | EAS (Expo) | expo.dev/accounts/kachingga/projects/kachingga | Org `kachingga`, project ID `49f7728b-7782-46e5-8a8a-491bb590bfe1` |
 | Updates OTA | EAS Update (canal `main`) | expo.dev | Automático al mergear a `main` (`.github/workflows/eas-update.yml`), inactivo hasta configurar `EXPO_TOKEN` |
-| CI | GitHub Actions | github.com/kachingga/kachingga/actions | `ci.yml` (checks obligatorios), `promote.yml` ("Promover a producción", a mano), `e2e.yml` (Playwright en la web, a demanda) y `eas-update.yml` |
+| CI | GitHub Actions | github.com/kachingga/kachingga/actions | `ci.yml` (checks obligatorios), `promote.yml` ("Promover a producción", a mano), `e2e.yml` (Playwright en la web, a demanda), `backup.yml` (backup semanal cifrado de prod, ver `DEPLOY.md` → "Backups") y `eas-update.yml` |
 | Cotizaciones (dólar blue y oficial, oficial de EUR, BRL, UYU y CLP) | DolarApi (público, sin clave) | dolarapi.com | `https://dolarapi.com/v1/dolares/{blue,oficial}` y `/v1/cotizaciones/{eur,brl,uyu,clp}` |
 | Repo | GitHub | github.com/kachingga/kachingga | — |
 
@@ -80,6 +80,8 @@ Mismas variables en los dos entornos, con los valores de su base (staging = `app
 
 | Secret | Descripción |
 |--------|-------------|
+| `BACKUP_DATABASE_URL` | `DIRECT_URL` de prod (session pooler, puerto 5432). Lo usa `backup.yml` para el `pg_dump` semanal |
+| `BACKUP_PASSPHRASE` | Passphrase con la que `backup.yml` cifra cada backup. Copia en `apps/api/.env.prod` y en el gestor de contraseñas de Galo: **sin ella no se pueden abrir los backups** |
 | `EXPO_TOKEN` | Token de acceso de Expo (org `kachingga`) para que `eas-update.yml` publique updates. **Todavía no creado** — ver `DEPLOY.md` → "Activar EAS Update automático" |
 
 ### Archivos locales (gitignoreados, nunca commitear)

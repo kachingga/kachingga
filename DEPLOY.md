@@ -147,6 +147,38 @@ Recién tiene sentido cuando haya algo que reciba los updates. En orden:
 
 ---
 
+## Backups
+
+**Qué:** cada lunes a las 06:00 UTC, `.github/workflows/backup.yml` hace un `pg_dump` de la base de **prod** (schemas `public` = los datos de la app, y `auth` = las cuentas de Supabase), formato custom (`-Fc`). **Dónde:** como artifact del run en GitHub Actions (`kachingga-prod-AAAA-MM-DD`), **90 días** (~12 backups). Si falla, GitHub le manda un mail a quien tocó el cron por última vez.
+
+**Siempre cifrado:** el repo es público y cualquiera logueado en GitHub puede bajar los artifacts. El dump pasa directo a `gpg` (AES256) con `BACKUP_PASSPHRASE`: nunca queda un archivo sin cifrar. **Sin la passphrase los backups no se abren**: está en `apps/api/.env.prod` y tiene que estar también en el gestor de contraseñas de Galo.
+
+**Setup (una vez, desde la raíz del repo):** carga los dos secrets del repo (`INFRA.md` → "GitHub") sin mostrarlos:
+
+```bash
+grep '^DIRECT_URL=' apps/api/.env.prod | cut -d= -f2- | tr -d '"' | gh secret set BACKUP_DATABASE_URL --repo kachingga/kachingga
+p=$(openssl rand -base64 32); echo "BACKUP_PASSPHRASE=$p" >> apps/api/.env.prod; printf %s "$p" | gh secret set BACKUP_PASSPHRASE --repo kachingga/kachingga; unset p
+```
+
+Después, guardar la passphrase en el gestor de contraseñas y correrlo una vez a mano para probarlo.
+
+**Correrlo a mano:** `gh workflow run backup.yml` (o Actions → "Backup semanal de prod" → *Run workflow*).
+
+**Restaurar** (necesita `gpg` y el cliente de Postgres 17: `brew install gnupg libpq`):
+
+```bash
+gh run list --workflow backup.yml                 # elegir el run
+gh run download <run-id> --dir backup             # baja backup/<nombre>/<nombre>.dump.gpg
+gpg -d -o kachingga.dump backup/*/*.dump.gpg      # pide la passphrase
+pg_restore --list kachingga.dump | less           # ver qué tiene
+```
+
+- **Lo normal es restaurar `public` (los datos de la app) en una base nueva o vacía**, nunca encima de prod sin pensarlo: `pg_restore --schema=public --no-owner --no-privileges -d "<DIRECT_URL de la base destino>" kachingga.dump`. Después `bun run --cwd apps/api db:migrate:status` contra esa base para confirmar que el schema coincide con las migraciones.
+- **`auth` es de Supabase:** las tablas ya existen en cualquier proyecto y Supabase las maneja. No restaurar el schema entero; si hace falta recuperar cuentas, restaurar solo los datos de `auth.users` / `auth.identities` (`pg_restore --data-only --table=...`) en un proyecto **nuevo**, y probarlo antes. Sin las cuentas, los participantes quedan sin dueño (sus gastos y saldos no se pierden).
+- Antes de restaurar algo en prod, hacer un backup a mano de cómo está.
+
+---
+
 ## Rollback
 
 - **API y web:** Railway guarda el historial de cada servicio y entorno — *Redeploy* de un deploy anterior desde el dashboard. Si el problema ya está en `main`, revertirlo con un PR (`revert`) y volver a promover.
