@@ -14,7 +14,7 @@
 | Qué procedure llamar, login / sesión, tipo de cambio, monedas, alias, export, errores de la API, el proxy de Vite | `docs/claude/web/usar-la-api.md` |
 | Montos, porcentajes, tipos de cambio o fechas (`src/lib/format.ts`, `<NumberInput>`, `<input type="date">`) | `docs/claude/web/plata-y-fechas.md` |
 | Colores, tema claro / oscuro, `src/index.css`, componentes de `src/components/` o de shadcn, confirmaciones, toasts, skeletons | `docs/claude/web/componentes-y-tema.md` |
-| Transiciones, navegar al guardar o borrar, gestos, tamaño del bundle, carga diferida, PWA | `docs/claude/web/sensacion-de-app.md` |
+| Transiciones, navegar al guardar o borrar, gestos, tamaño del bundle, carga diferida, PWA (service worker, manifest, íconos de `public/logo.svg`) | `docs/claude/web/sensacion-de-app.md` |
 | Una pantalla nueva o un cambio visible | `docs/claude/web/ui-ux.md` (+ `V1.md` → "Pantallas") |
 | Tests (`renderWithApi`, setup, E2E) | `docs/claude/web/testing.md` |
 
@@ -99,6 +99,7 @@ e2e/                          # Playwright
 
 - **TypeScript `~6.0.3`** y React **19.3.0 exacto** (las mismas versiones que mobile): con `node_modules` compartido, versiones distintas de React rompen todo.
 - `tsconfig.app.json` sin `baseUrl` (TS 6 lo rechaza); el alias `@/` está en `paths`, en `vite.config.ts` y en `tsconfig.json` (para el CLI de shadcn).
+- **El service worker (PWA) guarda solo los archivos de la app, nunca datos de la API.** Los íconos salen de `public/logo.svg`: no agregar PNGs a mano.
 - La web typechequea archivos de la API (vía `AppRouter`): si la API importa algo que acá no resuelve, se rompe el typecheck de la web.
 - Deploy: servicio `web` en Railway (settings en `DEPLOY.md`): buildea con Vite y `server.ts` sirve `dist` (rutas → `index.html`, cache largo en `/assets/*`). Las `VITE_*` se leen **al buildear**: cambiarlas en Railway requiere un deploy nuevo. La API de cada entorno tiene que permitir la URL de su web en `CORS_ORIGINS`. Ver `DEPLOY.md`.
 

@@ -1,13 +1,39 @@
 import tailwindcss from '@tailwindcss/vite';
 import react from '@vitejs/plugin-react';
 import { fileURLToPath } from 'node:url';
+import { VitePWA } from 'vite-plugin-pwa';
 import { defineConfig } from 'vitest/config';
 
 // Where the local API runs (`bun run api`).
 const API_URL = 'http://localhost:3000';
 
 export default defineConfig({
-  plugins: [react(), tailwindcss()],
+  plugins: [
+    react(),
+    tailwindcss(),
+    // Installable app + service worker that caches the app's own files (never API data).
+    // autoUpdate: a new deploy replaces the old version on the next open.
+    VitePWA({
+      registerType: 'autoUpdate',
+      pwaAssets: { config: true, overrideManifestIcons: true, injectThemeColor: false },
+      manifest: {
+        name: 'Kachingga',
+        short_name: 'Kachingga',
+        description: 'Dividí gastos con tu grupo',
+        lang: 'es',
+        start_url: '/',
+        scope: '/',
+        display: 'standalone',
+        background_color: '#ffffff',
+        theme_color: '#ffffff',
+      },
+      workbox: {
+        globPatterns: ['**/*.{js,css,html,svg,png,ico,woff2}'],
+        navigateFallback: '/index.html',
+        cleanupOutdatedCaches: true,
+      },
+    }),
+  ],
   resolve: {
     alias: { '@': fileURLToPath(new URL('./src', import.meta.url)) },
   },

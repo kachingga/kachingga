@@ -25,5 +25,13 @@ Optimistic updates en lo frecuente, precarga de la próxima pantalla, skeletons 
 ## Arranque y tamaño del bundle
 
 - **Sin rutas con carga diferida (`lazy`) — medido (nov 2026):** el bundle pesa ~260 kB comprimido y las pantallas son solo ~8%. El resto lo comparten todas: `react-dom` (26%), Supabase (~25%, casi todo realtime / storage / postgrest que no usamos), `react-router` (12%) y `zod` (11%). Partir las rutas ahorraría muy poco y sumaría un pedido la primera vez que se abre cada pantalla. Revisarlo si las pantallas pasan a ser una parte grande del bundle.
-- **Lo que sí rinde:** el service worker de la PWA (#18), que guarda la app (no los datos de la API) para que abra al instante, y usar solo la parte de auth de Supabase (~13% menos; en `V1.md` → "Por hacer", opcional).
-- **Instalada (PWA, #18):** manifest para abrir a pantalla completa, sin barra del navegador; splash screen (detalle en `V1.md`).
+- **Lo que sí rinde:** el service worker de la PWA (abajo), que guarda la app para que abra al instante, y usar solo la parte de auth de Supabase (~13% menos; en `V1.md` → "Por hacer", opcional).
+
+## PWA (instalable)
+
+- **`vite-plugin-pwa`** (config en `vite.config.ts`): genera el manifest (`display: standalone`, abre a pantalla completa sin barra del navegador) y el service worker (Workbox, `generateSW`).
+- **El service worker guarda solo los archivos de la app** (HTML, JS, CSS, íconos, fuentes: los del build). **Los datos de la API no se cachean ahí**: son de cada usuario, viven en otro dominio y los maneja TanStack Query. Las rutas de la app caen en `index.html` (`navigateFallback`), así abre sin red.
+- **Se actualiza solo** (`registerType: 'autoUpdate'`): al deployar, la próxima vez que se abre baja la versión nueva y la activa. `server.ts` sirve `sw.js`, `registerSW.js` y el manifest con `no-cache` para que el navegador vea el cambio.
+- **Íconos:** todos (favicon, PWA, *maskable* de Android, `apple-touch-icon` de iPhone) salen de **`public/logo.svg`** al buildear (`@vite-pwa/assets-generator`, config en `pwa-assets.config.ts`). Hoy es una "K" provisoria: cuando esté el logo, se reemplaza ese archivo (y el color de fondo de los íconos en `pwa-assets.config.ts`) y listo.
+- **iPhone:** metas `apple-mobile-web-app-*` en `index.html`. Las splash screens (`apple-touch-startup-image`) esperan al logo (`V1.md`); Android arma la suya con el manifest.
+- **Test:** `e2e/pwa.spec.ts` (manifest válido + service worker activo).
