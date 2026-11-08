@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <!-- Placeholder icon until the Kachingga logo exists (#37): replace this file and rebuild. -->
+  <rect width="512" height="512" rx="112" fill="#171717"/>
+  <path fill="#fafafa" d="M152 112h64v118l112-118h80L284 240l132 160h-82L240 284l-24 24v92h-64z"/>
+</svg>
