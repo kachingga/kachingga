@@ -19,7 +19,7 @@ Costos y la decisión de front (web app vs. nativa): [`costos-y-alternativas.md`
 
 **Camino (web app, el front decidido):** web y API en Railway (staging y prod) → instalable (PWA) → prueba en celus reales → cada uno la instala y se registra **en prod** (las cuentas de dev no sirven en prod). El orden lo dan los "Bloqueado por #N" de cada issue del milestone; los pasos técnicos, `DEPLOY.md`.
 
-**Si algún día se hace la app nativa:** cuenta de Apple Developer (USD 99/año, sin ella no hay app en iPhone; Expo Go solo sirve para desarrollar), variables de prod en EAS, APK para Android y TestFlight (*Internal Testers*) para iPhone, y `EXPO_TOKEN` para los updates automáticos. Pasos en `DEPLOY.md`; issues #12 y #6, con la label `app-nativa` (en pausa mientras el front sea la web, ver #20). Los builds de EAS **solo se lanzan cuando alguien lo pide explícitamente**.
+**App nativa:** se descartó y se sacó del repo el 8/11/2026 (solo web; ver `costos-y-alternativas.md`). Si algún día se quiere en las stores, se arranca de cero y aplica "Requisitos de las stores" (abajo): cuenta de Apple Developer (USD 99/año), TestFlight o App Store para iPhone y Google Play para Android.
 
 ---
 
@@ -33,12 +33,11 @@ Varias decisiones de producto se tomaron pensando en un grupo de amigos y hay qu
 - Ícono, capturas, descripción y categoría.
 - **Apple:** revisión de App Store. Publicando como persona, figura **el nombre de Galo** como vendedor; para que diga "Kachingga" hace falta una organización (con número D-U-N-S).
 - **Google Play:** USD 25 (una vez). Las cuentas personales nuevas necesitan una **prueba cerrada con al menos 12 testers durante 14 días** antes de publicar.
-- Canales de EAS Update separados para la versión de las stores.
 
 ### Producto y operación con usuarios desconocidos
 - **Revisar decisiones "para amigos"**: todos con los mismos permisos (sin admin), cualquiera edita o borra cualquier gasto, el código de invitación como única barrera (`CLAUDE.md` → "Decisiones de producto tomadas").
 - Servidor de mail propio (SMTP) en Supabase.
 - Límites contra abuso más finos: por usuario (no solo por IP), store compartido si hay varias instancias de la API, y los límites de registro de Supabase. (Ya hay límite por IP: `docs/claude/api/seguridad.md`.)
 - Reporte de errores en la web y en la API (ej. Sentry).
-- Costos al crecer (Supabase, Railway, EAS).
+- Costos al crecer (Supabase, Railway).
 - Requisitos legales de datos personales en Argentina.

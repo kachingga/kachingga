@@ -1,5 +1,4 @@
-# Solo GitHub Actions: las dependencias de la app se actualizan con `bunx expo install`
-# (tienen que ser compatibles con el SDK de Expo), no con Dependabot.
+# Solo GitHub Actions: las dependencias de la app se actualizan a mano (`bun add` en cada workspace), no con Dependabot.
 version: 2
 updates:
   - package-ecosystem: github-actions

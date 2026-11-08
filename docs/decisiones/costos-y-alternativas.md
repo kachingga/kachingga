@@ -2,7 +2,7 @@
 
 Decisión: con qué front seguir y cuánto cuesta cada camino, frente a volver a **Tricount**. Investigado el 3/11/2026; los precios cambian, así que antes de pagar algo conviene confirmarlo en la página oficial (links al final).
 
-**Estado: decidido → opción C**, web app nueva con React + Vite (`apps/web`). **Web y API en Railway** (el front iba a ir a Vercel; se cambió el 7/11/2026, ver "Hosting de la web: Railway en vez de Vercel"). `apps/mobile` (Expo) queda como alternativa nativa por si algún día se hace.
+**Estado: decidido → opción C**, web app nueva con React + Vite (`apps/web`). **Web y API en Railway** (el front iba a ir a Vercel; se cambió el 7/11/2026, ver "Hosting de la web: Railway en vez de Vercel"). **Solo web (8/11/2026):** se sacó `apps/mobile` (Expo) del repo, con su CI y sus docs. El código queda en el historial del repo (el commit anterior al PR que lo sacó). Si algún día se quiere la app en las stores, se arranca de cero: la API y las reglas no cambian, es otro front. La investigación de abajo queda como referencia.
 
 ---
 

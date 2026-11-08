@@ -1,6 +1,6 @@
 name: E2E
 
-# E2E de la web (Playwright, apps/web/e2e). Los flujos de Maestro de la app nativa (apps/mobile/.maestro) solo se corren en local.
+# E2E de la web (Playwright, apps/web/e2e).
 # No son checks obligatorios: corren a mano (Actions → "E2E" → Run workflow) o en PRs con la label `e2e`.
 
 on:

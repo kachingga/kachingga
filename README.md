@@ -35,8 +35,7 @@ El agente explica cómo se llegó a cada saldo, desglosando los gastos que lo co
 
 | Capa | Tecnología |
 |------|------------|
-| Web (front principal) | React + Vite + Tailwind, mobile-first, en Railway |
-| Mobile (alternativa nativa) | React Native (Expo) |
+| Web | React + Vite + Tailwind, mobile-first, en Railway |
 | Backend | TypeScript con Hono y Bun, hosteado en Railway |
 | API | tRPC (tipado de punta a punta entre app y backend) |
 | Base de datos | PostgreSQL en Supabase con Prisma |
@@ -51,7 +50,6 @@ Pedir invitación a:
 - Org de GitHub `kachingga`
 - Org de Supabase `kachingga` (proyectos `staging-kachingga` para desarrollo y `kachingga` para producción)
 - Proyecto de Railway `kachingga` (opcional: hoy lo maneja Galo)
-- Org de Expo `kachingga` (solo si se trabaja en la app nativa)
 
 ### 2. Herramientas
 
@@ -61,7 +59,7 @@ Pedir invitación a:
 
 ### 3. Instalación
 
-El repo es un monorepo: la API está en `apps/api`, el front web (el principal) en `apps/web` y la app nativa (alternativa) en `apps/mobile`.
+El repo es un monorepo: la API está en `apps/api` y el front web en `apps/web`.
 
 ```bash
 git clone git@github.com:kachingga/kachingga.git
@@ -72,8 +70,6 @@ bun run web                              # web en http://localhost:5173
 bun run dev:celu                         # API + web, con la web visible desde el celu (misma Wi-Fi)
 ```
 
-Solo si vas a tocar la app nativa: `cd apps/mobile && bunx eas-cli login` (una vez) y `bun run mobile`.
-
 ### 4. Armar los `.env` (dev)
 
 Para desarrollar solo hacen falta los de **dev** (proyecto `staging-kachingga`). El `.env.prod` lo necesita únicamente quien vaya a migrar producción.
@@ -81,7 +77,6 @@ Para desarrollar solo hacen falta los de **dev** (proyecto `staging-kachingga`).
 ```bash
 cp apps/api/.env.sample apps/api/.env
 cp apps/web/.env.sample apps/web/.env
-cp apps/mobile/.env.sample apps/mobile/.env   # solo si vas a tocar la app nativa
 ```
 
 Los samples ya traen el ref, el host y las URLs de dev. Solo hay que completar:
@@ -91,7 +86,7 @@ Los samples ya traen el ref, el host y las URLs de dev. Solo hay que completar:
 | `<DB_PASSWORD>` (en `DATABASE_URL` y `DIRECT_URL`) | `apps/api/.env` | **Pedírsela a Galo** (por privado o gestor de contraseñas). Supabase **no la muestra** en el dashboard |
 | `SUPABASE_SECRET_KEY` | `apps/api/.env` | Supabase → `staging-kachingga` → Project Settings → API Keys → Secret key (o `supabase projects api-keys --project-ref nraoqdaplvvsakvtlcam --reveal`) |
 | `SEED_USER_PASSWORD` | `apps/api/.env` | **Pedírsela a Galo**. Es la contraseña de los usuarios de prueba (`juan.demo@example.com`, etc.) |
-| `VITE_SUPABASE_PUBLISHABLE_KEY` (y `EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY` en mobile) | `apps/web/.env` (y `apps/mobile/.env`) | Supabase → `staging-kachingga` → Project Settings → API Keys → Publishable key |
+| `VITE_SUPABASE_PUBLISHABLE_KEY` | `apps/web/.env` | Supabase → `staging-kachingga` → Project Settings → API Keys → Publishable key |
 
 > ⚠️ **Nunca resetear la contraseña de la base** desde el dashboard: deja sin conexión a todos los demás (y, en prod, a Railway). Si se perdió, avisar al grupo antes.
 
@@ -109,8 +104,8 @@ Abrir `claude` desde la **raíz del repo**. Todo el contexto se carga solo y es 
 
 - `CLAUDE.md` — **reglas de negocio** (cómo funcionan grupos, gastos, monedas, saldos) y reglas del repo (commits, conflictos)
 - `.claude/CLAUDE.md` — guías de comportamiento
-- `apps/api/CLAUDE.md`, `apps/web/CLAUDE.md` y `apps/mobile/CLAUDE.md` — **lo técnico** de cada proyecto (modelo de datos, procedures, front, decisiones de implementación)
-- `.claude/settings.json` — config compartida (plugin de Expo). Aceptar cuando Claude pregunte si confiar en la carpeta / instalar el plugin
+- `apps/api/CLAUDE.md` y `apps/web/CLAUDE.md` — **lo técnico** de cada proyecto (modelo de datos, procedures, front, decisiones de implementación)
+- `.claude/settings.json` — config compartida (formatea con Prettier al editar). Aceptar cuando Claude pregunte si confiar en la carpeta
 
 Lo personal **no se commitea**: configuración propia en `.claude/settings.local.json` y notas propias en `CLAUDE.local.md` (ambos gitignoreados). Si algo debería aplicar a todos, va en `CLAUDE.md` o `.claude/settings.json` vía PR.
 
@@ -132,11 +127,10 @@ El repo está documentado para que **cualquier persona y el Claude de cada uno t
 | [`CLAUDE.md`](CLAUDE.md) | **Reglas de negocio y decisiones de producto** (grupos, gastos, monedas, saldos, pagos, alias, filtros) y reglas de todo el repo: stack, arquitectura, comandos, commits, PRs, conflictos, cuándo una tarea está terminada | Detalles de una app (van en su `CLAUDE.md`), pendientes, investigaciones |
 | [`.claude/CLAUDE.md`](.claude/CLAUDE.md) | Cómo se comporta Claude: pensar antes de codear, simplicidad, cambios quirúrgicos, cuestionar y dar opciones | Nada del proyecto |
 | [`apps/api/CLAUDE.md`](apps/api/CLAUDE.md) | Lo técnico de la API que vale **siempre**: reglas cortas, checklist de seguridad por procedure, migraciones, notas de "no romper", y el índice **"Antes de tocar… → leé…"** | Reglas de negocio (se referencian, no se copian); explicaciones largas (van en `docs/claude/api/`) |
-| [`apps/web/CLAUDE.md`](apps/web/CLAUDE.md) | Lo técnico del front web (el principal) que vale **siempre**: reglas cortas, lo que nunca se hace, comandos, env, y el índice **"Antes de tocar… → leé…"** | Ídem (explicaciones en `docs/claude/web/`) |
-| [`apps/mobile/CLAUDE.md`](apps/mobile/CLAUDE.md) | Todo lo técnico de la app nativa (alternativa): cómo usar la API, estándar de UI/UX, React, testing, EAS, notas técnicas | Ídem |
+| [`apps/web/CLAUDE.md`](apps/web/CLAUDE.md) | Lo técnico del front web que vale **siempre**: reglas cortas, lo que nunca se hace, comandos, env, y el índice **"Antes de tocar… → leé…"** | Ídem (explicaciones en `docs/claude/web/`) |
 | [`V1.md`](V1.md) / [`V2.md`](V2.md) | Alcance de cada versión: qué entra, qué no, **pantallas** y roadmap con checkboxes | Cómo se implementa |
-| [`INFRA.md`](INFRA.md) | Qué servicios existen (Supabase, Railway, Expo, GitHub…), entornos dev/prod, **todas las variables de entorno y secretos** (nombres, nunca valores) | Pasos de deploy |
-| [`DEPLOY.md`](DEPLOY.md) | **Cómo** se hace cada cosa: deploy de la API, migraciones en prod, builds, updates | Inventario de servicios |
+| [`INFRA.md`](INFRA.md) | Qué servicios existen (Supabase, Railway, Cloudflare, GitHub…), entornos dev/prod, **todas las variables de entorno y secretos** (nombres, nunca valores) | Pasos de deploy |
+| [`DEPLOY.md`](DEPLOY.md) | **Cómo** se hace cada cosa: deploy de la web y la API, promover a prod, migraciones en prod | Inventario de servicios |
 | [Issues de GitHub](https://github.com/kachingga/kachingga/issues) (no es un archivo) | **Todo lo pendiente**: tareas, bugs, propuestas y decisiones a tomar, con labels y milestones ("Fase 1 — Privada", "Fase 2 — Pública"). Cómo usarlos: [`docs/claude/repo/issues.md`](docs/claude/repo/issues.md) | Alcance de una versión (va en `V1.md`), conocimiento investigado (va en `docs/decisiones/`) |
 | [`docs/claude/`](docs/claude/README.md) | **Cómo está hecha cada cosa por dentro**: explicaciones, ejemplos y el porqué (`repo/`: git, PRs, issues, tooling; `web/`: datos y cache, plata y fechas, componentes, transiciones, UI/UX, tests; `api/`: contrato, seguridad, tests, seed). Cada doc dice a qué aplica y se lee antes de tocar ese tema | Reglas que valen siempre (van en los `CLAUDE.md`), reglas de negocio, pendientes |
 | [`docs/decisiones/`](docs/decisiones/) | Decisiones investigadas, con fuentes y fecha: [`costos-y-alternativas.md`](docs/decisiones/costos-y-alternativas.md) (costos, web app vs. nativa vs. Tricount), [`mercado-pago.md`](docs/decisiones/mercado-pago.md) (qué se puede y qué no), [`lanzamiento.md`](docs/decisiones/lanzamiento.md) (fases y requisitos para lanzar) | Tareas pendientes (van en issues) |
@@ -159,7 +153,7 @@ El repo está documentado para que **cualquier persona y el Claude de cada uno t
 |------------|---------------|
 | Una regla de negocio (cómo funciona algo para el usuario) | `CLAUDE.md` → "Reglas de negocio" |
 | Un procedure o el modelo de datos | `docs/claude/api/contrato.md` |
-| Cómo funciona algo técnico (web o API) | Su doc en `docs/claude/` (el índice "Antes de tocar…" del `CLAUDE.md` de la app dice cuál). Si es una regla que no se puede romper, además una línea en ese `CLAUDE.md`. Doc nuevo → linkearlo desde el índice (si no, `bun run check` falla). App nativa: `apps/mobile/CLAUDE.md` |
+| Cómo funciona algo técnico (web o API) | Su doc en `docs/claude/` (el índice "Antes de tocar…" del `CLAUDE.md` de la app dice cuál). Si es una regla que no se puede romper, además una línea en ese `CLAUDE.md`. Doc nuevo → linkearlo desde el índice (si no, `bun run check` falla). |
 | El alcance o una pantalla | `V1.md` / `V2.md` (y se tilda el roadmap al terminar) |
 | Un servicio, una variable de entorno o un secreto | `INFRA.md` + el `.env.sample` que corresponda |
 | Cómo se deploya o se migra | `DEPLOY.md` |

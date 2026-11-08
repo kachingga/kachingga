@@ -5,14 +5,12 @@
 | Servicio | Proveedor | Dashboard | Dominio / ID |
 |----------|-----------|-----------|--------------|
 | API | Railway (proyecto `kachingga`, servicio `api`) | railway.com/dashboard | Prod `https://api.kachingga.com` · staging `https://api-staging.kachingga.com` |
-| **Web (front principal)** | Railway (proyecto `kachingga`, servicio `web`) | railway.com/dashboard | Prod `https://kachingga.com` · staging `https://staging.kachingga.com` |
+| **Web** | Railway (proyecto `kachingga`, servicio `web`) | railway.com/dashboard | Prod `https://kachingga.com` · staging `https://staging.kachingga.com` |
 | Dominio y DNS | Cloudflare (Registrar + DNS) | dash.cloudflare.com | `kachingga.com`, con renovación automática |
 | Base de datos **PROD** | Supabase (`kachingga`) | supabase.com/dashboard/project/czrkjokurbmbbvobvmxd | `https://czrkjokurbmbbvobvmxd.supabase.co` (ref `czrkjokurbmbbvobvmxd`) |
 | Base de datos **DEV** | Supabase (`staging-kachingga`) | supabase.com/dashboard/project/nraoqdaplvvsakvtlcam | `https://nraoqdaplvvsakvtlcam.supabase.co` (ref `nraoqdaplvvsakvtlcam`) |
 | Auth | Supabase Auth | supabase.com/dashboard → Authentication | — |
-| Builds mobile (alternativa nativa) | EAS (Expo) | expo.dev/accounts/kachingga/projects/kachingga | Org `kachingga`, project ID `49f7728b-7782-46e5-8a8a-491bb590bfe1` |
-| Updates OTA | EAS Update (canal `main`) | expo.dev | Automático al mergear a `main` (`.github/workflows/eas-update.yml`), inactivo hasta configurar `EXPO_TOKEN` |
-| CI | GitHub Actions | github.com/kachingga/kachingga/actions | `ci.yml` (checks obligatorios), `promote.yml` ("Promover a producción", a mano), `e2e.yml` (Playwright en la web, a demanda), `backup.yml` (backup semanal cifrado de prod, ver `DEPLOY.md` → "Backups") y `eas-update.yml` |
+| CI | GitHub Actions | github.com/kachingga/kachingga/actions | `ci.yml` (checks obligatorios), `promote.yml` ("Promover a producción", a mano), `e2e.yml` (Playwright en la web, a demanda) y `backup.yml` (backup semanal cifrado de prod, ver `DEPLOY.md` → "Backups") |
 | Cotizaciones (dólar blue y oficial, oficial de EUR, BRL, UYU y CLP) | DolarApi (público, sin clave) | dolarapi.com | `https://dolarapi.com/v1/dolares/{blue,oficial}` y `/v1/cotizaciones/{eur,brl,uyu,clp}` |
 | Repo | GitHub | github.com/kachingga/kachingga | — |
 
@@ -30,7 +28,7 @@ Actualizar este archivo con los valores reales después de cada setup.
 
 - Cada base tiene **sus propios usuarios**: para probar en dev o staging hay que registrarse ahí (las cuentas de dev sirven en staging, no en prod).
 - **Staging y dev comparten base:** lo que se carga en local aparece en staging y al revés, y una migración aplicada en dev (`db:migrate:deploy`) ya está en staging.
-- Los `.env` no se suben con el build (están gitignoreados): las variables de prod de la app se cargan en EAS, entorno **`production`** (expo.dev → proyecto → Environment variables) antes del primer build. El perfil `preview` de `eas.json` y el workflow de EAS Update usan ese entorno.
+- Los `.env` no se suben con el build (están gitignoreados): las variables de cada entorno se cargan en Railway (ver abajo).
 
 ### Plan de Supabase
 - Hoy la org `kachingga` está en **Pro** (los dos proyectos se cobran por uso de cómputo).
@@ -66,30 +64,18 @@ Mismas variables en los dos entornos, con los valores de su base (staging = `app
 
 > Todo lo `VITE_*` queda dentro del JavaScript que baja el navegador: es **público**. Nunca secretos. Vite las lee **al buildear**: si cambian, hay que redeployar el servicio `web`.
 
-### EAS / Expo (mobile — `apps/mobile`, alternativa nativa)
-
-| Variable | Descripción |
-|----------|-------------|
-| `EXPO_PUBLIC_API_URL` | URL de la API en Railway |
-| `EXPO_PUBLIC_SUPABASE_URL` | `https://<project>.supabase.co` |
-| `EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY` | Clave **publishable** de Supabase (`sb_publishable_...`) — pública, solo para auth |
-
-> Todo lo que empieza con `EXPO_PUBLIC_` queda embebido en la app y es **público**. Nunca poner secretos ahí.
-
 ### GitHub (secrets del repo)
 
 | Secret | Descripción |
 |--------|-------------|
 | `BACKUP_DATABASE_URL` | `DIRECT_URL` de prod (session pooler, puerto 5432). Lo usa `backup.yml` para el `pg_dump` semanal |
 | `BACKUP_PASSPHRASE` | Passphrase con la que `backup.yml` cifra cada backup. Copia en `apps/api/.env.prod` y en el gestor de contraseñas de Galo: **sin ella no se pueden abrir los backups** |
-| `EXPO_TOKEN` | Token de acceso de Expo (org `kachingga`) para que `eas-update.yml` publique updates. **Todavía no creado** — ver `DEPLOY.md` → "Activar EAS Update automático" |
 
 ### Archivos locales (gitignoreados, nunca commitear)
 
 - `apps/api/.env` — variables de desarrollo de la API
-- `apps/api/.env` / `apps/web/.env` / `apps/mobile/.env` — **DEV** (`staging-kachingga`). Lo que usa todo lo local
-- `apps/api/.env.prod` / `apps/mobile/.env.prod` — **PROD** (`kachingga`). Solo para `db:migrate:prod` y como referencia de las variables de Railway y EAS
-- `apps/mobile/.env.local` — variables de desarrollo de la app
+- `apps/api/.env` / `apps/web/.env` — **DEV** (`staging-kachingga`). Lo que usa todo lo local
+- `apps/api/.env.prod` — **PROD** (`kachingga`). Solo para `db:migrate:prod` y como referencia de las variables de Railway (las `VITE_*` de prod de la web salen del dashboard de Supabase → `kachingga` → API Keys)
 
 ---
 
@@ -111,4 +97,4 @@ Mismas variables en los dos entornos, con los valores de su base (staging = `app
 
 ## Accesos
 
-Las cuentas están **a nombre de Galo**: org de GitHub `kachingga`, proyecto `kachingga` de Railway (en su cuenta personal, plan Hobby compartido con otros proyectos suyos), Cloudflare (dominio y DNS) y org `kachingga` de Supabase. Al resto del grupo se lo suma si lo necesita: org de GitHub, org de Supabase, proyecto de Railway (Hobby admite pocos miembros por proyecto: verificar el límite al invitar) y, si se trabaja en la app nativa, org de Expo.
+Las cuentas están **a nombre de Galo**: org de GitHub `kachingga`, proyecto `kachingga` de Railway (en su cuenta personal, plan Hobby compartido con otros proyectos suyos), Cloudflare (dominio y DNS) y org `kachingga` de Supabase. Al resto del grupo se lo suma si lo necesita: org de GitHub, org de Supabase, proyecto de Railway (Hobby admite pocos miembros por proyecto: verificar el límite al invitar).
