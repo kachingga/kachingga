@@ -68,12 +68,9 @@ export function ExpenseDetail() {
     return (
       <div className="p-6 text-center">
         <ErrorState message={expense.error.message} onRetry={() => expense.refetch()} />
-        <button
-          onClick={() => navigate(-1)}
-          className="mt-2 text-sm text-muted-foreground underline"
-        >
+        <Button variant="link" className="mt-2 text-muted-foreground" onClick={() => navigate(-1)}>
           Volver
-        </button>
+        </Button>
       </div>
     );
   }
@@ -84,13 +81,15 @@ export function ExpenseDetail() {
   return (
     <div className="mx-auto w-full max-w-2xl space-y-6">
       <div className="rise flex items-center justify-between">
-        <button
+        <Button
+          variant="ghost"
+          size="icon-sm"
+          className="text-muted-foreground"
           onClick={() => navigate(-1)}
           aria-label="Volver"
-          className="press grid size-9 shrink-0 place-items-center rounded-full text-lg text-muted-foreground hover:bg-muted"
         >
           <ArrowLeft className="size-5" />
-        </button>
+        </Button>
         {!isArchived && (
           <div className="flex gap-3">
             <Button asChild variant="outline" size="sm">
@@ -99,7 +98,9 @@ export function ExpenseDetail() {
                 Editar
               </Link>
             </Button>
-            <button
+            <Button
+              variant="destructive"
+              size="sm"
               onClick={async () => {
                 const ok = await confirm({
                   title: '¿Borrar este gasto?',
@@ -109,11 +110,10 @@ export function ExpenseDetail() {
                 });
                 if (ok) deleteExpense.mutate({ expenseId: expenseId! });
               }}
-              disabled={deleteExpense.isPending}
-              className="press inline-flex h-9 items-center gap-1.5 rounded-full bg-destructive/10 px-3.5 text-[0.8rem] font-semibold text-destructive disabled:opacity-50"
+              loading={deleteExpense.isPending}
             >
               {deleteExpense.isPending ? 'Borrando…' : 'Borrar'}
-            </button>
+            </Button>
           </div>
         )}
       </div>

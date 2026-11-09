@@ -1,7 +1,14 @@
 import { useRef, useState } from 'react';
 import { Link, useNavigate } from 'react-router';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { Archive, ArchiveRestore, ChevronRight, KeyRound, Plus } from 'lucide-react';
+import {
+  Archive,
+  ArchiveRestore,
+  ChevronRight,
+  KeyRound,
+  MoreHorizontal,
+  Plus,
+} from 'lucide-react';
 
 import { ErrorState } from '@/components/error-state';
 import { Avatar, Card, MyBalance, Page } from '@/components/kit';
@@ -164,9 +171,9 @@ export function GroupList() {
                     navigate(`/grupos/${group.id}`);
                   }}
                   aria-label="Opciones"
-                  className="flex h-full w-20 items-center justify-center rounded-r-2xl bg-accent text-xl text-accent-foreground"
+                  className="flex h-full w-20 items-center justify-center rounded-r-2xl bg-accent text-accent-foreground"
                 >
-                  ⋯
+                  <MoreHorizontal className="size-5" />
                 </button>
               </div>
 

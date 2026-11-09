@@ -8,6 +8,7 @@ import {
   type CategoryColor,
   type CategoryIconName,
 } from '@/lib/categories';
+import { Label } from '@/components/ui/label';
 import { formatMyBalance } from '@/lib/format';
 
 // Visual building blocks of the design (palette "yerba y durazno"). Only presentation: no data.
@@ -149,9 +150,30 @@ export function Page({ wide, className, ...props }: ComponentProps<'div'> & { wi
   );
 }
 
-/** Classes for native fields (`<select>`, date inputs) so they look like `<Input>`. */
-export const fieldClass =
-  'h-11 w-full min-w-0 rounded-xl border border-input bg-card px-3.5 text-base text-foreground outline-none transition-colors placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 disabled:opacity-50 dark:bg-input/30';
+/** A labeled form field: `<Label>` on top of its control (`Input`, `NativeSelect`, `NumberInput`…). */
+export function Field({
+  label,
+  htmlFor,
+  small,
+  className,
+  children,
+}: {
+  label: ReactNode;
+  htmlFor?: string;
+  /** Smaller, muted label (dense forms like filters). */
+  small?: boolean;
+  className?: string;
+  children: ReactNode;
+}) {
+  return (
+    <div className={cn('space-y-1.5', className)}>
+      <Label htmlFor={htmlFor} className={small ? 'text-xs text-muted-foreground' : undefined}>
+        {label}
+      </Label>
+      {children}
+    </div>
+  );
+}
 
 /** Small pill buttons for choices (split type, currency mode, filters). */
 export function Chip({

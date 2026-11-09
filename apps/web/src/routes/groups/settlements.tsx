@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useNavigate, useParams, useSearchParams } from 'react-router';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
-import { ArrowLeft } from 'lucide-react';
+import { Plus } from 'lucide-react';
 
 import type { inferRouterOutputs } from '@trpc/server';
 import type { AppRouter } from '@kachingga/api';
@@ -12,6 +12,10 @@ import { NumberInput } from '@/components/number-input';
 import { useExchangeRate } from '@/lib/use-exchange-rate';
 import { ArchivedNotice } from '@/components/archived-notice';
 import { ErrorState } from '@/components/error-state';
+import { Card, Field, Page, PageHeader } from '@/components/kit';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { NativeSelect } from '@/components/ui/native-select';
 import { ListScreenSkeleton, RowsSkeleton } from '@/components/skeletons';
 import { useTRPC } from '@/lib/trpc';
 import { buildSettlement, byDateDesc, isTemp } from '@/lib/optimistic';
@@ -41,12 +45,9 @@ export function Settlements() {
     return (
       <div className="p-6 text-center">
         <ErrorState message={group.error.message} onRetry={() => group.refetch()} />
-        <button
-          onClick={() => navigate(-1)}
-          className="mt-2 text-sm text-muted-foreground underline"
-        >
+        <Button variant="link" className="mt-2 text-muted-foreground" onClick={() => navigate(-1)}>
           Volver
-        </button>
+        </Button>
       </div>
     );
   }
@@ -178,177 +179,131 @@ function SettlementsBody({ groupId, group }: { groupId: string; group: GroupData
   const isArchived = !!group.archivedAt;
 
   return (
-    <div className="mx-auto w-full max-w-2xl space-y-6">
-      <div className="rise flex items-center gap-3">
-        <button
-          onClick={() => navigate(-1)}
-          aria-label="Volver"
-          className="press grid size-9 shrink-0 place-items-center rounded-full text-lg text-muted-foreground hover:bg-muted"
-        >
-          <ArrowLeft className="size-5" />
-        </button>
-        <h1 className="text-2xl font-bold lg:text-3xl">Pagos</h1>
-      </div>
+    <Page>
+      <PageHeader title="Pagos" back={{ onClick: () => navigate(-1), label: 'Volver' }} />
 
-      {isArchived && (
-        <div className="mb-6">
-          <ArchivedNotice groupId={group.id} />
-        </div>
-      )}
+      {isArchived && <ArchivedNotice groupId={group.id} />}
 
       {/* Registrar pago */}
       {!isArchived && (
-        <div className="mb-6">
+        <div>
           {!showForm ? (
-            <button
-              onClick={() => setShowForm(true)}
-              className="w-full rounded-xl bg-primary py-3 font-medium text-primary-foreground"
-            >
-              + Registrar pago
-            </button>
+            <Button size="lg" className="w-full" onClick={() => setShowForm(true)}>
+              <Plus />
+              Registrar pago
+            </Button>
           ) : (
-            <form
-              onSubmit={handleSubmit}
-              className="space-y-4 rounded-2xl border bg-card p-5 shadow-soft"
-            >
-              <h2 className="font-semibold">Registrar pago</h2>
+            <Card>
+              <form onSubmit={handleSubmit} className="space-y-4">
+                <h2 className="font-semibold">Registrar pago</h2>
 
-              <div className="grid grid-cols-2 gap-3 [&>*]:min-w-0">
-                <div>
-                  <label className="block text-sm font-medium text-foreground" htmlFor="from">
-                    Quién pagó
-                  </label>
-                  <select
-                    id="from"
-                    value={fromId}
-                    onChange={(e) => setFromId(e.target.value)}
-                    required
-                    className="mt-1.5 h-11 w-full rounded-xl border border-input bg-card px-3.5 text-base text-foreground placeholder:text-muted-foreground outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 disabled:opacity-50 dark:bg-input/30"
-                  >
-                    <option value="">Elegir…</option>
-                    {participants.map((p) => (
-                      <option key={p.id} value={p.id}>
-                        {p.name}
-                        {p.isMe ? ' (yo)' : ''}
-                      </option>
-                    ))}
-                  </select>
+                <div className="grid grid-cols-2 gap-3 [&>*]:min-w-0">
+                  <Field label="Quién pagó" htmlFor="from">
+                    <NativeSelect
+                      id="from"
+                      value={fromId}
+                      onChange={(e) => setFromId(e.target.value)}
+                      required
+                    >
+                      <option value="">Elegir…</option>
+                      {participants.map((p) => (
+                        <option key={p.id} value={p.id}>
+                          {p.name}
+                          {p.isMe ? ' (yo)' : ''}
+                        </option>
+                      ))}
+                    </NativeSelect>{' '}
+                  </Field>
+
+                  <Field label="A quién" htmlFor="to">
+                    <NativeSelect
+                      id="to"
+                      value={toId}
+                      onChange={(e) => setToId(e.target.value)}
+                      required
+                    >
+                      <option value="">Elegir…</option>
+                      {participants.map((p) => (
+                        <option key={p.id} value={p.id}>
+                          {p.name}
+                          {p.isMe ? ' (yo)' : ''}
+                        </option>
+                      ))}
+                    </NativeSelect>{' '}
+                  </Field>
                 </div>
 
-                <div>
-                  <label className="block text-sm font-medium text-foreground" htmlFor="to">
-                    A quién
-                  </label>
-                  <select
-                    id="to"
-                    value={toId}
-                    onChange={(e) => setToId(e.target.value)}
-                    required
-                    className="mt-1.5 h-11 w-full rounded-xl border border-input bg-card px-3.5 text-base text-foreground placeholder:text-muted-foreground outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 disabled:opacity-50 dark:bg-input/30"
-                  >
-                    <option value="">Elegir…</option>
-                    {participants.map((p) => (
-                      <option key={p.id} value={p.id}>
-                        {p.name}
-                        {p.isMe ? ' (yo)' : ''}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-              </div>
+                <div className="grid grid-cols-2 gap-3 [&>*]:min-w-0">
+                  <Field label="Monto" htmlFor="amount">
+                    <NumberInput
+                      id="amount"
+                      value={amountInput}
+                      onValueChange={setAmountInput}
+                      required
+                      placeholder="0"
+                    />{' '}
+                  </Field>
 
-              <div className="grid grid-cols-2 gap-3 [&>*]:min-w-0">
-                <div>
-                  <label className="block text-sm font-medium text-foreground" htmlFor="amount">
-                    Monto
-                  </label>
-                  <NumberInput
-                    id="amount"
-                    value={amountInput}
-                    onValueChange={setAmountInput}
-                    required
-                    placeholder="0"
-                    className="mt-1.5 h-11 w-full rounded-xl border border-input bg-card px-3.5 text-base text-foreground placeholder:text-muted-foreground outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 disabled:opacity-50 dark:bg-input/30"
-                  />
+                  <Field label="Moneda" htmlFor="sett-currency">
+                    <NativeSelect
+                      id="sett-currency"
+                      value={currency}
+                      onChange={(e) => {
+                        const c = e.target.value as Currency;
+                        setCurrency(c);
+                        rate.resetFor(c);
+                      }}
+                    >
+                      {currencies.map((c) => (
+                        <option key={c} value={c}>
+                          {currencyLabels[c]}
+                        </option>
+                      ))}
+                    </NativeSelect>{' '}
+                  </Field>
                 </div>
 
-                <div>
-                  <label
-                    className="block text-sm font-medium text-foreground"
-                    htmlFor="sett-currency"
-                  >
-                    Moneda
-                  </label>
-                  <select
-                    id="sett-currency"
-                    value={currency}
-                    onChange={(e) => {
-                      const c = e.target.value as Currency;
-                      setCurrency(c);
-                      rate.resetFor(c);
+                <ExchangeRateFields rate={rate} amountCents={toCents(amountInput)} />
+
+                <Field label="Fecha" htmlFor="sett-date">
+                  <Input
+                    id="sett-date"
+                    type="date"
+                    value={dateInput}
+                    onChange={(e) => setDateInput(e.target.value)}
+                    required
+                  />{' '}
+                </Field>
+
+                <Field label="Nota (opcional)" htmlFor="note">
+                  <Input
+                    id="note"
+                    value={note}
+                    onChange={(e) => setNote(e.target.value)}
+                    placeholder="Transferencia del 5/12"
+                  />{' '}
+                </Field>
+
+                {formError && <p className="text-sm text-destructive">{formError}</p>}
+
+                <div className="flex gap-2">
+                  <Button type="submit" className="flex-1" loading={createSettlement.isPending}>
+                    {createSettlement.isPending ? 'Guardando…' : 'Registrar'}
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    className="flex-1"
+                    onClick={() => {
+                      setShowForm(false);
+                      setFormError(null);
                     }}
-                    className="mt-1.5 h-11 w-full rounded-xl border border-input bg-card px-3.5 text-base text-foreground placeholder:text-muted-foreground outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 disabled:opacity-50 dark:bg-input/30"
                   >
-                    {currencies.map((c) => (
-                      <option key={c} value={c}>
-                        {currencyLabels[c]}
-                      </option>
-                    ))}
-                  </select>
+                    Cancelar
+                  </Button>
                 </div>
-              </div>
-
-              <ExchangeRateFields rate={rate} amountCents={toCents(amountInput)} />
-
-              <div>
-                <label className="block text-sm font-medium text-foreground" htmlFor="sett-date">
-                  Fecha
-                </label>
-                <input
-                  id="sett-date"
-                  type="date"
-                  value={dateInput}
-                  onChange={(e) => setDateInput(e.target.value)}
-                  required
-                  className="mt-1.5 h-11 w-full rounded-xl border border-input bg-card px-3.5 text-base text-foreground placeholder:text-muted-foreground outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 disabled:opacity-50 dark:bg-input/30"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-foreground" htmlFor="note">
-                  Nota (opcional)
-                </label>
-                <input
-                  id="note"
-                  value={note}
-                  onChange={(e) => setNote(e.target.value)}
-                  placeholder="Transferencia del 5/12"
-                  className="mt-1.5 h-11 w-full rounded-xl border border-input bg-card px-3.5 text-base text-foreground placeholder:text-muted-foreground outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 disabled:opacity-50 dark:bg-input/30"
-                />
-              </div>
-
-              {formError && <p className="text-sm text-destructive">{formError}</p>}
-
-              <div className="flex gap-2">
-                <button
-                  type="submit"
-                  disabled={createSettlement.isPending}
-                  className="press flex-1 rounded-full bg-primary py-2 font-semibold text-primary-foreground disabled:opacity-50 shadow-soft"
-                >
-                  {createSettlement.isPending ? 'Guardando…' : 'Registrar'}
-                </button>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setShowForm(false);
-                    setFormError(null);
-                  }}
-                  className="press flex-1 rounded-full border border-input py-2 text-foreground bg-card"
-                >
-                  Cancelar
-                </button>
-              </div>
-            </form>
+              </form>
+            </Card>
           )}
         </div>
       )}
@@ -371,7 +326,7 @@ function SettlementsBody({ groupId, group }: { groupId: string; group: GroupData
             <li
               key={s.id}
               aria-busy={isTemp(s.id) || undefined}
-              className={`flex items-center justify-between rounded-2xl bg-card p-3 ${isTemp(s.id) ? 'opacity-60' : ''}`}
+              className={`flex items-center justify-between rounded-2xl border bg-card p-4 shadow-soft ${isTemp(s.id) ? 'opacity-60' : ''}`}
             >
               <div>
                 <p className="text-sm font-medium">
@@ -383,7 +338,10 @@ function SettlementsBody({ groupId, group }: { groupId: string; group: GroupData
                 </p>
               </div>
               {!isArchived && !isTemp(s.id) && (
-                <button
+                <Button
+                  variant="ghost"
+                  size="xs"
+                  className="ml-2 text-destructive"
                   onClick={async () => {
                     const ok = await confirm({
                       title: '¿Borrar este pago?',
@@ -393,15 +351,14 @@ function SettlementsBody({ groupId, group }: { groupId: string; group: GroupData
                     });
                     if (ok) deleteSettlement.mutate({ settlementId: s.id });
                   }}
-                  className="ml-2 text-xs text-destructive"
                 >
                   Borrar
-                </button>
+                </Button>
               )}
             </li>
           ))}
         </ul>
       )}
-    </div>
+    </Page>
   );
 }

@@ -1,5 +1,6 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 
+import { Button } from '@/components/ui/button';
 import { useTRPC } from '@/lib/trpc';
 
 /**
@@ -24,13 +25,15 @@ export function ArchivedNotice({ groupId }: { groupId: string }) {
         <span className="font-medium text-foreground">Grupo archivado.</span> Se puede ver pero no
         modificar.
       </p>
-      <button
+      <Button
+        variant="outline"
+        size="sm"
+        className="shrink-0"
         onClick={() => unarchive.mutate({ groupId, archived: false })}
-        disabled={unarchive.isPending}
-        className="press shrink-0 rounded-full border border-input px-3 py-1 font-semibold text-foreground disabled:opacity-50 bg-card"
+        loading={unarchive.isPending}
       >
         {unarchive.isPending ? 'Desarchivando…' : 'Desarchivar'}
-      </button>
+      </Button>
     </div>
   );
 }

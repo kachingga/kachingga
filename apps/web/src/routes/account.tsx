@@ -1,10 +1,12 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { ArrowLeft } from 'lucide-react';
 
 import { useSession } from '@/lib/auth';
 import { ErrorState } from '@/components/error-state';
+import { Card, Page, PageHeader } from '@/components/kit';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import { useTRPC } from '@/lib/trpc';
 import { useSignOut } from '@/lib/use-sign-out';
 
@@ -40,25 +42,16 @@ export function Account() {
   const handleSignOut = useSignOut();
 
   return (
-    <div className="mx-auto w-full max-w-2xl space-y-6">
-      <div className="rise flex items-center gap-3">
-        <button
-          onClick={() => navigate(-1)}
-          aria-label="Volver"
-          className="press grid size-9 shrink-0 place-items-center rounded-full text-lg text-muted-foreground hover:bg-muted"
-        >
-          <ArrowLeft className="size-5" />
-        </button>
-        <h1 className="text-2xl font-bold lg:text-3xl">Mi cuenta</h1>
-      </div>
+    <Page>
+      <PageHeader title="Mi cuenta" back={{ onClick: () => navigate(-1), label: 'Volver' }} />
 
       <div className="space-y-6">
-        <div className="rounded-2xl border bg-card p-5 shadow-soft">
+        <Card>
           <p className="text-sm text-muted-foreground">Email</p>
           <p className="mt-1 font-medium">{session?.user.email ?? '—'}</p>
-        </div>
+        </Card>
 
-        <div className="rounded-2xl border bg-card p-5 shadow-soft">
+        <Card>
           <p className="mb-2 text-sm text-muted-foreground">Alias / CVU para cobrar</p>
 
           {profile.isPending && <p className="text-muted-foreground">Cargando…</p>}
@@ -70,35 +63,32 @@ export function Account() {
           {profile.isSuccess && !editingAlias && (
             <div className="flex items-center justify-between">
               <p className="font-medium">{profile.data.paymentAlias ?? 'Sin alias'}</p>
-              <button onClick={startEdit} className="text-sm text-muted-foreground underline">
+              <Button variant="link" size="sm" onClick={startEdit}>
                 {profile.data.paymentAlias ? 'Cambiar' : 'Agregar'}
-              </button>
+              </Button>
             </div>
           )}
 
           {editingAlias && (
             <div className="space-y-2">
-              <input
+              <Input
                 value={aliasInput}
                 onChange={(e) => setAliasInput(e.target.value)}
                 placeholder="alias.ejemplo o CVU de 22 dígitos"
-                className="h-11 w-full rounded-xl border border-input bg-card px-3.5 text-base text-foreground placeholder:text-muted-foreground outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 disabled:opacity-50 dark:bg-input/30"
+                aria-label="Alias o CVU"
               />
               {aliasError && <p className="text-sm text-destructive">{aliasError}</p>}
               <div className="flex gap-2">
-                <button
+                <Button
+                  className="flex-1"
                   onClick={() => updateProfile.mutate({ paymentAlias: aliasInput || null })}
-                  disabled={updateProfile.isPending}
-                  className="press flex-1 rounded-full bg-primary py-2 font-semibold text-primary-foreground disabled:opacity-50 shadow-soft"
+                  loading={updateProfile.isPending}
                 >
                   {updateProfile.isPending ? 'Guardando…' : 'Guardar'}
-                </button>
-                <button
-                  onClick={() => setEditingAlias(false)}
-                  className="press flex-1 rounded-full border border-input py-2 text-foreground bg-card"
-                >
+                </Button>
+                <Button variant="outline" className="flex-1" onClick={() => setEditingAlias(false)}>
                   Cancelar
-                </button>
+                </Button>
               </div>
             </div>
           )}
@@ -106,15 +96,12 @@ export function Account() {
           <p className="mt-2 text-xs text-muted-foreground">
             Se usa en todos tus grupos para recibir transferencias.
           </p>
-        </div>
+        </Card>
 
-        <button
-          onClick={handleSignOut}
-          className="press w-full rounded-full border border-destructive/40 py-3 text-destructive bg-card"
-        >
+        <Button variant="destructive" className="w-full" onClick={handleSignOut}>
           Cerrar sesión
-        </button>
+        </Button>
       </div>
-    </div>
+    </Page>
   );
 }

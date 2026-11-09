@@ -1,10 +1,14 @@
 import { useState } from 'react';
 import { Link, useNavigate, useParams, useSearchParams } from 'react-router';
 import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { ArrowLeft } from 'lucide-react';
+import { X } from 'lucide-react';
 
 import { ErrorState } from '@/components/error-state';
-import { CategoryIcon } from '@/components/kit';
+import { Card, CategoryIcon, Chip, Field, Page, PageHeader } from '@/components/kit';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { NativeSelect } from '@/components/ui/native-select';
 import { LoadMore } from '@/components/load-more';
 import { NumberInput } from '@/components/number-input';
 import { ExpenseListSkeleton } from '@/components/skeletons';
@@ -27,9 +31,6 @@ function triggerDownload(filename: string, mimeType: string, content: string) {
   a.click();
   URL.revokeObjectURL(url);
 }
-
-const fieldClass =
-  'mt-1.5 h-10 w-full rounded-xl border border-input bg-card px-3 text-base text-foreground placeholder:text-muted-foreground outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 dark:bg-input/30';
 
 export function Filters() {
   const { groupId } = useParams<{ groupId: string }>();
@@ -124,38 +125,32 @@ export function Filters() {
   const loadMoreExpenses = () => void expenses.fetchNextPage();
 
   return (
-    <div className="mx-auto w-full max-w-6xl space-y-6">
-      <div className="rise flex items-center gap-3">
-        <button
-          onClick={() => navigate(-1)}
-          aria-label="Volver"
-          className="press grid size-9 shrink-0 place-items-center rounded-full text-lg text-muted-foreground hover:bg-muted"
-        >
-          <ArrowLeft className="size-5" />
-        </button>
-        <h1 className="text-2xl font-bold lg:text-3xl">Filtros y totales</h1>
-      </div>
+    <Page wide>
+      <PageHeader
+        title="Filtros y totales"
+        back={{ onClick: () => navigate(-1), label: 'Volver' }}
+      />
 
       {/* Atajos */}
       <div className="flex flex-wrap items-center gap-2">
-        <button
+        <Button
+          variant="outline"
+          size="sm"
           onClick={() => myId && update({ involvedParticipantId: myId })}
-          className="press rounded-full border border-input px-3 py-1 text-sm text-foreground bg-card"
         >
           Mis gastos
-        </button>
-        <button
-          onClick={() => applyMonth(today().slice(0, 7))}
-          className="press rounded-full border border-input px-3 py-1 text-sm text-foreground bg-card"
-        >
+        </Button>
+        <Button variant="outline" size="sm" onClick={() => applyMonth(today().slice(0, 7))}>
           Este mes
-        </button>
-        <button
+        </Button>
+        <Button
+          variant="outline"
+          size="sm"
+          className="text-muted-foreground"
           onClick={() => setFilters({})}
-          className="press rounded-full border border-input px-3 py-1 text-sm text-muted-foreground bg-card"
         >
           Limpiar filtros
-        </button>
+        </Button>
       </div>
 
       {/* Filtros guardados */}
@@ -166,16 +161,23 @@ export function Filters() {
               key={sf.id}
               className="flex items-center gap-1 rounded-full border border-primary/30 bg-accent py-1 pr-1 pl-3 text-accent-foreground"
             >
-              <button onClick={() => setFilters(fromApiFilters(sf.filters))} className="text-sm">
+              <Button
+                variant="link"
+                size="xs"
+                className="px-0 text-accent-foreground"
+                onClick={() => setFilters(fromApiFilters(sf.filters))}
+              >
                 {sf.name}
-              </button>
-              <button
+              </Button>
+              <Button
+                variant="ghost"
+                size="icon-xs"
+                className="rounded-full text-muted-foreground"
                 onClick={() => deleteFilter.mutate({ savedFilterId: sf.id })}
                 aria-label={`Borrar filtro ${sf.name}`}
-                className="px-1 text-xs text-muted-foreground"
               >
-                ×
-              </button>
+                <X />
+              </Button>
             </div>
           ))}
         </div>
@@ -183,17 +185,13 @@ export function Filters() {
 
       <div className="grid grid-cols-[minmax(0,1fr)] gap-6 lg:grid-cols-[minmax(0,380px)_minmax(0,1fr)] lg:items-start">
         {/* Formulario de filtros */}
-        <div className="space-y-3 rounded-2xl border bg-card p-5 shadow-soft lg:sticky lg:top-10">
+        <Card className="space-y-3 lg:sticky lg:top-10">
           <div className="grid grid-cols-2 gap-3 [&>*]:min-w-0">
-            <div>
-              <label htmlFor="f-paid" className="block text-xs font-medium text-muted-foreground">
-                Quién pagó
-              </label>
-              <select
+            <Field label="Quién pagó" htmlFor="f-paid" small>
+              <NativeSelect
                 id="f-paid"
                 value={urlFilters.paidById ?? ''}
                 onChange={(e) => update({ paidById: e.target.value || undefined })}
-                className={fieldClass}
               >
                 <option value="">Todos</option>
                 {participants.map((p) => (
@@ -201,17 +199,13 @@ export function Filters() {
                     {p.name}
                   </option>
                 ))}
-              </select>
-            </div>
-            <div>
-              <label htmlFor="f-split" className="block text-xs font-medium text-muted-foreground">
-                Le corresponde a
-              </label>
-              <select
+              </NativeSelect>
+            </Field>
+            <Field label="Le corresponde a" htmlFor="f-split" small>
+              <NativeSelect
                 id="f-split"
                 value={urlFilters.splitParticipantId ?? ''}
                 onChange={(e) => update({ splitParticipantId: e.target.value || undefined })}
-                className={fieldClass}
               >
                 <option value="">Todos</option>
                 {participants.map((p) => (
@@ -219,19 +213,15 @@ export function Filters() {
                     {p.name}
                   </option>
                 ))}
-              </select>
-            </div>
+              </NativeSelect>
+            </Field>
           </div>
 
-          <div>
-            <label htmlFor="f-involved" className="block text-xs font-medium text-muted-foreground">
-              Involucrado (pagó o le corresponde)
-            </label>
-            <select
+          <Field label="Involucrado (pagó o le corresponde)" htmlFor="f-involved" small>
+            <NativeSelect
               id="f-involved"
               value={urlFilters.involvedParticipantId ?? ''}
               onChange={(e) => update({ involvedParticipantId: e.target.value || undefined })}
-              className={fieldClass}
             >
               <option value="">Todos</option>
               {participants.map((p) => (
@@ -239,85 +229,75 @@ export function Filters() {
                   {p.name}
                 </option>
               ))}
-            </select>
-          </div>
+            </NativeSelect>
+          </Field>
 
-          <div>
-            <label htmlFor="f-month" className="block text-xs font-medium text-muted-foreground">
-              Mes
-            </label>
-            <input
+          <Field label="Mes" htmlFor="f-month" small>
+            <Input
               id="f-month"
               type="month"
               value={selectedMonth}
               onChange={(e) => applyMonth(e.target.value)}
-              className={fieldClass}
             />
-          </div>
+          </Field>
 
           <div className="grid grid-cols-2 gap-3 [&>*]:min-w-0">
-            <div>
-              <label htmlFor="f-from" className="block text-xs font-medium text-muted-foreground">
-                Desde
-              </label>
-              <input
+            <Field label="Desde" htmlFor="f-from" small>
+              <Input
                 id="f-from"
                 type="date"
                 value={urlFilters.dateFrom ?? ''}
                 onChange={(e) => update({ dateFrom: e.target.value || undefined })}
-                className={fieldClass}
               />
-            </div>
-            <div>
-              <label htmlFor="f-to" className="block text-xs font-medium text-muted-foreground">
-                Hasta
-              </label>
-              <input
+            </Field>
+            <Field label="Hasta" htmlFor="f-to" small>
+              <Input
                 id="f-to"
                 type="date"
                 value={urlFilters.dateTo ?? ''}
                 onChange={(e) => update({ dateTo: e.target.value || undefined })}
-                className={fieldClass}
               />
-            </div>
+            </Field>
           </div>
 
-          <div>
-            <p className="text-xs text-muted-foreground">Monto (en la moneda de cada gasto)</p>
+          <div className="space-y-1.5">
+            <p className="text-xs font-medium text-muted-foreground">
+              Monto (en la moneda de cada gasto)
+            </p>
             <div className="grid grid-cols-2 gap-3 [&>*]:min-w-0">
               <NumberInput
                 aria-label="Monto mínimo"
                 placeholder="Mínimo"
                 value={urlFilters.minAmount ?? ''}
                 onValueChange={(v) => update({ minAmount: v || undefined })}
-                className={fieldClass}
               />
               <NumberInput
                 aria-label="Monto máximo"
                 placeholder="Máximo"
                 value={urlFilters.maxAmount ?? ''}
                 onValueChange={(v) => update({ maxAmount: v || undefined })}
-                className={fieldClass}
               />
             </div>
           </div>
 
-          <div>
-            <label htmlFor="f-search" className="block text-xs font-medium text-muted-foreground">
-              Descripción
-            </label>
-            <input
+          <Field label="Descripción" htmlFor="f-search" small>
+            <Input
               id="f-search"
               value={urlFilters.search ?? ''}
               onChange={(e) => update({ search: e.target.value || undefined })}
               placeholder="Buscar…"
-              className={fieldClass}
             />
-          </div>
+          </Field>
 
           <div>
-            <p className="block text-xs font-medium text-muted-foreground">Categorías</p>
-            <div className="mt-1 flex flex-wrap gap-1">
+            <Label id="f-categories" className="text-xs text-muted-foreground">
+              Categorías
+            </Label>
+            <div
+              className="mt-1.5 flex flex-wrap gap-1"
+              role="group"
+              aria-labelledby="f-categories"
+            >
               {(categories.data ?? [])
                 // Archived ones only if they're already in the filter (e.g. from a saved one).
                 .filter((cat) => !cat.archived || urlFilters.categoryIds?.includes(cat.id))
@@ -325,10 +305,10 @@ export function Filters() {
                   const ids = urlFilters.categoryIds ?? [];
                   const selected = ids.includes(cat.id);
                   return (
-                    <button
+                    <Chip
                       key={cat.id}
-                      type="button"
-                      aria-pressed={selected}
+                      active={selected}
+                      className="flex items-center gap-1.5 py-1 pr-3 pl-1 text-xs"
                       onClick={() =>
                         update({
                           categoryIds: selected
@@ -336,7 +316,6 @@ export function Filters() {
                             : [...ids, cat.id],
                         })
                       }
-                      className={`press flex items-center gap-1.5 rounded-full py-1 pr-3 pl-1 text-xs font-medium ${selected ? 'bg-primary text-primary-foreground' : 'border border-input bg-card text-muted-foreground'}`}
                     >
                       <CategoryIcon
                         icon={cat.icon}
@@ -344,7 +323,7 @@ export function Filters() {
                         className="size-6 rounded-full [&_svg]:size-3.5"
                       />
                       {cat.name}
-                    </button>
+                    </Chip>
                   );
                 })}
             </div>
@@ -352,27 +331,28 @@ export function Filters() {
 
           {/* Guardar filtro */}
           <div className="flex gap-2 border-t border-border pt-3">
-            <input
+            <Input
               value={filterName}
               onChange={(e) => setFilterName(e.target.value)}
               aria-label="Nombre del filtro"
               placeholder="Nombre del filtro…"
-              className="flex-1 h-11 rounded-xl border border-input bg-card px-3.5 text-base text-foreground placeholder:text-muted-foreground outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 disabled:opacity-50 dark:bg-input/30"
+              className="flex-1"
             />
-            <button
+            <Button
+              variant="secondary"
               onClick={() => {
                 if (filterName.trim()) {
                   createFilter.mutate({ groupId: groupId!, name: filterName.trim(), filters });
                 }
               }}
-              disabled={createFilter.isPending || !filterName.trim()}
-              className="press rounded-full bg-secondary px-4 text-sm font-semibold text-secondary-foreground disabled:opacity-50"
+              loading={createFilter.isPending}
+              disabled={!filterName.trim()}
             >
               Guardar
-            </button>
+            </Button>
           </div>
           {saveError && <p className="text-xs text-destructive">{saveError}</p>}
-        </div>
+        </Card>
 
         <div className="space-y-6">
           {/* Totales */}
@@ -440,20 +420,22 @@ export function Filters() {
 
           {/* Exportar */}
           <div className="flex gap-2">
-            <button
+            <Button
+              variant="outline"
+              className="flex-1"
               onClick={() => void handleExport('csv')}
-              disabled={exportingCsv}
-              className="press flex-1 rounded-full border bg-card py-2.5 text-sm font-medium text-foreground shadow-soft disabled:opacity-50"
+              loading={exportingCsv}
             >
               {exportingCsv ? 'Exportando…' : 'Exportar CSV'}
-            </button>
-            <button
+            </Button>
+            <Button
+              variant="outline"
+              className="flex-1"
               onClick={() => void handleExport('json')}
-              disabled={exportingJson}
-              className="press flex-1 rounded-full border bg-card py-2.5 text-sm font-medium text-foreground shadow-soft disabled:opacity-50"
+              loading={exportingJson}
             >
               {exportingJson ? 'Exportando…' : 'Exportar JSON'}
-            </button>
+            </Button>
           </div>
 
           {/* Gastos filtrados */}
@@ -511,7 +493,7 @@ export function Filters() {
           </div>
         </div>
       </div>
-    </div>
+    </Page>
   );
 }
 
