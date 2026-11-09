@@ -52,7 +52,7 @@ Mergear un PR a `main` → Railway espera el CI y deploya en **staging** solo lo
 1. Probar en staging.
 2. Si hay **migraciones nuevas**: `bun run --cwd apps/api db:migrate:prod` (prod antes que el código nuevo: el código espera el schema nuevo).
 3. GitHub → Actions → **"Promover a producción"** → *Run workflow* (o `gh workflow run promote.yml`). Hace avanzar `production` hasta `main` (solo fast-forward: nunca reescribe historia) y Railway deploya prod.
-   - **Railway pide aprobar esos deploys:** el push a `production` lo hace `github-actions[bot]`, que no es miembro del proyecto, así que los deploys quedan en *Needs approval*. Aprobarlos en Railway → proyecto `kachingga` → entorno `production` → cada servicio → *Approve*. (Alternativa sin aprobación: que un miembro empuje él mismo, `git push origin origin/main:production`, después de `git fetch`; también es solo fast-forward.)
+   - **Railway pide aprobar esos deploys:** el push a `production` lo hace `github-actions[bot]`, que no es miembro del proyecto, así que los deploys quedan en *Needs approval*. Aprobarlos en Railway → proyecto `kachingga` → entorno `production` → cada servicio → *Approve*.
 4. Comprobar `https://api.kachingga.com/health` y abrir `https://kachingga.com`. Todos ven la versión nueva al recargar (o al volver a abrir la app desde la pantalla de inicio).
 
 ### Cambios de schema
