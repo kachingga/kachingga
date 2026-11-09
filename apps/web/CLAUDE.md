@@ -97,7 +97,7 @@ e2e/                          # Playwright
 
 ## Notas técnicas — no romper
 
-- **TypeScript `~6.0.3`** y React **19.3.0 exacto** (las mismas versiones que mobile): con `node_modules` compartido, versiones distintas de React rompen todo.
+- **TypeScript `~6.0.3`** y React **19.3.0 exacto**: con `node_modules` compartido, versiones distintas rompen todo (ver `docs/claude/repo/tooling.md`).
 - `tsconfig.app.json` sin `baseUrl` (TS 6 lo rechaza); el alias `@/` está en `paths`, en `vite.config.ts` y en `tsconfig.json` (para el CLI de shadcn).
 - **El service worker (PWA) guarda solo los archivos de la app, nunca datos de la API.** Los íconos salen de `public/logo.svg`: no agregar PNGs a mano.
 - La web typechequea archivos de la API (vía `AppRouter`): si la API importa algo que acá no resuelve, se rompe el typecheck de la web.
@@ -105,6 +105,6 @@ e2e/                          # Playwright
 
 ## Conflictos (web)
 
-- **`package.json`:** combinar dependencias; React y TypeScript en las mismas versiones que mobile. Después `bun install && bun run check` desde la raíz.
+- **`package.json`:** combinar dependencias, sin cambiar las versiones de React y TypeScript. Después `bun install && bun run check` desde la raíz.
 - **`src/router.tsx`:** si los dos agregaron rutas, quedarse con ambas.
 - **`src/main.tsx`:** conservar `ApiProvider` envolviendo todo, y `ConfirmProvider` + `Toaster`.

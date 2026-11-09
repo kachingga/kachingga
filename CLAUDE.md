@@ -1,6 +1,6 @@
 # Kachingga — App para dividir gastos en grupo
 
-Proyecto de **Kachingga**, una organización de amigos (repo: `github.com/kachingga/kachingga`). **Hoy es para uso propio del grupo**: cada uno la usa en su celu y siempre en la última versión. El front es una **web app mobile-first** (`apps/web`: se usa en el celu y también en la compu; en `kachingga.com`); `apps/mobile` (Expo) queda como alternativa nativa por si algún día se hace (decisión en `docs/decisiones/costos-y-alternativas.md`). **A futuro se podría publicar** (ver `docs/decisiones/lanzamiento.md` → "Fase 2"): no tomar decisiones que lo hagan imposible, pero tampoco construir cosas para usuarios públicos antes de tiempo.
+Proyecto de **Kachingga**, una organización de amigos (repo: `github.com/kachingga/kachingga`). **Hoy es para uso propio del grupo**: cada uno la usa en su celu y siempre en la última versión. El front es una **web app mobile-first** (`apps/web`: se usa en el celu y también en la compu; en `kachingga.com`). No hay app nativa: se sacó del repo (decisión en `docs/decisiones/costos-y-alternativas.md`). **A futuro se podría publicar** (ver `docs/decisiones/lanzamiento.md` → "Fase 2"): no tomar decisiones que lo hagan imposible, pero tampoco construir cosas para usuarios públicos antes de tiempo.
 
 ---
 
@@ -13,7 +13,6 @@ Proyecto de **Kachingga**, una organización de amigos (repo: `github.com/kachin
 | **Este `CLAUDE.md` (raíz)** | **Reglas de negocio y decisiones de producto**, más lo que aplica a todo el repo: stack, arquitectura, comandos, commits, PRs, conflictos y tooling |
 | **`apps/api/CLAUDE.md`** | Todo lo técnico de la API: modelo de datos, procedures tRPC, Prisma, migraciones, Supabase |
 | **`apps/web/CLAUDE.md`** | Todo lo técnico del front web (el principal): React + Vite, cliente tRPC, login, UI/UX, testing |
-| **`apps/mobile/CLAUDE.md`** | Lo técnico de la app nativa (Expo, alternativa por si algún día se hace) |
 | **`V1.md` / `V2.md`** | Alcance de cada versión: qué entra, pantallas y roadmap |
 | **`INFRA.md` / `DEPLOY.md`** | Qué servicios y variables existen / cómo se deploya |
 | **GitHub Issues** (no un archivo) | **Todo lo pendiente**: tareas, bugs, propuestas y decisiones a tomar, agrupados por milestone. Ver "Issues" (abajo) |
@@ -152,7 +151,7 @@ Proyecto de **Kachingga**, una organización de amigos (repo: `github.com/kachin
 - Cualquier miembro puede exportar los gastos de su grupo.
 ### Decisiones de producto tomadas
 - Grupo de amigos, uso propio → sin roles ni permisos finos dentro de un grupo. *(A revisar antes de publicarla: `docs/decisiones/lanzamiento.md` → "Fase 2".)*
-- **Front: web app mobile-first** (web y API en Railway, con dominio propio `kachingga.com`), instalable en el celu desde el navegador ("Agregar a inicio"). Sin cuenta de Apple ni stores. La app nativa (Expo) queda como alternativa: si algún día se hace, iPhone por TestFlight (cuenta de Apple Developer) y Android por APK.
+- **Front: web app mobile-first** (web y API en Railway, con dominio propio `kachingga.com`), instalable en el celu desde el navegador ("Agregar a inicio"). Sin cuenta de Apple ni stores. **Solo web:** la app nativa (Expo) se sacó del repo el 8/11/2026; si algún día se quiere en las stores, se arranca de cero (`docs/decisiones/costos-y-alternativas.md`).
 - Saldar deudas es siempre manual (el pago se hace fuera de la app). **No hay integración con Mercado Pago**: pagar de una persona a otra desde la app sin comisiones no es posible (ver `docs/decisiones/mercado-pago.md`). El agente con IA es v2.
 - Dólar de referencia: **blue promedio** por defecto; se puede elegir el oficial o cargar uno a mano en cada gasto o pago. Las demás monedas, con su oficial sugerido.
 - Los tipos de cambio quedan "congelados" en cada gasto/pago al cargarlo.
@@ -167,7 +166,6 @@ Proyecto de **Kachingga**, una organización de amigos (repo: `github.com/kachin
 |------|------------|
 | Runtime / package manager | Bun (monorepo con workspaces) |
 | **Web (front principal)** | React 19 + Vite + Tailwind + React Router, hosteada en Railway (server estático de Bun) |
-| Mobile (alternativa nativa) | React Native con Expo (SDK 58) + Expo Router; EAS Build + EAS Update |
 | Backend | Hono + TypeScript sobre Bun, hosteado en Railway |
 | API (contrato app ↔ backend) | tRPC + Zod, con TanStack Query en la app |
 | Base de datos | PostgreSQL en Supabase, con Prisma |
@@ -201,8 +199,8 @@ Web (Railway) ──tRPC + token de Supabase──▶ API (Hono, Railway) ──
 - **Lo personal es personal:** el alias de una persona con cuenta solo lo cambia ella; perfil y filtros guardados, solo el dueño.
 - **El test `authorization.test.ts` cubre todos los procedures**: un procedure nuevo no pasa el CI hasta que se agrega ahí (como atacable o con el motivo por el que no toca un grupo).
 - **Los datos solo por la API.** El front usa Supabase únicamente para el login; RLS bloquea cualquier otro acceso a la base.
-- **Secretos:** nunca en el código, en los `.env.sample`, en issues, PRs ni en el chat. Solo en `.env` / `.env.prod` locales (gitignoreados) y en Railway. Lo que empieza con `VITE_` / `EXPO_PUBLIC_` es **público** (va dentro de la app): nunca un secreto ahí. GitHub escanea los pushes y bloquea si detecta una clave.
-- **Si se filtra un secreto:** avisar al grupo, **rotarlo** (generar uno nuevo en Supabase / Railway / Expo) y actualizarlo en todos lados. Borrarlo del historial no alcanza: el repo es público.
+- **Secretos:** nunca en el código, en los `.env.sample`, en issues, PRs ni en el chat. Solo en `.env` / `.env.prod` locales (gitignoreados) y en Railway. Lo que empieza con `VITE_` es **público** (va dentro de la app): nunca un secreto ahí. GitHub escanea los pushes y bloquea si detecta una clave.
+- **Si se filtra un secreto:** avisar al grupo, **rotarlo** (generar uno nuevo en Supabase / Railway) y actualizarlo en todos lados. Borrarlo del historial no alcanza: el repo es público.
 - **Límite de pedidos por IP** en la API (más estricto en códigos de invitación y export). Un procedure caro o adivinable lleva su límite.
 - **Validar todo lo que entra** (Zod en la API) y no mostrar errores internos al usuario.
 - **Nunca resetear contraseñas de las bases, desactivar RLS, abrir CORS a cualquier origen, ni saltear hooks o checks** (`--no-verify`, `eslint-disable` de las reglas del proyecto) para "destrabar" algo.
@@ -218,8 +216,7 @@ kachingga/
 ├── .husky/                  # commit-msg (formato) + pre-commit (bun run check)
 ├── apps/
 │   ├── api/                 # @kachingga/api — Hono + tRPC + Prisma (ver apps/api/CLAUDE.md)
-│   ├── web/                 # @kachingga/web — React + Vite, front principal (ver apps/web/CLAUDE.md)
-│   └── mobile/              # @kachingga/mobile — Expo, alternativa nativa (ver apps/mobile/CLAUDE.md)
+│   └── web/                 # @kachingga/web — React + Vite, el front (ver apps/web/CLAUDE.md)
 ├── docs/
 │   ├── claude/              # cómo está hecha cada cosa por dentro (repo/, web/, api/); ver su README
 │   └── decisiones/          # decisiones investigadas: costos, Mercado Pago, lanzamiento
@@ -230,13 +227,13 @@ kachingga/
 └── package.json             # workspaces + scripts globales
 ```
 
-> **Dependencias:** nunca agregar paquetes al `package.json` raíz (única excepción: tooling del repo, hoy `husky` y `prettier`). Siempre `cd` al workspace y desde ahí `bun add` (en mobile: `bunx expo install <paquete>`).
+> **Dependencias:** nunca agregar paquetes al `package.json` raíz (única excepción: tooling del repo, hoy `husky` y `prettier`). Siempre `cd` al workspace y desde ahí `bun add`.
 
 ---
 
 ## Comandos
 
-Desde la raíz (corren en `api` y `web` con `bun --filter`; **`apps/mobile` quedó fuera de los checks y del CI**, ver abajo):
+Desde la raíz (corren en `api` y `web` con `bun --filter`):
 
 ```bash
 bun install          # instala todo, activa husky y genera el cliente de Prisma
@@ -244,7 +241,6 @@ bun run dev          # levanta API (:3000) y web (:5173)
 bun run dev:celu     # lo mismo, con la web visible desde el celu en la misma Wi-Fi
 bun run api          # solo la API
 bun run web          # solo la web (necesita la API)
-bun run mobile       # solo Expo (app nativa, sin uso hoy)
 bun run typecheck    # tsc en api y web
 bun run test         # tests: api (unit + integración con PGlite), y web (Vitest)
 bun run lint         # ESLint en web
@@ -253,15 +249,11 @@ bun run docs:check   # que los docs no mencionen archivos que ya no existen (ver
 bun run check        # docs + formato + typecheck + test + lint — lo mismo que corre el pre-commit y el CI
 ```
 
-> **`apps/mobile` no se chequea:** el código queda por si algún día se hace la app nativa, pero no corre en `bun run check`, en el pre-commit ni en el CI (sin Jest, typecheck, lint, Expo doctor ni Maestro). Si se retoma, volver a sumarlo a los scripts raíz y al CI. Mientras tanto, no invertir tiempo en mantenerlo.
-
 **Antes de dar una tarea por terminada, correr `bun run check`.** El pre-commit lo corre en cada commit y lo rechaza si algo falla.
-
-> Los builds de EAS (`eas build`) solo se lanzan cuando alguien lo pide explícitamente. Ver `DEPLOY.md`.
 
 ### Variables de entorno
 
-Cada app tiene un `.env.sample` commiteado que dice qué variables hacen falta y de dónde sale cada valor. **Hay dos bases:** `.env` → **DEV** (Supabase `staging-kachingga`), que es lo que usa todo lo local y también **staging**; `.env.prod` → **PROD** (Supabase `kachingga`), solo para migrar producción y como referencia de Railway/EAS. Ambos gitignoreados. Detalle en `INFRA.md` → "Entornos". Si agregás una variable, sumala al `.env.sample` y a `INFRA.md`.
+Cada app tiene un `.env.sample` commiteado que dice qué variables hacen falta y de dónde sale cada valor. **Hay dos bases:** `.env` → **DEV** (Supabase `staging-kachingga`), que es lo que usa todo lo local y también **staging**; `.env.prod` → **PROD** (Supabase `kachingga`), solo para migrar producción y como referencia de Railway. Ambos gitignoreados. Detalle en `INFRA.md` → "Entornos". Si agregás una variable, sumala al `.env.sample` y a `INFRA.md`.
 
 > Claude: nunca correr nada contra **prod** (`db:migrate:prod`, scripts con `.env.prod`) salvo que el usuario lo pida explícitamente. **Nunca resetear la contraseña de una base de Supabase** ni sugerirlo como solución: rompe el `.env` de todos. Para armar un `.env`, guiar con la tabla de `README.md` → "Armar los `.env`"; la contraseña de la base se le pide a Galo.
 
@@ -275,7 +267,7 @@ Cada app tiene un `.env.sample` commiteado que dice qué variables hacen falta y
 Para cualquier tarea, en cualquier parte del repo. Claude no dice "listo" hasta cumplir todo esto (y si algo no se pudo, lo dice explícitamente):
 
 1. **Cumple las reglas de negocio** de este archivo y el alcance de `V1.md`. Si la tarea pedía algo que las contradice, se avisó antes (ver `.claude/CLAUDE.md` → "Cuestionar al humano").
-2. **Tiene tests** según el `CLAUDE.md` de la app tocada (API: integración por procedure; web/mobile: contenido por estado de cada pantalla).
+2. **Tiene tests** según el `CLAUDE.md` de la app tocada (API: integración por procedure; web: contenido por estado de cada pantalla).
 3. **No rompe ninguna regla de "Seguridad"**; si agrega o cambia un procedure, está cubierto en `authorization.test.ts`.
 4. **`bun run check` pasa** (typecheck + tests + lint). Nunca `--no-verify` ni desactivar reglas para que pase.
 5. **Docs actualizados en el lugar correcto:** regla de negocio nueva → acá; procedure o modelo → `docs/claude/api/contrato.md`; pantalla o roadmap → `V1.md`; cómo funciona algo técnico → su doc en `docs/claude/` (y, si es una regla que no se puede romper, una línea en el `CLAUDE.md` de la app); **si tocaste algo que aparece en un índice "Antes de tocar…", revisá que su doc siga diciendo la verdad**; servicios, variables o secretos → `INFRA.md`; cómo deployar → `DEPLOY.md`; decisión investigada (costos, alternativas) → `docs/decisiones/`. **Si la tarea resuelve un issue**, el PR dice `Closes #N` y lo que haya que saber queda documentado donde corresponde; **si deja algo pendiente**, se avisa y se propone su issue (ver "Issues"). Si toca un ítem de la checklist de UI de `V1.md`, se tilda ahí. Un dato vive en un solo lugar (guía completa: `README.md` → "Documentación").
@@ -301,7 +293,7 @@ Somos varios trabajando a la vez. **Antes de empezar y antes de pushear:** `git 
 ```
 
 **Types:** `feat`, `fix`, `chore`, `docs`, `refactor`, `test`, `style`, `perf`, `build`, `ci`, `revert`
-**Scopes sugeridos:** `web`, `api`, `db`, `mobile`, `infra`, `deps`, `agent` (v2)
+**Scopes sugeridos:** `web`, `api`, `db`, `infra`, `deps`, `agent` (v2)
 
 ```
 feat(api): agregar endpoint para crear grupos
@@ -333,4 +325,4 @@ Reglas para Claude:
 - **Claude no crea, edita ni cierra issues, labels o milestones por su cuenta** (el repo es público y lo ve todo el grupo): propone en el chat qué crearía y dónde, y lo crea cuando el humano dice que sí.
 - **Proponerle una mejora a otro del grupo** = issue con label `question` (problema, opciones, recomendación); nunca cambiar lo suyo sin hablarlo.
 - Un PR que resuelve un issue lo dice en la descripción (`Closes #N`).
-- **Qué label o milestone lleva cada cosa** (tarea, propuesta, decisión, bloqueo, lanzamiento, solo app nativa, ítem de UI): **`docs/claude/repo/issues.md`** — leerlo antes de proponer o crear un issue.
+- **Qué label o milestone lleva cada cosa** (tarea, propuesta, decisión, bloqueo, lanzamiento, ítem de UI): **`docs/claude/repo/issues.md`** — leerlo antes de proponer o crear un issue.

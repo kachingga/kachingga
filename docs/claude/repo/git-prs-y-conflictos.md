@@ -54,9 +54,9 @@ bun run check
 
 ### Cómo resolver conflictos por archivo
 - **`bun.lock`:** nunca a mano. Quedarse con la de `main` (`git checkout --theirs bun.lock` en un merge, `--ours` en un rebase), `bun install` para regenerarlo y `git add bun.lock`.
-- **`package.json` (cualquiera):** combinar las dos listas de dependencias y scripts. En mobile, si quedan versiones raras, `bunx expo install --fix`. Después `bun install`.
+- **`package.json` (cualquiera):** combinar las dos listas de dependencias y scripts. Después `bun install`.
 - **`CLAUDE.md`, `V1.md` y docs:** combinar ambos textos respetando la regla de "dónde va cada cosa".
-- **Archivos de cada app:** ver "Conflictos" en `apps/api/CLAUDE.md`, `apps/web/CLAUDE.md` y `apps/mobile/CLAUDE.md` (migraciones, `app.json`, `_layout.tsx`, `router.ts`…).
+- **Archivos de cada app:** ver "Conflictos" en `apps/api/CLAUDE.md` y `apps/web/CLAUDE.md` (migraciones, `router.tsx`…).
 
 Después de cualquier conflicto: `bun install && bun run check`. Si falla, se arregla antes de commitear — **nunca** `--no-verify`.
 
