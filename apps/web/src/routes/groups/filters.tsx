@@ -1,21 +1,21 @@
 import { useState } from 'react';
-import { useNavigate, useParams } from 'react-router';
+import { Link, useNavigate, useParams, useSearchParams } from 'react-router';
 import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
-import { expenseCategories, type ExpenseFilters } from '@kachingga/api/schemas';
+import { expenseCategories } from '@kachingga/api/schemas';
 import { ErrorState } from '@/components/error-state';
+import { LoadMore } from '@/components/load-more';
+import { NumberInput } from '@/components/number-input';
 import { ExpenseListSkeleton } from '@/components/skeletons';
 import { useTRPC } from '@/lib/trpc';
+import { categoryLabels, formatCents, formatDate, monthRange, today } from '@/lib/format';
 import {
-  categoryLabels,
-  endOfDay,
-  formatCents,
-  formatDate,
-  monthRange,
-  startOfDay,
-  toDay,
-  today,
-} from '@/lib/format';
+  fromApiFilters,
+  readUrlFilters,
+  toApiFilters,
+  writeUrlFilters,
+  type UrlFilters,
+} from '@/lib/url-filters';
 
 function triggerDownload(filename: string, mimeType: string, content: string) {
   const blob = new Blob([content], { type: mimeType });
@@ -27,16 +27,27 @@ function triggerDownload(filename: string, mimeType: string, content: string) {
   URL.revokeObjectURL(url);
 }
 
+const fieldClass =
+  'mt-1 w-full rounded-lg border border-input bg-muted px-2 py-1 text-base text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-ring sm:text-sm';
+
 export function Filters() {
   const { groupId } = useParams<{ groupId: string }>();
   const navigate = useNavigate();
   const trpc = useTRPC();
   const queryClient = useQueryClient();
 
+  // The filters live in the URL (src/lib/url-filters.ts): they survive opening an expense and
+  // coming back. Typing replaces the history entry instead of adding one per keystroke.
+  const [searchParams, setSearchParams] = useSearchParams();
+  const urlFilters = readUrlFilters(searchParams);
+  const filters = toApiFilters(urlFilters);
+  const setFilters = (next: UrlFilters) =>
+    setSearchParams(writeUrlFilters(next), { replace: true });
+  const update = (changes: Partial<UrlFilters>) => setFilters({ ...urlFilters, ...changes });
+
   const group = useQuery(trpc.groups.get.queryOptions({ groupId: groupId! }));
   const savedFilters = useQuery(trpc.savedFilters.list.queryOptions({ groupId: groupId! }));
 
-  const [filters, setFilters] = useState<ExpenseFilters>({});
   const [filterName, setFilterName] = useState('');
   const [saveError, setSaveError] = useState<string | null>(null);
   const [exportingCsv, setExportingCsv] = useState(false);
@@ -91,12 +102,23 @@ export function Filters() {
     }),
   );
 
-  function applyMonth() {
-    const { from, to } = monthRange(today());
-    setFilters((f) => ({ ...f, dateFrom: startOfDay(from), dateTo: endOfDay(to) }));
+  function applyMonth(month: string) {
+    if (!month) return update({ dateFrom: undefined, dateTo: undefined });
+    const { from, to } = monthRange(`${month}-01`);
+    update({ dateFrom: from, dateTo: to });
   }
 
+  // The month picker shows a month only while the dates are exactly that month.
+  const selectedMonth =
+    urlFilters.dateFrom &&
+    urlFilters.dateTo &&
+    monthRange(urlFilters.dateFrom).from === urlFilters.dateFrom &&
+    monthRange(urlFilters.dateFrom).to === urlFilters.dateTo
+      ? urlFilters.dateFrom.slice(0, 7)
+      : '';
+
   const allExpenses = expenses.data?.pages.flatMap((p) => p.items) ?? [];
+  const loadMoreExpenses = () => void expenses.fetchNextPage();
 
   return (
     <main className="mx-auto min-h-dvh max-w-md p-6">
@@ -108,15 +130,15 @@ export function Filters() {
       </div>
 
       {/* Atajos */}
-      <div className="mb-4 flex flex-wrap gap-2">
+      <div className="mb-4 flex flex-wrap items-center gap-2">
         <button
-          onClick={() => myId && setFilters((f) => ({ ...f, involvedParticipantId: myId }))}
+          onClick={() => myId && update({ involvedParticipantId: myId })}
           className="rounded-full border border-input px-3 py-1 text-sm text-foreground"
         >
           Mis gastos
         </button>
         <button
-          onClick={applyMonth}
+          onClick={() => applyMonth(today().slice(0, 7))}
           className="rounded-full border border-input px-3 py-1 text-sm text-foreground"
         >
           Este mes
@@ -137,7 +159,7 @@ export function Filters() {
               key={sf.id}
               className="flex items-center gap-1 rounded-full border border-input py-1 pl-3 pr-1"
             >
-              <button onClick={() => setFilters(sf.filters)} className="text-sm">
+              <button onClick={() => setFilters(fromApiFilters(sf.filters))} className="text-sm">
                 {sf.name}
               </button>
               <button
@@ -156,11 +178,14 @@ export function Filters() {
       <div className="mb-6 space-y-3 rounded-2xl bg-card p-4">
         <div className="grid grid-cols-2 gap-3">
           <div>
-            <label className="block text-xs text-muted-foreground">Quién pagó</label>
+            <label htmlFor="f-paid" className="block text-xs text-muted-foreground">
+              Quién pagó
+            </label>
             <select
-              value={filters.paidById ?? ''}
-              onChange={(e) => setFilters((f) => ({ ...f, paidById: e.target.value || undefined }))}
-              className="mt-1 w-full rounded-lg border border-input bg-muted px-2 py-1 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-ring"
+              id="f-paid"
+              value={urlFilters.paidById ?? ''}
+              onChange={(e) => update({ paidById: e.target.value || undefined })}
+              className={fieldClass}
             >
               <option value="">Todos</option>
               {participants.map((p) => (
@@ -171,16 +196,14 @@ export function Filters() {
             </select>
           </div>
           <div>
-            <label className="block text-xs text-muted-foreground">Involucrado</label>
+            <label htmlFor="f-split" className="block text-xs text-muted-foreground">
+              Le corresponde a
+            </label>
             <select
-              value={filters.involvedParticipantId ?? ''}
-              onChange={(e) =>
-                setFilters((f) => ({
-                  ...f,
-                  involvedParticipantId: e.target.value || undefined,
-                }))
-              }
-              className="mt-1 w-full rounded-lg border border-input bg-muted px-2 py-1 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-ring"
+              id="f-split"
+              value={urlFilters.splitParticipantId ?? ''}
+              onChange={(e) => update({ splitParticipantId: e.target.value || undefined })}
+              className={fieldClass}
             >
               <option value="">Todos</option>
               {participants.map((p) => (
@@ -190,65 +213,114 @@ export function Filters() {
               ))}
             </select>
           </div>
+        </div>
+
+        <div>
+          <label htmlFor="f-involved" className="block text-xs text-muted-foreground">
+            Involucrado (pagó o le corresponde)
+          </label>
+          <select
+            id="f-involved"
+            value={urlFilters.involvedParticipantId ?? ''}
+            onChange={(e) => update({ involvedParticipantId: e.target.value || undefined })}
+            className={fieldClass}
+          >
+            <option value="">Todos</option>
+            {participants.map((p) => (
+              <option key={p.id} value={p.id}>
+                {p.name}
+              </option>
+            ))}
+          </select>
+        </div>
+
+        <div>
+          <label htmlFor="f-month" className="block text-xs text-muted-foreground">
+            Mes
+          </label>
+          <input
+            id="f-month"
+            type="month"
+            value={selectedMonth}
+            onChange={(e) => applyMonth(e.target.value)}
+            className={fieldClass}
+          />
         </div>
 
         <div className="grid grid-cols-2 gap-3">
           <div>
-            <label className="block text-xs text-muted-foreground">Desde</label>
+            <label htmlFor="f-from" className="block text-xs text-muted-foreground">
+              Desde
+            </label>
             <input
+              id="f-from"
               type="date"
-              value={filters.dateFrom ? toDay(filters.dateFrom) : ''}
-              onChange={(e) =>
-                setFilters((f) => ({
-                  ...f,
-                  dateFrom: e.target.value ? startOfDay(e.target.value) : undefined,
-                }))
-              }
-              className="mt-1 w-full rounded-lg border border-input bg-muted px-2 py-1 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-ring"
+              value={urlFilters.dateFrom ?? ''}
+              onChange={(e) => update({ dateFrom: e.target.value || undefined })}
+              className={fieldClass}
             />
           </div>
           <div>
-            <label className="block text-xs text-muted-foreground">Hasta</label>
+            <label htmlFor="f-to" className="block text-xs text-muted-foreground">
+              Hasta
+            </label>
             <input
+              id="f-to"
               type="date"
-              value={filters.dateTo ? toDay(filters.dateTo) : ''}
-              onChange={(e) =>
-                setFilters((f) => ({
-                  ...f,
-                  dateTo: e.target.value ? endOfDay(e.target.value) : undefined,
-                }))
-              }
-              className="mt-1 w-full rounded-lg border border-input bg-muted px-2 py-1 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-ring"
+              value={urlFilters.dateTo ?? ''}
+              onChange={(e) => update({ dateTo: e.target.value || undefined })}
+              className={fieldClass}
             />
           </div>
         </div>
 
         <div>
-          <label className="block text-xs text-muted-foreground">Descripción</label>
+          <p className="text-xs text-muted-foreground">Monto (en la moneda de cada gasto)</p>
+          <div className="grid grid-cols-2 gap-3">
+            <NumberInput
+              aria-label="Monto mínimo"
+              placeholder="Mínimo"
+              value={urlFilters.minAmount ?? ''}
+              onValueChange={(v) => update({ minAmount: v || undefined })}
+              className={fieldClass}
+            />
+            <NumberInput
+              aria-label="Monto máximo"
+              placeholder="Máximo"
+              value={urlFilters.maxAmount ?? ''}
+              onValueChange={(v) => update({ maxAmount: v || undefined })}
+              className={fieldClass}
+            />
+          </div>
+        </div>
+
+        <div>
+          <label htmlFor="f-search" className="block text-xs text-muted-foreground">
+            Descripción
+          </label>
           <input
-            value={filters.search ?? ''}
-            onChange={(e) => setFilters((f) => ({ ...f, search: e.target.value || undefined }))}
+            id="f-search"
+            value={urlFilters.search ?? ''}
+            onChange={(e) => update({ search: e.target.value || undefined })}
             placeholder="Buscar…"
-            className="mt-1 w-full rounded-lg border border-input bg-muted px-2 py-1 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-ring"
+            className={fieldClass}
           />
         </div>
 
         <div>
-          <label className="block text-xs text-muted-foreground">Categorías</label>
+          <p className="block text-xs text-muted-foreground">Categorías</p>
           <div className="mt-1 flex flex-wrap gap-1">
             {expenseCategories.map((cat) => {
-              const selected = filters.categories?.includes(cat) ?? false;
+              const cats = urlFilters.categories ?? [];
+              const selected = cats.includes(cat);
               return (
                 <button
                   key={cat}
                   type="button"
+                  aria-pressed={selected}
                   onClick={() =>
-                    setFilters((f) => {
-                      const cats = f.categories ?? [];
-                      return {
-                        ...f,
-                        categories: selected ? cats.filter((c) => c !== cat) : [...cats, cat],
-                      };
+                    update({
+                      categories: selected ? cats.filter((c) => c !== cat) : [...cats, cat],
                     })
                   }
                   className={`rounded-full px-2 py-1 text-xs ${selected ? 'bg-primary text-primary-foreground' : 'border border-input text-muted-foreground'}`}
@@ -265,8 +337,9 @@ export function Filters() {
           <input
             value={filterName}
             onChange={(e) => setFilterName(e.target.value)}
+            aria-label="Nombre del filtro"
             placeholder="Nombre del filtro…"
-            className="flex-1 rounded-lg border border-input bg-muted px-2 py-1 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-ring"
+            className="flex-1 rounded-lg border border-input bg-muted px-2 py-1 text-base text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-ring sm:text-sm"
           />
           <button
             onClick={() => {
@@ -285,7 +358,14 @@ export function Filters() {
 
       {/* Totales */}
       {summary.isPending && (
-        <p className="mb-4 text-sm text-muted-foreground">Calculando totales…</p>
+        <div role="status" aria-label="Calculando totales" className="mb-6 space-y-2">
+          <div className="h-24 animate-pulse rounded-2xl bg-muted" />
+        </div>
+      )}
+      {summary.isError && (
+        <div className="mb-6">
+          <ErrorState message={summary.error.message} onRetry={() => summary.refetch()} />
+        </div>
       )}
       {summary.isSuccess && summary.data.length > 0 && (
         <div className="mb-6 space-y-2">
@@ -345,7 +425,14 @@ export function Filters() {
 
       {/* Gastos filtrados */}
       <div>
-        <h2 className="mb-3 font-semibold">Gastos</h2>
+        <h2 className="mb-3 font-semibold">
+          Gastos
+          {summary.isSuccess && (
+            <span className="ml-2 text-sm font-normal text-muted-foreground">
+              ({summary.data.reduce((n, s) => n + s.count, 0)})
+            </span>
+          )}
+        </h2>
         {expenses.isPending && <ExpenseListSkeleton />}
         {expenses.isError && (
           <ErrorState message={expenses.error.message} onRetry={() => expenses.refetch()} />
@@ -357,26 +444,34 @@ export function Filters() {
         )}
         <ul className="space-y-2">
           {allExpenses.map((e) => (
-            <li key={e.id} className="flex items-center justify-between rounded-2xl bg-card p-3">
-              <div className="min-w-0 flex-1">
-                <p className="truncate text-sm font-medium">{e.description}</p>
-                <p className="text-xs text-muted-foreground">
-                  {e.paidBy.name} · {formatDate(e.date)}
-                </p>
-              </div>
-              <p className="ml-3 font-medium">{formatCents(e.amountCents, e.currency)}</p>
+            <li key={e.id}>
+              <Link
+                to={`/grupos/${groupId}/gastos/${e.id}`}
+                // Preload: the list already has the whole expense, so its detail opens instantly.
+                onClick={() =>
+                  queryClient.setQueryData(
+                    trpc.expenses.get.queryKey({ expenseId: e.id }),
+                    (cached) => cached ?? e,
+                  )
+                }
+                className="flex items-center justify-between rounded-2xl bg-card p-3 active:bg-accent"
+              >
+                <div className="min-w-0 flex-1">
+                  <p className="truncate text-sm font-medium">{e.description}</p>
+                  <p className="text-xs text-muted-foreground">
+                    {e.paidBy.name} · {formatDate(e.date)}
+                  </p>
+                </div>
+                <p className="ml-3 font-medium">{formatCents(e.amountCents, e.currency)}</p>
+              </Link>
             </li>
           ))}
         </ul>
-        {expenses.hasNextPage && (
-          <button
-            onClick={() => expenses.fetchNextPage()}
-            disabled={expenses.isFetchingNextPage}
-            className="mt-4 w-full rounded-xl border border-input py-2 text-sm text-muted-foreground disabled:opacity-50"
-          >
-            {expenses.isFetchingNextPage ? 'Cargando…' : 'Cargar más'}
-          </button>
-        )}
+        <LoadMore
+          hasMore={expenses.hasNextPage}
+          loading={expenses.isFetchingNextPage}
+          onLoadMore={loadMoreExpenses}
+        />
       </div>
     </main>
   );
