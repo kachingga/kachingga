@@ -334,6 +334,12 @@ export function GroupDetail() {
                 >
                   Participantes
                 </Link>
+                <Link
+                  to={`/grupos/${groupId}/categorias`}
+                  className="block rounded-xl px-3 py-2 text-sm hover:bg-muted"
+                >
+                  Categorías
+                </Link>
                 <button
                   onClick={() => {
                     void shareInviteCode(g.name, g.inviteCode);

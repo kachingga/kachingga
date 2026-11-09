@@ -40,7 +40,9 @@ Sale de un diseño hecho en Lovable que eligió Galo (#37): **no se copió el pr
 | Para | Usar | Nunca |
 |------|------|-------|
 | Superficie de contenido | `<Card>` (`kit.tsx`): `rounded-2xl`, borde, `shadow-soft` | Un `div` con estilos repetidos |
-| Ícono de una categoría | `<CategoryIcon category>` (`kit.tsx`, íconos de lucide) | Emojis o íconos sueltos |
+| Ícono de una categoría | `<CategoryIcon icon color>` (`kit.tsx`) con el `icon` y `color` que trae la categoría de la API. Los nombres se traducen en `src/lib/categories.ts`: ícono → componente de lucide, color → clases del tema (`CATEGORY_COLORS`, fondo suave + color, siempre variables del tema). Si se suma un ícono o color a la API (`categoryIcons` / `categoryColors`), sumarlo ahí | Emojis, íconos sueltos o colores hex |
+| Elegir una categoría (formulario de gasto) | `<CategoryPicker>` (`components/category-picker.tsx`): grupo de opciones con ícono, color y nombre | Un `<select>` (no muestra íconos) |
+| Crear o editar una categoría | `<CategoryEditor>` (`components/category-editor.tsx`): nombre, ícono y color, todos con nombre accesible | — |
 | Inicial de una persona o grupo | `<Avatar name>` (`kit.tsx`, colores del tema) | Colores fijos por nombre |
 | Mi saldo ("Te deben" / "Debés" / "Estás al día") | `<MyBalance cents currency>` (`kit.tsx`: verde / terracota / gris, en un solo texto) | Armar el texto y el color en cada pantalla |
 | Título de pantalla con "volver" y acciones | `<PageHeader>` (`kit.tsx`) | — |

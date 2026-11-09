@@ -94,10 +94,11 @@ src/
 ├── routes/                   # una pantalla por archivo (groups/ = lo de un grupo), tests en __tests__/
 ├── components/               # ui/ (shadcn), kit (Card, CategoryIcon, Avatar, MyBalance, Page…), app-shell,
 │                             # auth-layout, skeletons, error-state, number-input, exchange-rate-fields,
-│                             # confirm-provider, animated-layout, api-provider, require-auth, offline-banner
+│                             # confirm-provider, animated-layout, api-provider, require-auth, offline-banner,
+│                             # category-picker, category-editor
 ├── lib/                      # trpc, supabase (ÚNICO que importa Supabase), auth, format, optimistic,
 │                             # use-prefetch, use-exchange-rate, use-confirm, use-go-back, offline-cache,
-│                             # theme, use-sign-out
+│                             # theme, use-sign-out, categories (ícono y color de cada categoría)
 └── test/                     # setup.ts, render.tsx (renderWithApi)
 e2e/                          # Playwright
 ```
