@@ -185,7 +185,7 @@ Web (Railway) ──tRPC + token de Supabase──▶ API (Hono, Railway) ──
 ```
 
 - **La app nunca lee ni escribe la base directo**: todo pasa por la API, que es la que aplica las reglas de negocio y decide qué ve cada usuario. La app usa Supabase solo para el login.
-- **App ↔ API solo por tRPC**, con tipos de punta a punta: la app importa el *tipo* del router de la API, nunca código del server. No hay endpoints REST a mano para la app (la única ruta fuera de tRPC es `/health`).
+- **App ↔ API solo por tRPC**, con tipos de punta a punta: la app importa el *tipo* del router de la API, nunca código del server. No hay endpoints REST a mano para la app (las únicas rutas fuera de tRPC son `/health` y `/health/db`, para el monitoreo).
 - Las validaciones de inputs (Zod) viven en la API y la app las reusa para sus formularios.
 - La web corre en el navegador en otro dominio: la API permite su origen por **CORS** (`CORS_ORIGINS`).
 - Detalles: `apps/api/CLAUDE.md` y `apps/web/CLAUDE.md`.

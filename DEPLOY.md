@@ -112,7 +112,7 @@ pg_restore --list kachingga.dump | less           # ver qué tiene
 - **Errores:** Sentry, proyectos `kachingga-web` y `kachingga-api`. Solo errores inesperados, sin datos de los grupos (cómo: `docs/claude/repo/monitoreo.md`). Para prenderlo en un entorno, cargar las variables de Sentry de `INFRA.md` en los servicios `api` y `web` de ese entorno y redeployar. Alertas: Sentry → Alerts → mail a Galo en errores nuevos y en picos.
 - **Caídas:** UptimeRobot (plan gratis, cuenta de Galo), cada 5 minutos con aviso por mail a Galo:
   - **Webs** — monitor *HTTP(s)* (avisa si no responde 200): `https://kachingga.com` y `https://staging.kachingga.com`.
-  - **APIs** — monitor *Keyword* con `"ok":true` y *alert when keyword not exists* (confirma que la API responde bien, no solo que hay algo): `https://api.kachingga.com/health` y `https://api-staging.kachingga.com/health`.
+  - **APIs** — monitor *Keyword* con `"ok":true` y *alert when keyword not exists*, a **`/health/db`**: `https://api.kachingga.com/health/db` y `https://api-staging.kachingga.com/health/db`. A diferencia de `/health` (que usa Railway para los deploys y solo dice que el proceso está vivo), `/health/db` hace un `SELECT 1` contra la base: avisa si la base está caída o pausada, y el ping cada 5 minutos mantiene activos los proyectos de Supabase (plan Free). Tiene el mismo límite por IP que el resto de la API.
 - Los avisos van a un mail personal, no a `devops@`: si el reenvío del dominio falla, igual llegan.
 - **Probarlo después de prenderlo:** un error forzado (ej. desde la consola del navegador en staging: `setTimeout(() => { throw new Error('prueba sentry') })`) tiene que aparecer en Sentry con el `environment` correcto y sin datos personales.
 

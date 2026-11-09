@@ -13,7 +13,7 @@
 | Login con Google (OAuth) | Google Cloud (proyecto `Kachingga` de Galo) | console.cloud.google.com → Google Auth Platform | Cliente OAuth *Web application* "Kachingga web", app publicada (*In production*). Detalle en "Supabase" |
 | CI | GitHub Actions | github.com/kachingga/kachingga/actions | `ci.yml` (checks obligatorios), `e2e.yml` (Playwright en la web, a demanda) y `backup.yml` (backup semanal cifrado de prod, ver `DEPLOY.md` → "Backups") |
 | Errores (monitoreo) | Sentry (plan gratis, org `kachingga` de Galo) | sentry.io/organizations/kachingga | Proyectos `kachingga-web` (React) y `kachingga-api` (Bun); cada uno con `environment` `staging` / `production`. Cómo está hecho: `docs/claude/repo/monitoreo.md` |
-| Caídas (uptime) | UptimeRobot (plan gratis, cuenta de Galo) | uptimerobot.com | HTTP(s) a `kachingga.com` y `staging.kachingga.com`; Keyword (`"ok":true`) a `api.kachingga.com/health` y `api-staging.kachingga.com/health` (ver `DEPLOY.md` → "Monitoreo") |
+| Caídas (uptime) | UptimeRobot (plan gratis, cuenta de Galo) | uptimerobot.com | HTTP(s) a `kachingga.com` y `staging.kachingga.com`; Keyword (`"ok":true`) a `api.kachingga.com/health/db` y `api-staging.kachingga.com/health/db` (ver `DEPLOY.md` → "Monitoreo") |
 | Cotizaciones (dólar blue y oficial, oficial de EUR, BRL, UYU y CLP) | DolarApi (público, sin clave) | dolarapi.com | `https://dolarapi.com/v1/dolares/{blue,oficial}` y `/v1/cotizaciones/{eur,brl,uyu,clp}` |
 | Repo | GitHub | github.com/kachingga/kachingga | — |
 
@@ -35,7 +35,7 @@ Actualizar este archivo con los valores reales después de cada setup.
 
 ### Plan de Supabase
 - La org `kachingga` está en **Free** (desde nov 2026): 2 proyectos activos por persona (sumando las orgs Free donde sos Owner/Admin), justo `kachingga` + `staging-kachingga`.
-- En Free, un proyecto **se pausa solo tras ~1 semana sin actividad** y se reactiva desde el dashboard. Si prod se pausa, la app deja de andar hasta reactivarlo: UptimeRobot lo detecta (la API de `/health` responde, pero los pedidos con datos fallan y Sentry los reporta). El uso diario del grupo y el backup semanal (`backup.yml`) hacen actividad en prod; staging sí puede pausarse si nadie la usa.
+- En Free, un proyecto **se pausa solo tras ~1 semana sin actividad** y se reactiva desde el dashboard. Si prod se pausa, la app deja de andar hasta reactivarlo: UptimeRobot lo detecta (`/health/db` deja de responder `"ok":true`). El ping de UptimeRobot a `/health/db` cada 5 minutos cuenta como actividad, así que ni prod ni staging deberían pausarse.
 
 ## Variables de entorno
 
