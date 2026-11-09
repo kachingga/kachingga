@@ -1,5 +1,10 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
-  <!-- Placeholder icon until the Kachingga logo exists (#37): replace this file and rebuild. -->
-  <rect width="512" height="512" rx="112" fill="#171717"/>
-  <path fill="#fafafa" d="M152 112h64v118l112-118h80L284 240l132 160h-82L240 284l-24 24v92h-64z"/>
+  <!-- Kachingga: a coin split in two (splitting expenses). Every app icon is generated from this file. -->
+  <defs>
+    <clipPath id="l"><polygon points="0,0 300,0 212,512 0,512"/></clipPath>
+    <clipPath id="r"><polygon points="324,0 512,0 512,512 236,512"/></clipPath>
+  </defs>
+  <rect width="512" height="512" rx="112" fill="#0C5C3C"/>
+  <g clip-path="url(#l)" transform="translate(-14 6)"><circle cx="256" cy="256" r="164" fill="#F6AB6B"/></g>
+  <g clip-path="url(#r)" transform="translate(14 -6)"><circle cx="256" cy="256" r="164" fill="#FFFDFA"/></g>
 </svg>
