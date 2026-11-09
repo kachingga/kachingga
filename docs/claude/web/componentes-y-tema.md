@@ -16,7 +16,8 @@ Sale de un diseño hecho en Lovable que eligió Galo (#37): **no se copió el pr
 
 - Inicializado con estilo `radix-nova` (`components.json`); el estilo de los componentes se ajustó al diseño (`button`: pastilla, `h-11`, sombra; `input`: `h-11`, `rounded-xl`, `bg-card`, texto de 16 px para que Safari no haga zoom). Agregar componentes: `bunx --bun shadcn@latest add <componente>` desde `apps/web`.
 - Los generados viven en `src/components/ui/` y **no se editan a mano salvo para ajustar estilo**. Excepción: `sonner.tsx` toma el tema de `useTheme()` (`src/lib/theme.ts`) en vez de `next-themes`.
-- Hoy hay: `button`, `input`, `label`, `skeleton`, `alert-dialog`, `sonner`. Los `<select>` y las fechas siguen siendo **nativos** (en el celu abren el selector del sistema, que es lo mejor), con la clase `fieldClass` de `src/components/kit.tsx` para que se vean como `Input`.
+- Hoy hay: `button`, `input`, `label`, `skeleton`, `alert-dialog`, `sonner` y uno propio, `native-select`. Los `<select>` y las fechas siguen siendo **nativos** (en el celu abren el selector del sistema, que es lo mejor): `<NativeSelect>` (`src/components/ui/native-select.tsx`) tiene el mismo estilo que `Input`, y las fechas son `<Input type="date">`.
+- **Todas las pantallas usan estos componentes**, no `<button>` / `<input>` / `<label>` con clases a mano. Excepciones a propósito: las superficies que se tocan enteras (la tarjeta de un grupo con sus acciones de deslizar, los links de gastos) y los selectores de categoría (`CategoryPicker`, `CategoryEditor`: grupos de opciones con rol de radio).
 - `cn` (paquete `cn`, reemplazo de `clsx` + `tailwind-merge`) para combinar clases.
 - El `tsconfig.json` de la web (el que solo tiene `references`) repite el alias `@/*`: sin eso, el CLI de shadcn escribe en una carpeta `@/` literal.
 - La regla de lint `react-refresh/only-export-components` está apagada solo para `src/components/ui/**` (generados).
@@ -46,13 +47,17 @@ Sale de un diseño hecho en Lovable que eligió Galo (#37): **no se copió el pr
 | Inicial de una persona o grupo | `<Avatar name>` (`kit.tsx`, colores del tema) | Colores fijos por nombre |
 | Mi saldo ("Te deben" / "Debés" / "Estás al día") | `<MyBalance cents currency>` (`kit.tsx`: verde / terracota / gris, en un solo texto) | Armar el texto y el color en cada pantalla |
 | Título de pantalla con "volver" y acciones | `<PageHeader>` (`kit.tsx`) | — |
-| Opciones tipo pastilla (división, monedas, categorías) | `<Chip active>` (`kit.tsx`) o el mismo estilo | Botones cuadrados |
 | Cargando | Skeletons con la forma de la pantalla (`skeletons.tsx`, sobre `Skeleton`) | Un spinner suelto |
 | Error de una query | `<ErrorState message onRetry={() => query.refetch()} />` (mensaje de la API + **Reintentar**) | Un error técnico crudo |
 | Confirmar algo destructivo | `useConfirm()` (`src/lib/use-confirm.ts` + `<ConfirmProvider>` en `main.tsx`): `if (await confirm({ title, description, confirmLabel, destructive }))` | `confirm()` del navegador |
 | Avisar éxito o error de una acción | `toast()` / `toast.error()` de `sonner` (`<Toaster>` en `main.tsx`) | `alert()` |
-| Campo numérico | `<NumberInput>` (ver `plata-y-fechas.md`) | `<input>` + `parseFloat` |
+| Botón | `<Button>` (`src/components/ui/button.tsx`). Variantes: `default` (acción principal), `outline` (secundaria), `secondary`, `soft` (confirmar algo chico en línea, ej. "OK"), `ghost` (acciones de texto o de solo ícono, ítems de menú), `destructive` (borrar, quitar), `link`, `google` (solo "Continuar con Google"). Tamaños `default` / `sm` / `xs` / `lg` e `icon*` (los de solo ícono **siempre** con `aria-label`). **`loading`**: deshabilita y marca `aria-busy`; el texto lo pone la pantalla ("Guardando…") | `<button>` con clases a mano |
+| Campo de texto | `<Input>` (`src/components/ui/input.tsx`); fechas, `<Input type="date">` | `<input>` con clases a mano |
+| Elegir de una lista (participante, moneda) | `<NativeSelect>` (`src/components/ui/native-select.tsx`): `<select>` nativo con el estilo de `Input` | Un dropdown propio (en el celu es peor que el del sistema) |
+| Etiqueta + campo | `<Field label htmlFor>` (`kit.tsx`, usa `Label`); `small` para formularios densos (filtros) | `<label>` + `<div>` con márgenes a mano |
+| Elegir una opción entre pocas (dividir, convertir/mantener, blue/oficial, categorías en filtros) | `<Chip active>` (`kit.tsx`, con `aria-pressed`) dentro de un `role="group"` con etiqueta | Botones con estilos condicionales a mano |
+| Campo numérico | `<NumberInput>` (ver `plata-y-fechas.md`): ya es un `Input` por dentro | `<input>` + `parseFloat` |
 | Moneda y tipo de cambio | `<ExchangeRateFields>` + `useExchangeRate` | Repetir la lógica en cada form |
 | Cerrar sesión | `useSignOut()` (`src/lib/use-sign-out.ts`: borra la cache offline y la de memoria) | `signOut()` suelto |
 
-Falta: un botón con estado de carga, texto de monto y selector de participantes reutilizables (hoy cada pantalla resuelve el suyo).
+Falta: texto de monto y selector de participantes reutilizables (hoy cada pantalla resuelve el suyo).
