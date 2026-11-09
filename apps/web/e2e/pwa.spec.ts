@@ -1,3 +1,4 @@
+/// <reference lib="dom" />
 import { expect, test } from '@playwright/test';
 
 // Installable app: valid manifest + a service worker that takes control (it caches only the app's files).
