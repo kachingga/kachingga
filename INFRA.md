@@ -11,6 +11,8 @@
 | Base de datos **DEV** | Supabase (`staging-kachingga`) | supabase.com/dashboard/project/nraoqdaplvvsakvtlcam | `https://nraoqdaplvvsakvtlcam.supabase.co` (ref `nraoqdaplvvsakvtlcam`) |
 | Auth | Supabase Auth | supabase.com/dashboard → Authentication | — |
 | CI | GitHub Actions | github.com/kachingga/kachingga/actions | `ci.yml` (checks obligatorios), `e2e.yml` (Playwright en la web, a demanda) y `backup.yml` (backup semanal cifrado de prod, ver `DEPLOY.md` → "Backups") |
+| Errores (monitoreo) | Sentry (plan gratis, org de Galo) | sentry.io | Proyectos `kachingga-web` (React) y `kachingga-api` (Bun); cada uno con `environment` `staging` / `production`. Cómo está hecho: `docs/claude/repo/monitoreo.md` |
+| Caídas (uptime) | UptimeRobot (plan gratis, cuenta de Galo) | uptimerobot.com | Monitores de `kachingga.com`, `api.kachingga.com/health` y `api-staging.kachingga.com/health` (ver `DEPLOY.md` → "Monitoreo") |
 | Cotizaciones (dólar blue y oficial, oficial de EUR, BRL, UYU y CLP) | DolarApi (público, sin clave) | dolarapi.com | `https://dolarapi.com/v1/dolares/{blue,oficial}` y `/v1/cotizaciones/{eur,brl,uyu,clp}` |
 | Repo | GitHub | github.com/kachingga/kachingga | — |
 
@@ -51,6 +53,8 @@ Mismas variables en los dos entornos, con los valores de su base (staging = `app
 | `NODE_ENV` | `production` — evita que tRPC devuelva stack traces en los errores |
 | `CORS_ORIGINS` | Orígenes del front web que pueden llamar a la API, separados por coma. Prod: `https://kachingga.com`. Staging: `https://staging.kachingga.com`. Local (default): `http://localhost:5173,http://localhost:4173` |
 | `SEED_USER_PASSWORD` | **Solo `apps/api/.env` (dev).** Contraseña de los usuarios de prueba de `bun run db:seed`. No va en Railway ni en `.env.prod` |
+| `SENTRY_DSN` | DSN del proyecto `kachingga-api` de Sentry (Settings → Client Keys). Sin él no se reporta nada (local, tests, CI) |
+| `SENTRY_ENVIRONMENT` | `production` o `staging` |
 | _(v2)_ `LLM_API_KEY` | API key del proveedor del agente |
 
 ### Railway — servicio `web` (`apps/web`)
@@ -60,6 +64,10 @@ Mismas variables en los dos entornos, con los valores de su base (staging = `app
 | `VITE_API_URL` | La API de su entorno: `https://api.kachingga.com` (prod) o `https://api-staging.kachingga.com` (staging). En local va vacía (Vite reenvía `/trpc` a la API) |
 | `VITE_SUPABASE_URL` | `https://<project>.supabase.co` de la base de su entorno |
 | `VITE_SUPABASE_PUBLISHABLE_KEY` | Clave **publishable** de esa base — pública, solo para auth |
+| `VITE_SENTRY_DSN` | DSN del proyecto `kachingga-web` de Sentry. **Público por diseño** (solo permite mandar eventos, no leerlos). Sin él no se reporta nada |
+| `VITE_SENTRY_ENVIRONMENT` | `production` o `staging` |
+| `SENTRY_AUTH_TOKEN` | **Secreto, solo para el build** (no es `VITE_*`): token de Sentry (Settings → Auth Tokens, permiso de subir source maps) para que el build suba los source maps. Opcional: sin él los errores se ven con el código minificado |
+| `SENTRY_ORG` / `SENTRY_PROJECT` | Slug de la org de Sentry y `kachingga-web`. Los usa el build junto con `SENTRY_AUTH_TOKEN` |
 | `PORT` | Lo setea Railway — no pisarlo (lo lee `server.ts`) |
 
 > Todo lo `VITE_*` queda dentro del JavaScript que baja el navegador: es **público**. Nunca secretos. Vite las lee **al buildear**: si cambian, hay que redeployar el servicio `web`.

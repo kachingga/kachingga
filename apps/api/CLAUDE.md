@@ -10,6 +10,7 @@ API en Hono + tRPC sobre Bun, con Prisma contra PostgreSQL en Supabase. Paquete 
 |-----------------|-----|
 | Un procedure, un router, un modelo o un schema (agregar, cambiar, o usarlo desde la web) | `docs/claude/api/contrato.md` (modelo, tabla de procedures, dónde vive cada regla, convenciones) |
 | Autenticación, acceso a grupos, rate limiting, CORS, RLS | `docs/claude/api/seguridad.md` |
+| Errores inesperados y Sentry (`src/lib/monitoring.ts`, el `onError` de tRPC / Hono) | `docs/claude/repo/monitoreo.md` |
 | Tests de la API | `docs/claude/api/tests.md` |
 | El seed o los usuarios de prueba | `docs/claude/api/datos-de-prueba.md` |
 
@@ -64,7 +65,7 @@ bun run db:seed                  # datos de prueba en DEV
 
 - **`.env` → DEV** (`staging-kachingga`, ref `nraoqdaplvvsakvtlcam`): lo usan `bun run dev`, los scripts de DB y Prisma Studio.
 - **`.env.prod` → PROD** (`kachingga`, ref `czrkjokurbmbbvobvmxd`): solo para `db:migrate:prod` y como referencia de las variables de Railway. `.env.prod` no lo carga nadie salvo `prisma.config.ts` cuando `PRISMA_ENV_FILE=.env.prod`.
-- Ambos gitignoreados; cada línea del `.env.sample` dice de dónde sale el valor. Bun carga `.env` solo. Variables: `DATABASE_URL` (transaction pooler, 6543), `DIRECT_URL` (session pooler, 5432, migraciones), `SUPABASE_URL`, `SUPABASE_SECRET_KEY`, `PORT`, `CORS_ORIGINS`, `SEED_USER_PASSWORD` (solo dev).
+- Ambos gitignoreados; cada línea del `.env.sample` dice de dónde sale el valor. Bun carga `.env` solo. Variables: `DATABASE_URL` (transaction pooler, 6543), `DIRECT_URL` (session pooler, 5432, migraciones), `SUPABASE_URL`, `SUPABASE_SECRET_KEY`, `PORT`, `CORS_ORIGINS`, `SENTRY_DSN` / `SENTRY_ENVIRONMENT` (vacías = Sentry apagado), `SEED_USER_PASSWORD` (solo dev).
 
 ## Arquitectura
 

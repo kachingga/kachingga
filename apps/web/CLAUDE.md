@@ -17,6 +17,7 @@
 | Transiciones, navegar al guardar o borrar, gestos, tamaño del bundle, carga diferida, PWA (service worker, manifest, íconos de `public/logo.svg`) | `docs/claude/web/sensacion-de-app.md` |
 | Una pantalla nueva o un cambio visible | `docs/claude/web/ui-ux.md` (+ `V1.md` → "Pantallas") |
 | Tests (`renderWithApi`, setup, E2E) | `docs/claude/web/testing.md` |
+| Errores inesperados y Sentry (`src/lib/monitoring.ts`, `RouteError`, los `onError` de `api-provider.tsx`) | `docs/claude/repo/monitoreo.md` |
 
 ## Reglas que valen siempre
 
@@ -78,6 +79,7 @@ Antes de dar una tarea por terminada: `bun run check` desde la raíz.
 Copiar `.env.sample` a `.env` (valores de **dev**). Todo lo `VITE_*` es **público** (va dentro del JS).
 - `VITE_API_URL` — **vacía en local** (Vite reenvía `/trpc` a la API: sin CORS y anda desde el celu). Prod: la URL de Railway.
 - `VITE_SUPABASE_URL` / `VITE_SUPABASE_PUBLISHABLE_KEY` — solo login y sesión.
+- `VITE_SENTRY_DSN` / `VITE_SENTRY_ENVIRONMENT` — errores a Sentry; vacías = apagado (local, tests, CI).
 
 Si agregás una: `src/vite-env.d.ts`, `.env.sample`, `INFRA.md` y `test.env` de `vite.config.ts`.
 

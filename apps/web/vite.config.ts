@@ -1,3 +1,4 @@
+import { sentryVitePlugin } from '@sentry/vite-plugin';
 import tailwindcss from '@tailwindcss/vite';
 import react from '@vitejs/plugin-react';
 import { fileURLToPath } from 'node:url';
@@ -6,6 +7,12 @@ import { defineConfig } from 'vitest/config';
 
 // Where the local API runs (`bun run api`).
 const API_URL = 'http://localhost:3000';
+
+// Commit being built: Railway exposes it during the build. Sentry groups errors by it (release).
+const release = process.env.RAILWAY_GIT_COMMIT_SHA ?? '';
+// Source maps for readable stack traces in Sentry: only when deploying with SENTRY_AUTH_TOKEN
+// (plus SENTRY_ORG and SENTRY_PROJECT). They're uploaded and deleted from dist/, never served.
+const uploadSourceMaps = Boolean(process.env.SENTRY_AUTH_TOKEN && release);
 
 export default defineConfig({
   plugins: [
@@ -33,7 +40,15 @@ export default defineConfig({
         cleanupOutdatedCaches: true,
       },
     }),
+    uploadSourceMaps &&
+      sentryVitePlugin({
+        release: { name: release },
+        sourcemaps: { filesToDeleteAfterUpload: ['./dist/**/*.map'] },
+        telemetry: false,
+      }),
   ],
+  define: { __APP_RELEASE__: JSON.stringify(release) },
+  build: { sourcemap: uploadSourceMaps ? 'hidden' : false },
   resolve: {
     alias: { '@': fileURLToPath(new URL('./src', import.meta.url)) },
   },

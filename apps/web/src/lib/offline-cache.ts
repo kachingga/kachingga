@@ -60,11 +60,12 @@ export function clearOfflineCache() {
  * Offline is read-only: a mutation without connection fails right away (before its optimistic
  * update) instead of staying paused and being sent later. The screens show the error as usual.
  */
-export function createMutationCache() {
+export function createMutationCache(onError?: (error: unknown) => void) {
   return new MutationCache({
     onMutate: () => {
       if (!onlineManager.isOnline()) throw new Error(OFFLINE_MESSAGE);
     },
+    onError,
   });
 }
 
