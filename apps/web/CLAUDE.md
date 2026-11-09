@@ -10,7 +10,7 @@
 
 | Antes de tocar… | Leé |
 |-----------------|-----|
-| Una query, mutation, optimistic update o precarga (`useQuery`, `useMutation`, `setQueryData`, `invalidateQueries`, `src/lib/optimistic.ts`, `src/lib/use-prefetch.ts`) | `docs/claude/web/datos-y-cache.md` |
+| Una query, mutation, optimistic update, precarga o el modo offline (`useQuery`, `useMutation`, `setQueryData`, `invalidateQueries`, `src/lib/optimistic.ts`, `src/lib/use-prefetch.ts`, `src/lib/offline-cache.ts`) | `docs/claude/web/datos-y-cache.md` |
 | Qué procedure llamar, login / sesión, tipo de cambio, monedas, alias, export, errores de la API, el proxy de Vite | `docs/claude/web/usar-la-api.md` |
 | Montos, porcentajes, tipos de cambio o fechas (`src/lib/format.ts`, `<NumberInput>`, `<input type="date">`) | `docs/claude/web/plata-y-fechas.md` |
 | Colores, tema claro / oscuro, `src/index.css`, componentes de `src/components/` o de shadcn, confirmaciones, toasts, skeletons | `docs/claude/web/componentes-y-tema.md` |
@@ -26,6 +26,7 @@
 - Mutations: **callbacks en `useMutation(trpc.x.mutationOptions({ … }))`**, nunca en `mutate(input, { … })`. Optimistic updates con `src/lib/optimistic.ts`; lo provisorio (`isTemp`) sin link ni acciones.
 - Precarga: los inputs tienen que ser **idénticos** a los de la pantalla.
 - Si a la web le falta algo de la API, se agrega en `apps/api`, nunca un workaround en el front.
+- **Offline es solo lectura:** la cache guardada en el dispositivo es **por usuario** y **se borra al cerrar sesión**; sin conexión las mutations fallan antes del optimistic update. No persistir mutations ni nada de la sesión.
 
 **Plata y fechas**
 - Plata en **centavos enteros**. Campos numéricos con **`<NumberInput>`**, nunca `parseFloat` sobre lo que escribe el usuario. Mostrar con `formatCents`.
@@ -88,9 +89,9 @@ src/
 ├── index.css                 # Tailwind + variables del tema (claro / oscuro) + transiciones
 ├── routes/                   # una pantalla por archivo (groups/ = lo de un grupo), tests en __tests__/
 ├── components/               # ui/ (shadcn), skeletons, error-state, number-input, exchange-rate-fields,
-│                             # confirm-provider, animated-layout, api-provider, require-auth
+│                             # confirm-provider, animated-layout, api-provider, require-auth, offline-banner
 ├── lib/                      # trpc, supabase (ÚNICO que importa Supabase), auth, format, optimistic,
-│                             # use-prefetch, use-exchange-rate, use-confirm, use-go-back
+│                             # use-prefetch, use-exchange-rate, use-confirm, use-go-back, offline-cache
 └── test/                     # setup.ts, render.tsx (renderWithApi)
 e2e/                          # Playwright
 ```

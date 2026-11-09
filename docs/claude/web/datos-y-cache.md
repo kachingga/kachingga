@@ -1,12 +1,12 @@
 # Datos y cache (TanStack Query) — web
 
-> **Aplica a:** toda query, mutation, optimistic update o precarga de `apps/web` (`useQuery`, `useMutation`, `setQueryData`, `invalidateQueries`), `src/lib/optimistic.ts`, `src/lib/use-prefetch.ts`. **Si cambiás cómo funciona algo de esto, actualizá este archivo en el mismo PR.** Reglas cortas: `apps/web/CLAUDE.md`.
+> **Aplica a:** toda query, mutation, optimistic update o precarga de `apps/web` (`useQuery`, `useMutation`, `setQueryData`, `invalidateQueries`), `src/lib/optimistic.ts`, `src/lib/use-prefetch.ts`, el modo offline (`src/lib/offline-cache.ts`, `src/components/api-provider.tsx`). **Si cambiás cómo funciona algo de esto, actualizá este archivo en el mismo PR.** Reglas cortas: `apps/web/CLAUDE.md`.
 
 ## Cómo funciona la cache
 
 - TanStack Query guarda en memoria un mapa **query key → datos + estado**. Cada `useQuery` observa una entrada. tRPC arma la key con el procedure y el input (`[['groups','get'], { input: { groupId }, type: 'query' }]`), así que **dos inputs distintos son dos entradas distintas**: `{ groupId }` y `{ groupId, filters: {} }` no comparten datos.
 - Al montar, si la key ya tiene datos se muestran **en el acto**. Con `staleTime` 0 (el default) además se revalida en segundo plano y la pantalla se actualiza sola (*stale-while-revalidate*). Si hay un pedido en vuelo con la misma key, no se hace otro (deduplicación).
-- `queryClient.setQueryData(key, data)` escribe en la cache: todo lo que observa esa key se re-renderiza como si viniera del server. `invalidateQueries(...)` marca como vieja: lo montado se pide ya, lo demás al usarse. Lo que nadie observa se borra a los 5 min (`gcTime`).
+- `queryClient.setQueryData(key, data)` escribe en la cache: todo lo que observa esa key se re-renderiza como si viniera del server. `invalidateQueries(...)` marca como vieja: lo montado se pide ya, lo demás al usarse. Lo que nadie observa se borra de la memoria a los 7 días (`gcTime` = lo que dura la copia offline, ver abajo).
 - **Saldos, transferencias y totales los calcula la API**: nunca se recalculan en el front ni se escriben a mano en la cache; después de tocar gastos o pagos se invalidan (`balances.get`, `expenses.summary`).
 - `expenses.list` es una *infinite query*: en la cache es `{ pages: [{ items, nextCursor }], pageParams }`, no un array.
 
@@ -47,3 +47,16 @@ onSettled: () => { /* invalidar la lista y lo que calcula la API (saldos, totale
 - **Los inputs tienen que ser idénticos a los de la pantalla** (si no, es otra key y la precarga no sirve). Pantalla nueva o input cambiado → actualizar `usePrefetch` y su test (`src/routes/groups/__tests__/list.test.tsx` verifica los inputs exactos).
 - La precarga usa `staleTime: 10_000` para no repetir pedidos al pasar el mouse varias veces; la pantalla igual revalida al montar.
 - **Sembrar en vez de pedir:** si ya tenemos los datos de la próxima pantalla, copiarlos con `setQueryData`. Ej.: `expenses.list` y `expenses.get` devuelven lo mismo por gasto (mismo `include` en la API), así que al tocar un gasto su detalle sale de la lista sin pedido. Si la API cambia uno de los dos, revisar esto.
+
+## Offline (solo lectura)
+
+Sin conexión, la app (instalada, PWA) abre igual y muestra **lo último que se trajo de la API**, con el aviso "Sin conexión: mostrando lo último que viste" (`src/components/offline-banner.tsx`). Al volver la red, las queries se actualizan solas.
+
+- **Dónde se guarda:** la cache de TanStack Query se guarda en `localStorage` con `PersistQueryClientProvider` (`src/components/api-provider.tsx`, helpers en `src/lib/offline-cache.ts`), serializada con **superjson** (las fechas vuelven como `Date`, igual que por tRPC). No es el service worker: ese guarda solo los archivos de la app.
+- **Qué se guarda:** solo queries exitosas, nunca mutations ni tokens (la sesión la maneja Supabase). Vale **7 días** (`CACHE_MAX_AGE`); por eso `gcTime` es igual (si una query sale de memoria antes, no se guarda).
+- **Por usuario:** una entrada por cuenta (`kachingga-cache:<userId>`) y un `QueryClient` por usuario (`key` en `ApiProvider`): otra cuenta en el mismo dispositivo nunca ve la cache de la anterior, ni en disco ni en memoria. **"Cerrar sesión" borra todo** (`clearOfflineCache()` + `queryClient.clear()`, en `src/routes/account.tsx`).
+- **Sesión vencida sin red:** el token de Supabase dura ~1 h y sin red no se puede renovar, así que la sesión aparece vacía. Si el dispositivo tiene la cache del último usuario (`kachingga-cache-user`), `RequireAuth` abre la app igual en solo lectura. Al volver la red, Supabase renueva la sesión sola; si todavía no lo hizo, manda a /login (limitación conocida).
+- **Solo lectura:** sin conexión, toda mutation falla **antes** de su `onMutate` (sin optimistic update ni pedido) con "Necesitás conexión para guardar" (`createMutationCache()`, la usan la app y `renderWithApi`). Cada pantalla muestra el error como siempre; el formulario de gasto queda abierto con lo cargado. No se encolan cambios para mandarlos después (conflictos, saldos).
+- **Arranque sin red:** TanStack Query asume que hay conexión hasta el evento `offline`; `syncOnlineAtStartup()` (`main.tsx`) lo corrige al abrir.
+- Una pantalla que nunca se abrió con red no tiene nada guardado: queda en su skeleton hasta que vuelva la conexión.
+- **Tests:** `src/lib/__tests__/offline-cache.test.tsx` (restaurar, por usuario, borrar, mutations, aviso), `src/components/__tests__/require-auth.test.tsx`, el de cerrar sesión en `account.test.tsx`, el de pagos sin conexión en `settlements.test.tsx` y `e2e/offline.spec.ts`.
