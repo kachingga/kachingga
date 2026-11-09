@@ -84,7 +84,8 @@ describe('GroupDetail', () => {
           {
             id: 'e1',
             description: 'Cena en el porto',
-            category: 'FOOD',
+            categoryId: 'cat-food',
+            category: { id: 'cat-food', name: 'Comida', icon: 'utensils', color: 'chart-2' },
             date: new Date('2024-01-15'),
             amountCents: 80000,
             currency: 'ARS',
@@ -124,7 +125,8 @@ describe('GroupDetail', () => {
     const saving = {
       id: 'temp-1',
       description: 'Pizza',
-      category: 'FOOD',
+      categoryId: 'cat-food',
+      category: { id: 'cat-food', name: 'Comida', icon: 'utensils', color: 'chart-2' },
       date: new Date('2026-11-04T12:00:00Z'),
       amountCents: 300000,
       currency: 'ARS',

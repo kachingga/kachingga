@@ -11,7 +11,7 @@ describe('buildExpenseWhere', () => {
     const where = buildExpenseWhere('g1', {
       paidById: 'p1',
       splitParticipantId: 'p2',
-      categories: ['FOOD'],
+      categoryIds: ['c1'],
       dateFrom,
       minAmountCents: 100,
       search: 'asado',
@@ -19,7 +19,7 @@ describe('buildExpenseWhere', () => {
     expect(where).toMatchObject({
       paidById: 'p1',
       splits: { some: { participantId: 'p2' } },
-      category: { in: ['FOOD'] },
+      categoryId: { in: ['c1'] },
       date: { gte: dateFrom, lte: undefined },
       amountCents: { gte: 100, lte: undefined },
       description: { contains: 'asado', mode: 'insensitive' },
@@ -33,6 +33,6 @@ describe('buildExpenseWhere', () => {
   })
 
   test('empty category list is ignored', () => {
-    expect(buildExpenseWhere('g1', { categories: [] })).toEqual({ groupId: 'g1', deletedAt: null })
+    expect(buildExpenseWhere('g1', { categoryIds: [] })).toEqual({ groupId: 'g1', deletedAt: null })
   })
 })

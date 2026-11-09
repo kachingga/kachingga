@@ -3,16 +3,45 @@ import { Link } from 'react-router';
 import { cn } from 'cn';
 import {
   ArrowLeft,
+  Baby,
+  Beer,
   BedDouble,
+  Book,
+  Briefcase,
+  Bus,
   Car,
+  Coffee,
+  Dumbbell,
+  Film,
+  Fuel,
+  Gamepad2,
+  Gift,
+  GraduationCap,
+  Heart,
+  Home,
+  Music,
   PartyPopper,
+  PawPrint,
+  Pill,
+  Pizza,
+  Plane,
   Shapes,
+  Shirt,
   ShoppingBag,
   ShoppingCart,
+  Smartphone,
+  Stethoscope,
+  Sun,
+  Ticket,
+  TreePine,
   Utensils,
+  Wallet,
+  Wifi,
+  Wrench,
   Zap,
 } from 'lucide-react';
-import { formatMyBalance, type ExpenseCategory } from '@/lib/format';
+import type { categoryColors, categoryIcons } from '@kachingga/api/schemas';
+import { formatMyBalance } from '@/lib/format';
 
 // Visual building blocks of the design (palette "yerba y durazno"). Only presentation: no data.
 // How they're used: docs/claude/web/componentes-y-tema.md.
@@ -32,30 +61,83 @@ export function SectionTitle({ className, ...props }: ComponentProps<'h2'>) {
   return <h2 className={cn('text-lg font-bold', className)} {...props} />;
 }
 
-const CATEGORY_ICONS: Record<ExpenseCategory, typeof Utensils> = {
-  FOOD: Utensils,
-  GROCERIES: ShoppingCart,
-  TRANSPORT: Car,
-  LODGING: BedDouble,
-  ENTERTAINMENT: PartyPopper,
-  SHOPPING: ShoppingBag,
-  SERVICES: Zap,
-  OTHER: Shapes,
+export type CategoryIconName = (typeof categoryIcons)[number];
+export type CategoryColor = (typeof categoryColors)[number];
+
+/** Every icon a category can have (`categoryIcons` in the API): the name → its lucide component. */
+export const CATEGORY_ICONS: Record<CategoryIconName, typeof Utensils> = {
+  utensils: Utensils,
+  'shopping-cart': ShoppingCart,
+  car: Car,
+  'bed-double': BedDouble,
+  'party-popper': PartyPopper,
+  'shopping-bag': ShoppingBag,
+  zap: Zap,
+  shapes: Shapes,
+  fuel: Fuel,
+  plane: Plane,
+  bus: Bus,
+  home: Home,
+  gift: Gift,
+  heart: Heart,
+  coffee: Coffee,
+  beer: Beer,
+  pizza: Pizza,
+  shirt: Shirt,
+  'gamepad-2': Gamepad2,
+  music: Music,
+  film: Film,
+  ticket: Ticket,
+  dumbbell: Dumbbell,
+  'paw-print': PawPrint,
+  baby: Baby,
+  'graduation-cap': GraduationCap,
+  stethoscope: Stethoscope,
+  pill: Pill,
+  wifi: Wifi,
+  smartphone: Smartphone,
+  book: Book,
+  briefcase: Briefcase,
+  wrench: Wrench,
+  'tree-pine': TreePine,
+  sun: Sun,
+  wallet: Wallet,
 };
 
+/**
+ * Every color a category can have (`categoryColors` in the API): a soft background and the color
+ * itself, always theme variables (they adapt to light and dark). Full class names so Tailwind sees them.
+ */
+export const CATEGORY_COLORS: Record<CategoryColor, string> = {
+  'chart-1': 'bg-chart-1/15 text-chart-1',
+  'chart-2': 'bg-chart-2/20 text-chart-2',
+  'chart-3': 'bg-chart-3/15 text-chart-3',
+  'chart-4': 'bg-chart-4/15 text-chart-4',
+  'chart-5': 'bg-chart-5/20 text-chart-5',
+  positive: 'bg-positive-soft text-positive',
+  negative: 'bg-negative-soft text-negative',
+  highlight: 'bg-highlight/25 text-highlight-foreground',
+  primary: 'bg-primary/15 text-primary',
+  muted: 'bg-muted text-muted-foreground',
+};
+
+/** A category's icon on its color. Unknown values (old data) fall back to "shapes" on muted. */
 export function CategoryIcon({
-  category,
+  icon,
+  color,
   className,
 }: {
-  category: ExpenseCategory;
+  icon: string;
+  color: string;
   className?: string;
 }) {
-  const Icon = CATEGORY_ICONS[category] ?? Shapes;
+  const Icon = CATEGORY_ICONS[icon as CategoryIconName] ?? Shapes;
   return (
     <span
       aria-hidden
       className={cn(
-        'grid size-10 shrink-0 place-items-center rounded-xl bg-accent text-accent-foreground',
+        'grid size-10 shrink-0 place-items-center rounded-xl',
+        CATEGORY_COLORS[color as CategoryColor] ?? CATEGORY_COLORS.muted,
         className,
       )}
     >

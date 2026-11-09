@@ -8,7 +8,7 @@ model Expense {
   id           String          @id @default(cuid())
   groupId      String
   description  String
-  category     ExpenseCategory
+  categoryId   String
   date         DateTime
   amountCents  Int
   currency     Currency
@@ -20,9 +20,10 @@ model Expense {
   updatedAt    DateTime        @updatedAt
   deletedAt    DateTime? // null = active; set = soft-deleted
 
-  group  Group          @relation(fields: [groupId], references: [id])
-  paidBy Participant    @relation(fields: [paidById], references: [id])
-  splits ExpenseSplit[]
+  group    Group          @relation(fields: [groupId], references: [id])
+  category Category       @relation(fields: [categoryId], references: [id])
+  paidBy   Participant    @relation(fields: [paidById], references: [id])
+  splits   ExpenseSplit[]
 
   @@index([groupId, date])
 }

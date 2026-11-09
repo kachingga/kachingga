@@ -4,6 +4,7 @@ import type { Prisma } from '../../db/generated/prisma/client'
 import type { Currency } from '../../db/generated/prisma/enums'
 import { prisma } from '../../db'
 import { assertParticipantsInGroup, requireActiveGroup, requireMembership } from '../../lib/access'
+import { resolveExpenseCategory } from '../../lib/categories'
 import { exportFilename, toCsv, toExportRows } from '../../lib/exportExpenses'
 import { resolveExchangeRate } from '../../lib/rates'
 import { resolveSplits } from '../../lib/splits'
@@ -14,6 +15,7 @@ import { protectedProcedure, router } from '../init'
 const PAGE_SIZE = 50
 
 const expenseInclude = {
+  category: { select: { id: true, name: true, icon: true, color: true } },
   paidBy: { select: { id: true, name: true } },
   splits: { include: { participant: { select: { id: true, name: true } } } },
 } satisfies Prisma.ExpenseInclude
@@ -27,7 +29,7 @@ export function buildExpenseWhere(groupId: string, filters: ExpenseFilters): Pri
     ...(filters.involvedParticipantId && {
       OR: [{ paidById: filters.involvedParticipantId }, { splits: { some: { participantId: filters.involvedParticipantId } } }],
     }),
-    ...(filters.categories?.length && { category: { in: filters.categories } }),
+    ...(filters.categoryIds?.length && { categoryId: { in: filters.categoryIds } }),
     ...((filters.dateFrom || filters.dateTo) && { date: { gte: filters.dateFrom, lte: filters.dateTo } }),
     ...((filters.minAmountCents != null || filters.maxAmountCents != null) && {
       amountCents: { gte: filters.minAmountCents, lte: filters.maxAmountCents },
@@ -37,14 +39,16 @@ export function buildExpenseWhere(groupId: string, filters: ExpenseFilters): Pri
 }
 
 // Validates an expense input against the group and turns it into the data to store.
-async function prepareExpense(input: z.infer<typeof expenseInput>, baseCurrency: Currency) {
+// `currentCategoryId`: when editing, the category it already had (allowed even if archived).
+async function prepareExpense(input: z.infer<typeof expenseInput>, baseCurrency: Currency, currentCategoryId?: string) {
   const splits = resolveSplits(input.amountCents, input.split)
   await assertParticipantsInGroup(input.groupId, [input.paidById, ...splits.map((s) => s.participantId)])
+  const categoryId = await resolveExpenseCategory(input.groupId, input.categoryId, currentCategoryId)
   const exchangeRate = await resolveExchangeRate({ ...input, baseCurrency })
   return {
     data: {
       description: input.description,
-      category: input.category,
+      categoryId,
       date: input.date,
       amountCents: input.amountCents,
       currency: input.currency,
@@ -117,7 +121,7 @@ export const expensesRouter = router({
         select: {
           currency: true,
           exchangeRate: true,
-          category: true,
+          category: { select: { id: true, name: true } },
           paidById: true,
           splits: { select: { participantId: true, amountCents: true } },
         },
@@ -144,7 +148,7 @@ export const expensesRouter = router({
     .mutation(async ({ ctx, input }) => {
       const { expense } = await findExpense(input.expenseId, ctx.user.id)
       const { group } = await requireActiveGroup(expense.groupId, ctx.user.id)
-      const { data, splits } = await prepareExpense({ ...input, groupId: expense.groupId }, group.baseCurrency)
+      const { data, splits } = await prepareExpense({ ...input, groupId: expense.groupId }, group.baseCurrency, expense.categoryId)
       return prisma.expense.update({
         where: { id: expense.id },
         data: { ...data, splits: { deleteMany: {}, create: splits } },

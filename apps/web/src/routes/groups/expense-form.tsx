@@ -1,23 +1,23 @@
 import { useState } from 'react';
-import { useLocation, useNavigate, useParams } from 'react-router';
+import { Link, useLocation, useNavigate, useParams } from 'react-router';
 import { toast } from 'sonner';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { ArrowLeft } from 'lucide-react';
 import type { inferRouterOutputs } from '@trpc/server';
 import type { AppRouter } from '@kachingga/api';
-import { currencies, distributeCents, expenseCategories } from '@kachingga/api/schemas';
+import { currencies, distributeCents } from '@kachingga/api/schemas';
 
 import { ExchangeRateFields } from '@/components/exchange-rate-fields';
 import { NumberInput } from '@/components/number-input';
 import { useExchangeRate } from '@/lib/use-exchange-rate';
 import { ArchivedNotice } from '@/components/archived-notice';
+import { CategoryPicker } from '@/components/category-picker';
 import { ErrorState } from '@/components/error-state';
 import { FormSkeleton } from '@/components/skeletons';
 import { useTRPC } from '@/lib/trpc';
 import { useGoBack } from '@/lib/use-go-back';
 import { buildExpense, byDateDesc, tempId, type Expense } from '@/lib/optimistic';
 import {
-  categoryLabels,
   centsToNumeric,
   currencyLabels,
   dayToDate,
@@ -29,7 +29,6 @@ import {
   toDay,
   today,
   type Currency,
-  type ExpenseCategory,
 } from '@/lib/format';
 
 type GroupData = inferRouterOutputs<AppRouter>['groups']['get'];
@@ -60,9 +59,16 @@ function ExpenseFormBody({ groupId, group, expenseId, expense }: FormProps) {
 
   // Form state
   const [description, setDescription] = useState(expense?.description ?? '');
-  const [category, setCategory] = useState<ExpenseCategory>(
-    (expense?.category as ExpenseCategory) ?? 'OTHER',
+  // The group's categories: the active ones can be picked; an archived one only if the expense
+  // already had it. '' = not picked yet → the group's "Otros".
+  const categories = useQuery(trpc.categories.list.queryOptions({ groupId }));
+  const [pickedCategoryId, setCategoryId] = useState(expense?.categoryId ?? '');
+  const categoryOptions = (categories.data ?? []).filter(
+    (c) => !c.archived || c.id === expense?.categoryId,
   );
+  const categoryId =
+    pickedCategoryId || categoryOptions.find((c) => c.defaultKey === 'OTHER')?.id || '';
+  const selectedCategory = categoryOptions.find((c) => c.id === categoryId);
   const [dateInput, setDateInput] = useState(expense ? toDay(expense.date) : today());
   const [amountInput, setAmountInput] = useState(
     expense ? centsToNumeric(expense.amountCents) : '',
@@ -116,7 +122,7 @@ function ExpenseFormBody({ groupId, group, expenseId, expense }: FormProps) {
       onMutate: async (input) => {
         await queryClient.cancelQueries({ queryKey: listKey });
         const previous = queryClient.getQueryData(listKey);
-        const draft = buildExpense(input, group, tempId());
+        const draft = buildExpense(input, group, tempId(), undefined, selectedCategory);
         queryClient.setQueryData(listKey, (old) =>
           old
             ? {
@@ -156,7 +162,7 @@ function ExpenseFormBody({ groupId, group, expenseId, expense }: FormProps) {
           detail: queryClient.getQueryData(detailKey),
           list: queryClient.getQueryData(listKey),
         };
-        const draft = buildExpense({ ...input }, group, id, expense);
+        const draft = buildExpense({ ...input }, group, id, expense, selectedCategory);
         queryClient.setQueryData(detailKey, draft);
         queryClient.setQueryData(listKey, (old) =>
           old
@@ -239,7 +245,7 @@ function ExpenseFormBody({ groupId, group, expenseId, expense }: FormProps) {
 
     const common = {
       description,
-      category,
+      categoryId: categoryId || undefined,
       date: dayToDate(dateInput),
       amountCents,
       currency,
@@ -322,26 +328,34 @@ function ExpenseFormBody({ groupId, group, expenseId, expense }: FormProps) {
           />
         </div>
 
-        {/* Categoría y fecha */}
-        <div className="grid grid-cols-2 gap-3 [&>*]:min-w-0">
-          <div>
-            <label className="block text-sm font-medium text-foreground" htmlFor="category">
+        {/* Categoría */}
+        <div>
+          <div className="flex items-baseline justify-between gap-3">
+            <p className="text-sm font-medium text-foreground" id="category-label">
               Categoría
-            </label>
-            <select
-              id="category"
-              value={category}
-              onChange={(e) => setCategory(e.target.value as ExpenseCategory)}
-              className="mt-1.5 h-11 w-full rounded-xl border border-input bg-card px-3.5 text-base text-foreground placeholder:text-muted-foreground outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 disabled:opacity-50 dark:bg-input/30"
+            </p>
+            <Link
+              to={`/grupos/${groupId}/categorias`}
+              className="text-xs text-muted-foreground underline-offset-2 hover:text-foreground hover:underline"
             >
-              {expenseCategories.map((c) => (
-                <option key={c} value={c}>
-                  {categoryLabels[c]}
-                </option>
-              ))}
-            </select>
+              Editar categorías
+            </Link>
           </div>
+          <div className="mt-1.5">
+            {categories.isPending ? (
+              <div className="h-10 animate-pulse rounded-xl bg-muted" />
+            ) : (
+              <CategoryPicker
+                categories={categoryOptions}
+                value={categoryId}
+                onChange={setCategoryId}
+              />
+            )}
+          </div>
+        </div>
 
+        {/* Fecha */}
+        <div className="grid grid-cols-2 gap-3 [&>*]:min-w-0">
           <div>
             <label className="block text-sm font-medium text-foreground" htmlFor="date">
               Fecha

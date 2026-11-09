@@ -7,17 +7,6 @@ enum Currency {
   CLP
 }
 
-enum ExpenseCategory {
-  FOOD
-  GROCERIES
-  TRANSPORT
-  LODGING
-  ENTERTAINMENT
-  SHOPPING
-  SERVICES
-  OTHER
-}
-
 enum SplitType {
   EQUAL
   AMOUNT

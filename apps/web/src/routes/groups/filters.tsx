@@ -3,21 +3,13 @@ import { Link, useNavigate, useParams, useSearchParams } from 'react-router';
 import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { ArrowLeft } from 'lucide-react';
 
-import { expenseCategories } from '@kachingga/api/schemas';
 import { ErrorState } from '@/components/error-state';
 import { CategoryIcon } from '@/components/kit';
 import { LoadMore } from '@/components/load-more';
 import { NumberInput } from '@/components/number-input';
 import { ExpenseListSkeleton } from '@/components/skeletons';
 import { useTRPC } from '@/lib/trpc';
-import {
-  categoryLabels,
-  formatCents,
-  formatDate,
-  monthRange,
-  today,
-  type ExpenseCategory,
-} from '@/lib/format';
+import { formatCents, formatDate, monthRange, today } from '@/lib/format';
 import {
   fromApiFilters,
   readUrlFilters,
@@ -56,6 +48,8 @@ export function Filters() {
 
   const group = useQuery(trpc.groups.get.queryOptions({ groupId: groupId! }));
   const savedFilters = useQuery(trpc.savedFilters.list.queryOptions({ groupId: groupId! }));
+  const categories = useQuery(trpc.categories.list.queryOptions({ groupId: groupId! }));
+  const categoryById = new Map((categories.data ?? []).map((c) => [c.id, c]));
 
   const [filterName, setFilterName] = useState('');
   const [saveError, setSaveError] = useState<string | null>(null);
@@ -324,25 +318,35 @@ export function Filters() {
           <div>
             <p className="block text-xs font-medium text-muted-foreground">Categorías</p>
             <div className="mt-1 flex flex-wrap gap-1">
-              {expenseCategories.map((cat) => {
-                const cats = urlFilters.categories ?? [];
-                const selected = cats.includes(cat);
-                return (
-                  <button
-                    key={cat}
-                    type="button"
-                    aria-pressed={selected}
-                    onClick={() =>
-                      update({
-                        categories: selected ? cats.filter((c) => c !== cat) : [...cats, cat],
-                      })
-                    }
-                    className={`press rounded-full px-3 py-1.5 text-xs font-medium ${selected ? 'bg-primary text-primary-foreground' : 'border border-input bg-card text-muted-foreground'}`}
-                  >
-                    {categoryLabels[cat]}
-                  </button>
-                );
-              })}
+              {(categories.data ?? [])
+                // Archived ones only if they're already in the filter (e.g. from a saved one).
+                .filter((cat) => !cat.archived || urlFilters.categoryIds?.includes(cat.id))
+                .map((cat) => {
+                  const ids = urlFilters.categoryIds ?? [];
+                  const selected = ids.includes(cat.id);
+                  return (
+                    <button
+                      key={cat.id}
+                      type="button"
+                      aria-pressed={selected}
+                      onClick={() =>
+                        update({
+                          categoryIds: selected
+                            ? ids.filter((id) => id !== cat.id)
+                            : [...ids, cat.id],
+                        })
+                      }
+                      className={`press flex items-center gap-1.5 rounded-full py-1 pr-3 pl-1 text-xs font-medium ${selected ? 'bg-primary text-primary-foreground' : 'border border-input bg-card text-muted-foreground'}`}
+                    >
+                      <CategoryIcon
+                        icon={cat.icon}
+                        color={cat.color}
+                        className="size-6 rounded-full [&_svg]:size-3.5"
+                      />
+                      {cat.name}
+                    </button>
+                  );
+                })}
             </div>
           </div>
 
@@ -417,10 +421,13 @@ export function Filters() {
                     <div className="mt-3 space-y-1.5 border-t pt-3">
                       {s.byCategory.map((bc) => (
                         <div
-                          key={bc.category}
-                          className="flex justify-between text-sm text-muted-foreground"
+                          key={bc.categoryId}
+                          className="flex items-center justify-between gap-2 text-sm text-muted-foreground"
                         >
-                          <span>{categoryLabels[bc.category as keyof typeof categoryLabels]}</span>
+                          <CategoryTotalLabel
+                            category={categoryById.get(bc.categoryId)}
+                            name={bc.name}
+                          />
                           <span>{formatCents(bc.totalCents, s.currency)}</span>
                         </div>
                       ))}
@@ -482,7 +489,7 @@ export function Filters() {
                     }
                     className="flex items-center gap-3 p-4 transition-colors hover:bg-muted/60"
                   >
-                    <CategoryIcon category={e.category as ExpenseCategory} />
+                    <CategoryIcon icon={e.category.icon} color={e.category.color} />
                     <div className="min-w-0 flex-1">
                       <p className="truncate font-medium">{e.description}</p>
                       <p className="text-sm text-muted-foreground">
@@ -505,5 +512,27 @@ export function Filters() {
         </div>
       </div>
     </div>
+  );
+}
+
+/** A category's name in the totals, with its icon when the group's list has it. */
+function CategoryTotalLabel({
+  category,
+  name,
+}: {
+  category?: { icon: string; color: string };
+  name: string;
+}) {
+  return (
+    <span className="flex min-w-0 items-center gap-2">
+      {category && (
+        <CategoryIcon
+          icon={category.icon}
+          color={category.color}
+          className="size-6 rounded-lg [&_svg]:size-3.5"
+        />
+      )}
+      <span className="truncate">{name}</span>
+    </span>
   );
 }

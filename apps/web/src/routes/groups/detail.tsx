@@ -26,14 +26,7 @@ import { useTRPC } from '@/lib/trpc';
 import { prefetchOn, usePrefetch } from '@/lib/use-prefetch';
 import { isTemp } from '@/lib/optimistic';
 import { useConfirm } from '@/lib/use-confirm';
-import {
-  categoryLabels,
-  formatCents,
-  formatDate,
-  formatMyBalance,
-  formatPlainAmount,
-  type ExpenseCategory,
-} from '@/lib/format';
+import { formatCents, formatDate, formatMyBalance, formatPlainAmount } from '@/lib/format';
 
 type GroupData = inferRouterOutputs<AppRouter>['groups']['get'];
 type BalancesData = inferRouterOutputs<AppRouter>['balances']['get'];
@@ -462,13 +455,13 @@ export function GroupDetail() {
                   const saving = isTemp(expense.id);
                   const content = (
                     <>
-                      <CategoryIcon category={expense.category as ExpenseCategory} />
+                      <CategoryIcon icon={expense.category.icon} color={expense.category.color} />
                       <div className="min-w-0 flex-1">
                         <p className="truncate font-medium">{expense.description}</p>
                         <p className="truncate text-sm text-muted-foreground">
                           {saving
                             ? 'Guardando…'
-                            : `${categoryLabels[expense.category as ExpenseCategory]} · Pagó ${expense.paidBy.name}`}
+                            : `${expense.category.name} · Pagó ${expense.paidBy.name}`}
                         </p>
                       </div>
                       <div className="text-right">

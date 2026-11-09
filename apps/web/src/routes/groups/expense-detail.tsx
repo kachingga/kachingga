@@ -11,14 +11,7 @@ import { ExpenseDetailSkeleton } from '@/components/skeletons';
 import { useTRPC } from '@/lib/trpc';
 import { useGoBack } from '@/lib/use-go-back';
 import { useConfirm } from '@/lib/use-confirm';
-import {
-  categoryLabels,
-  formatCents,
-  formatDate,
-  formatNumber,
-  splitTypeLabels,
-  type ExpenseCategory,
-} from '@/lib/format';
+import { formatCents, formatDate, formatNumber, splitTypeLabels } from '@/lib/format';
 
 export function ExpenseDetail() {
   const { groupId, expenseId } = useParams<{ groupId: string; expenseId: string }>();
@@ -129,11 +122,11 @@ export function ExpenseDetail() {
 
       <div className="rise space-y-5">
         <div className="flex items-center gap-3">
-          <CategoryIcon category={e.category as ExpenseCategory} className="size-12" />
+          <CategoryIcon icon={e.category.icon} color={e.category.color} className="size-12" />
           <div className="min-w-0">
             <h1 className="truncate text-2xl font-bold lg:text-3xl">{e.description}</h1>
             <p className="text-muted-foreground">
-              {categoryLabels[e.category as keyof typeof categoryLabels]} · {formatDate(e.date)}
+              {e.category.name} · {formatDate(e.date)}
             </p>
           </div>
         </div>

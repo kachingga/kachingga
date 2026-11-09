@@ -1,10 +1,10 @@
-import type { Currency, ExpenseCategory, SplitType } from '../db/generated/prisma/enums'
+import type { Currency, SplitType } from '../db/generated/prisma/enums'
 import { balanceCurrency } from './balances'
 
 export type ExpenseForExport = {
   date: Date
   description: string
-  category: ExpenseCategory
+  category: { name: string }
   amountCents: number
   currency: Currency
   exchangeRate: number | null
@@ -29,16 +29,6 @@ export type ExportRow = {
   mi_parte_en_moneda_saldo: number
 }
 
-const CATEGORY_LABELS: Record<ExpenseCategory, string> = {
-  FOOD: 'Comida',
-  GROCERIES: 'Súper',
-  TRANSPORT: 'Transporte',
-  LODGING: 'Alojamiento',
-  ENTERTAINMENT: 'Salidas',
-  SHOPPING: 'Compras',
-  SERVICES: 'Servicios',
-  OTHER: 'Otros',
-}
 const SPLIT_LABELS: Record<SplitType, string> = { EQUAL: 'Partes iguales', AMOUNT: 'Por monto', PERCENTAGE: 'Por porcentaje' }
 
 const units = (cents: number) => cents / 100
@@ -52,7 +42,7 @@ export function toExportRows(baseCurrency: Currency, meId: string, expenses: Exp
     return {
       fecha: e.date.toISOString().slice(0, 10),
       descripcion: e.description,
-      categoria: CATEGORY_LABELS[e.category],
+      categoria: e.category.name,
       moneda: e.currency,
       monto: units(e.amountCents),
       tipo_de_cambio: e.exchangeRate,

@@ -1,7 +1,6 @@
-import { currencies, expenseCategories } from '@kachingga/api/schemas';
+import { currencies } from '@kachingga/api/schemas';
 
 export type Currency = (typeof currencies)[number];
-export type ExpenseCategory = (typeof expenseCategories)[number];
 
 // ─── Locale ───────────────────────────────────────────────────────────────────
 // Everything the user sees (amounts, numbers, dates) follows the browser's language: "1.500,50"
@@ -137,17 +136,6 @@ export function monthRange(day: string): { from: string; to: string } {
 export function formatDate(date: Date | string): string {
   return new Intl.DateTimeFormat(getLocale(), { timeZone: 'UTC' }).format(new Date(date));
 }
-
-export const categoryLabels: Record<ExpenseCategory, string> = {
-  FOOD: 'Comida',
-  GROCERIES: 'Súper',
-  TRANSPORT: 'Transporte',
-  LODGING: 'Alojamiento',
-  ENTERTAINMENT: 'Salidas',
-  SHOPPING: 'Compras',
-  SERVICES: 'Servicios',
-  OTHER: 'Otros',
-};
 
 export const splitTypeLabels: Record<'EQUAL' | 'AMOUNT' | 'PERCENTAGE', string> = {
   EQUAL: 'partes iguales',

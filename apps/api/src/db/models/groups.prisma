@@ -11,6 +11,7 @@ model Group {
   expenses     Expense[]
   settlements  Settlement[]
   savedFilters SavedFilter[]
+  categories   Category[]
 }
 
 // A person in a group. May exist without an account (userId = null) until someone

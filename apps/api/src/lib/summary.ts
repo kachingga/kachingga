@@ -1,7 +1,7 @@
-import type { Currency, ExpenseCategory } from '../db/generated/prisma/enums'
+import type { Currency } from '../db/generated/prisma/enums'
 import { balanceCurrency, type ExpenseForBalance } from './balances'
 
-export type ExpenseForSummary = ExpenseForBalance & { category: ExpenseCategory }
+export type ExpenseForSummary = ExpenseForBalance & { category: { id: string; name: string } }
 
 export type CurrencySummary = {
   currency: Currency
@@ -9,13 +9,13 @@ export type CurrencySummary = {
   totalCents: number // what the expenses cost in total
   myShareCents: number // my part of them ("cuánto gasté yo")
   myPaidCents: number // what I actually paid
-  byCategory: { category: ExpenseCategory; totalCents: number }[] // biggest first
+  byCategory: { categoryId: string; name: string; totalCents: number }[] // biggest first
 }
 
 // Totals of a set of expenses, grouped by the balance they count in (same currency rules as balances:
 // converted expenses add up in the base currency, kept ones in their own).
 export function summarizeExpenses(baseCurrency: Currency, meId: string, expenses: ExpenseForSummary[]): CurrencySummary[] {
-  const byCurrency = new Map<Currency, CurrencySummary & { categories: Map<ExpenseCategory, number> }>()
+  const byCurrency = new Map<Currency, CurrencySummary & { categories: Map<string, { name: string; totalCents: number }> }>()
 
   for (const expense of expenses) {
     const { currency, rate } = balanceCurrency(expense, baseCurrency)
@@ -32,7 +32,9 @@ export function summarizeExpenses(baseCurrency: Currency, meId: string, expenses
     summary.totalCents += total
     summary.myShareCents += shares.find((s) => s.participantId === meId)?.cents ?? 0
     if (expense.paidById === meId) summary.myPaidCents += total
-    summary.categories.set(expense.category, (summary.categories.get(expense.category) ?? 0) + total)
+    const category = summary.categories.get(expense.category.id) ?? { name: expense.category.name, totalCents: 0 }
+    category.totalCents += total
+    summary.categories.set(expense.category.id, category)
   }
 
   return [...byCurrency.values()]
@@ -40,7 +42,7 @@ export function summarizeExpenses(baseCurrency: Currency, meId: string, expenses
     .map(({ categories, ...summary }) => ({
       ...summary,
       byCategory: [...categories.entries()]
-        .map(([category, totalCents]) => ({ category, totalCents }))
+        .map(([categoryId, { name, totalCents }]) => ({ categoryId, name, totalCents }))
         .sort((a, b) => b.totalCents - a.totalCents),
     }))
 }
