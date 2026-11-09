@@ -2,7 +2,7 @@ import { defineConfig, minimal2023Preset } from '@vite-pwa/assets-generator/conf
 
 // Every app icon (favicon, PWA, maskable, apple-touch-icon) is generated from public/logo.svg at build time.
 // iOS and Android crop their icons themselves: those two get a solid background (the logo's) instead of white.
-const iconBackground = '#171717';
+const iconBackground = '#0C5C3C';
 
 export default defineConfig({
   headLinkOptions: { preset: '2023' },
