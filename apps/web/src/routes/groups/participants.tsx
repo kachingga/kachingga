@@ -32,7 +32,10 @@ export function Participants() {
 
   const addParticipant = useMutation(
     trpc.participants.add.mutationOptions({
-      onSuccess: invalidate,
+      onSuccess: () => {
+        invalidate();
+        setAddName('');
+      },
       onError: (e) => setError(e.message),
     }),
   );
@@ -280,12 +283,7 @@ export function Participants() {
           onSubmit={(e) => {
             e.preventDefault();
             setError(null);
-            addParticipant.mutate(
-              { groupId: groupId!, name: addName },
-              {
-                onSuccess: () => setAddName(''),
-              },
-            );
+            addParticipant.mutate({ groupId: groupId!, name: addName });
           }}
           className="flex gap-2"
         >
