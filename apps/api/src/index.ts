@@ -4,7 +4,8 @@ import { getConnInfo } from 'hono/bun'
 import { cors } from 'hono/cors'
 import { appRouter } from './trpc/router'
 import { initMonitoring, reportError, reportTrpcError } from './lib/monitoring'
-import { clientIp } from './lib/rateLimit'
+import { clientIp, RateLimiter } from './lib/rateLimit'
+import { prisma } from './db'
 import { createContext } from './trpc/context'
 
 initMonitoring()
@@ -23,6 +24,22 @@ app.use(
 )
 
 app.get('/health', (c) => c.json({ ok: true }))
+
+// Health with a database round-trip, for the uptime monitor (UptimeRobot): `/health` only says the
+// process is up, this one also catches the database down or paused (Supabase Free pauses a project
+// after a week without activity; this ping every few minutes also counts as activity). Railway's
+// healthcheck stays on `/health`, so a database problem doesn't block deploys.
+const dbHealthLimiter = new RateLimiter()
+app.get('/health/db', async (c) => {
+  if (!dbHealthLimiter.allow(clientIp(c.req.raw, socketAddress(c)), '/health/db')) return c.json({ ok: false }, 429)
+  try {
+    await prisma.$queryRaw`SELECT 1`
+    return c.json({ ok: true })
+  } catch (error) {
+    reportError(error)
+    return c.json({ ok: false }, 503)
+  }
+})
 
 app.use(
   '/trpc/*',

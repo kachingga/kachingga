@@ -71,7 +71,7 @@ bun run db:seed                  # datos de prueba en DEV
 
 ```
 src/
-├── index.ts              # Hono: GET /health + tRPC en /trpc/*
+├── index.ts              # Hono: GET /health, GET /health/db (monitoreo) + tRPC en /trpc/*
 ├── schemas.ts            # Zod + helpers puros compartidos con la web (@kachingga/api/schemas)
 ├── trpc/                 # init.ts (superjson, errores Prisma, rate limit, procedures base), context.ts
 │                         # (token de Supabase → ctx.user), router.ts (AppRouter), routers/ (uno por dominio)
