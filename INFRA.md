@@ -34,9 +34,8 @@ Actualizar este archivo con los valores reales después de cada setup.
 - Los `.env` no se suben con el build (están gitignoreados): las variables de cada entorno se cargan en Railway (ver abajo).
 
 ### Plan de Supabase
-- Hoy la org `kachingga` está en **Pro** (los dos proyectos se cobran por uso de cómputo).
-- Plan: pasar la org `dear-cred` a Pro y la org `kachingga` a **Free**. El límite gratis es de 2 proyectos activos por persona (sumando todas las orgs Free donde sos Owner/Admin), justo `kachingga` + `staging-kachingga`.
-- En Free, un proyecto **se pausa solo tras ~1 semana sin uso**; se reactiva desde el dashboard. Si prod se pausa, la app deja de funcionar hasta reactivarlo.
+- La org `kachingga` está en **Free** (desde nov 2026): 2 proyectos activos por persona (sumando las orgs Free donde sos Owner/Admin), justo `kachingga` + `staging-kachingga`.
+- En Free, un proyecto **se pausa solo tras ~1 semana sin actividad** y se reactiva desde el dashboard. Si prod se pausa, la app deja de andar hasta reactivarlo: UptimeRobot lo detecta (la API de `/health` responde, pero los pedidos con datos fallan y Sentry los reporta). El uso diario del grupo y el backup semanal (`backup.yml`) hacen actividad en prod; staging sí puede pausarse si nadie la usa.
 
 ## Variables de entorno
 
