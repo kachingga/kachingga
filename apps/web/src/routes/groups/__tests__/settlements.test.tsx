@@ -1,6 +1,7 @@
+import { onlineManager } from '@tanstack/react-query';
 import { screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 
 import { apiError, neverResolves, renderWithApi } from '@/test/render';
 import { Settlements } from '@/routes/groups/settlements';
@@ -192,5 +193,33 @@ describe('Settlements', () => {
     expect(await screen.findByRole('button', { name: 'Registrar' })).toBeInTheDocument();
     expect(screen.queryByText('Juan → Tuke')).not.toBeInTheDocument();
     expect(screen.getByLabelText('Monto')).toHaveValue('60');
+  });
+
+  it('without connection, does not save or show the payment and says why', async () => {
+    const user = userEvent.setup();
+    const create = vi.fn();
+    renderWithApi(
+      <Settlements />,
+      {
+        'groups.get': () => fixGroup,
+        'settlements.list': () => [],
+        'settlements.create': create,
+      },
+      '/?from=p1&to=p2&amount=6000&currency=ARS',
+    );
+    const register = await screen.findByRole('button', { name: 'Registrar' });
+    onlineManager.setOnline(false);
+    try {
+      await user.click(register);
+
+      expect(
+        await screen.findByText('No se registró el pago: Necesitás conexión para guardar'),
+      ).toBeInTheDocument();
+      expect(screen.queryByText('Juan → Tuke')).not.toBeInTheDocument();
+      expect(screen.getByLabelText('Monto')).toHaveValue('60');
+      expect(create).not.toHaveBeenCalled();
+    } finally {
+      onlineManager.setOnline(true);
+    }
   });
 });
