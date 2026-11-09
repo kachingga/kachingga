@@ -78,6 +78,12 @@ Mismas variables en los dos entornos, con los valores de su base (staging = `app
 |--------|-------------|
 | `BACKUP_DATABASE_URL` | `DIRECT_URL` de prod (session pooler, puerto 5432). Lo usa `backup.yml` para el `pg_dump` semanal |
 | `BACKUP_PASSPHRASE` | Passphrase con la que `backup.yml` cifra cada backup. Copia en `apps/api/.env.prod` y en el gestor de contraseñas de Galo: **sin ella no se pueden abrir los backups** |
+| `E2E_DATABASE_URL` | `DATABASE_URL` de **dev** (`staging-kachingga`, pooler 6543). La usa la API que levanta `e2e.yml` para los recorridos con datos (`docs/claude/web/testing.md`) |
+| `E2E_SUPABASE_URL` | `SUPABASE_URL` de dev (la API y la web de los E2E) |
+| `E2E_SUPABASE_SECRET_KEY` | `SUPABASE_SECRET_KEY` de dev (solo la API de los E2E). Si se rota la de dev, actualizar este secret también |
+| `E2E_SUPABASE_PUBLISHABLE_KEY` | `VITE_SUPABASE_PUBLISHABLE_KEY` de dev (la web de los E2E; es pública, pero se guarda junto a las otras) |
+
+Sin los `E2E_*`, `e2e.yml` corre igual pero solo los specs que no necesitan la API.
 
 ### Archivos locales (gitignoreados, nunca commitear)
 

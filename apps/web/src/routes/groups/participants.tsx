@@ -292,10 +292,12 @@ export function Participants() {
             onChange={(e) => setAddName(e.target.value)}
             required
             placeholder="Nombre (sin cuenta)"
+            aria-label="Nombre de la persona sin cuenta"
             className="flex-1 rounded-lg border border-input bg-card px-3 py-2 text-base text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
           />
           <button
             type="submit"
+            aria-label="Agregar persona"
             disabled={addParticipant.isPending}
             className="rounded-lg bg-primary px-4 py-2 font-medium text-primary-foreground disabled:opacity-50"
           >

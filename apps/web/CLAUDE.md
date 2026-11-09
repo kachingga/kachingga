@@ -70,6 +70,7 @@ bun run typecheck    # tsc -b
 bun run lint         # ESLint
 bun run test         # Vitest (unit + contenido de pantallas)
 bun run e2e          # Playwright (la primera vez: bunx playwright install chromium webkit)
+E2E_API=1 bun run e2e  # + los recorridos críticos contra la API y la base de dev (docs/claude/web/testing.md)
 ```
 
 Antes de dar una tarea por terminada: `bun run check` desde la raíz.

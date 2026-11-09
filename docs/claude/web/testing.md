@@ -38,7 +38,12 @@ expect(await screen.findByText('Todavía no hay gastos')).toBeInTheDocument();
 ## E2E (Playwright)
 
 - **Qué lleva E2E:** solo los recorridos críticos (registrarse / login, crear grupo, unirse con código, agregar gasto, ver saldos, registrar pago). El resto va en los tests de contenido.
-- Corre contra el **build de producción** (`build` + `preview` en :4173) en celular y compu. Hoy solo existe `e2e/smoke.spec.ts` (la app carga).
-- Para flujos con datos: la API corriendo (`bun run api`) y un usuario de prueba en **dev** (los de `bun run db:seed`, ver `docs/claude/api/datos-de-prueba.md`). `preview` también reenvía `/trpc` a la API.
+- Corre contra el **build de producción** (`build` + `preview` en :4173), en celular (WebKit) y compu (Chrome), con `locale: 'es-AR'`.
+- **Sin API** (siempre): `e2e/smoke.spec.ts` (la app carga), `e2e/pwa.spec.ts` (instalable) y `e2e/offline.spec.ts` (abre sin red).
+- **Con API — los recorridos críticos** (`e2e/recorridos.spec.ts`, solo en celular: son lentos y crean datos): registro → cerrar sesión → login; y en un solo test, con dos usuarios (dos `browser.newContext()`): crear grupo → agregar participante sin cuenta → gasto en partes iguales → saldos y "cómo quedar a mano" → el otro usuario se une con el código reclamando a ese participante → "Marcar como pagado" → los dos "al día". Tarda ~35 s.
+  - Corren solo con **`E2E_API=1`**: Playwright levanta también la API (`bun run --cwd ../api start`, en :3000) y `preview` le reenvía `/trpc` (la web con `VITE_API_URL` vacía, sin CORS). Sin `E2E_API` se saltean.
+  - **Local:** `E2E_API=1 bun run e2e` desde `apps/web`, con `apps/api/.env` y `apps/web/.env` de dev. Si ya tenés la API corriendo, la reusa.
+  - **CI** (`e2e.yml`, a mano o con la label `e2e`): corren si existen los secrets `E2E_*` (`INFRA.md` → "GitHub"); si no, avisa y corre solo lo que no necesita API.
+  - **Qué dejan en dev** (`staging-kachingga`): cada corrida registra usuarios nuevos (`e2e+…@example.com`, por eso no hace falta guardar contraseñas: registro abierto y sin confirmar el email) y un grupo `E2E <fecha>` que **se archiva al final**. Se puede limpiar con un filtro por esos nombres; nunca corren contra prod.
 - Ponerle la label `e2e` a los PRs que cambian un recorrido crítico.
 - Ojo: Playwright con `locale: 'es-AR'` en Chromium reporta `navigator.language = 'es-419'` (como Chrome real en Argentina).
