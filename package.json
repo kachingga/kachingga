@@ -16,7 +16,8 @@
     "docs:check": "bun scripts/check-docs.ts",
     "check": "bun run docs:check && bun run format:check && bun run typecheck && bun run test && bun run lint",
     "api": "bun run --cwd apps/api dev",
-    "web": "bun run --cwd apps/web dev"
+    "web": "bun run --cwd apps/web dev",
+    "promote": "bun scripts/promote.ts"
   },
   "devDependencies": {
     "husky": "^9.1.7",

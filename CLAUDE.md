@@ -247,6 +247,7 @@ bun run lint         # ESLint en web
 bun run format       # formatea todo con Prettier (correrlo antes de commitear)
 bun run docs:check   # que los docs no mencionen archivos que ya no existen (ver docs/claude/README.md)
 bun run check        # docs + formato + typecheck + test + lint — lo mismo que corre el pre-commit y el CI
+bun run promote      # pasa main a prod (solo con el ok del usuario; ver DEPLOY.md)
 ```
 
 **Antes de dar una tarea por terminada, correr `bun run check`.** El pre-commit lo corre en cada commit y lo rechaza si algo falla.
@@ -316,7 +317,7 @@ Reglas para Claude:
 - PRs chicos y de un tema. Label `e2e` en los que cambian un recorrido crítico.
 - Si el PR queda atrás de `main`: **rebase, nunca merge** (`gh pr update-branch <n> --rebase`).
 - **Claude: crear la branch y el PR; mergear solo si el usuario lo pide** (`gh pr merge --squash` con el CI en verde).
-- **`main` → staging, `production` → prod:** cada merge a `main` se deploya solo en **staging** (`staging.kachingga.com`). Prod (`kachingga.com`) se deploya desde la branch `production`, que solo avanza con el workflow **"Promover a producción"** (fast-forward hasta `main`; sin force-push). Antes: probar en staging y, si hay migraciones, `db:migrate:prod`. Claude no promueve a prod sin que el usuario lo pida. Detalle: `DEPLOY.md`.
+- **`main` → staging, `production` → prod:** cada merge a `main` se deploya solo en **staging** (`staging.kachingga.com`). Prod (`kachingga.com`) se deploya desde la branch `production`, que solo avanza con **`bun run promote`** (fast-forward hasta `main`, desde la máquina de un miembro; sin force-push). Antes: probar en staging y, si hay migraciones, `db:migrate:prod`. Claude no promueve a prod sin que el usuario lo pida. Detalle: `DEPLOY.md`.
 - Comandos, CI colgado, PRs apilados y demás detalle: **`docs/claude/repo/git-prs-y-conflictos.md`**.
 
 ## Issues

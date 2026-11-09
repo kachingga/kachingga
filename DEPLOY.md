@@ -5,7 +5,7 @@
 | Servicio | Proveedor | Cómo se deploya |
 |----------|-----------|-----------------|
 | API y web — **staging** | Railway, entorno `staging` | Automático en cada merge a `main` (espera el CI) |
-| API y web — **prod** | Railway, entorno `production` | Desde la branch `production`, con el workflow "Promover a producción" |
+| API y web — **prod** | Railway, entorno `production` | Desde la branch `production`, con `bun run promote` |
 
 URLs, variables y bases de cada entorno: `INFRA.md`.
 
@@ -47,12 +47,12 @@ URLs, variables y bases de cada entorno: `INFRA.md`.
 
 Mergear un PR a `main` → Railway espera el CI y deploya en **staging** solo lo que cambió (watch paths de cada servicio). Se prueba en `https://staging.kachingga.com`.
 
-### Pasar a prod — "Promover a producción"
+### Pasar a prod — `bun run promote`
 
 1. Probar en staging.
 2. Si hay **migraciones nuevas**: `bun run --cwd apps/api db:migrate:prod` (prod antes que el código nuevo: el código espera el schema nuevo).
-3. GitHub → Actions → **"Promover a producción"** → *Run workflow* (o `gh workflow run promote.yml`). Hace avanzar `production` hasta `main` (solo fast-forward: nunca reescribe historia) y Railway deploya prod.
-   - **Railway pide aprobar esos deploys:** el push a `production` lo hace `github-actions[bot]`, que no es miembro del proyecto, así que los deploys quedan en *Needs approval*. Aprobarlos en Railway → proyecto `kachingga` → entorno `production` → cada servicio → *Approve*.
+3. **`bun run promote`** desde la raíz (`scripts/promote.ts`): hace avanzar `production` hasta `origin/main` (solo fast-forward: nunca reescribe historia), muestra qué va a prod y Railway deploya. Si hay migraciones nuevas sin aplicar, frena: aplicarlas en prod y correr `bun run promote --migrated`.
+   - **Se corre desde la máquina de un miembro, no desde GitHub Actions:** si el push lo hace un bot (`github-actions[bot]`), Railway deja los deploys de prod en *Needs approval* (pasó con el workflow que había antes). Si igual aparece, se aprueban en Railway → `kachingga` → `production` → cada servicio → *Approve*.
 4. Comprobar `https://api.kachingga.com/health` y abrir `https://kachingga.com`. Todos ven la versión nueva al recargar (o al volver a abrir la app desde la pantalla de inicio).
 
 ### Cambios de schema
@@ -68,7 +68,7 @@ Mergear un PR a `main` → Railway espera el CI y deploya en **staging** solo lo
    ```
    Hacerlo **antes de mergear** el PR que la usa, así staging arranca con el schema nuevo.
 3. Mergear → staging.
-4. Antes de promover: aplicarla en **prod** y recién ahí "Promover a producción":
+4. Antes de promover: aplicarla en **prod** y recién ahí `bun run promote --migrated`:
    ```bash
    bun run db:migrate:prod           # prod (.env.prod)
    ```
