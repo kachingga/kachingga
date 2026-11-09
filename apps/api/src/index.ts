@@ -3,8 +3,11 @@ import { trpcServer } from '@hono/trpc-server'
 import { getConnInfo } from 'hono/bun'
 import { cors } from 'hono/cors'
 import { appRouter } from './trpc/router'
+import { initMonitoring, reportError, reportTrpcError } from './lib/monitoring'
 import { clientIp } from './lib/rateLimit'
 import { createContext } from './trpc/context'
+
+initMonitoring()
 
 const app = new Hono()
 
@@ -26,8 +29,15 @@ app.use(
   trpcServer({
     router: appRouter,
     createContext: (_opts, c) => createContext(c.req.raw, clientIp(c.req.raw, socketAddress(c))),
+    onError: reportTrpcError,
   }),
 )
+
+// Anything that escapes Hono's handlers (not tRPC: tRPC answers its own errors).
+app.onError((err, c) => {
+  reportError(err)
+  return c.json({ error: 'Error interno' }, 500)
+})
 
 // Socket address when running under Bun.serve; undefined when called without a server (tests).
 function socketAddress(c: Parameters<typeof getConnInfo>[0]) {

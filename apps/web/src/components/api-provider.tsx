@@ -1,9 +1,10 @@
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { QueryCache, QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { PersistQueryClientProvider } from '@tanstack/react-query-persist-client';
 import { TRPCClientError } from '@trpc/client';
 import { useEffect, useState, type ReactNode } from 'react';
 
 import { useSession } from '@/lib/auth';
+import { reportError, setMonitoringUser } from '@/lib/monitoring';
 import {
   CACHE_MAX_AGE,
   cachedUser,
@@ -23,6 +24,7 @@ export function ApiProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     if (userId) rememberCachedUser(userId);
+    setMonitoringUser(userId ?? null);
   }, [userId]);
 
   // Wait until the session is restored, so the cache that loads is the right user's.
@@ -54,7 +56,9 @@ export function CachedApiProvider({
   const [queryClient] = useState(
     () =>
       new QueryClient({
-        mutationCache: createMutationCache(),
+        // Unexpected errors (bugs, not API or offline errors) go to Sentry: lib/monitoring.ts.
+        queryCache: new QueryCache({ onError: reportError }),
+        mutationCache: createMutationCache(reportError),
         defaultOptions: {
           queries: {
             // Kept in memory as long as the saved copy is valid (otherwise it isn't saved).

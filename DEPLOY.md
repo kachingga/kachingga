@@ -107,6 +107,18 @@ pg_restore --list kachingga.dump | less           # ver qué tiene
 
 ---
 
+## Monitoreo
+
+- **Errores:** Sentry, proyectos `kachingga-web` y `kachingga-api`. Solo errores inesperados, sin datos de los grupos (cómo: `docs/claude/repo/monitoreo.md`). Para prenderlo en un entorno, cargar las variables de Sentry de `INFRA.md` en los servicios `api` y `web` de ese entorno y redeployar. Alertas: Sentry → Alerts → mail a Galo en errores nuevos y en picos.
+- **Caídas:** UptimeRobot (plan gratis, cuenta de Galo), monitores HTTP cada 5 minutos con aviso por mail a Galo:
+  - `https://kachingga.com` (la web de prod)
+  - `https://api.kachingga.com/health` (la API de prod)
+  - `https://api-staging.kachingga.com/health` (la API de staging)
+- Los avisos van a un mail personal, no a `devops@`: si el reenvío del dominio falla, igual llegan.
+- **Probarlo después de prenderlo:** un error forzado (ej. desde la consola del navegador en staging: `setTimeout(() => { throw new Error('prueba sentry') })`) tiene que aparecer en Sentry con el `environment` correcto y sin datos personales.
+
+---
+
 ## Rollback
 
 - **API y web:** Railway guarda el historial de cada servicio y entorno — *Redeploy* de un deploy anterior desde el dashboard. Si el problema ya está en `main`, revertirlo con un PR (`revert`) y volver a promover.

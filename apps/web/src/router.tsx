@@ -2,6 +2,7 @@ import { createBrowserRouter, Navigate } from 'react-router';
 
 import { AnimatedLayout } from '@/components/animated-layout';
 import { RequireAuth } from '@/components/require-auth';
+import { RouteError } from '@/components/route-error';
 import { Login } from '@/routes/login';
 import { Register } from '@/routes/register';
 import { Account } from '@/routes/account';
@@ -18,6 +19,7 @@ import { Filters } from '@/routes/groups/filters';
 export const router = createBrowserRouter([
   {
     element: <AnimatedLayout />,
+    errorElement: <RouteError />,
     children: [
       { path: '/login', element: <Login /> },
       { path: '/registro', element: <Register /> },
