@@ -88,6 +88,7 @@ Sin los `E2E_*`, `e2e.yml` corre igual pero solo los specs que no necesitan la A
 ### Archivos locales (gitignoreados, nunca commitear)
 
 - `apps/api/.env` / `apps/web/.env` — **DEV** (`staging-kachingga`). Lo que usa todo lo local
+- `apps/web/.env.prod` — solo `SENTRY_AUTH_TOKEN` (el Organization Token de Sentry), como copia local para cargarlo en Railway.
 - `apps/api/.env.prod` — **PROD** (`kachingga`). Solo para `db:migrate:prod` y como referencia de las variables de Railway (las `VITE_*` de prod de la web salen del dashboard de Supabase → `kachingga` → API Keys)
 
 ---

@@ -25,6 +25,8 @@
 ## Stack traces legibles (source maps de la web)
 
 - Si el build tiene `SENTRY_AUTH_TOKEN`, `SENTRY_ORG` y `SENTRY_PROJECT` (variables del servicio `web` en Railway), `@sentry/vite-plugin` genera los source maps, los sube a Sentry con el mismo `release` y **los borra de `dist/`**: nunca se sirven. Sin token, el build no genera source maps.
+- El token es un **Organization Token** de la org `kachingga` de Sentry (solo puede subir source maps y releases), **no** el token personal de `sentry-cli`: ese tiene permisos de admin sobre todas las orgs de quien lo creó y no va en ningún servicio.
+- **Verificado (nov 2026):** en staging el log del build dice "Successfully uploaded source maps to Sentry", el release del commit aparece en Sentry y `/assets/*.js.map` da 404. Railway sí expone `RAILWAY_GIT_COMMIT_SHA` al buildear.
 - La API corre el TypeScript directo con Bun: sus stack traces ya apuntan a los archivos fuente.
 
 ## Tests
