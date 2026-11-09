@@ -17,7 +17,7 @@ jobs:
     name: Playwright (web)
     if: github.event_name == 'workflow_dispatch' || contains(github.event.pull_request.labels.*.name, 'e2e')
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 25
     steps:
       - uses: actions/checkout@v7
       - uses: oven-sh/setup-bun@v2
@@ -27,13 +27,29 @@ jobs:
       - name: Instalar navegadores
         working-directory: apps/web
         run: bunx playwright install --with-deps chromium webkit
-      # Celular (WebKit, como Safari en iPhone) y compu (Chrome). La API no se levanta: el smoke no la necesita.
+      # The critical flows (e2e/recorridos.spec.ts) need the API + the dev database and Supabase: they
+      # run only if the E2E_* secrets exist (INFRA.md → "GitHub"). Without them only the specs that
+      # don't need the API run (smoke, pwa, offline).
+      - name: ¿Hay secrets para los recorridos con API?
+        env:
+          E2E_DATABASE_URL: ${{ secrets.E2E_DATABASE_URL }}
+        run: |
+          if [ -n "$E2E_DATABASE_URL" ]; then
+            echo "E2E_API=1" >> "$GITHUB_ENV"
+          else
+            echo "::warning::Sin los secrets E2E_*: no corren los recorridos con API (docs/claude/web/testing.md)."
+          fi
+      # Celular (WebKit, como Safari en iPhone) y compu (Chrome). With E2E_API=1 Playwright also starts
+      # the API on :3000 and `preview` forwards /trpc to it (VITE_API_URL empty).
       - name: Correr Playwright
         working-directory: apps/web
         env:
-          VITE_API_URL: http://localhost:3000
-          VITE_SUPABASE_URL: https://example.supabase.co
-          VITE_SUPABASE_PUBLISHABLE_KEY: sb_publishable_ci
+          VITE_API_URL: ''
+          VITE_SUPABASE_URL: ${{ secrets.E2E_SUPABASE_URL || 'https://example.supabase.co' }}
+          VITE_SUPABASE_PUBLISHABLE_KEY: ${{ secrets.E2E_SUPABASE_PUBLISHABLE_KEY || 'sb_publishable_ci' }}
+          DATABASE_URL: ${{ secrets.E2E_DATABASE_URL }}
+          SUPABASE_URL: ${{ secrets.E2E_SUPABASE_URL }}
+          SUPABASE_SECRET_KEY: ${{ secrets.E2E_SUPABASE_SECRET_KEY }}
         run: bun run e2e
       - name: Guardar reporte
         if: always()
