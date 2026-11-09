@@ -1,7 +1,8 @@
-import { screen } from '@testing-library/react';
+import { screen, waitFor, within } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import { describe, expect, it } from 'vitest';
 
-import { neverResolves, renderWithApi } from '@/test/render';
+import { apiError, neverResolves, renderWithApi } from '@/test/render';
 import { Participants } from '@/routes/groups/participants';
 
 const fixGroup = {
@@ -63,5 +64,71 @@ describe('Participants', () => {
     renderWithApi(<Participants />, { 'groups.get': () => fixGroup });
     await screen.findByText('Juan');
     expect(screen.getByPlaceholderText('Nombre (sin cuenta)')).toBeInTheDocument();
+  });
+
+  it('removes a participant without account after confirming', async () => {
+    const user = userEvent.setup();
+    const removed: unknown[] = [];
+    renderWithApi(<Participants />, {
+      'groups.get': () => fixGroup,
+      'participants.remove': (input) => {
+        removed.push(input);
+        return { ok: true };
+      },
+    });
+    await screen.findByText('Sofi');
+    // Only people without account can be removed.
+    expect(screen.getAllByRole('button', { name: 'Quitar' })).toHaveLength(1);
+    await user.click(screen.getByRole('button', { name: 'Quitar' }));
+    const dialog = await screen.findByRole('alertdialog');
+    expect(dialog).toHaveTextContent('¿Quitar a Sofi?');
+    await user.click(within(dialog).getByRole('button', { name: 'Quitar' }));
+    await waitFor(() => expect(removed).toEqual([{ participantId: 'p3' }]));
+  });
+
+  it('explains why a participant cannot be removed', async () => {
+    const user = userEvent.setup();
+    renderWithApi(<Participants />, {
+      'groups.get': () => fixGroup,
+      'participants.remove': () => {
+        throw apiError('No se puede quitar: aparece en gastos o pagos');
+      },
+    });
+    await user.click(await screen.findByRole('button', { name: 'Quitar' }));
+    await user.click(
+      within(await screen.findByRole('alertdialog')).getByRole('button', { name: 'Quitar' }),
+    );
+    expect(
+      await screen.findByText('No se puede quitar: aparece en gastos o pagos'),
+    ).toBeInTheDocument();
+  });
+
+  it('renames a participant', async () => {
+    const user = userEvent.setup();
+    const renamed: unknown[] = [];
+    renderWithApi(<Participants />, {
+      'groups.get': () => fixGroup,
+      'participants.rename': (input) => {
+        renamed.push(input);
+        return { ok: true };
+      },
+    });
+    await screen.findByText('Sofi');
+    await user.click(screen.getAllByRole('button', { name: 'Renombrar' })[2]!);
+    const input = screen.getByDisplayValue('Sofi');
+    await user.clear(input);
+    await user.type(input, 'Sofía');
+    await user.click(screen.getByRole('button', { name: 'OK' }));
+    await waitFor(() => expect(renamed).toEqual([{ participantId: 'p3', name: 'Sofía' }]));
+  });
+
+  it('an archived group shows the notice and no edit actions', async () => {
+    renderWithApi(<Participants />, {
+      'groups.get': () => ({ ...fixGroup, archivedAt: new Date('2026-11-01') }),
+    });
+    expect(await screen.findByText('Grupo archivado.')).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Renombrar' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Quitar' })).not.toBeInTheDocument();
+    expect(screen.queryByPlaceholderText('Nombre (sin cuenta)')).not.toBeInTheDocument();
   });
 });
