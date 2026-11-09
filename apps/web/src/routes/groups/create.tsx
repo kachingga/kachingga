@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router';
 import { useMutation } from '@tanstack/react-query';
 
 import { currencies } from '@kachingga/api/schemas';
+import { shareInviteCode } from '@/lib/share';
 import { useTRPC } from '@/lib/trpc';
 import { currencyLabels, type Currency } from '@/lib/format';
 
@@ -14,11 +15,16 @@ export function CreateGroup() {
   const [baseCurrency, setBaseCurrency] = useState<Currency>('ARS');
   const [myName, setMyName] = useState('');
   const [error, setError] = useState<string | null>(null);
-  const [created, setCreated] = useState<{ id: string; inviteCode: string } | null>(null);
+  const [created, setCreated] = useState<{
+    id: string;
+    name: string;
+    inviteCode: string;
+  } | null>(null);
 
   const createGroup = useMutation(
     trpc.groups.create.mutationOptions({
-      onSuccess: (data) => setCreated({ id: data.id, inviteCode: data.inviteCode }),
+      onSuccess: (data) =>
+        setCreated({ id: data.id, name: data.name, inviteCode: data.inviteCode }),
       onError: (err) => setError(err.message),
     }),
   );
@@ -35,10 +41,10 @@ export function CreateGroup() {
 
         <div className="flex gap-2">
           <button
-            onClick={() => void navigator.clipboard.writeText(created.inviteCode)}
+            onClick={() => void shareInviteCode(created.name, created.inviteCode)}
             className="flex-1 rounded-lg border border-input py-3 font-medium text-foreground"
           >
-            Copiar código
+            Compartir código
           </button>
           <button
             onClick={() => navigate(`/grupos/${created.id}`)}

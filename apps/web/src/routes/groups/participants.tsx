@@ -4,6 +4,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
 import { ErrorState } from '@/components/error-state';
 import { ListScreenSkeleton } from '@/components/skeletons';
+import { shareInviteCode } from '@/lib/share';
 import { useTRPC } from '@/lib/trpc';
 import { useConfirm } from '@/lib/use-confirm';
 
@@ -94,10 +95,10 @@ export function Participants() {
             </p>
             <div className="flex gap-2">
               <button
-                onClick={() => void navigator.clipboard.writeText(g.inviteCode)}
+                onClick={() => void shareInviteCode(g.name, g.inviteCode)}
                 className="flex-1 rounded-lg border border-input py-2 text-sm text-foreground"
               >
-                Copiar código
+                Compartir código
               </button>
               {!isArchived && (
                 <button

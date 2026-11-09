@@ -6,6 +6,7 @@ import type { AppRouter } from '@kachingga/api';
 
 import { ErrorState } from '@/components/error-state';
 import { BalancesSkeleton, ExpenseListSkeleton, GroupSkeleton } from '@/components/skeletons';
+import { copyText, shareInviteCode } from '@/lib/share';
 import { useTRPC } from '@/lib/trpc';
 import { prefetchOn, usePrefetch } from '@/lib/use-prefetch';
 import { isTemp } from '@/lib/optimistic';
@@ -89,7 +90,7 @@ function BalanceSection({ group, balances }: { group: GroupData; balances: Balan
                               </p>
                               <button
                                 onClick={() =>
-                                  void navigator.clipboard.writeText(toParticipant.paymentAlias!)
+                                  void copyText(toParticipant.paymentAlias!, 'Alias copiado')
                                 }
                                 className="rounded border border-input px-3 py-1 text-xs text-foreground"
                               >
@@ -99,7 +100,7 @@ function BalanceSection({ group, balances }: { group: GroupData; balances: Balan
                           )}
                           <button
                             onClick={() =>
-                              void navigator.clipboard.writeText(formatPlainAmount(t.amountCents))
+                              void copyText(formatPlainAmount(t.amountCents), 'Monto copiado')
                             }
                             className="rounded border border-input px-3 py-1 text-xs text-foreground"
                           >
@@ -245,12 +246,12 @@ export function GroupDetail() {
           </Link>
           <button
             onClick={() => {
-              void navigator.clipboard.writeText(g.inviteCode);
+              void shareInviteCode(g.name, g.inviteCode);
               setShowMenu(false);
             }}
             className="block w-full rounded-xl px-3 py-2 text-left text-sm hover:bg-accent"
           >
-            Copiar código de invitación ({g.inviteCode})
+            Compartir código de invitación ({g.inviteCode})
           </button>
           <button
             onClick={() => {
