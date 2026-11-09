@@ -13,7 +13,7 @@
 | Una query, mutation, optimistic update, precarga o el modo offline (`useQuery`, `useMutation`, `setQueryData`, `invalidateQueries`, `src/lib/optimistic.ts`, `src/lib/use-prefetch.ts`, `src/lib/offline-cache.ts`) | `docs/claude/web/datos-y-cache.md` |
 | Qué procedure llamar, login / sesión, tipo de cambio, monedas, alias, export, errores de la API, el proxy de Vite | `docs/claude/web/usar-la-api.md` |
 | Montos, porcentajes, tipos de cambio o fechas (`src/lib/format.ts`, `<NumberInput>`, `<input type="date">`) | `docs/claude/web/plata-y-fechas.md` |
-| Colores, tema claro / oscuro, `src/index.css`, componentes de `src/components/` o de shadcn, confirmaciones, toasts, skeletons | `docs/claude/web/componentes-y-tema.md` |
+| Colores, tema claro / oscuro (toggle), `src/index.css`, componentes de `src/components/` o de shadcn, el marco (`AppShell`, `<Page>`), confirmaciones, toasts, skeletons | `docs/claude/web/componentes-y-tema.md` |
 | Transiciones, navegar al guardar o borrar, gestos, tamaño del bundle, carga diferida, PWA (service worker, manifest, íconos de `public/logo.svg`) | `docs/claude/web/sensacion-de-app.md` |
 | Una pantalla nueva o un cambio visible | `docs/claude/web/ui-ux.md` (+ `V1.md` → "Pantallas") |
 | Tests (`renderWithApi`, setup, E2E) | `docs/claude/web/testing.md` |
@@ -36,7 +36,8 @@
 - Monedas: siempre la lista `currencies` de `@kachingga/api/schemas`, nunca una a mano.
 
 **UI**
-- **Colores del tema** (`bg-card`, `text-muted-foreground`…), **nunca fijos** (`bg-neutral-900`, `text-white`). Claro y oscuro siguen al sistema.
+- **Colores del tema** (`bg-card`, `text-muted-foreground`, `text-positive`…), **nunca fijos** (`bg-neutral-900`, `text-white`). Claro y oscuro siguen al sistema salvo que la persona elija con el toggle (`src/lib/theme.ts`).
+- **Marco y piezas del diseño:** toda pantalla logueada va dentro de `AppShell` (lo pone el router) y define su ancho con `<Page>`; tarjetas, íconos de categoría, avatares y saldos con los de `src/components/kit.tsx`, no a mano.
 - Cargando = **skeleton** (nunca un spinner suelto); error = **`ErrorState`** con Reintentar; confirmar = **`useConfirm`** (nunca `confirm()`); avisar = **toast**.
 - Cerrar una pantalla después de guardar o borrar: **`useGoBack()(fallback)`**, no `navigate(ruta)`.
 - Componentes generados de shadcn (`src/components/ui/`): no se editan salvo estilo.
@@ -91,10 +92,12 @@ src/
 ├── main.tsx · router.tsx     # providers (ApiProvider, ConfirmProvider, Toaster) · todas las rutas
 ├── index.css                 # Tailwind + variables del tema (claro / oscuro) + transiciones
 ├── routes/                   # una pantalla por archivo (groups/ = lo de un grupo), tests en __tests__/
-├── components/               # ui/ (shadcn), skeletons, error-state, number-input, exchange-rate-fields,
+├── components/               # ui/ (shadcn), kit (Card, CategoryIcon, Avatar, MyBalance, Page…), app-shell,
+│                             # auth-layout, skeletons, error-state, number-input, exchange-rate-fields,
 │                             # confirm-provider, animated-layout, api-provider, require-auth, offline-banner
 ├── lib/                      # trpc, supabase (ÚNICO que importa Supabase), auth, format, optimistic,
-│                             # use-prefetch, use-exchange-rate, use-confirm, use-go-back, offline-cache
+│                             # use-prefetch, use-exchange-rate, use-confirm, use-go-back, offline-cache,
+│                             # theme, use-sign-out
 └── test/                     # setup.ts, render.tsx (renderWithApi)
 e2e/                          # Playwright
 ```

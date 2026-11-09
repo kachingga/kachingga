@@ -18,7 +18,7 @@ Optimistic updates en lo frecuente, precarga de la próxima pantalla, skeletons 
 
 ## Comportamiento de app
 
-- Sin rebote ni "pull to refresh" del navegador donde no corresponde (`overscroll-behavior`), sin selección de texto ni resaltado gris al tocar en controles (`-webkit-tap-highlight-color: transparent`, `user-select` donde aplique), `100dvh` para alturas, zonas seguras con `env(safe-area-inset-*)` (`viewport-fit=cover` ya está; la clase `pb-safe` de la barra de abajo **no existe** en Tailwind v4: pendiente en `V1.md`).
+- Sin rebote ni "pull to refresh" del navegador donde no corresponde (`overscroll-behavior`), sin selección de texto ni resaltado gris al tocar en controles (`-webkit-tap-highlight-color: transparent`, `user-select` donde aplique), `100dvh` para alturas, zonas seguras con `env(safe-area-inset-*)` (`viewport-fit=cover` ya está; utilidades `pb-safe`, `pt-safe` y `bottom-safe` en `src/index.css`).
 - **Inputs:** texto de **16 px o más** (si no, Safari en iPhone hace zoom al enfocar), `inputMode` correcto (`decimal` para montos), `autocomplete` en login.
 - **Gestos propios** donde suman (ej. deslizar para archivar un grupo), siempre con alternativa con botón.
 
