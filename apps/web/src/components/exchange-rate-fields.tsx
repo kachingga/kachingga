@@ -3,7 +3,7 @@ import { NumberInput } from '@/components/number-input';
 import { formatCents, toNumeric } from '@/lib/format';
 
 const chip = (active: boolean) =>
-  `rounded-lg px-3 py-1 text-xs ${active ? 'bg-primary text-primary-foreground' : 'border border-input text-muted-foreground'}`;
+  `press rounded-full px-3 py-1.5 text-xs font-medium ${active ? 'bg-primary text-primary-foreground' : 'border border-input bg-card text-muted-foreground'}`;
 
 export function ExchangeRateFields({
   rate,
@@ -23,19 +23,19 @@ export function ExchangeRateFields({
     source === 'manual' ? rate.manualRate : rateQuery.data ? toNumeric(rateQuery.data.mid) : '';
 
   return (
-    <div className="space-y-3 rounded-2xl bg-card p-4">
+    <div className="space-y-3 rounded-2xl border bg-card p-5 shadow-soft">
       <div className="flex gap-2">
         <button
           type="button"
           onClick={() => rate.setKeepCurrency(false)}
-          className={`flex-1 rounded-lg py-2 text-sm font-medium ${!keepCurrency ? 'bg-primary text-primary-foreground' : 'border border-input text-muted-foreground'}`}
+          className={`press flex-1 rounded-full py-2 text-sm font-medium ${!keepCurrency ? 'bg-primary text-primary-foreground' : 'border border-input bg-card text-muted-foreground'}`}
         >
           Convertir a {base}
         </button>
         <button
           type="button"
           onClick={() => rate.setKeepCurrency(true)}
-          className={`flex-1 rounded-lg py-2 text-sm font-medium ${keepCurrency ? 'bg-primary text-primary-foreground' : 'border border-input text-muted-foreground'}`}
+          className={`press flex-1 rounded-full py-2 text-sm font-medium ${keepCurrency ? 'bg-primary text-primary-foreground' : 'border border-input bg-card text-muted-foreground'}`}
         >
           Mantener en {currency}
         </button>
@@ -84,7 +84,7 @@ export function ExchangeRateFields({
                 decimals={6}
                 readOnly={source !== 'manual'}
                 placeholder="0"
-                className="flex-1 rounded-lg border border-input bg-muted px-3 py-2 text-base text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+                className="flex-1 h-11 rounded-xl border border-input bg-card px-3.5 text-base text-foreground placeholder:text-muted-foreground outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 disabled:opacity-50 dark:bg-input/30"
               />
               <span className="text-sm text-muted-foreground">{to}</span>
             </div>

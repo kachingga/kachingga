@@ -81,7 +81,7 @@ test('grupo: gasto, saldos, unirse con código y saldar', async ({ browser }) =>
   });
 
   await test.step('agregar gasto en partes iguales y ver saldos', async () => {
-    await galo.getByRole('link', { name: '+ Agregar gasto' }).click();
+    await galo.getByRole('link', { name: 'Agregar gasto' }).click();
     await galo.getByLabel('Monto').fill('1000');
     await galo.getByLabel('Descripción').fill('E2E cena');
     await galo.getByRole('button', { name: 'Agregar gasto' }).click();

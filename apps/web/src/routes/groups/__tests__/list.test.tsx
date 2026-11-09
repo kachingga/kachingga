@@ -27,7 +27,7 @@ const fixGroups = [
 describe('GroupList', () => {
   it('shows loading skeletons', () => {
     renderWithApi(<GroupList />, { 'groups.list': neverResolves });
-    expect(screen.getByRole('heading', { name: 'Grupos' })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Mis grupos' })).toBeInTheDocument();
   });
 
   it('shows groups when loaded', async () => {
@@ -71,9 +71,17 @@ describe('GroupList', () => {
     expect(screen.getByRole('button', { name: 'Reintentar' })).toBeInTheDocument();
   });
 
-  it('shows bottom nav', () => {
-    renderWithApi(<GroupList />, { 'groups.list': neverResolves });
-    expect(screen.getByText('Perfil')).toBeInTheDocument();
+  it('offers to create or join a group when there are groups', async () => {
+    renderWithApi(<GroupList />, { 'groups.list': () => fixGroups });
+    await screen.findByText('Viaje a Floripa');
+    expect(screen.getByRole('link', { name: 'Crear grupo' })).toHaveAttribute(
+      'href',
+      '/grupos/crear',
+    );
+    expect(screen.getByRole('link', { name: 'Unirme con código' })).toHaveAttribute(
+      'href',
+      '/grupos/unirme',
+    );
   });
 
   it('retries after an error', async () => {

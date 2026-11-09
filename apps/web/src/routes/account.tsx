@@ -1,11 +1,12 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { ArrowLeft } from 'lucide-react';
 
-import { signOut, useSession } from '@/lib/auth';
+import { useSession } from '@/lib/auth';
 import { ErrorState } from '@/components/error-state';
-import { clearOfflineCache } from '@/lib/offline-cache';
 import { useTRPC } from '@/lib/trpc';
+import { useSignOut } from '@/lib/use-sign-out';
 
 export function Account() {
   const navigate = useNavigate();
@@ -35,30 +36,29 @@ export function Account() {
     setAliasError(null);
   }
 
-  async function handleSignOut() {
-    await signOut();
-    // Nothing of this account stays on the device (offline cache, memory).
-    clearOfflineCache();
-    queryClient.clear();
-    void navigate('/login');
-  }
+  // Nothing of this account stays on the device (offline cache, memory).
+  const handleSignOut = useSignOut();
 
   return (
-    <main className="mx-auto min-h-dvh max-w-md p-6">
-      <div className="mb-6 flex items-center gap-3">
-        <button onClick={() => navigate(-1)} aria-label="Volver" className="text-muted-foreground">
-          ←
+    <div className="mx-auto w-full max-w-2xl space-y-6">
+      <div className="rise flex items-center gap-3">
+        <button
+          onClick={() => navigate(-1)}
+          aria-label="Volver"
+          className="press grid size-9 shrink-0 place-items-center rounded-full text-lg text-muted-foreground hover:bg-muted"
+        >
+          <ArrowLeft className="size-5" />
         </button>
-        <h1 className="text-xl font-bold">Mi cuenta</h1>
+        <h1 className="text-2xl font-bold lg:text-3xl">Mi cuenta</h1>
       </div>
 
       <div className="space-y-6">
-        <div className="rounded-2xl bg-card p-4">
+        <div className="rounded-2xl border bg-card p-5 shadow-soft">
           <p className="text-sm text-muted-foreground">Email</p>
           <p className="mt-1 font-medium">{session?.user.email ?? '—'}</p>
         </div>
 
-        <div className="rounded-2xl bg-card p-4">
+        <div className="rounded-2xl border bg-card p-5 shadow-soft">
           <p className="mb-2 text-sm text-muted-foreground">Alias / CVU para cobrar</p>
 
           {profile.isPending && <p className="text-muted-foreground">Cargando…</p>}
@@ -82,20 +82,20 @@ export function Account() {
                 value={aliasInput}
                 onChange={(e) => setAliasInput(e.target.value)}
                 placeholder="alias.ejemplo o CVU de 22 dígitos"
-                className="w-full rounded-lg border border-input bg-muted px-3 py-2 text-base text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+                className="h-11 w-full rounded-xl border border-input bg-card px-3.5 text-base text-foreground placeholder:text-muted-foreground outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 disabled:opacity-50 dark:bg-input/30"
               />
               {aliasError && <p className="text-sm text-destructive">{aliasError}</p>}
               <div className="flex gap-2">
                 <button
                   onClick={() => updateProfile.mutate({ paymentAlias: aliasInput || null })}
                   disabled={updateProfile.isPending}
-                  className="flex-1 rounded-lg bg-primary py-2 font-medium text-primary-foreground disabled:opacity-50"
+                  className="press flex-1 rounded-full bg-primary py-2 font-semibold text-primary-foreground disabled:opacity-50 shadow-soft"
                 >
                   {updateProfile.isPending ? 'Guardando…' : 'Guardar'}
                 </button>
                 <button
                   onClick={() => setEditingAlias(false)}
-                  className="flex-1 rounded-lg border border-input py-2 text-foreground"
+                  className="press flex-1 rounded-full border border-input py-2 text-foreground bg-card"
                 >
                   Cancelar
                 </button>
@@ -110,11 +110,11 @@ export function Account() {
 
         <button
           onClick={handleSignOut}
-          className="w-full rounded-lg border border-destructive/40 py-3 text-destructive"
+          className="press w-full rounded-full border border-destructive/40 py-3 text-destructive bg-card"
         >
           Cerrar sesión
         </button>
       </div>
-    </main>
+    </div>
   );
 }

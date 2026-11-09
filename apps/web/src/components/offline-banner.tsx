@@ -7,7 +7,7 @@ export function OfflineBanner() {
   return (
     <div
       role="status"
-      className="fixed inset-x-0 top-0 z-50 bg-muted px-4 pt-[calc(env(safe-area-inset-top)+0.5rem)] pb-2 text-center text-sm text-muted-foreground"
+      className="fixed inset-x-0 top-0 z-50 bg-highlight px-4 pt-[calc(env(safe-area-inset-top)+0.5rem)] pb-2 text-center text-sm font-medium text-highlight-foreground"
     >
       Sin conexión: mostrando lo último que viste
     </div>
