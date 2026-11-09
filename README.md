@@ -50,6 +50,7 @@ Pedir invitación a:
 - Org de GitHub `kachingga`
 - Org de Supabase `kachingga` (proyectos `staging-kachingga` para desarrollo y `kachingga` para producción)
 - Proyecto de Railway `kachingga` (opcional: hoy lo maneja Galo)
+- Org de Sentry `kachingga` (opcional: para ver los errores de la web y la API)
 
 ### 2. Herramientas
 

@@ -9,10 +9,11 @@
 | Dominio y DNS | Cloudflare (Registrar + DNS) | dash.cloudflare.com | `kachingga.com`, con renovación automática |
 | Base de datos **PROD** | Supabase (`kachingga`) | supabase.com/dashboard/project/czrkjokurbmbbvobvmxd | `https://czrkjokurbmbbvobvmxd.supabase.co` (ref `czrkjokurbmbbvobvmxd`) |
 | Base de datos **DEV** | Supabase (`staging-kachingga`) | supabase.com/dashboard/project/nraoqdaplvvsakvtlcam | `https://nraoqdaplvvsakvtlcam.supabase.co` (ref `nraoqdaplvvsakvtlcam`) |
-| Auth | Supabase Auth | supabase.com/dashboard → Authentication | — |
+| Auth | Supabase Auth (email + password y Google) | supabase.com/dashboard → Authentication | Ver "Supabase" (abajo) |
+| Login con Google (OAuth) | Google Cloud (proyecto `Kachingga` de Galo) | console.cloud.google.com → Google Auth Platform | Cliente OAuth *Web application* "Kachingga web", app publicada (*In production*). Detalle en "Supabase" |
 | CI | GitHub Actions | github.com/kachingga/kachingga/actions | `ci.yml` (checks obligatorios), `e2e.yml` (Playwright en la web, a demanda) y `backup.yml` (backup semanal cifrado de prod, ver `DEPLOY.md` → "Backups") |
 | Errores (monitoreo) | Sentry (plan gratis, org `kachingga` de Galo) | sentry.io/organizations/kachingga | Proyectos `kachingga-web` (React) y `kachingga-api` (Bun); cada uno con `environment` `staging` / `production`. Cómo está hecho: `docs/claude/repo/monitoreo.md` |
-| Caídas (uptime) | UptimeRobot (plan gratis, cuenta de Galo) | uptimerobot.com | Monitores de `kachingga.com`, `api.kachingga.com/health` y `api-staging.kachingga.com/health` (ver `DEPLOY.md` → "Monitoreo") |
+| Caídas (uptime) | UptimeRobot (plan gratis, cuenta de Galo) | uptimerobot.com | HTTP(s) a `kachingga.com` y `staging.kachingga.com`; Keyword (`"ok":true`) a `api.kachingga.com/health` y `api-staging.kachingga.com/health` (ver `DEPLOY.md` → "Monitoreo") |
 | Cotizaciones (dólar blue y oficial, oficial de EUR, BRL, UYU y CLP) | DolarApi (público, sin clave) | dolarapi.com | `https://dolarapi.com/v1/dolares/{blue,oficial}` y `/v1/cotizaciones/{eur,brl,uyu,clp}` |
 | Repo | GitHub | github.com/kachingga/kachingga | — |
 
@@ -66,7 +67,7 @@ Mismas variables en los dos entornos, con los valores de su base (staging = `app
 | `VITE_SUPABASE_PUBLISHABLE_KEY` | Clave **publishable** de esa base — pública, solo para auth |
 | `VITE_SENTRY_DSN` | DSN del proyecto `kachingga-web` de Sentry. **Público por diseño** (solo permite mandar eventos, no leerlos). Sin él no se reporta nada |
 | `VITE_SENTRY_ENVIRONMENT` | `production` o `staging` |
-| `SENTRY_AUTH_TOKEN` | **Secreto, solo para el build** (no es `VITE_*`): token de Sentry (Settings → Auth Tokens, permiso de subir source maps) para que el build suba los source maps. Opcional: sin él los errores se ven con el código minificado |
+| `SENTRY_AUTH_TOKEN` | **Secreto, solo para el build** (no es `VITE_*`): *Organization Token* de la org `kachingga` (Sentry → Settings → Developer Settings → Organization Tokens; solo se crean desde la web) para que el build suba los source maps. Opcional: sin él los errores se ven con el código minificado |
 | `SENTRY_ORG` / `SENTRY_PROJECT` | Slug de la org de Sentry y `kachingga-web`. Los usa el build junto con `SENTRY_AUTH_TOKEN` |
 | `PORT` | Lo setea Railway — no pisarlo (lo lee `server.ts`) |
 
@@ -87,7 +88,6 @@ Sin los `E2E_*`, `e2e.yml` corre igual pero solo los specs que no necesitan la A
 
 ### Archivos locales (gitignoreados, nunca commitear)
 
-- `apps/api/.env` — variables de desarrollo de la API
 - `apps/api/.env` / `apps/web/.env` — **DEV** (`staging-kachingga`). Lo que usa todo lo local
 - `apps/api/.env.prod` — **PROD** (`kachingga`). Solo para `db:migrate:prod` y como referencia de las variables de Railway (las `VITE_*` de prod de la web salen del dashboard de Supabase → `kachingga` → API Keys)
 
@@ -109,7 +109,8 @@ Sin los `E2E_*`, `e2e.yml` corre igual pero solo los specs que no necesitan la A
 - **Escaneo de secretos de GitHub + protección de push: activos.** Si un push trae una clave (Supabase, tokens, etc.), GitHub lo rechaza. No saltear el bloqueo: sacar el secreto del commit.
 - **Alertas de vulnerabilidades de dependencias (Dependabot alerts): activas.** Dependabot además abre PRs mensuales para las GitHub Actions.
 - El repo es **público**: cualquier secreto que llegue a un commit hay que rotarlo, aunque se borre después.
+- **Branches protegidas:** `main` (todo por PR con el CI en verde: "Typecheck, tests y lint", "Migraciones al día con el schema" y "Formato de commits y título del PR"; solo squash) y `production` (sin force-push ni borrado; avanza con `bun run promote`).
 
 ## Accesos
 
-Las cuentas están **a nombre de Galo**: org de GitHub `kachingga`, proyecto `kachingga` de Railway (en su cuenta personal, plan Hobby compartido con otros proyectos suyos), Cloudflare (dominio y DNS) y org `kachingga` de Supabase. Al resto del grupo se lo suma si lo necesita: org de GitHub, org de Supabase, proyecto de Railway (Hobby admite pocos miembros por proyecto: verificar el límite al invitar).
+Las cuentas están **a nombre de Galo**: org de GitHub `kachingga`, proyecto `kachingga` de Railway (en su cuenta personal, plan Hobby compartido con otros proyectos suyos), Cloudflare (dominio y DNS), org `kachingga` de Supabase, org `kachingga` de Sentry, UptimeRobot y el proyecto `Kachingga` de Google Cloud (OAuth). Las credenciales y el 2FA, en su gestor de contraseñas; nunca en el repo. Al resto del grupo se lo suma si lo necesita: org de GitHub, org de Supabase, proyecto de Railway (Hobby admite pocos miembros por proyecto: verificar el límite al invitar).
