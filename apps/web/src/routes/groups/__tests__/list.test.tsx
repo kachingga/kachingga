@@ -12,6 +12,7 @@ const fixGroups = [
     baseCurrency: 'ARS',
     archivedAt: null,
     _count: { participants: 3 },
+    myBalanceCents: 150000,
   },
   {
     id: 'g2',
@@ -19,6 +20,7 @@ const fixGroups = [
     baseCurrency: 'ARS',
     archivedAt: null,
     _count: { participants: 2 },
+    myBalanceCents: -2550,
   },
 ];
 
@@ -34,9 +36,29 @@ describe('GroupList', () => {
     expect(screen.getByText('Depto Palermo')).toBeInTheDocument();
   });
 
+  it('shows my balance in each group', async () => {
+    renderWithApi(<GroupList />, {
+      'groups.list': () => [
+        ...fixGroups,
+        { ...fixGroups[0], id: 'g3', name: 'Asado', myBalanceCents: 0 },
+      ],
+    });
+    expect(await screen.findByText(/Te deben \$\s?1\.500,00/)).toBeInTheDocument();
+    expect(screen.getByText(/Debés \$\s?25,50/)).toBeInTheDocument();
+    expect(screen.getByText('Estás al día')).toBeInTheDocument();
+  });
+
   it('shows empty state when there are no groups', async () => {
     renderWithApi(<GroupList />, { 'groups.list': () => [] });
     expect(await screen.findByText('Todavía no tenés grupos')).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: 'Crear grupo' })).toHaveAttribute(
+      'href',
+      '/grupos/crear',
+    );
+    expect(screen.getByRole('link', { name: 'Unirme con código' })).toHaveAttribute(
+      'href',
+      '/grupos/unirme',
+    );
   });
 
   it('shows error state', async () => {

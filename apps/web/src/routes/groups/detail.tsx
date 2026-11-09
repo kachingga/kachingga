@@ -10,7 +10,13 @@ import { useTRPC } from '@/lib/trpc';
 import { prefetchOn, usePrefetch } from '@/lib/use-prefetch';
 import { isTemp } from '@/lib/optimistic';
 import { useConfirm } from '@/lib/use-confirm';
-import { categoryLabels, formatCents, formatDate, formatPlainAmount } from '@/lib/format';
+import {
+  categoryLabels,
+  formatCents,
+  formatDate,
+  formatMyBalance,
+  formatPlainAmount,
+} from '@/lib/format';
 
 type GroupData = inferRouterOutputs<AppRouter>['groups']['get'];
 type BalancesData = inferRouterOutputs<AppRouter>['balances']['get'];
@@ -33,11 +39,7 @@ function BalanceSection({ group, balances }: { group: GroupData; balances: Balan
 
             {mine && (
               <p className="mb-3 text-lg font-semibold">
-                {mine.amountCents === 0
-                  ? 'Estás al día'
-                  : mine.amountCents > 0
-                    ? `Te deben ${formatCents(mine.amountCents, currency)}`
-                    : `Debés ${formatCents(-mine.amountCents, currency)}`}
+                {formatMyBalance(mine.amountCents, currency)}
               </p>
             )}
 

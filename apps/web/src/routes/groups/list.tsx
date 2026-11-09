@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
 import { ErrorState } from '@/components/error-state';
+import { formatMyBalance } from '@/lib/format';
 import { useTRPC } from '@/lib/trpc';
 import { prefetchOn, usePrefetch } from '@/lib/use-prefetch';
 
@@ -126,8 +127,23 @@ export function GroupList() {
               <>
                 <p className="text-lg font-medium text-foreground">Todavía no tenés grupos</p>
                 <p className="mt-1 text-sm text-muted-foreground">
-                  Creá uno o unite con un código.
+                  Un grupo junta los gastos compartidos con tus amigos (un viaje, la casa, una
+                  salida) y calcula quién le debe a quién.
                 </p>
+                <div className="mx-auto mt-6 flex max-w-xs flex-col gap-3">
+                  <Link
+                    to="/grupos/crear"
+                    className="rounded-lg bg-primary py-3 font-medium text-primary-foreground"
+                  >
+                    Crear grupo
+                  </Link>
+                  <Link
+                    to="/grupos/unirme"
+                    className="rounded-lg border border-input py-3 font-medium text-foreground"
+                  >
+                    Unirme con código
+                  </Link>
+                </div>
               </>
             )}
           </div>
@@ -194,8 +210,12 @@ export function GroupList() {
                     <p className="truncate font-semibold text-foreground">{group.name}</p>
                     <p className="text-sm text-muted-foreground">
                       {group._count.participants}{' '}
-                      {group._count.participants === 1 ? 'persona' : 'personas'} ·{' '}
-                      {group.baseCurrency}
+                      {group._count.participants === 1 ? 'persona' : 'personas'}
+                    </p>
+                    <p
+                      className={`text-sm font-medium ${group.myBalanceCents < 0 ? 'text-destructive' : group.myBalanceCents > 0 ? 'text-foreground' : 'text-muted-foreground'}`}
+                    >
+                      {formatMyBalance(group.myBalanceCents, group.baseCurrency)}
                     </p>
                   </div>
                   <span className="text-muted-foreground">›</span>

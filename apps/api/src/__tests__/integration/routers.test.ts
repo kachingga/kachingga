@@ -95,6 +95,38 @@ describe('groups', () => {
     await ana.groups.setArchived({ groupId: group.id, archived: false })
     expect(await ana.groups.list()).toHaveLength(1)
   })
+
+  test('list returns my balance in the base currency of each group', async () => {
+    const { ana, beto, group, pAna, pBeto, pJuan } = await groupWithMembers()
+    // Ana pays 3000 among the three; a USD expense kept in USD doesn't count in the base balance.
+    await ana.expenses.create({
+      groupId: group.id,
+      description: 'Cena',
+      date: day('01'),
+      amountCents: 3000,
+      currency: 'ARS',
+      paidById: pAna,
+      split: { type: 'EQUAL', participantIds: [pAna, pBeto, pJuan] },
+    })
+    await ana.expenses.create({
+      groupId: group.id,
+      description: 'Taxi en USD',
+      date: day('01'),
+      amountCents: 600,
+      currency: 'USD',
+      keepCurrency: true,
+      paidById: pBeto,
+      split: { type: 'EQUAL', participantIds: [pAna, pBeto] },
+    })
+    await beto.settlements.create({ groupId: group.id, fromId: pBeto, toId: pAna, amountCents: 400, currency: 'ARS', date: day('02') })
+    const other = await beto.groups.create({ name: 'Solo Beto', baseCurrency: 'USD', myName: 'Beto' })
+
+    const [anaGroup] = await ana.groups.list()
+    expect(anaGroup).toMatchObject({ id: group.id, myBalanceCents: 1600 })
+    const betoGroups = await beto.groups.list()
+    expect(betoGroups.find((g) => g.id === group.id)!.myBalanceCents).toBe(-600)
+    expect(betoGroups.find((g) => g.id === other.id)!.myBalanceCents).toBe(0)
+  })
 })
 
 describe('participants', () => {
