@@ -37,7 +37,7 @@ export function LoadMore({
       <button
         onClick={onLoadMore}
         disabled={loading}
-        className="mt-4 w-full rounded-xl border border-border py-2 text-sm text-muted-foreground disabled:opacity-50"
+        className="press mt-4 w-full rounded-full border bg-card py-2.5 text-sm font-medium text-muted-foreground shadow-soft disabled:opacity-50"
       >
         {loading ? 'Cargando…' : 'Cargar más'}
       </button>

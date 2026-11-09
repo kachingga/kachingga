@@ -1,9 +1,12 @@
 import { Link, useNavigate, useParams } from 'react-router';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
+import { ArrowLeft, Pencil } from 'lucide-react';
 
 import { ArchivedNotice } from '@/components/archived-notice';
 import { ErrorState } from '@/components/error-state';
+import { Avatar, Card, CategoryIcon } from '@/components/kit';
+import { Button } from '@/components/ui/button';
 import { ExpenseDetailSkeleton } from '@/components/skeletons';
 import { useTRPC } from '@/lib/trpc';
 import { useGoBack } from '@/lib/use-go-back';
@@ -14,6 +17,7 @@ import {
   formatDate,
   formatNumber,
   splitTypeLabels,
+  type ExpenseCategory,
 } from '@/lib/format';
 
 export function ExpenseDetail() {
@@ -85,19 +89,23 @@ export function ExpenseDetail() {
   const isArchived = !!group.data?.archivedAt;
 
   return (
-    <main className="mx-auto min-h-dvh max-w-md p-6">
-      <div className="mb-6 flex items-center justify-between">
-        <button onClick={() => navigate(-1)} aria-label="Volver" className="text-muted-foreground">
-          ←
+    <div className="mx-auto w-full max-w-2xl space-y-6">
+      <div className="rise flex items-center justify-between">
+        <button
+          onClick={() => navigate(-1)}
+          aria-label="Volver"
+          className="press grid size-9 shrink-0 place-items-center rounded-full text-lg text-muted-foreground hover:bg-muted"
+        >
+          <ArrowLeft className="size-5" />
         </button>
         {!isArchived && (
           <div className="flex gap-3">
-            <Link
-              to={`/grupos/${groupId}/gastos/${expenseId}/editar`}
-              className="text-sm text-muted-foreground underline"
-            >
-              Editar
-            </Link>
+            <Button asChild variant="outline" size="sm">
+              <Link to={`/grupos/${groupId}/gastos/${expenseId}/editar`}>
+                <Pencil />
+                Editar
+              </Link>
+            </Button>
             <button
               onClick={async () => {
                 const ok = await confirm({
@@ -109,7 +117,7 @@ export function ExpenseDetail() {
                 if (ok) deleteExpense.mutate({ expenseId: expenseId! });
               }}
               disabled={deleteExpense.isPending}
-              className="text-sm text-destructive disabled:opacity-50"
+              className="press inline-flex h-9 items-center gap-1.5 rounded-full bg-destructive/10 px-3.5 text-[0.8rem] font-semibold text-destructive disabled:opacity-50"
             >
               {deleteExpense.isPending ? 'Borrando…' : 'Borrar'}
             </button>
@@ -117,24 +125,25 @@ export function ExpenseDetail() {
         )}
       </div>
 
-      {isArchived && (
-        <div className="mb-5">
-          <ArchivedNotice groupId={groupId!} />
-        </div>
-      )}
+      {isArchived && <ArchivedNotice groupId={groupId!} />}
 
-      <div className="space-y-5">
-        <div>
-          <h1 className="text-2xl font-bold">{e.description}</h1>
-          <p className="mt-1 text-muted-foreground">
-            {categoryLabels[e.category as keyof typeof categoryLabels]} · {formatDate(e.date)}
+      <div className="rise space-y-5">
+        <div className="flex items-center gap-3">
+          <CategoryIcon category={e.category as ExpenseCategory} className="size-12" />
+          <div className="min-w-0">
+            <h1 className="truncate text-2xl font-bold lg:text-3xl">{e.description}</h1>
+            <p className="text-muted-foreground">
+              {categoryLabels[e.category as keyof typeof categoryLabels]} · {formatDate(e.date)}
+            </p>
+          </div>
+        </div>
+
+        <div className="rounded-3xl bg-hero p-6 text-primary-foreground shadow-lift dark:text-foreground">
+          <p className="font-display text-4xl font-bold tabular">
+            {formatCents(e.amountCents, e.currency)}
           </p>
-        </div>
-
-        <div className="rounded-2xl bg-card p-4">
-          <p className="text-3xl font-bold">{formatCents(e.amountCents, e.currency)}</p>
           {base && e.exchangeRate !== null && (
-            <p className="mt-1 text-sm text-muted-foreground">
+            <p className="mt-1 text-sm opacity-80">
               ≈ {formatCents(Math.round(e.amountCents * e.exchangeRate), base)} · Tipo de cambio:{' '}
               {e.currency === 'ARS'
                 ? `1 ${base} = ${formatNumber(1 / e.exchangeRate)} ARS`
@@ -142,36 +151,39 @@ export function ExpenseDetail() {
             </p>
           )}
           {base && e.exchangeRate === null && e.currency !== base && (
-            <p className="mt-1 text-sm text-muted-foreground">
-              Se mantiene en {e.currency} (saldo aparte)
-            </p>
+            <p className="mt-1 text-sm opacity-80">Se mantiene en {e.currency} (saldo aparte)</p>
           )}
         </div>
 
-        <div>
-          <p className="text-sm text-muted-foreground">Pagó</p>
-          <p className="font-medium">{e.paidBy.name}</p>
-        </div>
+        <Card className="space-y-4">
+          <div className="flex items-center gap-3">
+            <Avatar name={e.paidBy.name} />
+            <div>
+              <p className="text-sm text-muted-foreground">Pagó</p>
+              <p className="font-medium">{e.paidBy.name}</p>
+            </div>
+          </div>
 
-        <div>
-          <p className="mb-2 text-sm text-muted-foreground">
-            División ({splitTypeLabels[e.splitType as keyof typeof splitTypeLabels]})
-          </p>
-          <ul className="space-y-1">
-            {e.splits.map((split) => (
-              <li key={split.participantId} className="flex justify-between text-sm">
-                <span className="text-foreground">{split.participant.name}</span>
-                <span className="font-medium">
-                  {formatCents(split.amountCents, e.currency)}
-                  {split.percentage != null && (
-                    <span className="text-muted-foreground"> ({split.percentage}%)</span>
-                  )}
-                </span>
-              </li>
-            ))}
-          </ul>
-        </div>
+          <div className="border-t pt-4">
+            <p className="mb-2 text-sm text-muted-foreground">
+              División ({splitTypeLabels[e.splitType as keyof typeof splitTypeLabels]})
+            </p>
+            <ul className="space-y-2">
+              {e.splits.map((split) => (
+                <li key={split.participantId} className="flex justify-between text-sm">
+                  <span className="text-foreground">{split.participant.name}</span>
+                  <span className="font-medium tabular">
+                    {formatCents(split.amountCents, e.currency)}
+                    {split.percentage != null && (
+                      <span className="text-muted-foreground"> ({split.percentage}%)</span>
+                    )}
+                  </span>
+                </li>
+              ))}
+            </ul>
+          </div>
+        </Card>
       </div>
-    </main>
+    </div>
   );
 }

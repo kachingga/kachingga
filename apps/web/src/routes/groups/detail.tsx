@@ -3,11 +3,24 @@ import { Link, useNavigate, useParams } from 'react-router';
 import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import type { inferRouterOutputs } from '@trpc/server';
 import type { AppRouter } from '@kachingga/api';
+import {
+  ArrowLeft,
+  ArrowRight,
+  Check,
+  Copy,
+  HandCoins,
+  MoreHorizontal,
+  PieChart,
+  Plus,
+} from 'lucide-react';
 
 import { ArchivedNotice } from '@/components/archived-notice';
 import { ErrorState } from '@/components/error-state';
+import { Avatar, Card, CategoryIcon, Page, SectionTitle } from '@/components/kit';
 import { LoadMore } from '@/components/load-more';
 import { BalancesSkeleton, ExpenseListSkeleton, GroupSkeleton } from '@/components/skeletons';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import { copyText, shareInviteCode } from '@/lib/share';
 import { useTRPC } from '@/lib/trpc';
 import { prefetchOn, usePrefetch } from '@/lib/use-prefetch';
@@ -19,6 +32,7 @@ import {
   formatDate,
   formatMyBalance,
   formatPlainAmount,
+  type ExpenseCategory,
 } from '@/lib/format';
 
 type GroupData = inferRouterOutputs<AppRouter>['groups']['get'];
@@ -28,109 +42,146 @@ function participantName(group: GroupData, id: string) {
   return group.participants.find((p) => p.id === id)?.name ?? id;
 }
 
+/** "Tu situación" in the base currency: the big green card at the top of the group. */
+function MySituation({ group, balances }: { group: GroupData; balances: BalancesData }) {
+  const base = balances.find((b) => b.currency === group.baseCurrency) ?? balances[0];
+  const mine = base?.balances.find((b) => b.participantId === group.myParticipantId);
+  if (!base || !mine) return null;
+  const others = balances.filter((b) => b !== base);
+  return (
+    <div className="rise rounded-3xl bg-hero p-6 text-primary-foreground shadow-lift dark:text-foreground">
+      <p className="text-sm opacity-75">Tu situación</p>
+      <p className="mt-1 font-display text-3xl font-bold tabular">
+        {formatMyBalance(mine.amountCents, base.currency)}
+      </p>
+      {others.map((b) => {
+        const m = b.balances.find((x) => x.participantId === group.myParticipantId);
+        return m ? (
+          <p key={b.currency} className="mt-1 text-sm opacity-80 tabular">
+            En {b.currency}: {formatMyBalance(m.amountCents, b.currency)}
+          </p>
+        ) : null;
+      })}
+    </div>
+  );
+}
+
 function BalanceSection({ group, balances }: { group: GroupData; balances: BalancesData }) {
   const navigate = useNavigate();
   const prefetch = usePrefetch();
 
   return (
-    <div className="space-y-4">
-      {balances.map(({ currency, balances: bals, transfers }) => {
-        const mine = bals.find((b) => b.participantId === group.myParticipantId);
-        return (
-          <div key={currency} className="rounded-2xl bg-card p-4">
-            <p className="mb-3 text-sm font-semibold text-muted-foreground">{currency}</p>
-
-            {mine && (
-              <p className="mb-3 text-lg font-semibold">
-                {formatMyBalance(mine.amountCents, currency)}
-              </p>
-            )}
-
-            <div className="mb-3 space-y-1">
+    <div className="space-y-6">
+      {balances.map(({ currency, balances: bals, transfers }) => (
+        <div key={currency} className="space-y-6">
+          <Card>
+            <div className="flex items-center justify-between">
+              <SectionTitle>Saldos</SectionTitle>
+              <span className="rounded-full bg-muted px-2.5 py-0.5 text-xs font-semibold text-muted-foreground">
+                {currency}
+              </span>
+            </div>
+            <ul className="mt-3 divide-y">
               {bals.map((b) => (
-                <p key={b.participantId} className="text-sm text-muted-foreground">
-                  <span className="font-medium text-foreground">
+                <li key={b.participantId} className="flex items-center gap-3 py-2.5">
+                  <Avatar name={participantName(group, b.participantId)} />
+                  <span className="flex-1 font-medium">
                     {participantName(group, b.participantId)}
                   </span>
-                  {': '}
-                  {b.amountCents > 0
-                    ? `+${formatCents(b.amountCents, currency)}`
-                    : b.amountCents < 0
-                      ? formatCents(b.amountCents, currency)
-                      : 'al día'}
-                </p>
+                  <span
+                    className={`text-sm font-semibold tabular ${b.amountCents > 0 ? 'text-positive' : b.amountCents < 0 ? 'text-negative' : 'text-muted-foreground'}`}
+                  >
+                    {b.amountCents > 0
+                      ? `+${formatCents(b.amountCents, currency)}`
+                      : b.amountCents < 0
+                        ? formatCents(b.amountCents, currency)
+                        : 'al día'}
+                  </span>
+                </li>
               ))}
-            </div>
+            </ul>
+          </Card>
 
-            {transfers.length > 0 && (
-              <div className="space-y-2 border-t border-border pt-3">
-                <p className="text-xs font-medium text-muted-foreground">Cómo quedar a mano</p>
+          <Card>
+            <SectionTitle>Cómo quedar a mano</SectionTitle>
+            {transfers.length === 0 ? (
+              <p className="mt-2 text-sm text-muted-foreground">
+                Nadie le debe nada a nadie. ¡Impecable!
+              </p>
+            ) : (
+              <ul className="mt-3 space-y-3">
                 {transfers.map((t) => {
                   const isMyTransfer = t.fromId === group.myParticipantId;
                   const toParticipant = group.participants.find((p) => p.id === t.toId);
 
                   return (
-                    <div
+                    <li
                       key={`${t.fromId}-${t.toId}`}
-                      className={`rounded-xl p-3 ${isMyTransfer ? 'bg-muted' : ''}`}
+                      className={`rounded-xl p-3 ${isMyTransfer ? 'bg-negative-soft' : 'bg-muted'}`}
                     >
-                      <p className="text-sm">
-                        <span className="font-medium">{participantName(group, t.fromId)}</span>
-                        {' → '}
-                        <span className="font-medium">{participantName(group, t.toId)}</span>{' '}
-                        <span className="font-semibold">
+                      <p className="flex flex-wrap items-center gap-x-2 font-medium">
+                        <span>{participantName(group, t.fromId)}</span>
+                        <span className="sr-only"> → </span>
+                        <ArrowRight aria-hidden className="size-4 text-muted-foreground" />
+                        <span>{participantName(group, t.toId)}</span>
+                        <span className="ml-auto font-display text-lg font-bold tabular">
                           {formatCents(t.amountCents, currency)}
                         </span>
                       </p>
 
                       {isMyTransfer && (
-                        <div className="mt-2 flex flex-wrap gap-2">
+                        <div className="mt-2 flex flex-wrap gap-1.5">
                           {toParticipant?.paymentAlias && (
                             <>
                               <p className="w-full text-xs text-muted-foreground">
                                 Alias: {toParticipant.paymentAlias}
                               </p>
-                              <button
+                              <Button
+                                variant="outline"
+                                size="sm"
                                 onClick={() =>
                                   void copyText(toParticipant.paymentAlias!, 'Alias copiado')
                                 }
-                                className="rounded border border-input px-3 py-1 text-xs text-foreground"
                               >
+                                <Copy />
                                 Copiar alias
-                              </button>
+                              </Button>
                             </>
                           )}
-                          <button
+                          <Button
+                            variant="outline"
+                            size="sm"
                             onClick={() =>
                               void copyText(formatPlainAmount(t.amountCents), 'Monto copiado')
                             }
-                            className="rounded border border-input px-3 py-1 text-xs text-foreground"
                           >
+                            <Copy />
                             Copiar monto
-                          </button>
+                          </Button>
                           {!group.archivedAt && (
-                            <button
+                            <Button
+                              size="sm"
                               {...prefetchOn(() => prefetch.settlements(group.id))}
                               onClick={() =>
                                 navigate(
                                   `/grupos/${group.id}/pagos?from=${t.fromId}&to=${t.toId}&amount=${t.amountCents}&currency=${currency}`,
                                 )
                               }
-                              className="rounded bg-primary px-3 py-1 text-xs text-primary-foreground"
                             >
+                              <Check />
                               Marcar como pagado
-                            </button>
+                            </Button>
                           )}
                         </div>
                       )}
-                    </div>
+                    </li>
                   );
                 })}
-              </div>
+              </ul>
             )}
-          </div>
-        );
-      })}
+          </Card>
+        </div>
+      ))}
     </div>
   );
 }
@@ -176,240 +227,291 @@ export function GroupDetail() {
   }
   if (group.isError) {
     return (
-      <div className="p-6 text-center">
+      <Page>
         <ErrorState message={group.error.message} onRetry={() => group.refetch()} />
-        <button
-          onClick={() => navigate('/grupos')}
-          className="mt-2 text-sm text-muted-foreground underline"
-        >
-          Volver a mis grupos
-        </button>
-      </div>
+        <div className="text-center">
+          <Button variant="link" onClick={() => navigate('/grupos')}>
+            Volver a mis grupos
+          </Button>
+        </div>
+      </Page>
     );
   }
 
   const g = group.data;
   const allExpenses = expenses.data?.pages.flatMap((p) => p.items) ?? [];
   const loadMoreExpenses = () => void expenses.fetchNextPage();
+  // Consecutive expenses of the same day go under one date heading (the list comes newest first).
+  const days: { day: string; items: typeof allExpenses }[] = [];
+  for (const expense of allExpenses) {
+    const day = formatDate(expense.date);
+    if (days.at(-1)?.day === day) days.at(-1)!.items.push(expense);
+    else days.push({ day, items: [expense] });
+  }
 
   return (
-    <main className="mx-auto min-h-dvh max-w-md pb-24">
-      {/* Header */}
-      <div className="flex items-center justify-between p-4">
-        <button onClick={() => navigate(-1)} className="text-muted-foreground">
-          ←
-        </button>
-
-        {renaming ? (
-          <form
-            className="mx-2 flex flex-1 gap-2"
-            onSubmit={(e) => {
-              e.preventDefault();
-              renameGroup.mutate({ groupId: groupId!, name: newName });
-            }}
-          >
-            <input
-              value={newName}
-              onChange={(e) => setNewName(e.target.value)}
-              autoFocus
-              className="flex-1 rounded border border-input bg-card px-2 py-1 text-sm text-foreground focus:outline-none"
-            />
-            <button type="submit" disabled={renameGroup.isPending} className="text-sm font-medium">
-              Guardar
-            </button>
-            <button
-              type="button"
-              onClick={() => setRenaming(false)}
-              className="text-sm text-muted-foreground"
-            >
-              ×
-            </button>
-          </form>
-        ) : (
-          <div className="flex-1 px-2">
-            <h1 className="font-bold">{g.name}</h1>
-            <p className="text-xs text-muted-foreground">
-              {g.baseCurrency}
-              {g.archivedAt ? ' · Archivado' : ''}
-            </p>
-          </div>
-        )}
-
-        <button
-          onClick={() => setShowMenu(!showMenu)}
-          aria-label="Opciones del grupo"
-          className="p-2 text-muted-foreground"
+    <Page wide>
+      {/* Header (above the rest so its menu isn't covered by the cards below) */}
+      <div className="rise relative z-30">
+        <Link
+          to="/grupos"
+          className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground"
         >
-          ⋯
-        </button>
+          <ArrowLeft className="size-4" />
+          Mis grupos
+        </Link>
+        <div className="mt-3 flex flex-wrap items-center justify-between gap-3">
+          {renaming ? (
+            <form
+              className="flex min-w-0 flex-1 gap-2"
+              onSubmit={(e) => {
+                e.preventDefault();
+                renameGroup.mutate({ groupId: groupId!, name: newName });
+              }}
+            >
+              <Input
+                value={newName}
+                onChange={(e) => setNewName(e.target.value)}
+                autoFocus
+                aria-label="Nombre del grupo"
+                className="flex-1"
+              />
+              <Button type="submit" disabled={renameGroup.isPending}>
+                Guardar
+              </Button>
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon"
+                aria-label="Cancelar"
+                onClick={() => setRenaming(false)}
+              >
+                ×
+              </Button>
+            </form>
+          ) : (
+            <div className="flex min-w-0 items-center gap-3">
+              <Avatar name={g.name} className="size-12 rounded-xl bg-muted text-lg ring-0" />
+              <div className="min-w-0">
+                <h1 className="truncate text-2xl font-bold lg:text-3xl">{g.name}</h1>
+                <p className="text-sm text-muted-foreground">
+                  Moneda base: {g.baseCurrency} · {g.participants.length}{' '}
+                  {g.participants.length === 1 ? 'persona' : 'personas'}
+                  {g.archivedAt ? ' · Archivado' : ''}
+                </p>
+              </div>
+            </div>
+          )}
+
+          <div className="relative flex gap-2">
+            <Button asChild variant="outline" size="sm">
+              <Link
+                to={`/grupos/${groupId}/pagos`}
+                {...prefetchOn(() => prefetch.settlements(groupId!))}
+              >
+                <HandCoins />
+                Pagos
+              </Link>
+            </Button>
+            <Button asChild variant="outline" size="sm">
+              <Link
+                to={`/grupos/${groupId}/filtros`}
+                {...prefetchOn(() => prefetch.filters(groupId!))}
+              >
+                <PieChart />
+                Filtros y totales
+              </Link>
+            </Button>
+            <Button
+              variant="outline"
+              size="icon-sm"
+              onClick={() => setShowMenu(!showMenu)}
+              aria-label="Opciones del grupo"
+              aria-expanded={showMenu}
+            >
+              <MoreHorizontal />
+            </Button>
+
+            {/* Menu */}
+            {showMenu && (
+              <div className="absolute top-full left-0 z-30 mt-2 w-64 sm:right-0 sm:left-auto rounded-2xl border bg-popover p-2 text-popover-foreground shadow-lift">
+                <Link
+                  to={`/grupos/${groupId}/participantes`}
+                  className="block rounded-xl px-3 py-2 text-sm hover:bg-muted"
+                >
+                  Participantes
+                </Link>
+                <button
+                  onClick={() => {
+                    void shareInviteCode(g.name, g.inviteCode);
+                    setShowMenu(false);
+                  }}
+                  className="block w-full rounded-xl px-3 py-2 text-left text-sm hover:bg-muted"
+                >
+                  Compartir código de invitación ({g.inviteCode})
+                </button>
+                {!g.archivedAt && (
+                  <button
+                    onClick={() => {
+                      setNewName(g.name);
+                      setRenaming(true);
+                      setShowMenu(false);
+                    }}
+                    className="block w-full rounded-xl px-3 py-2 text-left text-sm hover:bg-muted"
+                  >
+                    Renombrar grupo
+                  </button>
+                )}
+                {!g.archivedAt ? (
+                  <button
+                    onClick={async () => {
+                      setShowMenu(false);
+                      const ok = await confirm({
+                        title: '¿Archivar este grupo?',
+                        description: 'Se puede ver pero no modificar hasta desarchivarlo.',
+                        confirmLabel: 'Archivar',
+                      });
+                      if (ok) setArchived.mutate({ groupId: groupId!, archived: true });
+                    }}
+                    className="block w-full rounded-xl px-3 py-2 text-left text-sm text-muted-foreground hover:bg-muted"
+                  >
+                    Archivar grupo
+                  </button>
+                ) : (
+                  <button
+                    onClick={() => {
+                      setArchived.mutate({ groupId: groupId!, archived: false });
+                      setShowMenu(false);
+                    }}
+                    className="block w-full rounded-xl px-3 py-2 text-left text-sm hover:bg-muted"
+                  >
+                    Desarchivar grupo
+                  </button>
+                )}
+              </div>
+            )}
+          </div>
+        </div>
       </div>
 
-      {/* Menu */}
-      {showMenu && (
-        <div className="mx-4 mb-2 rounded-2xl border border-border bg-card p-2 shadow-sm">
-          <Link
-            to={`/grupos/${groupId}/participantes`}
-            className="block rounded-xl px-3 py-2 text-sm hover:bg-accent"
-          >
-            Participantes
-          </Link>
-          <button
-            onClick={() => {
-              void shareInviteCode(g.name, g.inviteCode);
-              setShowMenu(false);
-            }}
-            className="block w-full rounded-xl px-3 py-2 text-left text-sm hover:bg-accent"
-          >
-            Compartir código de invitación ({g.inviteCode})
-          </button>
-          {!g.archivedAt && (
-            <button
-              onClick={() => {
-                setNewName(g.name);
-                setRenaming(true);
-                setShowMenu(false);
-              }}
-              className="block w-full rounded-xl px-3 py-2 text-left text-sm hover:bg-accent"
-            >
-              Renombrar grupo
-            </button>
+      {g.archivedAt && <ArchivedNotice groupId={g.id} />}
+
+      <div className="grid grid-cols-[minmax(0,1fr)] gap-6 lg:grid-cols-[minmax(0,380px)_minmax(0,1fr)] lg:items-start">
+        {/* Saldos: column on the side on wide screens */}
+        <div className="space-y-6 lg:sticky lg:top-10">
+          {balances.isPending && <BalancesSkeleton />}
+          {balances.isError && (
+            <ErrorState message={balances.error.message} onRetry={() => balances.refetch()} />
           )}
-          {!g.archivedAt ? (
-            <button
-              onClick={async () => {
-                setShowMenu(false);
-                const ok = await confirm({
-                  title: '¿Archivar este grupo?',
-                  description: 'Se puede ver pero no modificar hasta desarchivarlo.',
-                  confirmLabel: 'Archivar',
-                });
-                if (ok) setArchived.mutate({ groupId: groupId!, archived: true });
-              }}
-              className="block w-full rounded-xl px-3 py-2 text-left text-sm text-muted-foreground hover:bg-accent"
-            >
-              Archivar grupo
-            </button>
-          ) : (
-            <button
-              onClick={() => {
-                setArchived.mutate({ groupId: groupId!, archived: false });
-                setShowMenu(false);
-              }}
-              className="block w-full rounded-xl px-3 py-2 text-left text-sm hover:bg-accent"
-            >
-              Desarchivar grupo
-            </button>
+          {balances.isSuccess && balances.data.length > 0 && (
+            <>
+              <MySituation group={g} balances={balances.data} />
+              <BalanceSection group={g} balances={balances.data} />
+            </>
           )}
-        </div>
-      )}
-
-      <div className="space-y-6 px-4">
-        {g.archivedAt && <ArchivedNotice groupId={g.id} />}
-
-        {/* Saldos */}
-        {balances.isPending && <BalancesSkeleton />}
-        {balances.isError && (
-          <ErrorState message={balances.error.message} onRetry={() => balances.refetch()} />
-        )}
-        {balances.isSuccess && balances.data.length > 0 && (
-          <BalanceSection group={g} balances={balances.data} />
-        )}
-        {balances.isSuccess && balances.data.length === 0 && (
-          <p className="text-sm text-muted-foreground">Sin saldos todavía.</p>
-        )}
-
-        {/* Links de acción */}
-        <div className="flex gap-2">
-          <Link
-            to={`/grupos/${groupId}/pagos`}
-            {...prefetchOn(() => prefetch.settlements(groupId!))}
-            className="flex-1 rounded-xl border border-border py-2 text-center text-sm text-foreground"
-          >
-            Pagos
-          </Link>
-          <Link
-            to={`/grupos/${groupId}/filtros`}
-            {...prefetchOn(() => prefetch.filters(groupId!))}
-            className="flex-1 rounded-xl border border-border py-2 text-center text-sm text-foreground"
-          >
-            Filtros y totales
-          </Link>
+          {balances.isSuccess && balances.data.length === 0 && (
+            <Card className="text-sm text-muted-foreground">Sin saldos todavía.</Card>
+          )}
         </div>
 
         {/* Lista de gastos */}
         <div>
-          <h2 className="mb-3 font-semibold">Gastos</h2>
+          <div className="flex items-center justify-between">
+            <SectionTitle>Gastos</SectionTitle>
+            {!g.archivedAt && (
+              <Button asChild className="hidden lg:inline-flex">
+                <Link to={`/grupos/${groupId}/gastos/nuevo`}>
+                  <Plus />
+                  Agregar gasto
+                </Link>
+              </Button>
+            )}
+          </div>
 
-          {expenses.isPending && <ExpenseListSkeleton />}
+          {expenses.isPending && (
+            <div className="mt-3">
+              <ExpenseListSkeleton />
+            </div>
+          )}
           {expenses.isError && (
             <ErrorState message={expenses.error.message} onRetry={() => expenses.refetch()} />
           )}
 
           {expenses.isSuccess && allExpenses.length === 0 && (
-            <p className="py-6 text-center text-sm text-muted-foreground">
-              Todavía no hay gastos.{' '}
+            <Card className="mt-3 text-center text-sm text-muted-foreground">
+              <p>Todavía no hay gastos.</p>
               {!g.archivedAt && (
-                <Link to={`/grupos/${groupId}/gastos/nuevo`} className="underline">
+                <Link
+                  to={`/grupos/${groupId}/gastos/nuevo`}
+                  className="mt-1 inline-block font-semibold text-primary hover:underline"
+                >
                   Agregar uno
                 </Link>
               )}
-            </p>
+            </Card>
           )}
 
-          <ul className="space-y-2">
-            {allExpenses.map((expense) => {
-              const myShare = expense.splits.find((s) => s.participantId === g.myParticipantId);
-              const saving = isTemp(expense.id);
-              const content = (
-                <>
-                  <div className="min-w-0 flex-1">
-                    <p className="truncate font-medium">{expense.description}</p>
-                    <p className="text-xs text-muted-foreground">
-                      {saving
-                        ? 'Guardando…'
-                        : `${categoryLabels[expense.category as keyof typeof categoryLabels]} · ${expense.paidBy.name} · ${formatDate(expense.date)}`}
-                    </p>
-                  </div>
-                  <div className="ml-3 text-right">
-                    <p className="font-semibold">
-                      {formatCents(expense.amountCents, expense.currency)}
-                    </p>
-                    {myShare && (
-                      <p className="text-xs text-muted-foreground">
-                        vos: {formatCents(myShare.amountCents, expense.currency)}
-                      </p>
-                    )}
-                  </div>
-                </>
-              );
-              return (
-                <li key={expense.id}>
-                  {saving ? (
-                    <div
-                      aria-busy="true"
-                      className="flex items-center justify-between rounded-2xl bg-card p-3 opacity-60"
-                    >
-                      {content}
-                    </div>
-                  ) : (
-                    <Link
-                      to={`/grupos/${groupId}/gastos/${expense.id}`}
-                      // Preload: the list already has the whole expense, so its detail opens instantly.
-                      onClick={() =>
-                        queryClient.setQueryData(
-                          trpc.expenses.get.queryKey({ expenseId: expense.id }),
-                          (cached) => cached ?? expense,
-                        )
-                      }
-                      className="flex items-center justify-between rounded-2xl bg-card p-3 active:bg-accent"
-                    >
-                      {content}
-                    </Link>
-                  )}
-                </li>
-              );
-            })}
-          </ul>
+          {days.map(({ day, items }) => (
+            <section key={day} className="mt-5">
+              <p className="mb-2 text-xs font-semibold tracking-wider text-muted-foreground uppercase">
+                {day}
+              </p>
+              <ul className="overflow-hidden rounded-2xl border bg-card shadow-soft">
+                {items.map((expense) => {
+                  const myShare = expense.splits.find((s) => s.participantId === g.myParticipantId);
+                  const saving = isTemp(expense.id);
+                  const content = (
+                    <>
+                      <CategoryIcon category={expense.category as ExpenseCategory} />
+                      <div className="min-w-0 flex-1">
+                        <p className="truncate font-medium">{expense.description}</p>
+                        <p className="truncate text-sm text-muted-foreground">
+                          {saving
+                            ? 'Guardando…'
+                            : `${categoryLabels[expense.category as ExpenseCategory]} · Pagó ${expense.paidBy.name}`}
+                        </p>
+                      </div>
+                      <div className="text-right">
+                        <p className="font-semibold tabular">
+                          {formatCents(expense.amountCents, expense.currency)}
+                        </p>
+                        {myShare ? (
+                          <p className="text-xs text-muted-foreground tabular">
+                            vos: {formatCents(myShare.amountCents, expense.currency)}
+                          </p>
+                        ) : (
+                          <p className="text-xs text-muted-foreground">no participás</p>
+                        )}
+                      </div>
+                    </>
+                  );
+                  return (
+                    <li key={expense.id} className="border-b last:border-0">
+                      {saving ? (
+                        <div aria-busy="true" className="flex items-center gap-3 p-4 opacity-60">
+                          {content}
+                        </div>
+                      ) : (
+                        <Link
+                          to={`/grupos/${groupId}/gastos/${expense.id}`}
+                          // Preload: the list already has the whole expense, so its detail opens instantly.
+                          onClick={() =>
+                            queryClient.setQueryData(
+                              trpc.expenses.get.queryKey({ expenseId: expense.id }),
+                              (cached) => cached ?? expense,
+                            )
+                          }
+                          className="flex items-center gap-3 p-4 transition-colors hover:bg-muted/60"
+                        >
+                          {content}
+                        </Link>
+                      )}
+                    </li>
+                  );
+                })}
+              </ul>
+            </section>
+          ))}
 
           <LoadMore
             hasMore={expenses.hasNextPage}
@@ -419,17 +521,16 @@ export function GroupDetail() {
         </div>
       </div>
 
-      {/* FAB */}
+      {/* Floating "Agregar gasto" on phones (on wide screens it's next to "Gastos") */}
       {!g.archivedAt && (
-        <div className="fixed bottom-6 left-0 right-0 flex justify-center">
-          <Link
-            to={`/grupos/${groupId}/gastos/nuevo`}
-            className="rounded-full bg-primary px-6 py-3 font-medium text-primary-foreground shadow-lg"
-          >
-            + Agregar gasto
-          </Link>
-        </div>
+        <Link
+          to={`/grupos/${groupId}/gastos/nuevo`}
+          className="press fixed bottom-safe left-1/2 z-30 flex h-14 -translate-x-1/2 items-center gap-2 rounded-full bg-primary px-7 font-semibold text-primary-foreground shadow-lift lg:hidden"
+        >
+          <Plus className="size-5" />
+          Agregar gasto
+        </Link>
       )}
-    </main>
+    </Page>
   );
 }

@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useLocation, useNavigate, useParams } from 'react-router';
 import { toast } from 'sonner';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { ArrowLeft } from 'lucide-react';
 import type { inferRouterOutputs } from '@trpc/server';
 import type { AppRouter } from '@kachingga/api';
 import { currencies, distributeCents, expenseCategories } from '@kachingga/api/schemas';
@@ -273,18 +274,27 @@ function ExpenseFormBody({ groupId, group, expenseId, expense }: FormProps) {
   );
 
   return (
-    <main className="mx-auto min-h-dvh max-w-md p-6 pb-12">
-      <div className="mb-6 flex items-center gap-3">
-        <button onClick={() => navigate(-1)} aria-label="Volver" className="text-muted-foreground">
-          ←
+    <div className="mx-auto w-full max-w-2xl space-y-6">
+      <div className="rise flex items-center gap-3">
+        <button
+          onClick={() => navigate(-1)}
+          aria-label="Volver"
+          className="press grid size-9 shrink-0 place-items-center rounded-full text-lg text-muted-foreground hover:bg-muted"
+        >
+          <ArrowLeft className="size-5" />
         </button>
-        <h1 className="text-xl font-bold">{isEdit ? 'Editar gasto' : 'Agregar gasto'}</h1>
+        <h1 className="text-2xl font-bold lg:text-3xl">
+          {isEdit ? 'Editar gasto' : 'Agregar gasto'}
+        </h1>
       </div>
 
-      <form onSubmit={handleSubmit} className="space-y-5">
+      <form
+        onSubmit={handleSubmit}
+        className="rise space-y-5 rounded-2xl border bg-card p-5 shadow-soft"
+      >
         {/* Monto */}
         <div>
-          <label className="block text-sm font-medium text-muted-foreground" htmlFor="amount">
+          <label className="block text-sm font-medium text-foreground" htmlFor="amount">
             Monto
           </label>
           <NumberInput
@@ -293,13 +303,13 @@ function ExpenseFormBody({ groupId, group, expenseId, expense }: FormProps) {
             onValueChange={setAmountInput}
             required
             placeholder="0"
-            className="mt-1 w-full rounded-lg border border-input bg-card px-3 py-2 text-base text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+            className="mt-1.5 h-14 font-display text-3xl font-bold tabular w-full rounded-xl border border-input bg-card px-3.5 text-foreground placeholder:text-muted-foreground outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 disabled:opacity-50 dark:bg-input/30"
           />
         </div>
 
         {/* Descripción */}
         <div>
-          <label className="block text-sm font-medium text-muted-foreground" htmlFor="description">
+          <label className="block text-sm font-medium text-foreground" htmlFor="description">
             Descripción
           </label>
           <input
@@ -308,21 +318,21 @@ function ExpenseFormBody({ groupId, group, expenseId, expense }: FormProps) {
             onChange={(e) => setDescription(e.target.value)}
             required
             placeholder="Cena"
-            className="mt-1 w-full rounded-lg border border-input bg-card px-3 py-2 text-base text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+            className="mt-1.5 h-11 w-full rounded-xl border border-input bg-card px-3.5 text-base text-foreground placeholder:text-muted-foreground outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 disabled:opacity-50 dark:bg-input/30"
           />
         </div>
 
         {/* Categoría y fecha */}
-        <div className="grid grid-cols-2 gap-3">
+        <div className="grid grid-cols-2 gap-3 [&>*]:min-w-0">
           <div>
-            <label className="block text-sm font-medium text-muted-foreground" htmlFor="category">
+            <label className="block text-sm font-medium text-foreground" htmlFor="category">
               Categoría
             </label>
             <select
               id="category"
               value={category}
               onChange={(e) => setCategory(e.target.value as ExpenseCategory)}
-              className="mt-1 w-full rounded-lg border border-input bg-card px-3 py-2 text-base text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+              className="mt-1.5 h-11 w-full rounded-xl border border-input bg-card px-3.5 text-base text-foreground placeholder:text-muted-foreground outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 disabled:opacity-50 dark:bg-input/30"
             >
               {expenseCategories.map((c) => (
                 <option key={c} value={c}>
@@ -333,7 +343,7 @@ function ExpenseFormBody({ groupId, group, expenseId, expense }: FormProps) {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-muted-foreground" htmlFor="date">
+            <label className="block text-sm font-medium text-foreground" htmlFor="date">
               Fecha
             </label>
             <input
@@ -342,21 +352,21 @@ function ExpenseFormBody({ groupId, group, expenseId, expense }: FormProps) {
               value={dateInput}
               onChange={(e) => setDateInput(e.target.value)}
               required
-              className="mt-1 w-full rounded-lg border border-input bg-card px-3 py-2 text-base text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+              className="mt-1.5 h-11 w-full rounded-xl border border-input bg-card px-3.5 text-base text-foreground placeholder:text-muted-foreground outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 disabled:opacity-50 dark:bg-input/30"
             />
           </div>
         </div>
 
         {/* Quién pagó */}
         <div>
-          <label className="block text-sm font-medium text-muted-foreground" htmlFor="paidBy">
+          <label className="block text-sm font-medium text-foreground" htmlFor="paidBy">
             Quién pagó
           </label>
           <select
             id="paidBy"
             value={paidById}
             onChange={(e) => setPaidById(e.target.value)}
-            className="mt-1 w-full rounded-lg border border-input bg-card px-3 py-2 text-base text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+            className="mt-1.5 h-11 w-full rounded-xl border border-input bg-card px-3.5 text-base text-foreground placeholder:text-muted-foreground outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 disabled:opacity-50 dark:bg-input/30"
           >
             {participants.map((p) => (
               <option key={p.id} value={p.id}>
@@ -369,7 +379,7 @@ function ExpenseFormBody({ groupId, group, expenseId, expense }: FormProps) {
 
         {/* Moneda */}
         <div>
-          <label className="block text-sm font-medium text-muted-foreground" htmlFor="currency">
+          <label className="block text-sm font-medium text-foreground" htmlFor="currency">
             Moneda
           </label>
           <select
@@ -380,7 +390,7 @@ function ExpenseFormBody({ groupId, group, expenseId, expense }: FormProps) {
               setCurrency(c);
               rate.resetFor(c);
             }}
-            className="mt-1 w-full rounded-lg border border-input bg-card px-3 py-2 text-base text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+            className="mt-1.5 h-11 w-full rounded-xl border border-input bg-card px-3.5 text-base text-foreground placeholder:text-muted-foreground outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 disabled:opacity-50 dark:bg-input/30"
           >
             {currencies.map((c) => (
               <option key={c} value={c}>
@@ -394,14 +404,14 @@ function ExpenseFormBody({ groupId, group, expenseId, expense }: FormProps) {
 
         {/* División */}
         <div>
-          <label className="block text-sm font-medium text-muted-foreground">Dividir</label>
+          <label className="block text-sm font-medium text-foreground">Dividir</label>
           <div className="mt-1 flex gap-2">
             {(['EQUAL', 'AMOUNT', 'PERCENTAGE'] as const).map((t) => (
               <button
                 key={t}
                 type="button"
                 onClick={() => setSplitType(t)}
-                className={`flex-1 rounded-lg py-2 text-sm ${splitType === t ? 'bg-primary text-primary-foreground' : 'border border-input text-muted-foreground'}`}
+                className={`press flex-1 rounded-full py-2 text-sm font-medium ${splitType === t ? 'bg-primary text-primary-foreground' : 'border border-input bg-card text-muted-foreground'}`}
               >
                 {t === 'EQUAL' ? 'Igual' : t === 'AMOUNT' ? 'Por monto' : 'Por %'}
               </button>
@@ -414,6 +424,7 @@ function ExpenseFormBody({ groupId, group, expenseId, expense }: FormProps) {
                 <label key={p.id} className="flex items-center gap-3">
                   <input
                     type="checkbox"
+                    className="size-4 accent-primary"
                     checked={equalIds.includes(p.id)}
                     onChange={(e) =>
                       setEqualIds(
@@ -450,12 +461,12 @@ function ExpenseFormBody({ groupId, group, expenseId, expense }: FormProps) {
                     value={amountShares[p.id] ?? ''}
                     onValueChange={(v) => setAmountShares({ ...amountShares, [p.id]: v })}
                     placeholder="0"
-                    className="w-24 rounded-lg border border-input bg-card px-2 py-1 text-right text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+                    className="w-24 text-right h-11 rounded-xl border border-input bg-card px-3.5 text-base text-foreground placeholder:text-muted-foreground outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 disabled:opacity-50 dark:bg-input/30"
                   />
                 </div>
               ))}
               <p
-                className={`text-xs ${amountSumCents === totalCents ? 'text-green-600 dark:text-green-400' : 'text-muted-foreground'}`}
+                className={`text-xs ${amountSumCents === totalCents ? 'text-positive' : 'text-muted-foreground'}`}
               >
                 Suma: {formatCents(amountSumCents, currency)} / {formatCents(totalCents, currency)}
                 {amountSumCents !== totalCents &&
@@ -478,14 +489,14 @@ function ExpenseFormBody({ groupId, group, expenseId, expense }: FormProps) {
                       value={percentShares[p.id] ?? ''}
                       onValueChange={(v) => setPercentShares({ ...percentShares, [p.id]: v })}
                       placeholder="0"
-                      className="w-20 rounded-lg border border-input bg-card px-2 py-1 text-right text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+                      className="w-20 text-right h-11 rounded-xl border border-input bg-card px-3.5 text-base text-foreground placeholder:text-muted-foreground outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 disabled:opacity-50 dark:bg-input/30"
                     />
                     <span className="text-sm text-muted-foreground">%</span>
                   </div>
                 </div>
               ))}
               <p
-                className={`text-xs ${Math.abs(percentSum - 100) < 0.01 ? 'text-green-600 dark:text-green-400' : 'text-muted-foreground'}`}
+                className={`text-xs ${Math.abs(percentSum - 100) < 0.01 ? 'text-positive' : 'text-muted-foreground'}`}
               >
                 Total: {formatNumber(percentSum, 2)}% / 100%
                 {Math.abs(percentSum - 100) >= 0.01 &&
@@ -500,12 +511,12 @@ function ExpenseFormBody({ groupId, group, expenseId, expense }: FormProps) {
         <button
           type="submit"
           disabled={isSaving}
-          className="w-full rounded-lg bg-primary py-3 font-medium text-primary-foreground disabled:opacity-50"
+          className="press h-12 w-full rounded-full bg-primary text-base font-semibold text-primary-foreground shadow-soft disabled:opacity-50"
         >
           {isSaving ? 'Guardando…' : isEdit ? 'Guardar cambios' : 'Agregar gasto'}
         </button>
       </form>
-    </main>
+    </div>
   );
 }
 
@@ -535,27 +546,27 @@ export function ExpenseForm() {
   }
   if (group.isError) {
     return (
-      <main className="p-6">
+      <div className="p-6">
         <ErrorState message={group.error.message} onRetry={() => group.refetch()} />
-      </main>
+      </div>
     );
   }
   if (isEdit && expense.isError) {
     return (
-      <main className="p-6">
+      <div className="p-6">
         <ErrorState message={expense.error.message} onRetry={() => expense.refetch()} />
-      </main>
+      </div>
     );
   }
 
   if (group.data.archivedAt) {
     return (
-      <main className="mx-auto min-h-dvh max-w-md space-y-4 p-6">
+      <div className="mx-auto w-full max-w-2xl space-y-6">
         <ArchivedNotice groupId={groupId!} />
         <button onClick={() => navigate(-1)} className="text-sm text-muted-foreground underline">
           Volver
         </button>
-      </main>
+      </div>
     );
   }
 

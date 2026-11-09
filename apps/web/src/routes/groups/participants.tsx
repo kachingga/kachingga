@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useNavigate, useParams } from 'react-router';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { ArrowLeft } from 'lucide-react';
 
 import { ArchivedNotice } from '@/components/archived-notice';
 import { ErrorState } from '@/components/error-state';
@@ -70,9 +71,9 @@ export function Participants() {
   if (group.isPending) return <ListScreenSkeleton />;
   if (group.isError) {
     return (
-      <main className="p-6">
+      <div className="p-6">
         <ErrorState message={group.error.message} onRetry={() => group.refetch()} />
-      </main>
+      </div>
     );
   }
 
@@ -81,12 +82,16 @@ export function Participants() {
   const myId = g.myParticipantId;
 
   return (
-    <main className="mx-auto min-h-dvh max-w-md p-6">
-      <div className="mb-6 flex items-center gap-3">
-        <button onClick={() => navigate(-1)} aria-label="Volver" className="text-muted-foreground">
-          ←
+    <div className="mx-auto w-full max-w-2xl space-y-6">
+      <div className="rise flex items-center gap-3">
+        <button
+          onClick={() => navigate(-1)}
+          aria-label="Volver"
+          className="press grid size-9 shrink-0 place-items-center rounded-full text-lg text-muted-foreground hover:bg-muted"
+        >
+          <ArrowLeft className="size-5" />
         </button>
-        <h1 className="text-xl font-bold">Participantes</h1>
+        <h1 className="text-2xl font-bold lg:text-3xl">Participantes</h1>
       </div>
 
       {isArchived && (
@@ -96,7 +101,7 @@ export function Participants() {
       )}
 
       {/* Código de invitación */}
-      <div className="mb-6 rounded-2xl bg-card p-4">
+      <div className="rise rounded-2xl border bg-card p-5 shadow-soft">
         <p className="mb-1 text-sm font-medium text-muted-foreground">Código de invitación</p>
         {showCode ? (
           <div className="space-y-2">
@@ -106,7 +111,7 @@ export function Participants() {
             <div className="flex gap-2">
               <button
                 onClick={() => void shareInviteCode(g.name, g.inviteCode)}
-                className="flex-1 rounded-lg border border-input py-2 text-sm text-foreground"
+                className="press flex-1 rounded-full border border-input py-2 text-sm text-foreground bg-card"
               >
                 Compartir código
               </button>
@@ -121,7 +126,7 @@ export function Participants() {
                     if (ok) regenerateCode.mutate({ groupId: groupId! });
                   }}
                   disabled={regenerateCode.isPending}
-                  className="flex-1 rounded-lg border border-input py-2 text-sm text-muted-foreground disabled:opacity-50"
+                  className="press flex-1 rounded-full border border-input py-2 text-sm text-muted-foreground disabled:opacity-50 bg-card"
                 >
                   Regenerar
                 </button>
@@ -158,7 +163,7 @@ export function Participants() {
                     value={renameValue}
                     onChange={(e) => setRenameValue(e.target.value)}
                     autoFocus
-                    className="flex-1 rounded-lg border border-input bg-muted px-2 py-1 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+                    className="flex-1 h-11 rounded-xl border border-input bg-card px-3.5 text-base text-foreground placeholder:text-muted-foreground outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 disabled:opacity-50 dark:bg-input/30"
                   />
                   <button type="submit" disabled={rename.isPending} className="text-sm font-medium">
                     OK
@@ -199,7 +204,7 @@ export function Participants() {
                           onChange={(e) => setAliasValue(e.target.value)}
                           placeholder="alias o CBU"
                           autoFocus
-                          className="flex-1 rounded-lg border border-input bg-muted px-2 py-1 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+                          className="flex-1 h-11 rounded-xl border border-input bg-card px-3.5 text-base text-foreground placeholder:text-muted-foreground outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 disabled:opacity-50 dark:bg-input/30"
                         />
                         <button
                           type="submit"
@@ -293,13 +298,13 @@ export function Participants() {
             required
             placeholder="Nombre (sin cuenta)"
             aria-label="Nombre de la persona sin cuenta"
-            className="flex-1 rounded-lg border border-input bg-card px-3 py-2 text-base text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+            className="flex-1 h-11 rounded-xl border border-input bg-card px-3.5 text-base text-foreground placeholder:text-muted-foreground outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 disabled:opacity-50 dark:bg-input/30"
           />
           <button
             type="submit"
             aria-label="Agregar persona"
             disabled={addParticipant.isPending}
-            className="rounded-lg bg-primary px-4 py-2 font-medium text-primary-foreground disabled:opacity-50"
+            className="press rounded-full bg-primary px-4 py-2 font-semibold text-primary-foreground disabled:opacity-50 shadow-soft"
           >
             +
           </button>
@@ -307,6 +312,6 @@ export function Participants() {
       )}
 
       {error && <p className="mt-2 text-sm text-destructive">{error}</p>}
-    </main>
+    </div>
   );
 }

@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router';
 import { useMutation } from '@tanstack/react-query';
+import { ArrowLeft } from 'lucide-react';
 
 import { currencies } from '@kachingga/api/schemas';
 import { shareInviteCode } from '@/lib/share';
@@ -31,39 +32,43 @@ export function CreateGroup() {
 
   if (created) {
     return (
-      <main className="mx-auto flex min-h-dvh max-w-md flex-col justify-center p-6">
-        <h2 className="mb-2 text-xl font-bold">Grupo creado</h2>
-        <p className="mb-6 text-muted-foreground">Compartí este código para que otros se unan:</p>
+      <div className="mx-auto w-full max-w-2xl space-y-6 flex min-h-[60dvh] flex-col justify-center">
+        <h2 className="text-3xl font-bold">Grupo creado</h2>
+        <p className="-mt-3 text-muted-foreground">Compartí este código para que otros se unan:</p>
 
-        <div className="mb-6 rounded-2xl bg-card p-6 text-center">
-          <p className="font-mono text-3xl font-bold tracking-widest">{created.inviteCode}</p>
+        <div className="rounded-3xl bg-hero p-8 text-center text-primary-foreground shadow-lift dark:text-foreground">
+          <p className="font-mono text-4xl font-bold tracking-widest">{created.inviteCode}</p>
         </div>
 
         <div className="flex gap-2">
           <button
             onClick={() => void shareInviteCode(created.name, created.inviteCode)}
-            className="flex-1 rounded-lg border border-input py-3 font-medium text-foreground"
+            className="press flex-1 rounded-full border border-input py-3 font-semibold text-foreground bg-card"
           >
             Compartir código
           </button>
           <button
             onClick={() => navigate(`/grupos/${created.id}`)}
-            className="flex-1 rounded-lg bg-primary py-3 font-medium text-primary-foreground"
+            className="press flex-1 rounded-full bg-primary py-3 font-semibold text-primary-foreground shadow-soft"
           >
             Ir al grupo
           </button>
         </div>
-      </main>
+      </div>
     );
   }
 
   return (
-    <main className="mx-auto min-h-dvh max-w-md p-6">
-      <div className="mb-6 flex items-center gap-3">
-        <button onClick={() => navigate(-1)} aria-label="Volver" className="text-muted-foreground">
-          ←
+    <div className="mx-auto w-full max-w-2xl space-y-6">
+      <div className="rise flex items-center gap-3">
+        <button
+          onClick={() => navigate(-1)}
+          aria-label="Volver"
+          className="press grid size-9 shrink-0 place-items-center rounded-full text-lg text-muted-foreground hover:bg-muted"
+        >
+          <ArrowLeft className="size-5" />
         </button>
-        <h1 className="text-xl font-bold">Crear grupo</h1>
+        <h1 className="text-2xl font-bold lg:text-3xl">Crear grupo</h1>
       </div>
 
       <form
@@ -72,10 +77,10 @@ export function CreateGroup() {
           setError(null);
           createGroup.mutate({ name, baseCurrency, myName });
         }}
-        className="space-y-4"
+        className="rise rounded-2xl border bg-card p-5 shadow-soft space-y-4"
       >
         <div>
-          <label className="block text-sm font-medium text-muted-foreground" htmlFor="name">
+          <label className="block text-sm font-medium text-foreground" htmlFor="name">
             Nombre del grupo
           </label>
           <input
@@ -84,19 +89,19 @@ export function CreateGroup() {
             onChange={(e) => setName(e.target.value)}
             required
             placeholder="Viaje a Bariloche"
-            className="mt-1 w-full rounded-lg border border-input bg-card px-3 py-2 text-base text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+            className="mt-1.5 h-11 w-full rounded-xl border border-input bg-card px-3.5 text-base text-foreground placeholder:text-muted-foreground outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 disabled:opacity-50 dark:bg-input/30"
           />
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-muted-foreground" htmlFor="currency">
+          <label className="block text-sm font-medium text-foreground" htmlFor="currency">
             Moneda base
           </label>
           <select
             id="currency"
             value={baseCurrency}
             onChange={(e) => setBaseCurrency(e.target.value as Currency)}
-            className="mt-1 w-full rounded-lg border border-input bg-card px-3 py-2 text-base text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+            className="mt-1.5 h-11 w-full rounded-xl border border-input bg-card px-3.5 text-base text-foreground placeholder:text-muted-foreground outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 disabled:opacity-50 dark:bg-input/30"
           >
             {currencies.map((c) => (
               <option key={c} value={c}>
@@ -107,7 +112,7 @@ export function CreateGroup() {
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-muted-foreground" htmlFor="myName">
+          <label className="block text-sm font-medium text-foreground" htmlFor="myName">
             ¿Cómo te llamás en este grupo?
           </label>
           <input
@@ -116,7 +121,7 @@ export function CreateGroup() {
             onChange={(e) => setMyName(e.target.value)}
             required
             placeholder="Juan"
-            className="mt-1 w-full rounded-lg border border-input bg-card px-3 py-2 text-base text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+            className="mt-1.5 h-11 w-full rounded-xl border border-input bg-card px-3.5 text-base text-foreground placeholder:text-muted-foreground outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 disabled:opacity-50 dark:bg-input/30"
           />
         </div>
 
@@ -125,11 +130,11 @@ export function CreateGroup() {
         <button
           type="submit"
           disabled={createGroup.isPending}
-          className="w-full rounded-lg bg-primary py-3 font-medium text-primary-foreground disabled:opacity-50"
+          className="press w-full rounded-full bg-primary py-3 font-semibold text-primary-foreground disabled:opacity-50 shadow-soft"
         >
           {createGroup.isPending ? 'Creando…' : 'Crear grupo'}
         </button>
       </form>
-    </main>
+    </div>
   );
 }

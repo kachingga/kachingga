@@ -199,7 +199,7 @@ describe('GroupDetail', () => {
     });
     expect(await screen.findByText('Grupo archivado.')).toBeInTheDocument();
     expect(await screen.findByText(/Te deben/)).toBeInTheDocument();
-    expect(screen.queryByRole('link', { name: '+ Agregar gasto' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('link', { name: 'Agregar gasto' })).not.toBeInTheDocument();
     expect(screen.queryByRole('link', { name: 'Agregar uno' })).not.toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'Marcar como pagado' })).not.toBeInTheDocument();
 

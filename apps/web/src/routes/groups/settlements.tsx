@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useNavigate, useParams, useSearchParams } from 'react-router';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
+import { ArrowLeft } from 'lucide-react';
 
 import type { inferRouterOutputs } from '@trpc/server';
 import type { AppRouter } from '@kachingga/api';
@@ -177,12 +178,16 @@ function SettlementsBody({ groupId, group }: { groupId: string; group: GroupData
   const isArchived = !!group.archivedAt;
 
   return (
-    <main className="mx-auto min-h-dvh max-w-md p-6">
-      <div className="mb-6 flex items-center gap-3">
-        <button onClick={() => navigate(-1)} aria-label="Volver" className="text-muted-foreground">
-          ←
+    <div className="mx-auto w-full max-w-2xl space-y-6">
+      <div className="rise flex items-center gap-3">
+        <button
+          onClick={() => navigate(-1)}
+          aria-label="Volver"
+          className="press grid size-9 shrink-0 place-items-center rounded-full text-lg text-muted-foreground hover:bg-muted"
+        >
+          <ArrowLeft className="size-5" />
         </button>
-        <h1 className="text-xl font-bold">Pagos</h1>
+        <h1 className="text-2xl font-bold lg:text-3xl">Pagos</h1>
       </div>
 
       {isArchived && (
@@ -202,12 +207,15 @@ function SettlementsBody({ groupId, group }: { groupId: string; group: GroupData
               + Registrar pago
             </button>
           ) : (
-            <form onSubmit={handleSubmit} className="space-y-4 rounded-2xl bg-card p-4">
+            <form
+              onSubmit={handleSubmit}
+              className="space-y-4 rounded-2xl border bg-card p-5 shadow-soft"
+            >
               <h2 className="font-semibold">Registrar pago</h2>
 
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-2 gap-3 [&>*]:min-w-0">
                 <div>
-                  <label className="block text-sm font-medium text-muted-foreground" htmlFor="from">
+                  <label className="block text-sm font-medium text-foreground" htmlFor="from">
                     Quién pagó
                   </label>
                   <select
@@ -215,7 +223,7 @@ function SettlementsBody({ groupId, group }: { groupId: string; group: GroupData
                     value={fromId}
                     onChange={(e) => setFromId(e.target.value)}
                     required
-                    className="mt-1 w-full rounded-lg border border-input bg-muted px-2 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+                    className="mt-1.5 h-11 w-full rounded-xl border border-input bg-card px-3.5 text-base text-foreground placeholder:text-muted-foreground outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 disabled:opacity-50 dark:bg-input/30"
                   >
                     <option value="">Elegir…</option>
                     {participants.map((p) => (
@@ -228,7 +236,7 @@ function SettlementsBody({ groupId, group }: { groupId: string; group: GroupData
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-muted-foreground" htmlFor="to">
+                  <label className="block text-sm font-medium text-foreground" htmlFor="to">
                     A quién
                   </label>
                   <select
@@ -236,7 +244,7 @@ function SettlementsBody({ groupId, group }: { groupId: string; group: GroupData
                     value={toId}
                     onChange={(e) => setToId(e.target.value)}
                     required
-                    className="mt-1 w-full rounded-lg border border-input bg-muted px-2 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+                    className="mt-1.5 h-11 w-full rounded-xl border border-input bg-card px-3.5 text-base text-foreground placeholder:text-muted-foreground outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 disabled:opacity-50 dark:bg-input/30"
                   >
                     <option value="">Elegir…</option>
                     {participants.map((p) => (
@@ -249,12 +257,9 @@ function SettlementsBody({ groupId, group }: { groupId: string; group: GroupData
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-2 gap-3 [&>*]:min-w-0">
                 <div>
-                  <label
-                    className="block text-sm font-medium text-muted-foreground"
-                    htmlFor="amount"
-                  >
+                  <label className="block text-sm font-medium text-foreground" htmlFor="amount">
                     Monto
                   </label>
                   <NumberInput
@@ -263,13 +268,13 @@ function SettlementsBody({ groupId, group }: { groupId: string; group: GroupData
                     onValueChange={setAmountInput}
                     required
                     placeholder="0"
-                    className="mt-1 w-full rounded-lg border border-input bg-muted px-3 py-2 text-base text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+                    className="mt-1.5 h-11 w-full rounded-xl border border-input bg-card px-3.5 text-base text-foreground placeholder:text-muted-foreground outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 disabled:opacity-50 dark:bg-input/30"
                   />
                 </div>
 
                 <div>
                   <label
-                    className="block text-sm font-medium text-muted-foreground"
+                    className="block text-sm font-medium text-foreground"
                     htmlFor="sett-currency"
                   >
                     Moneda
@@ -282,7 +287,7 @@ function SettlementsBody({ groupId, group }: { groupId: string; group: GroupData
                       setCurrency(c);
                       rate.resetFor(c);
                     }}
-                    className="mt-1 w-full rounded-lg border border-input bg-muted px-2 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+                    className="mt-1.5 h-11 w-full rounded-xl border border-input bg-card px-3.5 text-base text-foreground placeholder:text-muted-foreground outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 disabled:opacity-50 dark:bg-input/30"
                   >
                     {currencies.map((c) => (
                       <option key={c} value={c}>
@@ -296,10 +301,7 @@ function SettlementsBody({ groupId, group }: { groupId: string; group: GroupData
               <ExchangeRateFields rate={rate} amountCents={toCents(amountInput)} />
 
               <div>
-                <label
-                  className="block text-sm font-medium text-muted-foreground"
-                  htmlFor="sett-date"
-                >
+                <label className="block text-sm font-medium text-foreground" htmlFor="sett-date">
                   Fecha
                 </label>
                 <input
@@ -308,12 +310,12 @@ function SettlementsBody({ groupId, group }: { groupId: string; group: GroupData
                   value={dateInput}
                   onChange={(e) => setDateInput(e.target.value)}
                   required
-                  className="mt-1 w-full rounded-lg border border-input bg-muted px-3 py-2 text-base text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+                  className="mt-1.5 h-11 w-full rounded-xl border border-input bg-card px-3.5 text-base text-foreground placeholder:text-muted-foreground outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 disabled:opacity-50 dark:bg-input/30"
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-muted-foreground" htmlFor="note">
+                <label className="block text-sm font-medium text-foreground" htmlFor="note">
                   Nota (opcional)
                 </label>
                 <input
@@ -321,7 +323,7 @@ function SettlementsBody({ groupId, group }: { groupId: string; group: GroupData
                   value={note}
                   onChange={(e) => setNote(e.target.value)}
                   placeholder="Transferencia del 5/12"
-                  className="mt-1 w-full rounded-lg border border-input bg-muted px-3 py-2 text-base text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+                  className="mt-1.5 h-11 w-full rounded-xl border border-input bg-card px-3.5 text-base text-foreground placeholder:text-muted-foreground outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 disabled:opacity-50 dark:bg-input/30"
                 />
               </div>
 
@@ -331,7 +333,7 @@ function SettlementsBody({ groupId, group }: { groupId: string; group: GroupData
                 <button
                   type="submit"
                   disabled={createSettlement.isPending}
-                  className="flex-1 rounded-lg bg-primary py-2 font-medium text-primary-foreground disabled:opacity-50"
+                  className="press flex-1 rounded-full bg-primary py-2 font-semibold text-primary-foreground disabled:opacity-50 shadow-soft"
                 >
                   {createSettlement.isPending ? 'Guardando…' : 'Registrar'}
                 </button>
@@ -341,7 +343,7 @@ function SettlementsBody({ groupId, group }: { groupId: string; group: GroupData
                     setShowForm(false);
                     setFormError(null);
                   }}
-                  className="flex-1 rounded-lg border border-input py-2 text-foreground"
+                  className="press flex-1 rounded-full border border-input py-2 text-foreground bg-card"
                 >
                   Cancelar
                 </button>
@@ -400,6 +402,6 @@ function SettlementsBody({ groupId, group }: { groupId: string; group: GroupData
           ))}
         </ul>
       )}
-    </main>
+    </div>
   );
 }
