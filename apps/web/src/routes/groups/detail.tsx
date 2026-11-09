@@ -6,6 +6,7 @@ import type { AppRouter } from '@kachingga/api';
 
 import { ArchivedNotice } from '@/components/archived-notice';
 import { ErrorState } from '@/components/error-state';
+import { LoadMore } from '@/components/load-more';
 import { BalancesSkeleton, ExpenseListSkeleton, GroupSkeleton } from '@/components/skeletons';
 import { copyText, shareInviteCode } from '@/lib/share';
 import { useTRPC } from '@/lib/trpc';
@@ -189,6 +190,7 @@ export function GroupDetail() {
 
   const g = group.data;
   const allExpenses = expenses.data?.pages.flatMap((p) => p.items) ?? [];
+  const loadMoreExpenses = () => void expenses.fetchNextPage();
 
   return (
     <main className="mx-auto min-h-dvh max-w-md pb-24">
@@ -374,7 +376,7 @@ export function GroupDetail() {
                     </p>
                     {myShare && (
                       <p className="text-xs text-muted-foreground">
-                        yo: {formatCents(myShare.amountCents, expense.currency)}
+                        vos: {formatCents(myShare.amountCents, expense.currency)}
                       </p>
                     )}
                   </div>
@@ -409,15 +411,11 @@ export function GroupDetail() {
             })}
           </ul>
 
-          {expenses.hasNextPage && (
-            <button
-              onClick={() => expenses.fetchNextPage()}
-              disabled={expenses.isFetchingNextPage}
-              className="mt-4 w-full rounded-xl border border-border py-2 text-sm text-muted-foreground disabled:opacity-50"
-            >
-              {expenses.isFetchingNextPage ? 'Cargando…' : 'Cargar más'}
-            </button>
-          )}
+          <LoadMore
+            hasMore={expenses.hasNextPage}
+            loading={expenses.isFetchingNextPage}
+            onLoadMore={loadMoreExpenses}
+          />
         </div>
       </div>
 

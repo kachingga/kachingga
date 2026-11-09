@@ -117,6 +117,7 @@ describe('GroupDetail', () => {
       }),
     });
     expect(await screen.findByText('Cena en el porto')).toBeInTheDocument();
+    expect(screen.getByText(/^vos: \$\s?400,00$/)).toBeInTheDocument();
   });
 
   it('shows an expense that is still being saved, without a link to it', async () => {
