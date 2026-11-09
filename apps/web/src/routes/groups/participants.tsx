@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useNavigate, useParams } from 'react-router';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
+import { ArchivedNotice } from '@/components/archived-notice';
 import { ErrorState } from '@/components/error-state';
 import { ListScreenSkeleton } from '@/components/skeletons';
 import { shareInviteCode } from '@/lib/share';
@@ -84,6 +85,12 @@ export function Participants() {
         </button>
         <h1 className="text-xl font-bold">Participantes</h1>
       </div>
+
+      {isArchived && (
+        <div className="mb-6">
+          <ArchivedNotice groupId={g.id} />
+        </div>
+      )}
 
       {/* Código de invitación */}
       <div className="mb-6 rounded-2xl bg-card p-4">

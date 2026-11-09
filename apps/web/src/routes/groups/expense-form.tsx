@@ -9,6 +9,7 @@ import { currencies, distributeCents, expenseCategories } from '@kachingga/api/s
 import { ExchangeRateFields } from '@/components/exchange-rate-fields';
 import { NumberInput } from '@/components/number-input';
 import { useExchangeRate } from '@/lib/use-exchange-rate';
+import { ArchivedNotice } from '@/components/archived-notice';
 import { ErrorState } from '@/components/error-state';
 import { FormSkeleton } from '@/components/skeletons';
 import { useTRPC } from '@/lib/trpc';
@@ -521,6 +522,7 @@ export function ExpenseForm() {
   const draft = (location.state as FormState | null)?.draft;
   const isEdit = !!expenseId;
   const trpc = useTRPC();
+  const navigate = useNavigate();
 
   const group = useQuery(trpc.groups.get.queryOptions({ groupId: groupId! }));
   const expense = useQuery({
@@ -542,6 +544,17 @@ export function ExpenseForm() {
     return (
       <main className="p-6">
         <ErrorState message={expense.error.message} onRetry={() => expense.refetch()} />
+      </main>
+    );
+  }
+
+  if (group.data.archivedAt) {
+    return (
+      <main className="mx-auto min-h-dvh max-w-md space-y-4 p-6">
+        <ArchivedNotice groupId={groupId!} />
+        <button onClick={() => navigate(-1)} className="text-sm text-muted-foreground underline">
+          Volver
+        </button>
       </main>
     );
   }

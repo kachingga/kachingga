@@ -4,6 +4,7 @@ import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from '@tansta
 import type { inferRouterOutputs } from '@trpc/server';
 import type { AppRouter } from '@kachingga/api';
 
+import { ArchivedNotice } from '@/components/archived-notice';
 import { ErrorState } from '@/components/error-state';
 import { BalancesSkeleton, ExpenseListSkeleton, GroupSkeleton } from '@/components/skeletons';
 import { copyText, shareInviteCode } from '@/lib/share';
@@ -106,17 +107,19 @@ function BalanceSection({ group, balances }: { group: GroupData; balances: Balan
                           >
                             Copiar monto
                           </button>
-                          <button
-                            {...prefetchOn(() => prefetch.settlements(group.id))}
-                            onClick={() =>
-                              navigate(
-                                `/grupos/${group.id}/pagos?from=${t.fromId}&to=${t.toId}&amount=${t.amountCents}&currency=${currency}`,
-                              )
-                            }
-                            className="rounded bg-primary px-3 py-1 text-xs text-primary-foreground"
-                          >
-                            Marcar como pagado
-                          </button>
+                          {!group.archivedAt && (
+                            <button
+                              {...prefetchOn(() => prefetch.settlements(group.id))}
+                              onClick={() =>
+                                navigate(
+                                  `/grupos/${group.id}/pagos?from=${t.fromId}&to=${t.toId}&amount=${t.amountCents}&currency=${currency}`,
+                                )
+                              }
+                              className="rounded bg-primary px-3 py-1 text-xs text-primary-foreground"
+                            >
+                              Marcar como pagado
+                            </button>
+                          )}
                         </div>
                       )}
                     </div>
@@ -230,7 +233,11 @@ export function GroupDetail() {
           </div>
         )}
 
-        <button onClick={() => setShowMenu(!showMenu)} className="p-2 text-muted-foreground">
+        <button
+          onClick={() => setShowMenu(!showMenu)}
+          aria-label="Opciones del grupo"
+          className="p-2 text-muted-foreground"
+        >
           ⋯
         </button>
       </div>
@@ -253,16 +260,18 @@ export function GroupDetail() {
           >
             Compartir código de invitación ({g.inviteCode})
           </button>
-          <button
-            onClick={() => {
-              setNewName(g.name);
-              setRenaming(true);
-              setShowMenu(false);
-            }}
-            className="block w-full rounded-xl px-3 py-2 text-left text-sm hover:bg-accent"
-          >
-            Renombrar grupo
-          </button>
+          {!g.archivedAt && (
+            <button
+              onClick={() => {
+                setNewName(g.name);
+                setRenaming(true);
+                setShowMenu(false);
+              }}
+              className="block w-full rounded-xl px-3 py-2 text-left text-sm hover:bg-accent"
+            >
+              Renombrar grupo
+            </button>
+          )}
           {!g.archivedAt ? (
             <button
               onClick={async () => {
@@ -293,6 +302,8 @@ export function GroupDetail() {
       )}
 
       <div className="space-y-6 px-4">
+        {g.archivedAt && <ArchivedNotice groupId={g.id} />}
+
         {/* Saldos */}
         {balances.isPending && <BalancesSkeleton />}
         {balances.isError && (
@@ -335,9 +346,11 @@ export function GroupDetail() {
           {expenses.isSuccess && allExpenses.length === 0 && (
             <p className="py-6 text-center text-sm text-muted-foreground">
               Todavía no hay gastos.{' '}
-              <Link to={`/grupos/${groupId}/gastos/nuevo`} className="underline">
-                Agregar uno
-              </Link>
+              {!g.archivedAt && (
+                <Link to={`/grupos/${groupId}/gastos/nuevo`} className="underline">
+                  Agregar uno
+                </Link>
+              )}
             </p>
           )}
 
