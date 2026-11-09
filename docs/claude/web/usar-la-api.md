@@ -54,9 +54,10 @@ const createExpense = useMutation(
 - **Errores:** los `TRPCClientError` traen `message` en español listo para mostrar (`ErrorState` en queries, toast en mutations). `NOT_FOUND` en un grupo = no sos miembro. `TOO_MANY_REQUESTS` = límite de pedidos: mostrar el mensaje y no reintentar en loop.
 - **Si a la web le falta algo de la API**, se agrega en `apps/api` (mismo repo), nunca workarounds en el front.
 
-## Login (Supabase Auth, email + password)
+## Login (Supabase Auth: email + password y Google)
 
 - **Decisión:** el login va **directo contra Supabase** (`src/lib/auth.ts`), no por nuestra API; la librería guarda la sesión (localStorage) y **renueva el token** sola. Los datos siempre por la API.
+- **Google** (`signInWithGoogle` en `src/lib/auth.ts`, botón `src/components/google-sign-in.tsx` en login y registro): la app se va a Google y vuelve a `/` con un código de un solo uso (flujo **PKCE**, `flowType: 'pkce'` en `src/lib/supabase.ts`); la librería lo canjea por la sesión al cargar, así que `useSession()` ya la ve y `/` manda a `/grupos`. La URL de vuelta tiene que estar permitida en Supabase (`INFRA.md` → "Supabase"). **iPhone con la app instalada:** el ida y vuelta a Google puede abrirse en Safari en vez de la app (y la sesión quedar en Safari); se verifica en #42.
 - `src/lib/trpc.ts` manda el token en cada pedido (`Authorization: Bearer`). Sin sesión, todo menos `health.ping` responde `UNAUTHORIZED`. `src/components/api-provider.tsx` reintenta una vez un `UNAUTHORIZED` (carrera justo después del login).
 - Las rutas privadas van dentro de `<RequireAuth />` en `src/router.tsx`. `useSession()` devuelve `undefined` mientras restaura la sesión (no mostrar nada), `null` sin sesión.
 - Después del login: `groups.list`. Unirse: `groups.preview` con el código → elegir participante sin cuenta o nombre nuevo → `groups.join`.

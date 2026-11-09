@@ -81,8 +81,9 @@ Mismas variables en los dos entornos, con los valores de su base (staging = `app
 
 ## Supabase
 
-- **Auth:** email + password. Habilitar el provider "Email" en Authentication → Providers. Decidir si se deja abierto el signup o se crean los usuarios a mano desde el dashboard.
-- **URLs de auth** (Authentication → URL Configuration), para que los links de los mails (confirmar, recuperar contraseña) vuelvan a la web correcta: en `kachingga`, *Site URL* `https://kachingga.com`; en `staging-kachingga`, *Site URL* `http://localhost:5173` y `https://staging.kachingga.com` en *Redirect URLs*.
+- **Auth:** registro abierto (#40), **email + password sin confirmar el email** (#41: *Confirm email* apagado) y **Google**, en los dos proyectos (Authentication → Sign In / Providers).
+- **Google:** un cliente OAuth tipo *Web application* en Google Cloud (proyecto de Galo) con los dos *Authorized redirect URIs* de Supabase: `https://czrkjokurbmbbvobvmxd.supabase.co/auth/v1/callback` (prod) y `https://nraoqdaplvvsakvtlcam.supabase.co/auth/v1/callback` (staging). Su client ID y secret se cargan en el provider Google de cada proyecto de Supabase (el secret solo ahí, nunca en el repo).
+- **URLs de auth** (Authentication → URL Configuration): adónde puede volver el login con Google (y los links de los mails). En `kachingga`, *Site URL* `https://kachingga.com` y *Redirect URLs* `https://kachingga.com/**`; en `staging-kachingga`, *Site URL* `http://localhost:5173` y *Redirect URLs* `https://staging.kachingga.com/**` y `http://localhost:5173/**`.
 - **Base de datos:** el schema se maneja solo con migraciones de Prisma — nunca modificarlo a mano desde el SQL editor.
 - **Claves:** usar las claves nuevas (`sb_publishable_...` / `sb_secret_...`), no las JWT legacy (`anon` / `service_role`). Se ven en Project Settings → API Keys (o con `supabase projects api-keys --project-ref <ref> --reveal`; sin `--reveal` la secret sale enmascarada).
 - **Contraseñas de las bases:** Supabase solo las muestra al crear el proyecto; después **no se pueden ver**, solo resetear. Las tiene Galo y se pasan por privado / gestor de contraseñas. **Nunca resetearlas** sin avisar: rompe el `.env` de todos y, en prod, Railway.

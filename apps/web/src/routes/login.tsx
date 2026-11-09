@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router';
 
+import { GoogleSignIn } from '@/components/google-sign-in';
 import { signIn } from '@/lib/auth';
 
 export function Login() {
@@ -24,6 +25,8 @@ export function Login() {
     <main className="mx-auto flex min-h-dvh max-w-md flex-col justify-center p-6">
       <h1 className="mb-2 text-3xl font-bold">Kachingga</h1>
       <p className="mb-8 text-muted-foreground">Iniciá sesión para continuar</p>
+
+      <GoogleSignIn />
 
       <form onSubmit={handleSubmit} className="space-y-4">
         <div>
