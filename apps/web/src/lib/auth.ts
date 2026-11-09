@@ -3,12 +3,19 @@ import { useEffect, useState } from 'react';
 
 import { supabase } from '@/lib/supabase';
 
-// Email + password with Supabase Auth (decision in CLAUDE.md). Screens call these; errors come
-// back as Supabase AuthError (show `error.message`, translated when needed).
+// Email + password or Google with Supabase Auth (decision in CLAUDE.md). Screens call these; errors
+// come back as Supabase AuthError (show `error.message`, translated when needed).
 export const signIn = (email: string, password: string) =>
   supabase.auth.signInWithPassword({ email, password });
 export const signUp = (email: string, password: string) =>
   supabase.auth.signUp({ email, password });
+// Leaves the app for Google and comes back to `/` (→ /grupos) with the session. The redirect URL
+// has to be allowed in Supabase (INFRA.md → "Supabase").
+export const signInWithGoogle = () =>
+  supabase.auth.signInWithOAuth({
+    provider: 'google',
+    options: { redirectTo: `${window.location.origin}/` },
+  });
 export const signOut = () => supabase.auth.signOut();
 
 /** Current session. `undefined` while it's being restored from storage, `null` when logged out. */

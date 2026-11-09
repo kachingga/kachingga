@@ -5,6 +5,7 @@ import { createClient } from '@supabase/supabase-js';
 export const supabase = createClient(
   import.meta.env.VITE_SUPABASE_URL,
   import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
-  // Session persisted in localStorage and refreshed automatically by the library.
-  { auth: { persistSession: true, autoRefreshToken: true } },
+  // Session persisted in localStorage and refreshed automatically by the library. PKCE for OAuth
+  // (Google): the redirect back carries a one-time code, not the tokens; the library exchanges it on load.
+  { auth: { persistSession: true, autoRefreshToken: true, flowType: 'pkce' } },
 );

@@ -8,6 +8,7 @@ import { Login } from '@/routes/login';
 vi.mock('@/lib/auth', () => ({
   signIn: vi.fn().mockResolvedValue({ error: null }),
   signUp: vi.fn(),
+  signInWithGoogle: vi.fn().mockResolvedValue({ error: null }),
   signOut: vi.fn(),
   useSession: () => null,
   getAccessToken: vi.fn().mockResolvedValue(null),
@@ -41,5 +42,31 @@ describe('Login', () => {
     await user.click(screen.getByRole('button', { name: 'Entrar' }));
 
     expect(await screen.findByText('Credenciales inválidas')).toBeInTheDocument();
+  });
+
+  it('offers to continue with Google', async () => {
+    const { signInWithGoogle } = await import('@/lib/auth');
+    const user = userEvent.setup();
+    renderWithApi(<Login />);
+
+    await user.click(screen.getByRole('button', { name: 'Continuar con Google' }));
+    expect(signInWithGoogle).toHaveBeenCalled();
+    expect(screen.getByRole('button', { name: 'Abriendo Google…' })).toBeDisabled();
+  });
+
+  it('shows an error when Google fails', async () => {
+    const { signInWithGoogle } = await import('@/lib/auth');
+    vi.mocked(signInWithGoogle).mockResolvedValueOnce({
+      data: { provider: 'google', url: null },
+      error: { message: 'provider is not enabled', name: 'AuthApiError', status: 400 } as never,
+    });
+    const user = userEvent.setup();
+    renderWithApi(<Login />);
+
+    await user.click(screen.getByRole('button', { name: 'Continuar con Google' }));
+    expect(
+      await screen.findByText('No se pudo entrar con Google. Probá de nuevo o usá tu email.'),
+    ).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Continuar con Google' })).toBeEnabled();
   });
 });

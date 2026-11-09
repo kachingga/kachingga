@@ -62,7 +62,7 @@ Proyecto de **Kachingga**, una organización de amigos (repo: `github.com/kachin
 ## Reglas de negocio
 
 ### Usuarios y login
-- Cada persona se registra con **email + password** (Supabase Auth). Sin login social ni magic link en v1.
+- Cada persona entra con **email + password** o con **Google** (Supabase Auth). Si ya tenía cuenta con email y entra con Google con el mismo mail, es la misma cuenta. Sin Apple (exige la cuenta de Apple Developer, USD 99/año) ni magic link.
 - Un usuario puede estar en muchos grupos.
 
 ### Grupos
@@ -169,7 +169,7 @@ Proyecto de **Kachingga**, una organización de amigos (repo: `github.com/kachin
 | Backend | Hono + TypeScript sobre Bun, hosteado en Railway |
 | API (contrato app ↔ backend) | tRPC + Zod, con TanStack Query en la app |
 | Base de datos | PostgreSQL en Supabase, con Prisma |
-| Auth | Supabase Auth — email + password |
+| Auth | Supabase Auth — email + password y Google (OAuth) |
 | Cotizaciones | DolarApi (dólar blue y oficial; oficial de EUR, BRL, UYU y CLP) |
 | Agente (v2) | API de LLM con tool calling sobre los datos del grupo |
 
