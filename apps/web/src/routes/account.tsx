@@ -4,6 +4,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
 import { signOut, useSession } from '@/lib/auth';
 import { ErrorState } from '@/components/error-state';
+import { clearOfflineCache } from '@/lib/offline-cache';
 import { useTRPC } from '@/lib/trpc';
 
 export function Account() {
@@ -36,6 +37,9 @@ export function Account() {
 
   async function handleSignOut() {
     await signOut();
+    // Nothing of this account stays on the device (offline cache, memory).
+    clearOfflineCache();
+    queryClient.clear();
     void navigate('/login');
   }
 

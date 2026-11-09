@@ -129,7 +129,8 @@ function ExpenseFormBody({ groupId, group, expenseId, expense }: FormProps) {
         return { previous, draft };
       },
       onError: (err, _input, context) => {
-        if (!context) return;
+        // No context: it failed before the optimistic update (e.g. offline); the form is still open.
+        if (!context) return void toast.error(err.message);
         queryClient.setQueryData(listKey, context.previous);
         toast.error(`No se guardó "${context.draft.description}": ${err.message}`, {
           duration: 10_000,
@@ -170,7 +171,8 @@ function ExpenseFormBody({ groupId, group, expenseId, expense }: FormProps) {
         return { previous, draft, detailKey };
       },
       onError: (err, _input, context) => {
-        if (!context) return;
+        // No context: it failed before the optimistic update (e.g. offline); the form is still open.
+        if (!context) return void toast.error(err.message);
         queryClient.setQueryData(context.detailKey, context.previous.detail);
         queryClient.setQueryData(listKey, context.previous.list);
         toast.error(`No se guardaron los cambios: ${err.message}`, {

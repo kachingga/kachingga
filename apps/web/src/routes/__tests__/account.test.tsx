@@ -1,4 +1,5 @@
-import { screen } from '@testing-library/react';
+import { screen, waitFor } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import { describe, expect, it, vi } from 'vitest';
 
 import { apiError, neverResolves, renderWithApi } from '@/test/render';
@@ -44,5 +45,16 @@ describe('Account', () => {
       },
     });
     expect(await screen.findByText('No autorizado')).toBeInTheDocument();
+  });
+
+  it('signing out deletes the offline cache saved on the device', async () => {
+    localStorage.setItem('kachingga-cache:u1', '{"datos":"del grupo"}');
+    localStorage.setItem('kachingga-cache-user', 'u1');
+    renderWithApi(<Account />, { 'profile.get': () => ({ paymentAlias: null }) });
+
+    await userEvent.click(await screen.findByRole('button', { name: 'Cerrar sesión' }));
+
+    await waitFor(() => expect(localStorage.getItem('kachingga-cache:u1')).toBeNull());
+    expect(localStorage.getItem('kachingga-cache-user')).toBeNull();
   });
 });

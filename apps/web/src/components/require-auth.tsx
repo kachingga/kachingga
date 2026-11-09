@@ -1,13 +1,17 @@
 import { Navigate, Outlet } from 'react-router';
 
 import { useSession } from '@/lib/auth';
+import { cachedUser, useOnline } from '@/lib/offline-cache';
 
 /**
  * Route guard: renders the child routes only with a session; otherwise redirects to /login.
  * While the session is being restored from storage, shows a skeleton to avoid a flash of /login.
+ * Offline with an expired token Supabase can't refresh the session: if this device has the last
+ * user's saved cache, the app opens read-only with it (back online, the session refreshes or it's /login).
  */
 export function RequireAuth() {
   const session = useSession();
+  const online = useOnline();
 
   if (session === undefined) {
     return (
@@ -25,6 +29,6 @@ export function RequireAuth() {
     );
   }
 
-  if (!session) return <Navigate to="/login" replace />;
+  if (!session && !(!online && cachedUser())) return <Navigate to="/login" replace />;
   return <Outlet />;
 }

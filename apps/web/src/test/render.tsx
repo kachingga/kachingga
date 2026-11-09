@@ -8,6 +8,7 @@ import { MemoryRouter } from 'react-router';
 
 import { ConfirmProvider } from '@/components/confirm-provider';
 import { Toaster } from '@/components/ui/sonner';
+import { createMutationCache } from '@/lib/offline-cache';
 import { TRPCProvider } from '@/lib/trpc';
 
 // Fake API for screen tests: map a procedure path ("groups.get") to what it returns.
@@ -44,6 +45,11 @@ function fakeLink(handlers: ApiHandlers): TRPCLink<AppRouter> {
       });
 }
 
+/** A tRPC client that answers from `api` instead of the real server. */
+export function createFakeApiClient(api: ApiHandlers = {}) {
+  return createTRPCClient<AppRouter>({ links: [fakeLink(api)] });
+}
+
 /**
  * Renders `ui` with the same providers as the app (tRPC + TanStack Query + router), but against
  * `api` instead of the real server. `route` is the initial URL for screens that read params.
@@ -51,12 +57,13 @@ function fakeLink(handlers: ApiHandlers): TRPCLink<AppRouter> {
 export function renderWithApi(ui: ReactElement, api: ApiHandlers = {}, route = '/') {
   // gcTime: Infinity → no cache-cleanup timers left running between tests.
   const queryClient = new QueryClient({
+    mutationCache: createMutationCache(),
     defaultOptions: {
       queries: { retry: false, gcTime: Infinity },
       mutations: { retry: false, gcTime: Infinity },
     },
   });
-  const trpcClient = createTRPCClient<AppRouter>({ links: [fakeLink(api)] });
+  const trpcClient = createFakeApiClient(api);
   return render(
     <QueryClientProvider client={queryClient}>
       <TRPCProvider trpcClient={trpcClient} queryClient={queryClient}>
