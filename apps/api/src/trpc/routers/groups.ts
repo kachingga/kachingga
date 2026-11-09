@@ -2,6 +2,7 @@ import { TRPCError } from '@trpc/server'
 import { z } from 'zod'
 import { prisma } from '../../db'
 import { requireActiveGroup, requireMembership } from '../../lib/access'
+import { computeBalances } from '../../lib/balances'
 import { generateInviteCode } from '../../lib/inviteCode'
 import { resolvePaymentAliases } from '../../lib/paymentAlias'
 import { groupInput, participantName } from '../../schemas'
@@ -11,16 +12,49 @@ const groupId = z.object({ groupId: z.string() })
 const inviteCode = z.string().trim().toUpperCase().min(1)
 
 export const groupsRouter = router({
-  list: protectedProcedure.input(z.object({ includeArchived: z.boolean().default(false) }).optional()).query(({ ctx, input }) =>
-    prisma.group.findMany({
+  // My groups, each with my balance in its base currency (`myBalanceCents`: positive = they owe me).
+  // Three queries in total, whatever the number of groups.
+  list: protectedProcedure.input(z.object({ includeArchived: z.boolean().default(false) }).optional()).query(async ({ ctx, input }) => {
+    const groups = await prisma.group.findMany({
       where: {
         participants: { some: { userId: ctx.user.id } },
         ...(input?.includeArchived ? {} : { archivedAt: null }),
       },
-      include: { _count: { select: { participants: true } } },
+      include: {
+        _count: { select: { participants: true } },
+        participants: { where: { userId: ctx.user.id }, select: { id: true } },
+      },
       orderBy: { createdAt: 'desc' },
-    }),
-  ),
+    })
+    const groupIds = groups.map((g) => g.id)
+    const [expenses, settlements] = await Promise.all([
+      prisma.expense.findMany({
+        where: { groupId: { in: groupIds }, deletedAt: null },
+        select: {
+          groupId: true,
+          currency: true,
+          exchangeRate: true,
+          paidById: true,
+          splits: { select: { participantId: true, amountCents: true } },
+        },
+      }),
+      prisma.settlement.findMany({
+        where: { groupId: { in: groupIds }, deletedAt: null },
+        select: { groupId: true, currency: true, exchangeRate: true, fromId: true, toId: true, amountCents: true },
+      }),
+    ])
+    return groups.map(({ participants, ...group }) => {
+      const myId = participants[0]!.id
+      const base = computeBalances(
+        group.baseCurrency,
+        [myId],
+        expenses.filter((e) => e.groupId === group.id),
+        settlements.filter((s) => s.groupId === group.id),
+      ).find((b) => b.currency === group.baseCurrency)!
+      const myBalanceCents = base.balances.find((b) => b.participantId === myId)?.amountCents ?? 0
+      return { ...group, myBalanceCents }
+    })
+  }),
 
   get: protectedProcedure.input(groupId).query(async ({ ctx, input }) => {
     const me = await requireMembership(input.groupId, ctx.user.id)

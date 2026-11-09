@@ -4,13 +4,22 @@ import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from '@tansta
 import type { inferRouterOutputs } from '@trpc/server';
 import type { AppRouter } from '@kachingga/api';
 
+import { ArchivedNotice } from '@/components/archived-notice';
 import { ErrorState } from '@/components/error-state';
+import { LoadMore } from '@/components/load-more';
 import { BalancesSkeleton, ExpenseListSkeleton, GroupSkeleton } from '@/components/skeletons';
+import { copyText, shareInviteCode } from '@/lib/share';
 import { useTRPC } from '@/lib/trpc';
 import { prefetchOn, usePrefetch } from '@/lib/use-prefetch';
 import { isTemp } from '@/lib/optimistic';
 import { useConfirm } from '@/lib/use-confirm';
-import { categoryLabels, formatCents, formatDate, formatPlainAmount } from '@/lib/format';
+import {
+  categoryLabels,
+  formatCents,
+  formatDate,
+  formatMyBalance,
+  formatPlainAmount,
+} from '@/lib/format';
 
 type GroupData = inferRouterOutputs<AppRouter>['groups']['get'];
 type BalancesData = inferRouterOutputs<AppRouter>['balances']['get'];
@@ -33,11 +42,7 @@ function BalanceSection({ group, balances }: { group: GroupData; balances: Balan
 
             {mine && (
               <p className="mb-3 text-lg font-semibold">
-                {mine.amountCents === 0
-                  ? 'Estás al día'
-                  : mine.amountCents > 0
-                    ? `Te deben ${formatCents(mine.amountCents, currency)}`
-                    : `Debés ${formatCents(-mine.amountCents, currency)}`}
+                {formatMyBalance(mine.amountCents, currency)}
               </p>
             )}
 
@@ -87,7 +92,7 @@ function BalanceSection({ group, balances }: { group: GroupData; balances: Balan
                               </p>
                               <button
                                 onClick={() =>
-                                  void navigator.clipboard.writeText(toParticipant.paymentAlias!)
+                                  void copyText(toParticipant.paymentAlias!, 'Alias copiado')
                                 }
                                 className="rounded border border-input px-3 py-1 text-xs text-foreground"
                               >
@@ -97,23 +102,25 @@ function BalanceSection({ group, balances }: { group: GroupData; balances: Balan
                           )}
                           <button
                             onClick={() =>
-                              void navigator.clipboard.writeText(formatPlainAmount(t.amountCents))
+                              void copyText(formatPlainAmount(t.amountCents), 'Monto copiado')
                             }
                             className="rounded border border-input px-3 py-1 text-xs text-foreground"
                           >
                             Copiar monto
                           </button>
-                          <button
-                            {...prefetchOn(() => prefetch.settlements(group.id))}
-                            onClick={() =>
-                              navigate(
-                                `/grupos/${group.id}/pagos?from=${t.fromId}&to=${t.toId}&amount=${t.amountCents}&currency=${currency}`,
-                              )
-                            }
-                            className="rounded bg-primary px-3 py-1 text-xs text-primary-foreground"
-                          >
-                            Marcar como pagado
-                          </button>
+                          {!group.archivedAt && (
+                            <button
+                              {...prefetchOn(() => prefetch.settlements(group.id))}
+                              onClick={() =>
+                                navigate(
+                                  `/grupos/${group.id}/pagos?from=${t.fromId}&to=${t.toId}&amount=${t.amountCents}&currency=${currency}`,
+                                )
+                              }
+                              className="rounded bg-primary px-3 py-1 text-xs text-primary-foreground"
+                            >
+                              Marcar como pagado
+                            </button>
+                          )}
                         </div>
                       )}
                     </div>
@@ -183,6 +190,7 @@ export function GroupDetail() {
 
   const g = group.data;
   const allExpenses = expenses.data?.pages.flatMap((p) => p.items) ?? [];
+  const loadMoreExpenses = () => void expenses.fetchNextPage();
 
   return (
     <main className="mx-auto min-h-dvh max-w-md pb-24">
@@ -227,7 +235,11 @@ export function GroupDetail() {
           </div>
         )}
 
-        <button onClick={() => setShowMenu(!showMenu)} className="p-2 text-muted-foreground">
+        <button
+          onClick={() => setShowMenu(!showMenu)}
+          aria-label="Opciones del grupo"
+          className="p-2 text-muted-foreground"
+        >
           ⋯
         </button>
       </div>
@@ -243,23 +255,25 @@ export function GroupDetail() {
           </Link>
           <button
             onClick={() => {
-              void navigator.clipboard.writeText(g.inviteCode);
+              void shareInviteCode(g.name, g.inviteCode);
               setShowMenu(false);
             }}
             className="block w-full rounded-xl px-3 py-2 text-left text-sm hover:bg-accent"
           >
-            Copiar código de invitación ({g.inviteCode})
+            Compartir código de invitación ({g.inviteCode})
           </button>
-          <button
-            onClick={() => {
-              setNewName(g.name);
-              setRenaming(true);
-              setShowMenu(false);
-            }}
-            className="block w-full rounded-xl px-3 py-2 text-left text-sm hover:bg-accent"
-          >
-            Renombrar grupo
-          </button>
+          {!g.archivedAt && (
+            <button
+              onClick={() => {
+                setNewName(g.name);
+                setRenaming(true);
+                setShowMenu(false);
+              }}
+              className="block w-full rounded-xl px-3 py-2 text-left text-sm hover:bg-accent"
+            >
+              Renombrar grupo
+            </button>
+          )}
           {!g.archivedAt ? (
             <button
               onClick={async () => {
@@ -290,6 +304,8 @@ export function GroupDetail() {
       )}
 
       <div className="space-y-6 px-4">
+        {g.archivedAt && <ArchivedNotice groupId={g.id} />}
+
         {/* Saldos */}
         {balances.isPending && <BalancesSkeleton />}
         {balances.isError && (
@@ -332,9 +348,11 @@ export function GroupDetail() {
           {expenses.isSuccess && allExpenses.length === 0 && (
             <p className="py-6 text-center text-sm text-muted-foreground">
               Todavía no hay gastos.{' '}
-              <Link to={`/grupos/${groupId}/gastos/nuevo`} className="underline">
-                Agregar uno
-              </Link>
+              {!g.archivedAt && (
+                <Link to={`/grupos/${groupId}/gastos/nuevo`} className="underline">
+                  Agregar uno
+                </Link>
+              )}
             </p>
           )}
 
@@ -358,7 +376,7 @@ export function GroupDetail() {
                     </p>
                     {myShare && (
                       <p className="text-xs text-muted-foreground">
-                        yo: {formatCents(myShare.amountCents, expense.currency)}
+                        vos: {formatCents(myShare.amountCents, expense.currency)}
                       </p>
                     )}
                   </div>
@@ -393,15 +411,11 @@ export function GroupDetail() {
             })}
           </ul>
 
-          {expenses.hasNextPage && (
-            <button
-              onClick={() => expenses.fetchNextPage()}
-              disabled={expenses.isFetchingNextPage}
-              className="mt-4 w-full rounded-xl border border-border py-2 text-sm text-muted-foreground disabled:opacity-50"
-            >
-              {expenses.isFetchingNextPage ? 'Cargando…' : 'Cargar más'}
-            </button>
-          )}
+          <LoadMore
+            hasMore={expenses.hasNextPage}
+            loading={expenses.isFetchingNextPage}
+            onLoadMore={loadMoreExpenses}
+          />
         </div>
       </div>
 

@@ -37,6 +37,14 @@ export function formatCents(cents: number, currency: string): string {
   }).format(cents / 100);
 }
 
+/** My balance as text: positive = they owe me ("Te deben $ 10,00"), negative = I owe ("Debés $ 10,00"). */
+export function formatMyBalance(cents: number, currency: string): string {
+  if (cents === 0) return 'Estás al día';
+  return cents > 0
+    ? `Te deben ${formatCents(cents, currency)}`
+    : `Debés ${formatCents(-cents, currency)}`;
+}
+
 /** A localized number, e.g. an exchange rate (1555.5 → "1.555,5" in es-AR). */
 export function formatNumber(value: number, maxDecimals = 4): string {
   return new Intl.NumberFormat(getLocale(), { maximumFractionDigits: maxDecimals }).format(value);

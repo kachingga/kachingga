@@ -101,4 +101,14 @@ describe('ExpenseDetail', () => {
     await user.click(within(confirmDialog).getByRole('button', { name: 'Borrar' }));
     await waitFor(() => expect(deleted).toEqual([{ expenseId: undefined }]));
   });
+
+  it('hides edit and delete when the group is archived', async () => {
+    renderWithApi(<ExpenseDetail />, {
+      'expenses.get': () => fixExpense,
+      'groups.get': () => ({ id: 'g1', archivedAt: new Date('2026-11-01'), participants: [] }),
+    });
+    expect(await screen.findByText('Grupo archivado.')).toBeInTheDocument();
+    expect(screen.queryByRole('link', { name: 'Editar' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Borrar' })).not.toBeInTheDocument();
+  });
 });

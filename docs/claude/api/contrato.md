@@ -34,7 +34,7 @@ Todos con `protectedProcedure` salvo `health.ping`. Inputs en `src/schemas.ts`.
 |-----------|------|----------|
 | `health.ping` | query | Público. Chequeo de vida |
 | `health.me` | query | Usuario logueado (id, email) |
-| `groups.list` | query | Mis grupos (`includeArchived?`), con `_count.participants` |
+| `groups.list` | query | Mis grupos (`includeArchived?`), con `_count.participants` y `myBalanceCents` (mi saldo en la moneda base: positivo = me deben; lo mantenido en otras monedas no cuenta). 3 queries en total, no una por grupo |
 | `groups.get` | query | Grupo + participantes (`isMe`, `hasAccount`, `paymentAlias`, `paymentAliasSource`: `'group'` / `'account'` / `null`) + `myParticipantId` |
 | `groups.create` | mutation | Crea grupo + mi participante (`myName`) |
 | `groups.rename` | mutation | Cambia el nombre |

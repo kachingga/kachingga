@@ -9,6 +9,7 @@ import { currencies } from '@kachingga/api/schemas';
 import { ExchangeRateFields } from '@/components/exchange-rate-fields';
 import { NumberInput } from '@/components/number-input';
 import { useExchangeRate } from '@/lib/use-exchange-rate';
+import { ArchivedNotice } from '@/components/archived-notice';
 import { ErrorState } from '@/components/error-state';
 import { ListScreenSkeleton, RowsSkeleton } from '@/components/skeletons';
 import { useTRPC } from '@/lib/trpc';
@@ -183,6 +184,12 @@ function SettlementsBody({ groupId, group }: { groupId: string; group: GroupData
         </button>
         <h1 className="text-xl font-bold">Pagos</h1>
       </div>
+
+      {isArchived && (
+        <div className="mb-6">
+          <ArchivedNotice groupId={group.id} />
+        </div>
+      )}
 
       {/* Registrar pago */}
       {!isArchived && (

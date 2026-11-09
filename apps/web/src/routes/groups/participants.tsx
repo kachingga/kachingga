@@ -2,8 +2,10 @@ import { useState } from 'react';
 import { useNavigate, useParams } from 'react-router';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
+import { ArchivedNotice } from '@/components/archived-notice';
 import { ErrorState } from '@/components/error-state';
 import { ListScreenSkeleton } from '@/components/skeletons';
+import { shareInviteCode } from '@/lib/share';
 import { useTRPC } from '@/lib/trpc';
 import { useConfirm } from '@/lib/use-confirm';
 
@@ -84,6 +86,12 @@ export function Participants() {
         <h1 className="text-xl font-bold">Participantes</h1>
       </div>
 
+      {isArchived && (
+        <div className="mb-6">
+          <ArchivedNotice groupId={g.id} />
+        </div>
+      )}
+
       {/* Código de invitación */}
       <div className="mb-6 rounded-2xl bg-card p-4">
         <p className="mb-1 text-sm font-medium text-muted-foreground">Código de invitación</p>
@@ -94,10 +102,10 @@ export function Participants() {
             </p>
             <div className="flex gap-2">
               <button
-                onClick={() => void navigator.clipboard.writeText(g.inviteCode)}
+                onClick={() => void shareInviteCode(g.name, g.inviteCode)}
                 className="flex-1 rounded-lg border border-input py-2 text-sm text-foreground"
               >
-                Copiar código
+                Compartir código
               </button>
               {!isArchived && (
                 <button

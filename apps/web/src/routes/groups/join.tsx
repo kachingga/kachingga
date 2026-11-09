@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useNavigate } from 'react-router';
+import { Link, useNavigate, useSearchParams } from 'react-router';
 import { useMutation, useQuery } from '@tanstack/react-query';
 
 import { useTRPC } from '@/lib/trpc';
@@ -8,8 +8,11 @@ export function JoinGroup() {
   const navigate = useNavigate();
   const trpc = useTRPC();
 
-  const [codeInput, setCodeInput] = useState('');
-  const [submittedCode, setSubmittedCode] = useState<string | null>(null);
+  // A shared invite link (`/grupos/unirme?codigo=…`) opens with the code already looked up.
+  const [searchParams] = useSearchParams();
+  const linkCode = searchParams.get('codigo')?.trim().toUpperCase() || null;
+  const [codeInput, setCodeInput] = useState(linkCode ?? '');
+  const [submittedCode, setSubmittedCode] = useState<string | null>(linkCode);
   const [joinAs, setJoinAs] = useState<'new' | 'claim'>('new');
   const [selectedParticipantId, setSelectedParticipantId] = useState<string | null>(null);
   const [newName, setNewName] = useState('');
@@ -91,7 +94,15 @@ export function JoinGroup() {
           </div>
 
           {preview.data.alreadyMember ? (
-            <p className="text-amber-600 dark:text-amber-400">Ya sos miembro de este grupo.</p>
+            <div className="space-y-3">
+              <p className="text-muted-foreground">Ya sos parte de este grupo.</p>
+              <Link
+                to={`/grupos/${preview.data.id}`}
+                className="block w-full rounded-lg bg-primary py-3 text-center font-medium text-primary-foreground"
+              >
+                Ir al grupo
+              </Link>
+            </div>
           ) : (
             <div className="space-y-4">
               <p className="font-medium">¿Quién sos?</p>

@@ -2,6 +2,7 @@ import { Link, useNavigate, useParams } from 'react-router';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 
+import { ArchivedNotice } from '@/components/archived-notice';
 import { ErrorState } from '@/components/error-state';
 import { ExpenseDetailSkeleton } from '@/components/skeletons';
 import { useTRPC } from '@/lib/trpc';
@@ -81,6 +82,7 @@ export function ExpenseDetail() {
   }
 
   const e = expense.data;
+  const isArchived = !!group.data?.archivedAt;
 
   return (
     <main className="mx-auto min-h-dvh max-w-md p-6">
@@ -88,30 +90,38 @@ export function ExpenseDetail() {
         <button onClick={() => navigate(-1)} aria-label="Volver" className="text-muted-foreground">
           ←
         </button>
-        <div className="flex gap-3">
-          <Link
-            to={`/grupos/${groupId}/gastos/${expenseId}/editar`}
-            className="text-sm text-muted-foreground underline"
-          >
-            Editar
-          </Link>
-          <button
-            onClick={async () => {
-              const ok = await confirm({
-                title: '¿Borrar este gasto?',
-                description: 'Deja de contar en los saldos.',
-                confirmLabel: 'Borrar',
-                destructive: true,
-              });
-              if (ok) deleteExpense.mutate({ expenseId: expenseId! });
-            }}
-            disabled={deleteExpense.isPending}
-            className="text-sm text-destructive disabled:opacity-50"
-          >
-            {deleteExpense.isPending ? 'Borrando…' : 'Borrar'}
-          </button>
-        </div>
+        {!isArchived && (
+          <div className="flex gap-3">
+            <Link
+              to={`/grupos/${groupId}/gastos/${expenseId}/editar`}
+              className="text-sm text-muted-foreground underline"
+            >
+              Editar
+            </Link>
+            <button
+              onClick={async () => {
+                const ok = await confirm({
+                  title: '¿Borrar este gasto?',
+                  description: 'Deja de contar en los saldos.',
+                  confirmLabel: 'Borrar',
+                  destructive: true,
+                });
+                if (ok) deleteExpense.mutate({ expenseId: expenseId! });
+              }}
+              disabled={deleteExpense.isPending}
+              className="text-sm text-destructive disabled:opacity-50"
+            >
+              {deleteExpense.isPending ? 'Borrando…' : 'Borrar'}
+            </button>
+          </div>
+        )}
       </div>
+
+      {isArchived && (
+        <div className="mb-5">
+          <ArchivedNotice groupId={groupId!} />
+        </div>
+      )}
 
       <div className="space-y-5">
         <div>
