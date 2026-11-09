@@ -33,7 +33,11 @@ export async function setupTestApi() {
   // A tRPC caller authenticated as a fake Supabase user.
   const caller = (userId: string) => createCaller({ user: { id: userId, email: `${userId}@test.dev` } as User })
 
-  return { caller, prisma, anonymous: createCaller({ user: null }) }
+  // Id of one of the group's built-in categories (FOOD, OTHER…), as a member sees it.
+  const categoryId = async (userId: string, groupId: string, key: string) =>
+    (await caller(userId).categories.list({ groupId })).find((c) => c.defaultKey === key)!.id
+
+  return { caller, prisma, anonymous: createCaller({ user: null }), categoryId }
 }
 
 // Blue rate used whenever a test triggers the automatic conversion (fetch is stubbed, no network).

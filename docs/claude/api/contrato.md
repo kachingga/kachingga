@@ -11,7 +11,8 @@ Schema en `src/db/models/*.prisma`.
 | `Group` | `name`, `baseCurrency`, `inviteCode` (único), `createdById`, `archivedAt` |
 | `Participant` | `groupId`, `name`, `userId?` (Supabase; `null` = sin cuenta), `paymentAlias?` (alias propio del grupo). Único `(groupId, userId)` |
 | `UserProfile` | `userId` (id de Supabase, clave), `paymentAlias?` (alias de la cuenta, para todos los grupos) |
-| `Expense` | `description`, `category`, `date`, `amountCents`, `currency`, `exchangeRate?`, `splitType`, `paidById`, `createdById`, `deletedAt?` |
+| `Category` | `groupId`, `name`, `icon` (uno de `categoryIcons`), `color` (uno de `categoryColors`: nombre de color del tema, nunca hex), `defaultKey?` (`FOOD`…`OTHER` en las 8 que trae cada grupo; `null` = creada por alguien), `archivedAt?`. Nombre único entre las activas del grupo (en la API, sin distinguir mayúsculas) |
+| `Expense` | `description`, `categoryId` (del mismo grupo), `date`, `amountCents`, `currency`, `exchangeRate?`, `splitType`, `paidById`, `createdById`, `deletedAt?` |
 | `ExpenseSplit` | `expenseId`, `participantId`, `amountCents` (parte ya resuelta), `percentage?` (solo `PERCENTAGE`). Único `(expenseId, participantId)`, cascade al borrar el gasto |
 | `Settlement` | `fromId`, `toId`, `amountCents`, `currency`, `exchangeRate?`, `date`, `note?`, `createdById`, `deletedAt?` |
 | `SavedFilter` | `groupId`, `userId`, `name`, `filters` (JSON con la forma de `expenseFilters`) |
@@ -36,7 +37,7 @@ Todos con `protectedProcedure` salvo `health.ping`. Inputs en `src/schemas.ts`.
 | `health.me` | query | Usuario logueado (id, email) |
 | `groups.list` | query | Mis grupos (`includeArchived?`), con `_count.participants` y `myBalanceCents` (mi saldo en la moneda base: positivo = me deben; lo mantenido en otras monedas no cuenta). 3 queries en total, no una por grupo |
 | `groups.get` | query | Grupo + participantes (`isMe`, `hasAccount`, `paymentAlias`, `paymentAliasSource`: `'group'` / `'account'` / `null`) + `myParticipantId` |
-| `groups.create` | mutation | Crea grupo + mi participante (`myName`) |
+| `groups.create` | mutation | Crea grupo + mi participante (`myName`) + sus 8 categorías por defecto |
 | `groups.rename` | mutation | Cambia el nombre |
 | `groups.setArchived` | mutation | Archiva / desarchiva |
 | `groups.regenerateInviteCode` | mutation | Nuevo código |
@@ -45,16 +46,19 @@ Todos con `protectedProcedure` salvo `health.ping`. Inputs en `src/schemas.ts`.
 | `participants.add` / `rename` / `remove` | mutation | ABM de participantes |
 | `participants.setPaymentAlias` | mutation | `{ participantId, paymentAlias \| null }`: alias propio del grupo. Con cuenta, solo esa persona (`FORBIDDEN` si no); sin cuenta, cualquier miembro. `null` = volver al de la cuenta |
 | `profile.get` / `profile.update` | query / mutation | Alias de la cuenta del usuario logueado (`{ paymentAlias \| null }`) |
+| `categories.list` | query | `{ groupId }` → todas las categorías del grupo en orden (las 8 por defecto primero), con `archived` y `expenseCount` (gastos activos que la usan) |
+| `categories.create` / `update` | mutation | `{ groupId, name, icon, color }` / `{ categoryId, name?, icon?, color? }`. Cualquier miembro; grupo archivado = solo lectura. `CONFLICT` si el nombre ya está entre las activas |
+| `categories.archive` / `unarchive` | mutation | `{ categoryId }`. Archivada: los gastos la conservan, no se puede elegir para gastos nuevos. No se puede archivar la última activa; desarchivar choca si ya hay una activa con ese nombre |
 | `expenses.list` | query | `{ groupId, filters, cursor }` → `{ items, nextCursor }` (páginas de 50, más nuevo primero). Cada item tiene la misma forma que `expenses.get` |
 | `expenses.export` | query | `{ groupId, filters, format: 'csv' \| 'json' }` → `{ filename, mimeType, content }`: **todos** los gastos que coinciden (sin paginar), del más viejo al más nuevo, con mi parte |
-| `expenses.summary` | query | `{ groupId, filters }` (mismos filtros que `list`) → `[{ currency, count, totalCents, myShareCents, myPaidCents, byCategory: [{ category, totalCents }] }]`, base primero |
-| `expenses.get` / `create` / `update` / `delete` | query / mutation | `update` reemplaza el gasto y sus partes; `delete` es lógico |
+| `expenses.summary` | query | `{ groupId, filters }` (mismos filtros que `list`) → `[{ currency, count, totalCents, myShareCents, myPaidCents, byCategory: [{ categoryId, name, totalCents }] }]`, base primero |
+| `expenses.get` / `create` / `update` / `delete` | query / mutation | Cada gasto trae `category` (`{ id, name, icon, color }`). `categoryId` del input tiene que ser del grupo y activa (al editar se puede dejar la que ya tenía aunque esté archivada); sin `categoryId` → "Otros" del grupo. `update` reemplaza el gasto y sus partes; `delete` es lógico |
 | `settlements.list` / `create` / `delete` | query / mutation | Pagos manuales (más nuevo primero) |
 | `balances.get` | query | `[{ currency, balances: [{ participantId, amountCents }], transfers: [{ fromId, toId, amountCents }] }]`, base primero |
 | `savedFilters.list` / `create` / `delete` | query / mutation | Solo los del usuario |
 | `rates.get` | query | `{ currency (no ARS), source?: 'blue' \| 'oficial' }` → `{ buy, sell, mid, updatedAt, source }`: 1 unidad en ARS, para precargar el tipo de cambio. Sin `source`: blue para USD, oficial para el resto. `blue` con otra moneda → `BAD_REQUEST` |
 
-**`expenseFilters`:** `paidById`, `splitParticipantId`, `involvedParticipantId` (pagó **o** participa), `categories[]`, `dateFrom`, `dateTo`, `minAmountCents`, `maxAmountCents`, `search`.
+**`expenseFilters`:** `paidById`, `splitParticipantId`, `involvedParticipantId` (pagó **o** participa), `categoryIds[]` (ids de categorías del grupo), `dateFrom`, `dateTo`, `minAmountCents`, `maxAmountCents`, `search`.
 
 ## Dónde vive cada regla de negocio
 
@@ -68,6 +72,7 @@ Todos con `protectedProcedure` salvo `health.ping`. Inputs en `src/schemas.ts`.
 | Exportar (formato de cada fila, CSV) | `lib/exportExpenses.ts` (`toExportRows`, `toCsv`; mismas reglas de moneda y redondeo que los saldos) |
 | Totales por filtro | `lib/summary.ts` (`summarizeExpenses`, puro; mismas reglas de moneda y redondeo que los saldos) |
 | Unirse / reclamar participante | `routers/groups.ts` (`preview`, `join`) |
+| Categorías por grupo (las por defecto, cuál usa un gasto, nombres únicos) | `lib/categories.ts` (`defaultCategoryRows`, `resolveExpenseCategory`, `assertCategoryNameFree`) + `routers/categories.ts`; las 8 por defecto, íconos y colores válidos en `schemas.ts` (`defaultCategories`, `categoryIcons`, `categoryColors`) |
 | Alias para cobrar (cuál vale en cada grupo) | `lib/paymentAlias.ts`; formato en `schemas.ts` (`paymentAlias`) |
 
 ## Convenciones de routers

@@ -33,6 +33,7 @@ const settlement = await owner.settlements.create({
   date: new Date(),
 })
 const saved = await owner.savedFilters.create({ groupId: group.id, name: 'Míos', filters: {} })
+const category = await owner.categories.create({ groupId: group.id, name: 'Nafta', icon: 'fuel', color: 'chart-4' })
 
 const expenseFields = {
   description: 'Hackeado',
@@ -68,6 +69,11 @@ const attacks: Record<string, () => Promise<unknown>> = {
   'savedFilters.list': () => outsider.savedFilters.list({ groupId: group.id }),
   'savedFilters.create': () => outsider.savedFilters.create({ groupId: group.id, name: 'X', filters: {} }),
   'savedFilters.delete': () => outsider.savedFilters.delete({ savedFilterId: saved.id }),
+  'categories.list': () => outsider.categories.list({ groupId: group.id }),
+  'categories.create': () => outsider.categories.create({ groupId: group.id, name: 'Intrusa', icon: 'shapes', color: 'muted' }),
+  'categories.update': () => outsider.categories.update({ categoryId: category.id, name: 'Hackeada' }),
+  'categories.archive': () => outsider.categories.archive({ categoryId: category.id }),
+  'categories.unarchive': () => outsider.categories.unarchive({ categoryId: category.id }),
 }
 
 // Procedures that don't take a group (or reach it only through the invite code, on purpose).
@@ -111,5 +117,22 @@ describe('authorization: non-members', () => {
     expect((await owner.expenses.list({ groupId: group.id })).items.map((e) => e.description)).toEqual(['Secreto'])
     expect(await owner.settlements.list({ groupId: group.id })).toHaveLength(1)
     expect(await owner.savedFilters.list({ groupId: group.id })).toHaveLength(1)
+    const categories = await owner.categories.list({ groupId: group.id })
+    expect(categories.map((c) => c.name)).not.toContain('Intrusa')
+    expect(categories.find((c) => c.id === category.id)).toMatchObject({ name: 'Nafta', archived: false })
+  })
+
+  test("a category of another group can't be used in an expense", async () => {
+    const own = await outsider.groups.create({ name: 'Mío', baseCurrency: 'ARS', myName: 'Yo' })
+    const myId = (await outsider.groups.get({ groupId: own.id })).myParticipantId
+    await expect(
+      outsider.expenses.create({
+        groupId: own.id,
+        ...expenseFields,
+        paidById: myId,
+        split: { type: 'EQUAL', participantIds: [myId] },
+        categoryId: category.id,
+      }),
+    ).rejects.toThrow('no es del grupo')
   })
 })

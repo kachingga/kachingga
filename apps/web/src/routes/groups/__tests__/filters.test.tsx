@@ -37,7 +37,8 @@ const fixGroup = {
 const expense = {
   id: 'e1',
   description: 'Cena',
-  category: 'FOOD',
+  categoryId: 'cat-food',
+  category: { id: 'cat-food', name: 'Comida', icon: 'utensils', color: 'chart-2' },
   date: new Date('2026-11-10T12:00:00Z'),
   amountCents: 80000,
   currency: 'ARS',
@@ -55,6 +56,26 @@ const expense = {
 function api(listCalls: unknown[] = []) {
   return {
     'groups.get': () => fixGroup,
+    'categories.list': () => [
+      {
+        id: 'cat-food',
+        name: 'Comida',
+        icon: 'utensils',
+        color: 'chart-2',
+        defaultKey: 'FOOD',
+        archived: false,
+        expenseCount: 1,
+      },
+      {
+        id: 'cat-other',
+        name: 'Otros',
+        icon: 'shapes',
+        color: 'muted',
+        defaultKey: 'OTHER',
+        archived: false,
+        expenseCount: 0,
+      },
+    ],
     'expenses.list': (input: unknown) => {
       listCalls.push((input as { filters: unknown }).filters);
       return { items: [expense], nextCursor: null };
@@ -177,10 +198,12 @@ describe('Filters', () => {
     const calls: unknown[] = [];
     renderWithApi(<Filters />, {
       ...api(calls),
-      'savedFilters.list': () => [{ id: 'sf1', name: 'Comida', filters: { categories: ['FOOD'] } }],
+      'savedFilters.list': () => [
+        { id: 'sf1', name: 'Solo comida', filters: { categoryIds: ['cat-food'] } },
+      ],
     });
-    await user.click(await screen.findByRole('button', { name: 'Comida' }));
-    await waitFor(() => expect(calls.at(-1)).toEqual({ categories: ['FOOD'] }));
+    await user.click(await screen.findByRole('button', { name: 'Solo comida' }));
+    await waitFor(() => expect(calls.at(-1)).toEqual({ categoryIds: ['cat-food'] }));
     expect(screen.getByRole('button', { name: 'Comida', pressed: true })).toBeInTheDocument();
   });
 

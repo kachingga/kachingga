@@ -14,6 +14,7 @@ import { GroupDetail } from '@/routes/groups/detail';
 import { ExpenseForm } from '@/routes/groups/expense-form';
 import { ExpenseDetail } from '@/routes/groups/expense-detail';
 import { Settlements } from '@/routes/groups/settlements';
+import { Categories } from '@/routes/groups/categories';
 import { Participants } from '@/routes/groups/participants';
 import { Filters } from '@/routes/groups/filters';
 
@@ -48,6 +49,7 @@ export const router = createBrowserRouter([
               { path: '/grupos/:groupId/gastos/:expenseId/editar', element: <ExpenseForm /> },
               { path: '/grupos/:groupId/pagos', element: <Settlements /> },
               { path: '/grupos/:groupId/participantes', element: <Participants /> },
+              { path: '/grupos/:groupId/categorias', element: <Categories /> },
               { path: '/grupos/:groupId/filtros', element: <Filters /> },
             ],
           },

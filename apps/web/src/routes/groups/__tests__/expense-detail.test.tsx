@@ -8,7 +8,8 @@ import { ExpenseDetail } from '@/routes/groups/expense-detail';
 const fixExpense = {
   id: 'e1',
   description: 'Cena',
-  category: 'FOOD',
+  categoryId: 'cat-food',
+  category: { id: 'cat-food', name: 'Comida', icon: 'utensils', color: 'chart-2' },
   date: new Date('2024-01-15'),
   amountCents: 80000,
   currency: 'ARS',

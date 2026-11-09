@@ -9,7 +9,7 @@ describe('url filters', () => {
       paidById: 'p1',
       splitParticipantId: 'p2',
       involvedParticipantId: 'p3',
-      categories: ['FOOD' as const, 'TRANSPORT' as const],
+      categoryIds: ['cat-food', 'cat-transport'],
       dateFrom: '2026-11-01',
       dateTo: '2026-11-30',
       minAmount: '1500.5',
@@ -18,7 +18,7 @@ describe('url filters', () => {
     };
     const params = writeUrlFilters(filters);
     expect(params.toString()).toBe(
-      'pago=p1&para=p2&involucrado=p3&categorias=FOOD%2CTRANSPORT&desde=2026-11-01&hasta=2026-11-30&min=1500.5&max=20000&q=cena',
+      'pago=p1&para=p2&involucrado=p3&categorias=cat-food%2Ccat-transport&desde=2026-11-01&hasta=2026-11-30&min=1500.5&max=20000&q=cena',
     );
     expect(readUrlFilters(params)).toEqual(filters);
   });
@@ -39,17 +39,17 @@ describe('url filters', () => {
       fromApiFilters({
         dateFrom: startOfDay('2026-11-01'),
         maxAmountCents: 2000000,
-        categories: ['FOOD'],
+        categoryIds: ['cat-food'],
       }),
     ).toEqual({
       dateFrom: '2026-11-01',
       maxAmount: '20000',
-      categories: ['FOOD'],
+      categoryIds: ['cat-food'],
     });
   });
 
   it('ignores malformed values from a hand-edited link', () => {
-    const params = new URLSearchParams('desde=ayer&min=-5&max=abc&categorias=FOOD,NOPE&q=%20');
-    expect(readUrlFilters(params)).toEqual({ categories: ['FOOD'] });
+    const params = new URLSearchParams('desde=ayer&min=-5&max=abc&categorias=cat-food,%20,&q=%20');
+    expect(readUrlFilters(params)).toEqual({ categoryIds: ['cat-food'] });
   });
 });

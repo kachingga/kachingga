@@ -85,7 +85,11 @@ Proyecto de **Kachingga**, una organización de amigos (repo: `github.com/kachin
 
 ### Gastos
 - Un gasto tiene: descripción, categoría, fecha, monto, moneda, quién pagó y entre quiénes se divide.
-- **Categorías:** comida (`FOOD`), súper (`GROCERIES`), transporte (`TRANSPORT`), alojamiento (`LODGING`), salidas (`ENTERTAINMENT`), compras (`SHOPPING`), servicios (`SERVICES`), otros (`OTHER`, default).
+- **Categorías: cada grupo tiene las suyas.** Todo grupo arranca con 8 por defecto: Comida, Súper, Transporte, Alojamiento, Salidas, Compras, Servicios y Otros. Cualquier miembro puede **crear** nuevas (ej. "Nafta"), **renombrarlas** y cambiarles **ícono y color** (de una lista fija), y **archivarlas** (no se borran).
+  - Un gasto sin categoría elegida va a **"Otros"**.
+  - Archivada: los gastos que ya la tenían la conservan (y se puede dejar al editarlos), pero no se puede elegir para gastos nuevos. El grupo siempre tiene al menos una activa.
+  - El nombre es único entre las activas del grupo (sin distinguir mayúsculas).
+  - Filtros, totales por categoría, filtros guardados y export usan las categorías del grupo.
 - **Quien paga puede no estar en la división** (ej. pagué yo un regalo que es solo de Román).
 - **Cualquier miembro puede cargar un gasto pagado por otro** (ej. "pagó Román, entre Tuke y yo") y editar o borrar cualquier gasto.
 - **Formas de dividir:**

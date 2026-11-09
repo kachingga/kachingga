@@ -1,4 +1,4 @@
-import { expenseCategories, type ExpenseFilters } from '@kachingga/api/schemas';
+import type { ExpenseFilters } from '@kachingga/api/schemas';
 
 import { centsToNumeric, endOfDay, startOfDay, toCents, toDay, toNumber } from '@/lib/format';
 
@@ -11,7 +11,7 @@ const PARAM = {
   paidById: 'pago',
   splitParticipantId: 'para',
   involvedParticipantId: 'involucrado',
-  categories: 'categorias',
+  categoryIds: 'categorias',
   dateFrom: 'desde',
   dateTo: 'hasta',
   minAmount: 'min',
@@ -23,7 +23,8 @@ export type UrlFilters = {
   paidById?: string;
   splitParticipantId?: string;
   involvedParticipantId?: string;
-  categories?: ExpenseFilters['categories'];
+  /** Ids of the group's categories */
+  categoryIds?: string[];
   /** YYYY-MM-DD */
   dateFrom?: string;
   /** YYYY-MM-DD */
@@ -48,16 +49,15 @@ export function readUrlFilters(params: URLSearchParams): UrlFilters {
     const value = text(key);
     return value && isAmount(value) ? value : undefined;
   };
-  const categories = text(PARAM.categories)
+  const categoryIds = text(PARAM.categoryIds)
     ?.split(',')
-    .filter((c): c is (typeof expenseCategories)[number] =>
-      (expenseCategories as readonly string[]).includes(c),
-    );
+    .map((id) => id.trim())
+    .filter(Boolean);
   return {
     paidById: text(PARAM.paidById),
     splitParticipantId: text(PARAM.splitParticipantId),
     involvedParticipantId: text(PARAM.involvedParticipantId),
-    categories: categories?.length ? categories : undefined,
+    categoryIds: categoryIds?.length ? categoryIds : undefined,
     dateFrom: day(PARAM.dateFrom),
     dateTo: day(PARAM.dateTo),
     minAmount: amount(PARAM.minAmount),
@@ -75,7 +75,7 @@ export function writeUrlFilters(filters: UrlFilters): URLSearchParams {
   set(PARAM.paidById, filters.paidById);
   set(PARAM.splitParticipantId, filters.splitParticipantId);
   set(PARAM.involvedParticipantId, filters.involvedParticipantId);
-  set(PARAM.categories, filters.categories?.join(','));
+  set(PARAM.categoryIds, filters.categoryIds?.join(','));
   set(PARAM.dateFrom, filters.dateFrom);
   set(PARAM.dateTo, filters.dateTo);
   set(PARAM.minAmount, filters.minAmount);
@@ -90,7 +90,7 @@ export function toApiFilters(filters: UrlFilters): ExpenseFilters {
     paidById: filters.paidById,
     splitParticipantId: filters.splitParticipantId,
     involvedParticipantId: filters.involvedParticipantId,
-    categories: filters.categories,
+    categoryIds: filters.categoryIds,
     dateFrom: filters.dateFrom ? startOfDay(filters.dateFrom) : undefined,
     dateTo: filters.dateTo ? endOfDay(filters.dateTo) : undefined,
     minAmountCents: filters.minAmount ? toCents(filters.minAmount) : undefined,
@@ -110,7 +110,7 @@ export function fromApiFilters(filters: ExpenseFilters): UrlFilters {
     paidById: filters.paidById,
     splitParticipantId: filters.splitParticipantId,
     involvedParticipantId: filters.involvedParticipantId,
-    categories: filters.categories,
+    categoryIds: filters.categoryIds,
     dateFrom: filters.dateFrom ? toDay(filters.dateFrom) : undefined,
     dateTo: filters.dateTo ? toDay(filters.dateTo) : undefined,
     minAmount: filters.minAmountCents != null ? centsToNumeric(filters.minAmountCents) : undefined,

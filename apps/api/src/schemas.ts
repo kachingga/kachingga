@@ -3,15 +3,85 @@ import { z } from 'zod'
 // Shared with the app (`@kachingga/api/schemas`): keep this file free of server-only imports.
 
 export const currencies = ['ARS', 'USD', 'EUR', 'BRL', 'UYU', 'CLP'] as const
-export const expenseCategories = ['FOOD', 'GROCERIES', 'TRANSPORT', 'LODGING', 'ENTERTAINMENT', 'SHOPPING', 'SERVICES', 'OTHER'] as const
+
+// Categories belong to each group (CLAUDE.md → "Gastos"): every group starts with these 8 and its
+// members can add, rename, recolor or archive them. `key` marks the built-in ones (Category.defaultKey).
+export const defaultCategories = [
+  { key: 'FOOD', name: 'Comida', icon: 'utensils', color: 'chart-2' },
+  { key: 'GROCERIES', name: 'Súper', icon: 'shopping-cart', color: 'chart-1' },
+  { key: 'TRANSPORT', name: 'Transporte', icon: 'car', color: 'chart-4' },
+  { key: 'LODGING', name: 'Alojamiento', icon: 'bed-double', color: 'chart-5' },
+  { key: 'ENTERTAINMENT', name: 'Salidas', icon: 'party-popper', color: 'chart-3' },
+  { key: 'SHOPPING', name: 'Compras', icon: 'shopping-bag', color: 'highlight' },
+  { key: 'SERVICES', name: 'Servicios', icon: 'zap', color: 'positive' },
+  { key: 'OTHER', name: 'Otros', icon: 'shapes', color: 'muted' },
+] as const
+export type DefaultCategoryKey = (typeof defaultCategories)[number]['key']
+
+// Icons a category can have: lucide icon names (the app maps each one to its component).
+export const categoryIcons = [
+  'utensils',
+  'shopping-cart',
+  'car',
+  'bed-double',
+  'party-popper',
+  'shopping-bag',
+  'zap',
+  'shapes',
+  'fuel',
+  'plane',
+  'bus',
+  'home',
+  'gift',
+  'heart',
+  'coffee',
+  'beer',
+  'pizza',
+  'shirt',
+  'gamepad-2',
+  'music',
+  'film',
+  'ticket',
+  'dumbbell',
+  'paw-print',
+  'baby',
+  'graduation-cap',
+  'stethoscope',
+  'pill',
+  'wifi',
+  'smartphone',
+  'book',
+  'briefcase',
+  'wrench',
+  'tree-pine',
+  'sun',
+  'wallet',
+] as const
+// Colors a category can have: names of theme colors (never hex: the app resolves them in light and dark).
+export const categoryColors = [
+  'chart-1',
+  'chart-2',
+  'chart-3',
+  'chart-4',
+  'chart-5',
+  'positive',
+  'negative',
+  'highlight',
+  'primary',
+  'muted',
+] as const
 
 export const currency = z.enum(currencies)
 // Where a suggested exchange rate comes from: blue (only USD, the default for it) or oficial
 export const rateSource = z.enum(['blue', 'oficial'])
-export const expenseCategory = z.enum(expenseCategories)
 
 const id = z.string().min(1)
 const name = z.string().trim().min(1).max(60)
+
+export const categoryIcon = z.enum(categoryIcons)
+export const categoryColor = z.enum(categoryColors)
+export const categoryName = z.string().trim().min(1).max(30)
+export const categoryInput = z.object({ name: categoryName, icon: categoryIcon, color: categoryColor })
 // Postgres int4 limit (≈ 21.4M in the expense's currency)
 const amountCents = z.number().int().positive().max(2_147_483_647)
 
@@ -40,7 +110,8 @@ const movementCurrency = {
 export const expenseInput = z.object({
   groupId: id,
   description: z.string().trim().min(1).max(120),
-  category: expenseCategory.default('OTHER'),
+  // One of the group's categories; omitted → the group's "Otros"
+  categoryId: id.optional(),
   date: z.date(),
   amountCents,
   ...movementCurrency,
@@ -65,7 +136,7 @@ export const expenseFilters = z.object({
   splitParticipantId: id.optional(),
   // paid it OR is part of the split ("gastos en los que estoy involucrado")
   involvedParticipantId: id.optional(),
-  categories: z.array(expenseCategory).optional(),
+  categoryIds: z.array(id).optional(),
   dateFrom: z.date().optional(),
   dateTo: z.date().optional(),
   minAmountCents: z.number().int().nonnegative().optional(),
@@ -84,6 +155,7 @@ export const paymentAlias = z
   .regex(/^([a-zA-Z0-9.-]{6,20}|\d{22})$/, 'Alias (6 a 20 letras, números, puntos o guiones) o CVU/CBU (22 dígitos)')
   .nullable()
 
+export type CategoryInput = z.infer<typeof categoryInput>
 export type ExpenseInput = z.input<typeof expenseInput>
 export type SettlementInput = z.input<typeof settlementInput>
 export type ExpenseFilters = z.infer<typeof expenseFilters>

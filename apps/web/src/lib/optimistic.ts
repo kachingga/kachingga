@@ -60,13 +60,18 @@ export function buildExpense(
   group: Group,
   id: string,
   previous?: Expense,
+  category?: Expense['category'],
 ): Expense {
+  // The category the expense will show: the one picked (from `categories.list`), or what it had.
+  const shownCategory = category ??
+    previous?.category ?? { id: '', name: 'Otros', icon: 'shapes', color: 'muted' };
   const now = new Date();
   return {
     id,
     groupId: group.id,
     description: input.description,
-    category: input.category ?? 'OTHER',
+    categoryId: shownCategory.id,
+    category: shownCategory,
     date: input.date,
     amountCents: input.amountCents,
     currency: input.currency,

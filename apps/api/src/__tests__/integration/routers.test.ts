@@ -18,7 +18,9 @@ async function groupWithMembers() {
   const juan = await ana.participants.add({ groupId: group.id, name: 'Juan' })
   const full = await ana.groups.get({ groupId: group.id })
   const id = (name: string) => full.participants.find((p) => p.name === name)!.id
-  return { ana, beto, eve, group, juan, pAna: id('Ana'), pBeto: id('Beto'), pJuan: id('Juan') }
+  const categories = await ana.categories.list({ groupId: group.id })
+  const cat = (key: string) => categories.find((c) => c.defaultKey === key)!.id
+  return { ana, beto, eve, group, juan, pAna: id('Ana'), pBeto: id('Beto'), pJuan: id('Juan'), cat }
 }
 
 const day = (d: string) => new Date(`2026-11-${d}T12:00:00Z`)
@@ -150,11 +152,11 @@ describe('participants', () => {
 
 describe('expenses and balances', () => {
   test('full flow: ARS, converted USD (automatic blue), kept USD, settlement', async () => {
-    const { ana, beto, group, pAna, pBeto, pJuan } = await groupWithMembers()
+    const { ana, beto, group, pAna, pBeto, pJuan, cat } = await groupWithMembers()
     await ana.expenses.create({
       groupId: group.id,
       description: 'Asado',
-      category: 'FOOD',
+      categoryId: cat('FOOD'),
       date: day('01'),
       amountCents: 300000,
       currency: 'ARS',
@@ -164,7 +166,7 @@ describe('expenses and balances', () => {
     const nafta = await beto.expenses.create({
       groupId: group.id,
       description: 'Nafta',
-      category: 'TRANSPORT',
+      categoryId: cat('TRANSPORT'),
       date: day('02'),
       amountCents: 2000,
       currency: 'USD',
@@ -262,12 +264,12 @@ describe('expenses and balances', () => {
   })
 
   test('list: combined filters and cursor pagination', async () => {
-    const { ana, group, pAna, pJuan } = await groupWithMembers()
+    const { ana, group, pAna, pJuan, cat } = await groupWithMembers()
     for (let i = 0; i < 55; i++) {
       await ana.expenses.create({
         groupId: group.id,
         description: i === 8 ? 'Asado del sábado' : `Gasto ${i}`,
-        category: i === 8 ? 'FOOD' : 'OTHER',
+        categoryId: cat(i === 8 ? 'FOOD' : 'OTHER'),
         date: day('01'),
         amountCents: 100 + i,
         currency: 'ARS',
@@ -284,7 +286,7 @@ describe('expenses and balances', () => {
 
     const search = await ana.expenses.list({
       groupId: group.id,
-      filters: { search: 'ASADO', categories: ['FOOD'], splitParticipantId: pJuan },
+      filters: { search: 'ASADO', categoryIds: [cat('FOOD')], splitParticipantId: pJuan },
     })
     expect(search.items.map((e) => e.description)).toEqual(['Asado del sábado'])
   })

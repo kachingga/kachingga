@@ -7,7 +7,7 @@ const beto = { id: 'b', name: 'Beto' }
 const base: ExpenseForExport = {
   date: new Date('2026-11-02T12:00:00Z'),
   description: 'Asado',
-  category: 'FOOD',
+  category: { name: 'Comida' },
   amountCents: 300000,
   currency: 'ARS',
   exchangeRate: null,

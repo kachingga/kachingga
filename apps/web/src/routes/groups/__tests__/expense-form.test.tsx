@@ -1,4 +1,4 @@
-import { screen, waitFor } from '@testing-library/react';
+import { screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it } from 'vitest';
 
@@ -91,6 +91,49 @@ describe('ExpenseForm (amounts, dates and currencies)', () => {
       keepCurrency: false,
       date: dayToDate(today()),
     });
+  });
+
+  it('offers the group\'s active categories ("Otros" by default) and sends the one picked', async () => {
+    const user = userEvent.setup();
+    const create = captureCreate();
+    const category = (id: string, name: string, defaultKey: string | null, archived = false) => ({
+      id,
+      name,
+      icon: 'shapes',
+      color: 'muted',
+      defaultKey,
+      archived,
+      expenseCount: 0,
+    });
+    renderWithApi(<ExpenseForm />, {
+      'groups.get': () => fixGroup,
+      'categories.list': () => [
+        category('c-food', 'Comida', 'FOOD'),
+        category('c-old', 'Vieja', null, true),
+        category('c-nafta', 'Nafta', null),
+        category('c-other', 'Otros', 'OTHER'),
+      ],
+      'expenses.create': create.handler,
+    });
+    const picker = await screen.findByRole('radiogroup', { name: 'Categoría' });
+    // Active ones only (the archived "Vieja" is left out), "Otros" picked by default.
+    expect(
+      within(picker)
+        .getAllByRole('radio')
+        .map((o) => o.textContent),
+    ).toEqual(['Comida', 'Nafta', 'Otros']);
+    expect(within(picker).getByRole('radio', { name: 'Otros' })).toBeChecked();
+    expect(screen.getByRole('link', { name: 'Editar categorías' })).toHaveAttribute(
+      'href',
+      expect.stringMatching(/\/categorias$/),
+    );
+
+    await fillBasics(user, '100');
+    await user.click(within(picker).getByRole('radio', { name: 'Nafta' }));
+    expect(within(picker).getByRole('radio', { name: 'Nafta' })).toBeChecked();
+    await user.click(screen.getByRole('button', { name: 'Agregar gasto' }));
+    await waitFor(() => expect(create.calls).toHaveLength(1));
+    expect(create.calls[0]).toMatchObject({ categoryId: 'c-nafta' });
   });
 
   it('converts dollars with the suggested blue rate by default', async () => {

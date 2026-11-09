@@ -1,18 +1,14 @@
 import type { ComponentProps, ReactNode } from 'react';
 import { Link } from 'react-router';
 import { cn } from 'cn';
+import { ArrowLeft, Shapes } from 'lucide-react';
 import {
-  ArrowLeft,
-  BedDouble,
-  Car,
-  PartyPopper,
-  Shapes,
-  ShoppingBag,
-  ShoppingCart,
-  Utensils,
-  Zap,
-} from 'lucide-react';
-import { formatMyBalance, type ExpenseCategory } from '@/lib/format';
+  CATEGORY_COLORS,
+  CATEGORY_ICONS,
+  type CategoryColor,
+  type CategoryIconName,
+} from '@/lib/categories';
+import { formatMyBalance } from '@/lib/format';
 
 // Visual building blocks of the design (palette "yerba y durazno"). Only presentation: no data.
 // How they're used: docs/claude/web/componentes-y-tema.md.
@@ -32,30 +28,23 @@ export function SectionTitle({ className, ...props }: ComponentProps<'h2'>) {
   return <h2 className={cn('text-lg font-bold', className)} {...props} />;
 }
 
-const CATEGORY_ICONS: Record<ExpenseCategory, typeof Utensils> = {
-  FOOD: Utensils,
-  GROCERIES: ShoppingCart,
-  TRANSPORT: Car,
-  LODGING: BedDouble,
-  ENTERTAINMENT: PartyPopper,
-  SHOPPING: ShoppingBag,
-  SERVICES: Zap,
-  OTHER: Shapes,
-};
-
+/** A category's icon on its color. Unknown values (old data) fall back to "shapes" on muted. */
 export function CategoryIcon({
-  category,
+  icon,
+  color,
   className,
 }: {
-  category: ExpenseCategory;
+  icon: string;
+  color: string;
   className?: string;
 }) {
-  const Icon = CATEGORY_ICONS[category] ?? Shapes;
+  const Icon = CATEGORY_ICONS[icon as CategoryIconName] ?? Shapes;
   return (
     <span
       aria-hidden
       className={cn(
-        'grid size-10 shrink-0 place-items-center rounded-xl bg-accent text-accent-foreground',
+        'grid size-10 shrink-0 place-items-center rounded-xl',
+        CATEGORY_COLORS[color as CategoryColor] ?? CATEGORY_COLORS.muted,
         className,
       )}
     >

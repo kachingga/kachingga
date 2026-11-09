@@ -3,6 +3,7 @@ import { z } from 'zod'
 import { prisma } from '../../db'
 import { requireActiveGroup, requireMembership } from '../../lib/access'
 import { computeBalances } from '../../lib/balances'
+import { defaultCategoryRows } from '../../lib/categories'
 import { generateInviteCode } from '../../lib/inviteCode'
 import { resolvePaymentAliases } from '../../lib/paymentAlias'
 import { groupInput, participantName } from '../../schemas'
@@ -85,6 +86,7 @@ export const groupsRouter = router({
         inviteCode: generateInviteCode(),
         createdById: ctx.user.id,
         participants: { create: { name: input.myName, userId: ctx.user.id } },
+        categories: { create: defaultCategoryRows() },
       },
     }),
   ),

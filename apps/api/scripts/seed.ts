@@ -77,6 +77,12 @@ const daysAgo = (n: number) => {
 }
 const ars = (pesos: number) => pesos * 100
 
+// The group's built-in categories by key (FOOD, GROCERIES…): every group starts with them.
+async function categoryIds(groupId: string) {
+  const categories = await juan.categories.list({ groupId })
+  return Object.fromEntries(categories.filter((c) => c.defaultKey).map((c) => [c.defaultKey!, c.id]))
+}
+
 async function participantIds(groupId: string) {
   const g = await juan.groups.get({ groupId })
   return Object.fromEntries(g.participants.map((p) => [p.name, p.id]))
@@ -98,6 +104,7 @@ await tuke.profile.update({ paymentAlias: 'tuke.mp' })
   await tuke.participants.setPaymentAlias({ participantId: tukeP.id, paymentAlias: 'tuke.viajes' }) // overrides the account's
 
   const p = await participantIds(group.id)
+  const c = await categoryIds(group.id)
   const everyone = [p.Juan!, p.Tuke!, p.Román!, p.Sofi!]
   const base = { groupId: group.id }
   const equal = { type: 'EQUAL' as const, participantIds: everyone }
@@ -105,7 +112,7 @@ await tuke.profile.update({ paymentAlias: 'tuke.mp' })
   await juan.expenses.create({
     ...base,
     description: 'Micro ida y vuelta',
-    category: 'TRANSPORT',
+    categoryId: c.TRANSPORT!,
     date: daysAgo(40),
     amountCents: ars(480_000),
     currency: 'ARS',
@@ -116,7 +123,7 @@ await tuke.profile.update({ paymentAlias: 'tuke.mp' })
   await tuke.expenses.create({
     ...base,
     description: 'Airbnb en Lagoa',
-    category: 'LODGING',
+    categoryId: c.LODGING!,
     date: daysAgo(38),
     amountCents: 800_00,
     currency: 'USD',
@@ -126,7 +133,7 @@ await tuke.profile.update({ paymentAlias: 'tuke.mp' })
   await roman.expenses.create({
     ...base,
     description: 'Súper para la semana',
-    category: 'GROCERIES',
+    categoryId: c.GROCERIES!,
     date: daysAgo(37),
     amountCents: 650_00,
     currency: 'BRL',
@@ -138,7 +145,7 @@ await tuke.profile.update({ paymentAlias: 'tuke.mp' })
   await juan.expenses.create({
     ...base,
     description: 'Cena de despedida',
-    category: 'FOOD',
+    categoryId: c.FOOD!,
     date: daysAgo(32),
     amountCents: 120_00,
     currency: 'USD',
@@ -149,7 +156,7 @@ await tuke.profile.update({ paymentAlias: 'tuke.mp' })
   await tuke.expenses.create({
     ...base,
     description: 'Caipirinhas en la playa',
-    category: 'ENTERTAINMENT',
+    categoryId: c.ENTERTAINMENT!,
     date: daysAgo(35),
     amountCents: 180_00,
     currency: 'BRL',
@@ -160,7 +167,7 @@ await tuke.profile.update({ paymentAlias: 'tuke.mp' })
   await juan.expenses.create({
     ...base,
     description: 'Excursión en barco',
-    category: 'ENTERTAINMENT',
+    categoryId: c.ENTERTAINMENT!,
     date: daysAgo(36),
     amountCents: ars(110_000),
     currency: 'ARS',
@@ -177,7 +184,7 @@ await tuke.profile.update({ paymentAlias: 'tuke.mp' })
   await roman.expenses.create({
     ...base,
     description: 'Nafta del auto alquilado',
-    category: 'TRANSPORT',
+    categoryId: c.TRANSPORT!,
     date: daysAgo(34),
     amountCents: 45_00,
     currency: 'USD',
@@ -196,7 +203,7 @@ await tuke.profile.update({ paymentAlias: 'tuke.mp' })
   await juan.expenses.create({
     ...base,
     description: 'Regalo de cumple para Sofi',
-    category: 'SHOPPING',
+    categoryId: c.SHOPPING!,
     date: daysAgo(33),
     amountCents: ars(60_000),
     currency: 'ARS',
@@ -215,7 +222,7 @@ await tuke.profile.update({ paymentAlias: 'tuke.mp' })
     await juan.expenses.create({
       ...base,
       description,
-      category: 'FOOD',
+      categoryId: c.FOOD!,
       date: daysAgo(39 - i),
       amountCents: ars(pesos),
       currency: 'ARS',
@@ -226,7 +233,7 @@ await tuke.profile.update({ paymentAlias: 'tuke.mp' })
   const duplicated = await juan.expenses.create({
     ...base,
     description: 'Helado (duplicado)',
-    category: 'FOOD',
+    categoryId: c.FOOD!,
     date: daysAgo(35),
     amountCents: ars(18_500),
     currency: 'ARS',
@@ -261,6 +268,7 @@ await tuke.profile.update({ paymentAlias: 'tuke.mp' })
   const group = await juan.groups.create({ name: 'Depto Palermo', baseCurrency: 'ARS', myName: 'Juan' })
   await tuke.groups.join({ inviteCode: group.inviteCode, name: 'Tuke' })
   const p = await participantIds(group.id)
+  const c = await categoryIds(group.id)
   const both = { type: 'EQUAL' as const, participantIds: [p.Juan!, p.Tuke!] }
   const base = { groupId: group.id, currency: 'ARS' as const, split: both }
 
@@ -271,7 +279,7 @@ await tuke.profile.update({ paymentAlias: 'tuke.mp' })
     await juan.expenses.create({
       ...base,
       description: 'Alquiler',
-      category: 'LODGING',
+      categoryId: c.LODGING!,
       date: daysAgo(start),
       amountCents: amount(650_000),
       paidById: p.Juan!,
@@ -279,7 +287,7 @@ await tuke.profile.update({ paymentAlias: 'tuke.mp' })
     await tuke.expenses.create({
       ...base,
       description: 'Expensas',
-      category: 'SERVICES',
+      categoryId: c.SERVICES!,
       date: daysAgo(start - 2),
       amountCents: amount(118_000),
       paidById: p.Tuke!,
@@ -287,7 +295,7 @@ await tuke.profile.update({ paymentAlias: 'tuke.mp' })
     await tuke.expenses.create({
       ...base,
       description: 'Luz',
-      category: 'SERVICES',
+      categoryId: c.SERVICES!,
       date: daysAgo(start - 5),
       amountCents: amount(32_400),
       paidById: p.Tuke!,
@@ -295,7 +303,7 @@ await tuke.profile.update({ paymentAlias: 'tuke.mp' })
     await juan.expenses.create({
       ...base,
       description: 'Gas',
-      category: 'SERVICES',
+      categoryId: c.SERVICES!,
       date: daysAgo(start - 6),
       amountCents: amount(14_900),
       paidById: p.Juan!,
@@ -303,7 +311,7 @@ await tuke.profile.update({ paymentAlias: 'tuke.mp' })
     await juan.expenses.create({
       ...base,
       description: 'Internet',
-      category: 'SERVICES',
+      categoryId: c.SERVICES!,
       date: daysAgo(start - 8),
       amountCents: amount(27_000),
       paidById: p.Juan!,
@@ -313,7 +321,7 @@ await tuke.profile.update({ paymentAlias: 'tuke.mp' })
       await juan.expenses.create({
         ...base,
         description: 'Súper',
-        category: 'GROCERIES',
+        categoryId: c.GROCERIES!,
         date: daysAgo(start - 3 - week * 7),
         amountCents: amount(48_000 + week * 7_350),
         paidById: payer,
@@ -333,7 +341,7 @@ await tuke.profile.update({ paymentAlias: 'tuke.mp' })
   const firstOfMonth = new Date()
   firstOfMonth.setDate(1)
   firstOfMonth.setHours(0, 0, 0, 0)
-  await juan.savedFilters.create({ groupId: group.id, name: 'Servicios', filters: { categories: ['SERVICES'] } })
+  await juan.savedFilters.create({ groupId: group.id, name: 'Servicios', filters: { categoryIds: [c.SERVICES!] } })
   await juan.savedFilters.create({ groupId: group.id, name: 'Lo que pagué yo', filters: { paidById: p.Juan! } })
   await juan.savedFilters.create({ groupId: group.id, name: 'Este mes', filters: { dateFrom: firstOfMonth } })
 }
@@ -344,11 +352,12 @@ await tuke.profile.update({ paymentAlias: 'tuke.mp' })
   await juan.groups.join({ inviteCode: group.inviteCode, name: 'Juan' })
   await tuke.groups.join({ inviteCode: group.inviteCode, name: 'Tuke' })
   const p = await participantIds(group.id)
+  const c = await categoryIds(group.id)
   const base = { groupId: group.id, currency: 'ARS' as const }
   await roman.expenses.create({
     ...base,
     description: 'Carne y achuras',
-    category: 'GROCERIES',
+    categoryId: c.GROCERIES!,
     date: daysAgo(3),
     amountCents: ars(90_000),
     paidById: p.Román!,
@@ -363,11 +372,12 @@ await tuke.profile.update({ paymentAlias: 'tuke.mp' })
   const group = await juan.groups.create({ name: 'Bariloche 2025', baseCurrency: 'ARS', myName: 'Juan' })
   await roman.groups.join({ inviteCode: group.inviteCode, name: 'Román' })
   const p = await participantIds(group.id)
+  const c = await categoryIds(group.id)
   const base = { groupId: group.id, currency: 'ARS' as const, split: { type: 'EQUAL' as const, participantIds: [p.Juan!, p.Román!] } }
   await juan.expenses.create({
     ...base,
     description: 'Cabaña',
-    category: 'LODGING',
+    categoryId: c.LODGING!,
     date: daysAgo(300),
     amountCents: ars(420_000),
     paidById: p.Juan!,
@@ -375,7 +385,7 @@ await tuke.profile.update({ paymentAlias: 'tuke.mp' })
   await roman.expenses.create({
     ...base,
     description: 'Pases de ski',
-    category: 'ENTERTAINMENT',
+    categoryId: c.ENTERTAINMENT!,
     date: daysAgo(298),
     amountCents: ars(380_000),
     paidById: p.Román!,

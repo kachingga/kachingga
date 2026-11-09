@@ -1,5 +1,6 @@
 import { router } from './init'
 import { balancesRouter } from './routers/balances'
+import { categoriesRouter } from './routers/categories'
 import { expensesRouter } from './routers/expenses'
 import { groupsRouter } from './routers/groups'
 import { healthRouter } from './routers/health'
@@ -14,6 +15,7 @@ export const appRouter = router({
   groups: groupsRouter,
   participants: participantsRouter,
   profile: profileRouter,
+  categories: categoriesRouter,
   expenses: expensesRouter,
   settlements: settlementsRouter,
   balances: balancesRouter,
