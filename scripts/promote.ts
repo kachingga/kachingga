@@ -4,7 +4,7 @@
 // Usage: `bun run promote` (add `--migrated` once new migrations were applied to prod).
 import { $ } from "bun";
 
-const MIGRATIONS = "apps/api/prisma/migrations";
+const MIGRATIONS = "apps/api/src/db/migrations";
 
 await $`git fetch --quiet origin main production`;
 const main = (await $`git rev-parse origin/main`.text()).trim();
