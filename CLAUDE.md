@@ -77,6 +77,7 @@ Proyecto de **Kachingga**, una organización de amigos (repo: `github.com/kachin
 - **Dentro del grupo todo es público para sus miembros:** todos ven todos los gastos (los cargue y los pague quien sea), todos los pagos y los saldos de todos. Lo único personal son los **filtros guardados**.
 - **Código de invitación:** cada grupo tiene un código (8 caracteres, sin letras/números confusibles como 0/O, 1/I/L). Se puede regenerar; el anterior deja de servir.
 - **Archivar:** un grupo archivado se puede ver pero no modificar (ni gastos, ni pagos, ni participantes) hasta desarchivarlo. No aparece en la lista por defecto.
+- **Cupo:** cada usuario puede **crear hasta 50 grupos** (los archivados cuentan). Unirse a grupos de otros no tiene límite.
 
 ### Participantes
 - Un participante es una persona dentro de un grupo. **Puede no tener cuenta** ("Juan", que no usa la app).
@@ -87,6 +88,7 @@ Proyecto de **Kachingga**, una organización de amigos (repo: `github.com/kachin
 - El participante de alguien que **borró su cuenta** queda sin cuenta y se puede reclamar con el código como cualquier otro (si la persona vuelve, se registra de nuevo y se reclama a sí misma).
 - Se puede renombrar a cualquiera.
 - **Quitar un participante** solo se puede si no tiene cuenta y nunca aparece en un gasto o pago (para no romper saldos).
+- Un grupo tiene **hasta 50 personas** (con o sin cuenta). Lleno, no se puede agregar a nadie ni entrar como participante nuevo; reclamar uno que ya existe, sí.
 
 ### Gastos
 - Un gasto tiene: descripción, categoría, fecha, monto, moneda, quién pagó y entre quiénes se divide.
@@ -99,6 +101,7 @@ Proyecto de **Kachingga**, una organización de amigos (repo: `github.com/kachin
     - Solo se sugieren categorías **activas del grupo**; gastos borrados no cuentan. Sin IA (eso sería v2).
   - Archivada: los gastos que ya la tenían la conservan (y se puede dejar al editarlos), pero no se puede elegir para gastos nuevos. El grupo siempre tiene al menos una activa.
   - El nombre es único entre las activas del grupo (sin distinguir mayúsculas).
+  - Un grupo tiene **hasta 50 categorías**, contando las 8 por defecto y las archivadas.
   - Filtros, totales por categoría, filtros guardados y export usan las categorías del grupo.
 - **Quien paga puede no estar en la división** (ej. pagué yo un regalo que es solo de Román).
 - **Cualquier miembro puede cargar un gasto pagado por otro** (ej. "pagó Román, entre Tuke y yo") y editar o borrar cualquier gasto.
@@ -109,6 +112,7 @@ Proyecto de **Kachingga**, una organización de amigos (repo: `github.com/kachin
 - **Redondeo:** se trabaja en centavos. Si no divide exacto, los centavos que sobran se reparten de a uno (a los que más "fracción" tenían; en partes iguales, a los primeros). **La suma de las partes siempre es exactamente el total.**
 - Editar un gasto lo reemplaza entero (incluida la división).
 - **Borrar** un gasto no lo elimina: queda oculto y deja de contar en saldos.
+- La **fecha** (de un gasto, de un pago o de un filtro) va del año 2000 al 2100: así no se guarda un año mal tipeado (0202).
 
 ### Multimoneda
 - **Monedas:** ARS, USD, EUR, BRL, UYU, CLP.
@@ -156,7 +160,7 @@ Proyecto de **Kachingga**, una organización de amigos (repo: `github.com/kachin
   - **en qué gastos está involucrado alguien** (lo pagó **o** participa: "mis gastos"),
   - categorías, rango de fechas (por mes = del 1 al último día), rango de montos (en la moneda de cada gasto) y texto en la descripción (sin distinguir mayúsculas).
 - **Totales para cualquier filtro** ("¿cuánto gasté en noviembre?"): cantidad de gastos, total gastado, **mi parte** (lo que me correspondió), **lo que pagué yo** y el total por categoría. Por moneda, con las mismas reglas que los saldos (lo convertido suma en la base; lo mantenido, en su moneda). Los pagos manuales no cuentan como gasto.
-- **Filtros guardados:** cada usuario puede guardar combinaciones con nombre, por grupo. Son personales (los demás no los ven).
+- **Filtros guardados:** cada usuario puede guardar combinaciones con nombre, por grupo, **hasta 30 por grupo**. Son personales (los demás no los ven) y se pueden guardar también en un grupo archivado.
 
 
 ### Exportar gastos
@@ -217,7 +221,7 @@ Web (Railway) ──tRPC + token de Supabase──▶ API (Hono, Railway) ──
 - **Los datos solo por la API.** El front usa Supabase únicamente para el login; RLS bloquea cualquier otro acceso a la base.
 - **Secretos:** nunca en el código, en los `.env.sample`, en issues, PRs ni en el chat. Solo en `.env` / `.env.prod` locales (gitignoreados) y en Railway. Lo que empieza con `VITE_` es **público** (va dentro de la app): nunca un secreto ahí. GitHub escanea los pushes y bloquea si detecta una clave.
 - **Si se filtra un secreto:** avisar al grupo, **rotarlo** (generar uno nuevo en Supabase / Railway) y actualizarlo en todos lados. Borrarlo del historial no alcanza: el repo es público.
-- **Límite de pedidos por IP** en la API (más estricto en códigos de invitación y export). Un procedure caro o adivinable lleva su límite.
+- **Límite de pedidos por IP** en la API (más estricto en códigos de invitación, export, saldos y totales) y **por usuario en las escrituras**; pedidos de hasta 1 MB, topes en todos los inputs y cupos (ver "Reglas de negocio"). Un procedure caro o adivinable lleva su límite; algo que crece con el uso, su cupo. Así nadie llena la base (Supabase Free: 500 MB, después queda en solo lectura para todos) ni traba la API.
 - **Validar todo lo que entra** (Zod en la API) y no mostrar errores internos al usuario.
 - **Nunca resetear contraseñas de las bases, desactivar RLS, abrir CORS a cualquier origen, ni saltear hooks o checks** (`--no-verify`, `eslint-disable` de las reglas del proyecto) para "destrabar" algo.
 - **Ante la duda sobre algo de seguridad, frenar y preguntar** (ver `.claude/CLAUDE.md` → cuestionar al humano).
