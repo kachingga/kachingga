@@ -10,12 +10,15 @@
     <meta name="apple-mobile-web-app-title" content="Kachingga" />
     <meta name="apple-mobile-web-app-status-bar-style" content="default" />
     <title>Kachingga</title>
-    <!-- Theme before the first paint (no flash). Same logic and key as src/lib/theme.ts. -->
+    <!-- Theme and palette before the first paint (no flash). Same logic and keys as src/lib/theme.ts. -->
     <script>
       try {
         var t = localStorage.getItem('kachingga-theme');
         if (t === 'dark' || (t !== 'light' && matchMedia('(prefers-color-scheme: dark)').matches))
           document.documentElement.classList.add('dark');
+        var p = localStorage.getItem('kachingga-palette');
+        if (/^(green|blue|violet|yellow|mono)$/.test(p))
+          document.documentElement.dataset.palette = p;
       } catch (e) {}
     </script>
   </head>

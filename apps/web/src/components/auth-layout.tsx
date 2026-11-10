@@ -20,7 +20,7 @@ export function AuthLayout({
     <div className="relative min-h-dvh overflow-hidden bg-background">
       <div
         aria-hidden
-        className="pointer-events-none absolute inset-0 coin-pattern text-primary opacity-[0.045] dark:opacity-[0.05]"
+        className="pointer-events-none absolute inset-0 coin-pattern text-primary-ink opacity-[0.045] dark:opacity-[0.05]"
       />
       <header className="relative mx-auto flex max-w-6xl items-center justify-between px-6 pt-[calc(env(safe-area-inset-top)+1.25rem)] pb-5 sm:px-10">
         <Wordmark />

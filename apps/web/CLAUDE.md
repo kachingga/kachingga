@@ -36,7 +36,7 @@
 - Monedas: siempre la lista `currencies` de `@kachingga/api/schemas`, nunca una a mano.
 
 **UI**
-- **Colores del tema** (`bg-card`, `text-muted-foreground`, `text-positive`…), **nunca fijos** (`bg-neutral-900`, `text-white`). Claro y oscuro siguen al sistema salvo que la persona elija con el toggle (`src/lib/theme.ts`).
+- **Colores del tema** (`bg-card`, `text-muted-foreground`, `text-positive`…), **nunca fijos** (`bg-neutral-900`, `text-white`): así andan en claro, oscuro y las 5 paletas (Mi cuenta → "Colores de la app", `src/lib/theme.ts`). Claro y oscuro siguen al sistema salvo que la persona elija con el toggle. Texto en el color principal: `text-primary-ink`, no `text-primary` (en amarillo no se lee).
 - **Marco y piezas del diseño:** toda pantalla logueada va dentro de `AppShell` (lo pone el router) y define su ancho con `<Page>`; tarjetas, íconos de categoría, avatares (con `id`: cada persona tiene su color), montos grandes (`Money`), saldos y estados vacíos (`EmptyState`) con los de `src/components/kit.tsx`, no a mano. Formularios con `Button` (con `loading`), `Input`, `NativeSelect`, `<Field>` y `<Chip>`, nunca `<button>` / `<input>` con clases a mano.
 - Cargando = **skeleton** (nunca un spinner suelto); vacío = **`EmptyState`**; error = **`ErrorState`** con Reintentar; confirmar = **`useConfirm`** (nunca `confirm()`); avisar = **toast**.
 - Animaciones cortas y apagadas con **"reducir movimiento"** (ya lo hace la regla global de `src/index.css`; ver `docs/claude/web/sensacion-de-app.md` → "Micro-interacciones").
