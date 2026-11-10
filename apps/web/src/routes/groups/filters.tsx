@@ -4,7 +4,7 @@ import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from '@tansta
 import { X } from 'lucide-react';
 
 import { ErrorState } from '@/components/error-state';
-import { Card, CategoryIcon, Chip, Field, Page, PageHeader } from '@/components/kit';
+import { Card, CategoryIcon, Chip, Field, Money, Page, PageHeader } from '@/components/kit';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -377,24 +377,24 @@ export function Filters() {
                   <p className="w-fit rounded-full bg-muted px-2.5 py-0.5 text-xs font-semibold text-muted-foreground">
                     {s.currency}
                   </p>
-                  <div className="mt-3 grid grid-cols-3 gap-2 text-foreground">
-                    <div>
+                  {/* Phone: the total on its own row and the other two below (three in a row didn't
+                      fit amounts in the millions). From sm up, the three in a row. */}
+                  <div className="mt-3 grid grid-cols-2 gap-x-3 gap-y-3 text-foreground sm:grid-cols-3">
+                    <div className="col-span-2 min-w-0 sm:col-span-1">
                       <p className="text-xs text-muted-foreground">Gastos ({s.count})</p>
-                      <p className="font-display text-lg font-bold tabular">
-                        {formatCents(s.totalCents, s.currency)}
-                      </p>
+                      <Money
+                        cents={s.totalCents}
+                        currency={s.currency}
+                        className="text-2xl sm:text-lg"
+                      />
                     </div>
-                    <div>
+                    <div className="min-w-0">
                       <p className="text-xs text-muted-foreground">Mi parte</p>
-                      <p className="font-display text-lg font-bold tabular">
-                        {formatCents(s.myShareCents, s.currency)}
-                      </p>
+                      <Money cents={s.myShareCents} currency={s.currency} className="text-lg" />
                     </div>
-                    <div>
+                    <div className="min-w-0">
                       <p className="text-xs text-muted-foreground">Pagué</p>
-                      <p className="font-display text-lg font-bold tabular">
-                        {formatCents(s.myPaidCents, s.currency)}
-                      </p>
+                      <Money cents={s.myPaidCents} currency={s.currency} className="text-lg" />
                     </div>
                   </div>
                   {s.byCategory.length > 0 && (
