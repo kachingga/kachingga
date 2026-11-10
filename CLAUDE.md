@@ -1,6 +1,6 @@
 # Kachingga — App para dividir gastos en grupo
 
-Proyecto de **Kachingga**, una organización de amigos (repo: `github.com/kachingga/kachingga`). **Hoy es para uso propio del grupo**: cada uno la usa en su celu y siempre en la última versión. El front es una **web app mobile-first** (`apps/web`: se usa en el celu y también en la compu; en `kachingga.com`). No hay app nativa: se sacó del repo (decisión en `docs/decisiones/costos-y-alternativas.md`). **A futuro se podría publicar** (ver `docs/decisiones/lanzamiento.md` → "Fase 2"): no tomar decisiones que lo hagan imposible, pero tampoco construir cosas para usuarios públicos antes de tiempo.
+Proyecto de **Kachingga**, una organización de amigos (repo: `github.com/kachingga/kachingga`). **Hoy es para uso propio del grupo**: cada uno la usa en su celu y siempre en la última versión. El front es una **web app mobile-first** (`apps/web`: se usa en el celu y también en la compu; en `app.kachingga.com`, y `kachingga.com` es la landing pública, #100). No hay app nativa: se sacó del repo (decisión en `docs/decisiones/costos-y-alternativas.md`). **A futuro se podría publicar** (ver `docs/decisiones/lanzamiento.md` → "Fase 2"): no tomar decisiones que lo hagan imposible, pero tampoco construir cosas para usuarios públicos antes de tiempo.
 
 ---
 
@@ -174,7 +174,7 @@ Proyecto de **Kachingga**, una organización de amigos (repo: `github.com/kachin
 - Cualquier miembro puede exportar los gastos de su grupo.
 ### Decisiones de producto tomadas
 - Grupo de amigos, uso propio → sin roles ni permisos finos dentro de un grupo. *(A revisar antes de publicarla: `docs/decisiones/lanzamiento.md` → "Fase 2".)*
-- **Front: web app mobile-first** (web y API en Railway, con dominio propio `kachingga.com`), instalable en el celu desde el navegador ("Agregar a inicio"). Sin cuenta de Apple ni stores. **Solo web:** la app nativa (Expo) se sacó del repo el 8/11/2026; si algún día se quiere en las stores, se arranca de cero (`docs/decisiones/costos-y-alternativas.md`).
+- **Front: web app mobile-first** (web y API en Railway, con dominio propio: la app en `app.kachingga.com` y la landing en `kachingga.com`), instalable en el celu desde el navegador ("Agregar a inicio"). Sin cuenta de Apple ni stores. **Solo web:** la app nativa (Expo) se sacó del repo el 8/11/2026; si algún día se quiere en las stores, se arranca de cero (`docs/decisiones/costos-y-alternativas.md`).
 - Saldar deudas es siempre manual (el pago se hace fuera de la app). **No hay integración con Mercado Pago**: pagar de una persona a otra desde la app sin comisiones no es posible (ver `docs/decisiones/mercado-pago.md`). El agente con IA es v2.
 - Dólar de referencia: **blue promedio** por defecto; se puede elegir el oficial o cargar uno a mano en cada gasto o pago. Las demás monedas, con su oficial sugerido.
 - Los tipos de cambio quedan "congelados" en cada gasto/pago al cargarlo.
@@ -340,7 +340,7 @@ Reglas para Claude:
 - PRs chicos y de un tema. Label `e2e` en los que cambian un recorrido crítico.
 - Si el PR queda atrás de `main`: **rebase, nunca merge** (`gh pr update-branch <n> --rebase`).
 - **Claude: crear la branch y el PR; mergear solo si el usuario lo pide** (`gh pr merge --squash` con el CI en verde).
-- **`main` → staging, `production` → prod:** cada merge a `main` se deploya solo en **staging** (`staging.kachingga.com`). Prod (`kachingga.com`) se deploya desde la branch `production`, que solo avanza con **`bun run promote`** (fast-forward hasta `main`, desde la máquina de un miembro; sin force-push). Antes: probar en staging y, si hay migraciones, `db:migrate:prod`. Claude no promueve a prod sin que el usuario lo pida. Detalle: `DEPLOY.md`.
+- **`main` → staging, `production` → prod:** cada merge a `main` se deploya solo en **staging** (`staging.kachingga.com`). Prod (`app.kachingga.com`) se deploya desde la branch `production`, que solo avanza con **`bun run promote`** (fast-forward hasta `main`, desde la máquina de un miembro; sin force-push). Antes: probar en staging y, si hay migraciones, `db:migrate:prod`. Claude no promueve a prod sin que el usuario lo pida. Detalle: `DEPLOY.md`.
 - Comandos, CI colgado, PRs apilados y demás detalle: **`docs/claude/repo/git-prs-y-conflictos.md`**.
 
 ## Issues

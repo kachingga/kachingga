@@ -41,5 +41,5 @@ console.log(
 );
 await $`git push origin ${main}:refs/heads/production`;
 console.log(
-  "Listo: Railway deploya prod. Comprobar https://api.kachingga.com/health y https://kachingga.com.",
+  "Listo: Railway deploya prod. Comprobar https://api.kachingga.com/health y https://app.kachingga.com.",
 );
