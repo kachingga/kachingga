@@ -27,15 +27,16 @@
 
 ## Límites contra abuso
 
-Para que nadie que se registre (o un miembro) llene la base (Supabase Free: 500 MB; después queda **en solo lectura para todos**) ni trabe la API (un solo proceso de Bun).
+Para que nadie que se registre (o un miembro) llene la base (Supabase Free: 500 MB sumando prod y staging; si se pasa, **la app deja de andar para todos**: `INFRA.md` → "Plan de Supabase") ni trabe la API (un solo proceso de Bun).
 
 | Qué | Cómo | Dónde |
 |-----|------|-------|
 | **Tamaño del pedido** | Hasta 1 MB (`MAX_BODY_BYTES`). Más → `PAYLOAD_TOO_LARGE` (413) antes de que tRPC lo lea | `index.ts` (`bodyLimit` de Hono) |
 | **Topes en los inputs** | Ids ≤ 40 caracteres (`id`); listas ≤ 100 (personas de la división, `categoryIds`); fechas entre 2000 y 2100; código de invitación de 8 caracteres; textos con su largo máximo. Los filtros guardados se guardan como los parseó `expenseFilters` (solo campos conocidos, con sus topes), nunca el JSON que llegó | `schemas.ts`, routers |
-| **Cupos** (regla de negocio, `CLAUDE.md` raíz) | 50 grupos creados por usuario (archivados incluidos), 50 personas por grupo, 50 categorías por grupo (archivadas incluidas), 30 filtros guardados por usuario y grupo → `BAD_REQUEST` con el mensaje. Se cuentan antes de crear: dos pedidos en el mismo instante pueden pasarse por uno (no importa) | `lib/quotas.ts` |
-| **Escrituras por usuario** | Toda mutation: 30/min y 300/hora. Acota qué tan rápido una cuenta puede llenar la base, pero no lo impide del todo: no hay tope de gastos ni pagos por grupo | `USER_WRITE_RULES` en `lib/rateLimit.ts` |
+| **Cupos** (regla de negocio, `CLAUDE.md` raíz) | 50 grupos creados por usuario (archivados incluidos), 50 personas por grupo, 50 categorías por grupo (archivadas incluidas), 30 filtros guardados por usuario y grupo, 5.000 gastos y 5.000 pagos por grupo (borrados incluidos: igual ocupan lugar) → `BAD_REQUEST` con el mensaje. Se cuentan antes de crear: dos pedidos en el mismo instante pueden pasarse por uno (no importa) | `lib/quotas.ts` |
+| **Escrituras por usuario** | Toda mutation: 30/min y 300/hora. Acota qué tan rápido una cuenta puede llenar la base; cuánto, lo acotan los cupos | `USER_WRITE_RULES` en `lib/rateLimit.ts` |
 | **Lecturas caras** | `balances.get` y `expenses.summary` con límite propio (60/min por IP); `minimizeTransfers` ordena una sola vez (antes reordenaba en cada vuelta: con miles de personas bloqueaba la API) | `lib/rateLimit.ts`, `lib/balances.ts` |
+| **Tamaño de la base** | Los cupos no impiden que muchas cuentas o grupos la llenen de a poco: el backup diario mide `pg_database_size` de prod y falla (mail de GitHub) si pasa los 350 MB. Qué hacer si salta: `DEPLOY.md` → "Monitoreo" | `.github/workflows/backup.yml` |
 | **CSV del export** | Una celda de texto que empieza con `=`, `+`, `-`, `@`, tab o CR lleva `'` adelante: nadie mete una fórmula en la planilla de otro | `csvCell` en `lib/exportExpenses.ts` |
 | **Carreras** | Nombre de categoría: índice único parcial `Category_active_name_key` (`groupId`, `lower(name)`, solo activas), además del chequeo previo. Archivar la última activa: transacción que bloquea (`FOR UPDATE`) las activas del grupo. Quitar a alguien: `deleteMany` con `userId: null` (si lo reclamaron en el medio, no se borra) | migración `nombre_de_categoria_unico`, `routers/categories.ts`, `routers/participants.ts` |
 

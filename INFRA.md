@@ -13,7 +13,7 @@
 | Base de datos **DEV** | Supabase (`staging-kachingga`) | supabase.com/dashboard/project/nraoqdaplvvsakvtlcam | `https://nraoqdaplvvsakvtlcam.supabase.co` (ref `nraoqdaplvvsakvtlcam`) |
 | Auth | Supabase Auth (email + password y Google) | supabase.com/dashboard → Authentication | Ver "Supabase" (abajo) |
 | Login con Google (OAuth) | Google Cloud (proyecto `Kachingga` de Galo) | console.cloud.google.com → Google Auth Platform | Cliente OAuth *Web application* "Kachingga web", app publicada (*In production*). Detalle en "Supabase" |
-| CI | GitHub Actions | github.com/kachingga/kachingga/actions | `ci.yml` (checks obligatorios), `e2e.yml` (Playwright en la web, a demanda) y `backup.yml` (backup diario cifrado de prod, ver `DEPLOY.md` → "Backups") |
+| CI | GitHub Actions | github.com/kachingga/kachingga/actions | `ci.yml` (checks obligatorios), `e2e.yml` (Playwright en la web, a demanda) y `backup.yml` (backup diario cifrado de prod y alerta de tamaño de la base, ver `DEPLOY.md` → "Backups") |
 | Errores (monitoreo) | Sentry (plan gratis, org `kachingga` de Galo) | sentry.io/organizations/kachingga | Proyectos `kachingga-web` (React) y `kachingga-api` (Bun); cada uno con `environment` `staging` / `production`. Cómo está hecho: `docs/claude/repo/monitoreo.md` |
 | Caídas (uptime) | UptimeRobot (plan gratis, cuenta de Galo) | uptimerobot.com | HTTP(s) a `kachingga.com` y `staging.kachingga.com`; Keyword (`"ok":true`) a `api.kachingga.com/health/db` y `api-staging.kachingga.com/health/db` (ver `DEPLOY.md` → "Monitoreo") |
 | Cotizaciones (dólar blue y oficial, oficial de EUR, BRL, UYU y CLP) | DolarApi (público, sin clave) | dolarapi.com | `https://dolarapi.com/v1/dolares/{blue,oficial}` y `/v1/cotizaciones/{eur,brl,uyu,clp}` |
@@ -38,6 +38,7 @@ Actualizar este archivo con los valores reales después de cada setup.
 ### Plan de Supabase
 - La org `kachingga` está en **Free** (desde nov 2026): 2 proyectos activos por persona (sumando las orgs Free donde sos Owner/Admin), justo `kachingga` + `staging-kachingga`.
 - En Free, un proyecto **se pausa solo tras ~1 semana sin actividad** y se reactiva desde el dashboard. Si prod se pausa, la app deja de andar hasta reactivarlo: UptimeRobot lo detecta (`/health/db` deja de responder `"ok":true`). El ping de UptimeRobot a `/health/db` cada 5 minutos cuenta como actividad, así que ni prod ni staging deberían pausarse.
+- **Base de hasta 500 MB para toda la org**, sumando `kachingga` y `staging-kachingga`, medida como el **promedio diario** del período de facturación (no el tamaño del momento). Cada proyecto arranca ocupando ~40–60 MB. Si se pasa, Supabase restringe la org (los pedidos dan error 402: la app deja de andar para todos) hasta pasar a Pro o hasta el período siguiente; achicar la base no lo destraba enseguida. Aparte, el disco de cada proyecto (2 GB) pasa a **solo lectura** al llegar al 95%. El backup diario avisa antes: `DEPLOY.md` → "Monitoreo" → "Tamaño de la base".
 
 ## Variables de entorno
 
@@ -82,7 +83,7 @@ Los de prod (`BACKUP_*`) están en el **environment `backup`** (Settings → Env
 
 | Secret | Dónde | Descripción |
 |--------|-------|-------------|
-| `BACKUP_DATABASE_URL` | Environment `backup` | `DIRECT_URL` de prod (session pooler, puerto 5432). Lo usa `backup.yml` para el `pg_dump` diario |
+| `BACKUP_DATABASE_URL` | Environment `backup` | `DIRECT_URL` de prod (session pooler, puerto 5432). Lo usa `backup.yml` para el `pg_dump` diario y para medir el tamaño de la base |
 | `BACKUP_PASSPHRASE` | Environment `backup` | Passphrase con la que `backup.yml` cifra cada backup. Copia en `apps/api/.env.prod` y en el gestor de contraseñas de Galo: **sin ella no se pueden abrir los backups** |
 | `E2E_DATABASE_URL` | Repo | `DATABASE_URL` de **dev** (`staging-kachingga`, pooler 6543). La usa la API que levanta `e2e.yml` para los recorridos con datos (`docs/claude/web/testing.md`) |
 | `E2E_SUPABASE_URL` | Repo | `SUPABASE_URL` de dev (la API y la web de los E2E) |

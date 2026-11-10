@@ -29,7 +29,7 @@ Schema en `src/db/models/*.prisma`.
 
 ## Procedures tRPC
 
-Todos con `protectedProcedure` salvo `health.ping`. Inputs en `src/schemas.ts`, con topes (ids ≤ 40, listas ≤ 100: `docs/claude/api/seguridad.md` → "Límites contra abuso"). Los que crean algo con cupo (`groups.create`, `participants.add`, `groups.join` como nuevo, `categories.create`, `savedFilters.create`) responden `BAD_REQUEST` con el mensaje al llegar al cupo (`lib/quotas.ts`).
+Todos con `protectedProcedure` salvo `health.ping`. Inputs en `src/schemas.ts`, con topes (ids ≤ 40, listas ≤ 100: `docs/claude/api/seguridad.md` → "Límites contra abuso"). Los que crean algo con cupo (`groups.create`, `participants.add`, `groups.join` como nuevo, `categories.create`, `savedFilters.create`, `expenses.create`, `settlements.create`) responden `BAD_REQUEST` con el mensaje al llegar al cupo (`lib/quotas.ts`).
 
 | Procedure | Tipo | Qué hace |
 |-----------|------|----------|
@@ -78,7 +78,7 @@ Todos con `protectedProcedure` salvo `health.ping`. Inputs en `src/schemas.ts`, 
 | Categorías por grupo (las por defecto, cuál usa un gasto, nombres únicos) | `lib/categories.ts` (`defaultCategoryRows`, `resolveExpenseCategory`, `assertCategoryNameFree`) + `routers/categories.ts`; las 8 por defecto, íconos y colores válidos en `schemas.ts` (`defaultCategories`, `categoryIcons`, `categoryColors`) |
 | Alias para cobrar (cuál vale en cada grupo) | `lib/paymentAlias.ts`; formato en `schemas.ts` (`paymentAlias`) |
 | Borrar mi cuenta (desvincular, no sacar de los grupos) | `profile.deleteAccount` en `routers/profile.ts`; lo que queda pendiente, `myBalances` de `groups.list` |
-| Cupos (grupos por usuario, personas y categorías por grupo, filtros guardados) | `lib/quotas.ts` (valores y mensajes) |
+| Cupos (grupos por usuario; personas, categorías, gastos y pagos por grupo; filtros guardados) | `lib/quotas.ts` (valores y mensajes) |
 
 ## Convenciones de routers
 
