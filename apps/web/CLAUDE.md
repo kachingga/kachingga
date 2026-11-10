@@ -38,7 +38,7 @@
 
 **UI**
 - **Colores del tema** (`bg-card`, `text-muted-foreground`, `text-positive`…), **nunca fijos** (`bg-neutral-900`, `text-white`): así andan en claro, oscuro y las 5 paletas (Mi cuenta → "Colores de la app", `src/lib/theme.ts`). Claro y oscuro siguen al sistema salvo que la persona elija con el toggle. Texto en el color principal: `text-primary-ink`, no `text-primary` (en amarillo no se lee).
-- **Marco y piezas del diseño:** toda pantalla logueada va dentro de `AppShell` (lo pone el router) y define su ancho con `<Page>`; tarjetas, íconos de categoría, avatares (con `id`: cada persona tiene su color), montos grandes (`Money`), saldos y estados vacíos (`EmptyState`) con los de `src/components/kit.tsx`, no a mano. Formularios con `Button` (con `loading`), `Input`, `NativeSelect`, `<Field>` y `<Chip>`, nunca `<button>` / `<input>` con clases a mano.
+- **Marco y piezas del diseño:** toda pantalla logueada va dentro de `AppShell` (lo pone el router) y define su ancho con `<Page>`; tarjetas, íconos de categoría, avatares (con `id`: cada persona tiene su color), montos grandes (`Money`), saldos y estados vacíos (`EmptyState`) con los de `src/components/kit.tsx`, no a mano. Formularios con `Button` (con `loading`), `Input` (contraseñas con `PasswordInput`, que tiene el botón para verla), `NativeSelect`, `<Field>` y `<Chip>`, nunca `<button>` / `<input>` con clases a mano.
 - Cargando = **skeleton** (nunca un spinner suelto); vacío = **`EmptyState`**; error = **`ErrorState`** con Reintentar; confirmar = **`useConfirm`** (nunca `confirm()`); avisar = **toast**.
 - Animaciones cortas y apagadas con **"reducir movimiento"** (ya lo hace la regla global de `src/index.css`; ver `docs/claude/web/sensacion-de-app.md` → "Micro-interacciones").
 - Cerrar una pantalla después de guardar o borrar: **`useGoBack()(fallback)`**, no `navigate(ruta)`.
@@ -99,7 +99,8 @@ src/
 ├── components/               # ui/ (shadcn), kit (Card, CategoryIcon, Avatar, Money, EmptyState, Page…), app-shell,
 │                             # auth-layout, skeletons, error-state, number-input, exchange-rate-fields,
 │                             # confirm-provider, animated-layout, api-provider, require-auth, offline-banner,
-│                             # category-picker, category-editor, mail-sent ("Revisá tu mail" / "Reenviar mail")
+│                             # category-picker, category-editor, mail-sent ("Revisá tu mail" / "Reenviar mail"),
+│                             # password-input (contraseña con botón para verla, al lado: no adentro, por 1Password)
 ├── lib/                      # trpc, supabase (ÚNICO que importa Supabase), auth, auth-errors (en español),
 │                             # email-link (links de los mails), use-captcha (Turnstile), format, optimistic,
 │                             # use-prefetch, use-exchange-rate, use-confirm, use-go-back, offline-cache,
