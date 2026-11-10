@@ -139,9 +139,10 @@ Proyecto de **Kachingga**, una organización de amigos (repo: `github.com/kachin
 - Cada persona puede cargar su **alias o CVU/CBU** para que le paguen por transferencia. Formato: alias de 6 a 20 letras, números, puntos o guiones, o CVU/CBU de 22 dígitos.
 - **Alias de la cuenta:** se carga una vez y se usa **en todos los grupos** de esa persona.
 - **Alias por grupo (opcional):** pisa al de la cuenta **solo en ese grupo** (ej. una cuenta distinta para un viaje). Si se borra, vuelve a usarse el de la cuenta.
-- El alias de alguien **con cuenta** solo lo cambia esa persona. A alguien **sin cuenta** cualquier miembro del grupo le puede cargar el alias.
+- **El alias lo carga solo cada persona, con su cuenta** (el de la cuenta y el de su participante en cada grupo). Nadie le carga el alias a otro, tenga cuenta o no: así nadie puede poner su propio CVU a nombre de otro.
+- **Los participantes sin cuenta no tienen alias.** Al reclamar un participante, arranca sin alias del grupo (vale el de la cuenta de quien lo reclamó).
 - Al saldar, la app muestra a quién pagarle, cuánto y su alias, con botones para **copiar el alias** y **copiar el monto**. La transferencia se hace afuera (Mercado Pago, banco) y después se marca "ya pagué" (pago manual). Sin comisiones.
-- Si la persona no tiene alias cargado, se muestra igual la transferencia sugerida, sin alias.
+- Si la persona no tiene alias (no lo cargó o no tiene cuenta), se muestra igual la transferencia sugerida, sin alias.
 
 ### Filtros
 - Los gastos se pueden filtrar, combinando todo:
@@ -206,7 +207,7 @@ Web (Railway) ──tRPC + token de Supabase──▶ API (Hono, Railway) ──
 **Nadie (persona o Claude) mergea algo que rompa esto.** Checklist por procedure: `apps/api/CLAUDE.md`; cómo está implementado: `docs/claude/api/seguridad.md`.
 
 - **Un usuario solo ve y toca los grupos de los que es miembro.** Todo procedure que toca un grupo chequea pertenencia en la API; el front nunca es la barrera. A quien no es miembro se le responde "no encontrado" (no se revela que el grupo existe).
-- **Lo personal es personal:** el alias de una persona con cuenta solo lo cambia ella; perfil y filtros guardados, solo el dueño.
+- **Lo personal es personal:** el alias de cada persona solo lo carga ella (nadie le pone alias a otro, ni a alguien sin cuenta); perfil y filtros guardados, solo el dueño.
 - **El test `authorization.test.ts` cubre todos los procedures**: un procedure nuevo no pasa el CI hasta que se agrega ahí (como atacable o con el motivo por el que no toca un grupo).
 - **Los datos solo por la API.** El front usa Supabase únicamente para el login; RLS bloquea cualquier otro acceso a la base.
 - **Secretos:** nunca en el código, en los `.env.sample`, en issues, PRs ni en el chat. Solo en `.env` / `.env.prod` locales (gitignoreados) y en Railway. Lo que empieza con `VITE_` es **público** (va dentro de la app): nunca un secreto ahí. GitHub escanea los pushes y bloquea si detecta una clave.

@@ -140,9 +140,10 @@ export const groupsRouter = router({
 
       if ('participantId' in input) {
         // Only claim if still unclaimed (guards against two people claiming at once).
+        // Starts without a group alias: whoever claims it uses their account's (#106).
         const { count } = await prisma.participant.updateMany({
           where: { id: input.participantId, groupId: group.id, userId: null },
-          data: { userId: ctx.user.id },
+          data: { userId: ctx.user.id, paymentAlias: null },
         })
         if (count === 0) throw new TRPCError({ code: 'CONFLICT', message: 'Ese participante ya tiene cuenta' })
       } else {

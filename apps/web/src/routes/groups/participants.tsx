@@ -133,7 +133,8 @@ export function Participants() {
       {/* Lista */}
       <ul className="space-y-3">
         {g.participants.map((p) => {
-          const canSetAlias = !p.hasAccount || p.isMe;
+          // Only my own alias: nobody sets someone else's, and people without account have none.
+          const canSetAlias = p.isMe;
           const canRemove = !p.hasAccount;
 
           return (

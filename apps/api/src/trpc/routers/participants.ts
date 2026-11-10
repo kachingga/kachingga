@@ -24,12 +24,12 @@ export const participantsRouter = router({
     return prisma.participant.update({ where: { id: input.participantId }, data: { name: input.name } })
   }),
 
-  // Alias/CVU to get paid in this group. With account: only that person can set it (null = use the account's).
-  // Without account: any member can set it.
+  // Alias/CVU to get paid in this group (null = use the account's). Only for my own participant:
+  // nobody sets someone else's, and participants without account have none (#106).
   setPaymentAlias: protectedProcedure.input(z.object({ participantId: z.string(), paymentAlias })).mutation(async ({ ctx, input }) => {
     const participant = await findParticipant(input.participantId, ctx.user.id)
-    if (participant.userId && participant.userId !== ctx.user.id) {
-      throw new TRPCError({ code: 'FORBIDDEN', message: `Solo ${participant.name} puede cambiar su alias` })
+    if (participant.userId !== ctx.user.id) {
+      throw new TRPCError({ code: 'FORBIDDEN', message: 'Solo podés cambiar tu propio alias' })
     }
     return prisma.participant.update({ where: { id: participant.id }, data: { paymentAlias: input.paymentAlias } })
   }),

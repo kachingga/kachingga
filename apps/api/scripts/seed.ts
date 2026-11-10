@@ -97,10 +97,9 @@ await tuke.profile.update({ paymentAlias: 'tuke.mp' })
   const group = await juan.groups.create({ name: 'Viaje a Florianópolis', baseCurrency: 'ARS', myName: 'Juan' })
   const tukeP = await juan.participants.add({ groupId: group.id, name: 'Tuke' })
   const romanP = await juan.participants.add({ groupId: group.id, name: 'Román' })
-  const sofi = await juan.participants.add({ groupId: group.id, name: 'Sofi' }) // no account
+  await juan.participants.add({ groupId: group.id, name: 'Sofi' }) // no account, so no alias
   await tuke.groups.join({ inviteCode: group.inviteCode, participantId: tukeP.id })
   await roman.groups.join({ inviteCode: group.inviteCode, participantId: romanP.id })
-  await juan.participants.setPaymentAlias({ participantId: sofi.id, paymentAlias: 'sofi.floripa' })
   await tuke.participants.setPaymentAlias({ participantId: tukeP.id, paymentAlias: 'tuke.viajes' }) // overrides the account's
 
   const p = await participantIds(group.id)

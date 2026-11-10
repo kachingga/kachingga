@@ -60,6 +60,38 @@ describe('Participants', () => {
     expect(screen.getByText('sin cuenta')).toBeInTheDocument();
   });
 
+  it('shows the alias of each one, and only mine can be changed', async () => {
+    renderWithApi(<Participants />, { 'groups.get': () => fixGroup });
+    await screen.findByText('Juan');
+    expect(screen.getByText(/Alias: juan\.alias/)).toHaveTextContent(
+      'Alias: juan.alias (de la cuenta)',
+    );
+    // Tuke (with account) and Sofi (without account): no alias, and nobody else can set one.
+    expect(screen.getAllByText('Sin alias')).toHaveLength(2);
+    expect(screen.queryByRole('button', { name: 'Agregar' })).not.toBeInTheDocument();
+    expect(screen.getAllByRole('button', { name: 'Cambiar' })).toHaveLength(1);
+  });
+
+  it('changes my alias for this group', async () => {
+    const user = userEvent.setup();
+    const saved: unknown[] = [];
+    renderWithApi(<Participants />, {
+      'groups.get': () => fixGroup,
+      'participants.setPaymentAlias': (input) => {
+        saved.push(input);
+        return { ok: true };
+      },
+    });
+    await user.click(await screen.findByRole('button', { name: 'Cambiar' }));
+    const input = screen.getByLabelText('Alias de Juan');
+    await user.clear(input);
+    await user.type(input, 'juan.viajes');
+    await user.click(screen.getByRole('button', { name: 'OK' }));
+    await waitFor(() =>
+      expect(saved).toEqual([{ participantId: 'p1', paymentAlias: 'juan.viajes' }]),
+    );
+  });
+
   it('shows add participant form', async () => {
     renderWithApi(<Participants />, { 'groups.get': () => fixGroup });
     await screen.findByText('Juan');
@@ -129,6 +161,7 @@ describe('Participants', () => {
     expect(await screen.findByText('Grupo archivado.')).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'Renombrar' })).not.toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'Quitar' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Cambiar' })).not.toBeInTheDocument();
     expect(screen.queryByPlaceholderText('Nombre (sin cuenta)')).not.toBeInTheDocument();
   });
 });

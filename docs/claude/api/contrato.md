@@ -36,15 +36,15 @@ Todos con `protectedProcedure` salvo `health.ping`. Inputs en `src/schemas.ts`.
 | `health.ping` | query | Público. Chequeo de vida |
 | `health.me` | query | Usuario logueado (id, email) |
 | `groups.list` | query | Mis grupos (`includeArchived?`), con `_count.participants`, `participants` (id y nombre de cada uno, del más viejo al más nuevo: las caritas de la lista) y `myBalanceCents` (mi saldo en la moneda base: positivo = me deben; lo mantenido en otras monedas no cuenta). 3 queries en total, no una por grupo |
-| `groups.get` | query | Grupo + participantes (`isMe`, `hasAccount`, `paymentAlias`, `paymentAliasSource`: `'group'` / `'account'` / `null`) + `myParticipantId` |
+| `groups.get` | query | Grupo + participantes (`isMe`, `hasAccount`, `paymentAlias`, `paymentAliasSource`: `'group'` / `'account'` / `null`; sin cuenta, siempre `null`) + `myParticipantId` |
 | `groups.create` | mutation | Crea grupo + mi participante (`myName`) + sus 8 categorías por defecto |
 | `groups.rename` | mutation | Cambia el nombre |
 | `groups.setArchived` | mutation | Archiva / desarchiva |
 | `groups.regenerateInviteCode` | mutation | Nuevo código |
 | `groups.preview` | query | Por código: nombre, moneda, `unclaimedParticipants`, `alreadyMember` |
-| `groups.join` | mutation | Por código: `{ participantId }` (reclamar) o `{ name }` (nuevo) |
+| `groups.join` | mutation | Por código: `{ participantId }` (reclamar; arranca sin alias del grupo) o `{ name }` (nuevo) |
 | `participants.add` / `rename` / `remove` | mutation | ABM de participantes |
-| `participants.setPaymentAlias` | mutation | `{ participantId, paymentAlias \| null }`: alias propio del grupo. Con cuenta, solo esa persona (`FORBIDDEN` si no); sin cuenta, cualquier miembro. `null` = volver al de la cuenta |
+| `participants.setPaymentAlias` | mutation | `{ participantId, paymentAlias \| null }`: alias propio del grupo. **Solo el propio participante** (`FORBIDDEN` con cualquier otro, tenga cuenta o no). `null` = volver al de la cuenta |
 | `profile.get` / `profile.update` | query / mutation | Alias de la cuenta del usuario logueado (`{ paymentAlias \| null }`) |
 | `categories.list` | query | `{ groupId }` → todas las categorías del grupo en orden (las 8 por defecto primero), con `archived` y `expenseCount` (gastos activos que la usan) |
 | `categories.create` / `update` | mutation | `{ groupId, name, icon, color }` / `{ categoryId, name?, icon?, color? }`. Cualquier miembro; grupo archivado = solo lectura. `CONFLICT` si el nombre ya está entre las activas |

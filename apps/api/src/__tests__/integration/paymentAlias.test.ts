@@ -1,9 +1,9 @@
-// Alias/CVU para cobrar: de la cuenta (todos los grupos) o propio de un grupo.
+// Alias/CVU para cobrar: de la cuenta (todos los grupos) o propio de un grupo. Solo cada persona carga el suyo.
 import { describe, expect, test } from 'bun:test'
 import { paymentAlias } from '../../schemas'
 import { setupTestApi } from './setup'
 
-const { caller, anonymous } = await setupTestApi()
+const { caller, anonymous, prisma } = await setupTestApi()
 let n = 0
 
 async function group() {
@@ -15,7 +15,7 @@ async function group() {
   const juan = await yo.participants.add({ groupId: g.id, name: 'Juan' })
   const aliasOf = async (name: string) => (await yo.groups.get({ groupId: g.id })).participants.find((p) => p.name === name)!
   const idOf = async (name: string) => (await aliasOf(name)).id
-  return { yo, tuke, groupId: g.id, juanId: juan.id, aliasOf, idOf }
+  return { yo, tuke, groupId: g.id, inviteCode: g.inviteCode, juanId: juan.id, aliasOf, idOf }
 }
 
 describe('alias de la cuenta', () => {
@@ -59,17 +59,38 @@ describe('alias por grupo', () => {
   })
 
   test('nobody can change the alias of someone else with account', async () => {
-    const { yo, idOf } = await group()
+    const { yo, aliasOf, idOf } = await group()
     await expect(yo.participants.setPaymentAlias({ participantId: await idOf('Tuke'), paymentAlias: 'robo.mp' })).rejects.toThrow(
-      'Solo Tuke puede cambiar su alias',
+      'Solo podés cambiar tu propio alias',
     )
+    expect(await aliasOf('Tuke')).toMatchObject({ paymentAlias: null, paymentAliasSource: null })
   })
 
-  test('anyone in the group can set it for someone without account', async () => {
-    const { tuke, juanId, aliasOf } = await group()
+  test('nobody can set an alias for someone without account (not even who added them)', async () => {
+    const { yo, tuke, juanId, aliasOf } = await group()
+    for (const member of [yo, tuke]) {
+      await expect(member.participants.setPaymentAlias({ participantId: juanId, paymentAlias: 'robo.mp' })).rejects.toThrow(
+        'Solo podés cambiar tu propio alias',
+      )
+    }
     expect(await aliasOf('Juan')).toMatchObject({ paymentAlias: null, paymentAliasSource: null })
-    await tuke.participants.setPaymentAlias({ participantId: juanId, paymentAlias: 'juan.perez' })
-    expect(await aliasOf('Juan')).toMatchObject({ paymentAlias: 'juan.perez', paymentAliasSource: 'group' })
+  })
+
+  test('an old alias of someone without account is not shown', async () => {
+    const { juanId, aliasOf } = await group()
+    await prisma.participant.update({ where: { id: juanId }, data: { paymentAlias: 'robo.mp' } }) // set before #106
+    expect(await aliasOf('Juan')).toMatchObject({ paymentAlias: null, paymentAliasSource: null })
+  })
+
+  test('claiming a participant clears its group alias: the account one applies', async () => {
+    const { inviteCode, juanId, aliasOf } = await group()
+    await prisma.participant.update({ where: { id: juanId }, data: { paymentAlias: 'robo.mp' } }) // set before #106
+    const juan = caller(`juan-${n}`)
+    await juan.profile.update({ paymentAlias: 'juan.mp' })
+    await juan.groups.join({ inviteCode, participantId: juanId })
+
+    expect(await aliasOf('Juan')).toMatchObject({ paymentAlias: 'juan.mp', paymentAliasSource: 'account' })
+    expect((await prisma.participant.findUniqueOrThrow({ where: { id: juanId } })).paymentAlias).toBeNull()
   })
 
   test('outsiders cannot touch a group alias', async () => {
