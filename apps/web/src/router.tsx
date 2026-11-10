@@ -8,6 +8,7 @@ import { Login } from '@/routes/login';
 import { Register } from '@/routes/register';
 import { ForgotPassword } from '@/routes/forgot-password';
 import { NewPassword } from '@/routes/new-password';
+import { ChangeEmail } from '@/routes/change-email';
 import { Account } from '@/routes/account';
 import { GroupList } from '@/routes/groups/list';
 import { CreateGroup } from '@/routes/groups/create';
@@ -27,7 +28,7 @@ export const router = createBrowserRouter([
     element: <Outlet />,
     errorElement: <RouteError />,
     children: [
-      // Login, register and password recovery: full screen, no app frame.
+      // Login, register, password recovery and the email-change links: full screen, no app frame.
       {
         element: <AnimatedLayout />,
         children: [
@@ -35,6 +36,7 @@ export const router = createBrowserRouter([
           { path: '/registro', element: <Register /> },
           { path: '/recuperar-contrasena', element: <ForgotPassword /> },
           { path: '/nueva-contrasena', element: <NewPassword /> },
+          { path: '/cambiar-email', element: <ChangeEmail /> },
         ],
       },
       {
