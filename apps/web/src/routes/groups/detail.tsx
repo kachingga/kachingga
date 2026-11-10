@@ -435,9 +435,12 @@ export function GroupDetail() {
                     setShowMenu(false);
                   }}
                   variant="ghost"
-                  className="h-auto w-full justify-start rounded-xl px-3 py-2 font-normal"
+                  className="h-auto w-full flex-col items-start gap-0 rounded-xl px-3 py-2 text-left font-normal whitespace-normal"
                 >
-                  Compartir código de invitación ({g.inviteCode})
+                  Compartir código de invitación
+                  <span className="text-xs tracking-wider text-muted-foreground">
+                    {g.inviteCode}
+                  </span>
                 </Button>
                 {!g.archivedAt && (
                   <Button

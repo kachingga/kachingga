@@ -24,7 +24,10 @@ export function AnimatedLayout({ className }: { className?: string }) {
     direction: 'none',
   });
   if (location.pathname !== screen.path) {
-    setScreen({ path: location.pathname, direction: screenDirection(location, navType) });
+    setScreen({
+      path: location.pathname,
+      direction: screenDirection(screen.path, location, navType),
+    });
   }
   const { path, direction } = screen;
 

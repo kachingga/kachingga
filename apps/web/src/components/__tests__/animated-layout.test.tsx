@@ -83,6 +83,13 @@ describe('screen transitions', () => {
     expect(document.documentElement.dataset.nav).toBe('back');
   });
 
+  it('a link up to the screen that contains this one ("Mis grupos") animates as going back', async () => {
+    const router = setup(['/grupo/nuevo']);
+    await act(() => router.navigate('/grupo'));
+    expect(router.state.historyAction).toBe('PUSH');
+    expect(page('Grupo')).toHaveClass('page-enter-left');
+  });
+
   it('closing a form opened from the app goes back (no duplicate in the history)', async () => {
     const router = setup(['/grupo', '/grupo/nuevo']);
     await userEvent.click(screen.getByRole('button', { name: 'Guardar' }));
