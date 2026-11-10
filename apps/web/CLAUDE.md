@@ -83,6 +83,7 @@ Copiar `.env.sample` a `.env` (valores de **dev**). Todo lo `VITE_*` es **públi
 - `VITE_API_URL` — **vacía en local** (Vite reenvía `/trpc` a la API: sin CORS y anda desde el celu). Prod: la URL de Railway.
 - `VITE_SUPABASE_URL` / `VITE_SUPABASE_PUBLISHABLE_KEY` — solo login y sesión.
 - `VITE_SENTRY_DSN` / `VITE_SENTRY_ENVIRONMENT` — errores a Sentry; vacías = apagado (local, tests, CI).
+- `VITE_TURNSTILE_SITE_KEY` — captcha (Cloudflare Turnstile) del login con email, el registro y "¿Olvidaste tu contraseña?"; vacía = sin captcha (local, tests, CI).
 
 Si agregás una: `src/vite-env.d.ts`, `.env.sample`, `INFRA.md` y `test.env` de `vite.config.ts`.
 
@@ -96,12 +97,13 @@ src/
 ├── components/               # ui/ (shadcn), kit (Card, CategoryIcon, Avatar, Money, EmptyState, Page…), app-shell,
 │                             # auth-layout, skeletons, error-state, number-input, exchange-rate-fields,
 │                             # confirm-provider, animated-layout, api-provider, require-auth, offline-banner,
-│                             # category-picker, category-editor
-├── lib/                      # trpc, supabase (ÚNICO que importa Supabase), auth, format, optimistic,
+│                             # category-picker, category-editor, mail-sent ("Revisá tu mail" / "Reenviar mail")
+├── lib/                      # trpc, supabase (ÚNICO que importa Supabase), auth, auth-errors (en español),
+│                             # email-link (links de los mails), use-captcha (Turnstile), format, optimistic,
 │                             # use-prefetch, use-exchange-rate, use-confirm, use-go-back, offline-cache,
 │                             # theme, use-sign-out, categories (ícono y color de cada categoría), use-debounced-value,
 │                             # screen-transitions (View Transitions entre pantallas)
-└── test/                     # setup.ts, render.tsx (renderWithApi)
+└── test/                     # setup.ts, render.tsx (renderWithApi), fake-turnstile.tsx (captcha de mentira)
 e2e/                          # Playwright
 ```
 

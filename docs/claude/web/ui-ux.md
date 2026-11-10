@@ -38,7 +38,7 @@ La app la usamos nosotros todos los días, sobre todo en el celu: tiene que ser 
 - **Al abrir una pantalla, el foco va a su `h1`** (`AnimatedLayout`): el lector de pantalla la anuncia y el teclado arranca desde ahí. Si todavía carga, apenas aparece el título; no le saca el foco a un campo con `autoFocus` ni a la barra lateral.
 - **Lo que está escondido no se alcanza con Tab:** `inert` (ej. las acciones de deslizar de Mis grupos, detrás de la tarjeta). Un menú propio se cierra con Escape (y el foco vuelve al botón que lo abrió) y tocando afuera.
 - **Foco que no se recorta:** en filas o tarjetas que se tocan enteras dentro de un contenedor con `overflow-hidden`, el anillo va adentro (`focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-ring`).
-- **axe en los E2E** (`e2e/axe.ts` → `expectAccessible`): login y registro en claro y oscuro (`e2e/accesibilidad.spec.ts`) y la pantalla del grupo con datos (`e2e/recorridos.spec.ts`). No reemplaza probar con teclado y lector de pantalla.
+- **axe en los E2E** (`e2e/axe.ts` → `expectAccessible`): login, registro y "¿Olvidaste tu contraseña?" en claro y oscuro (`e2e/accesibilidad.spec.ts`) y la pantalla del grupo con datos (`e2e/recorridos.spec.ts`). No reemplaza probar con teclado y lector de pantalla.
 
 ## Antes de dar una pantalla por terminada
 - [ ] Cumple las reglas de negocio y `V1.md` → "Pantallas".

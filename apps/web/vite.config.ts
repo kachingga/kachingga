@@ -70,6 +70,8 @@ export default defineConfig({
       VITE_API_URL: 'http://localhost:3000',
       VITE_SUPABASE_URL: 'https://test.supabase.co',
       VITE_SUPABASE_PUBLISHABLE_KEY: 'sb_publishable_test',
+      // No captcha by default (tests that need it use vi.stubEnv).
+      VITE_TURNSTILE_SITE_KEY: '',
     },
     include: ['src/**/*.test.{ts,tsx}', 'server.test.ts'],
   },
