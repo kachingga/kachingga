@@ -54,16 +54,18 @@ const ICON_LABELS: Record<CategoryIconName, string> = {
 };
 
 const COLOR_LABELS: Record<CategoryColor, string> = {
-  'chart-1': 'Verde',
-  'chart-2': 'Naranja',
-  'chart-3': 'Terracota',
-  'chart-4': 'Azul',
-  'chart-5': 'Oliva',
-  positive: 'Menta',
-  negative: 'Coral',
-  highlight: 'Durazno',
-  primary: 'Yerba',
-  muted: 'Gris',
+  tomato: 'Tomate',
+  tangerine: 'Mandarina',
+  mango: 'Mango',
+  lime: 'Lima',
+  mint: 'Menta',
+  teal: 'Turquesa',
+  sky: 'Cielo',
+  indigo: 'Índigo',
+  grape: 'Uva',
+  raspberry: 'Frambuesa',
+  pink: 'Rosa',
+  cocoa: 'Cacao',
 };
 
 export type CategoryDraft = { name: string; icon: CategoryIconName; color: CategoryColor };
@@ -84,7 +86,7 @@ export function CategoryEditor({
 }) {
   const [name, setName] = useState(initial?.name ?? '');
   const [icon, setIcon] = useState<CategoryIconName>(initial?.icon ?? 'shapes');
-  const [color, setColor] = useState<CategoryColor>(initial?.color ?? 'chart-1');
+  const [color, setColor] = useState<CategoryColor>(initial?.color ?? 'mint');
 
   return (
     <form

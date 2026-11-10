@@ -9,7 +9,7 @@ const fixExpense = {
   id: 'e1',
   description: 'Cena',
   categoryId: 'cat-food',
-  category: { id: 'cat-food', name: 'Comida', icon: 'utensils', color: 'chart-2' },
+  category: { id: 'cat-food', name: 'Comida', icon: 'utensils', color: 'tangerine' },
   date: new Date('2024-01-15'),
   amountCents: 80000,
   currency: 'ARS',
