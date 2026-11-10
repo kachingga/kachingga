@@ -10,8 +10,11 @@ const t = initTRPC.context<Context>().create({
   transformer: superjson,
   // The app shows `message` as it comes, so: never the text of an unexpected error (Prisma, a bug…),
   // and for an invalid input its first problem (our messages in Spanish) instead of Zod's JSON.
+  // tRPC wraps anything that isn't a TRPCError as INTERNAL_SERVER_ERROR with the original text as
+  // its message: that's what gets replaced. An INTERNAL we throw with our own message keeps it.
   errorFormatter({ shape, error }) {
-    if (error.code === 'INTERNAL_SERVER_ERROR') return { ...shape, message: INTERNAL_MESSAGE }
+    const internalText = error.message === (error.cause as Error | undefined)?.message || error.message === error.code
+    if (error.code === 'INTERNAL_SERVER_ERROR' && internalText) return { ...shape, message: INTERNAL_MESSAGE }
     if (error.cause instanceof ZodError) return { ...shape, message: error.cause.issues[0]?.message ?? shape.message }
     return shape
   },

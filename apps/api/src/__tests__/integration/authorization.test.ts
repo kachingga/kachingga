@@ -186,6 +186,7 @@ const writableWhenArchived: Record<string, string> = {
   'groups.setArchived': 'the way to unarchive it',
   'groups.create': 'creates a new group',
   'profile.update': "the account's alias, not group-scoped",
+  'profile.deleteAccount': 'the whole account, not group-scoped (unlinks it from archived groups too)',
   'savedFilters.create': 'personal way of reading the expenses, not group data',
   'savedFilters.delete': 'personal way of reading the expenses, not group data',
 }

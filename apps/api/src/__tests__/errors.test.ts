@@ -15,6 +15,16 @@ const testRouter = router({
       code: 'P2022',
     })
   }),
+  wrapped: publicProcedure.query(() => {
+    throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR', cause: new Error('relation "Secret" does not exist') })
+  }),
+  ours: publicProcedure.query(() => {
+    throw new TRPCError({
+      code: 'INTERNAL_SERVER_ERROR',
+      message: 'No se pudo terminar. Intentá de nuevo.',
+      cause: new Error('admin API 500'),
+    })
+  }),
   business: publicProcedure.query(() => {
     throw new TRPCError({ code: 'BAD_REQUEST', message: 'El grupo está archivado' })
   }),
@@ -35,13 +45,14 @@ async function errorOf(path: string, input?: unknown) {
 
 describe('error messages', () => {
   test('any unexpected error → a generic message in Spanish, never its text', async () => {
-    for (const path of ['bug', 'prisma']) {
+    for (const path of ['bug', 'prisma', 'wrapped']) {
       expect(await errorOf(path)).toEqual({ status: 500, code: 'INTERNAL_SERVER_ERROR', message: 'Error interno. Intentá de nuevo.' })
     }
   })
 
-  test('business errors keep their message', async () => {
+  test('business errors keep their message, and so does an INTERNAL we throw with our own', async () => {
     expect(await errorOf('business')).toEqual({ status: 400, code: 'BAD_REQUEST', message: 'El grupo está archivado' })
+    expect(await errorOf('ours')).toEqual({ status: 500, code: 'INTERNAL_SERVER_ERROR', message: 'No se pudo terminar. Intentá de nuevo.' })
   })
 
   test("invalid input → its first problem, not Zod's JSON", async () => {
