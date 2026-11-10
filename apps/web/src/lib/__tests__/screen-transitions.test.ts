@@ -14,19 +14,35 @@ function popstate(hasUAVisualTransition: boolean) {
 
 describe('screenDirection', () => {
   it('forward when opening a screen, back with the back button or `useGoBack`', () => {
-    expect(screenDirection(at('/grupos/g1'), NavigationType.Push)).toBe('forward');
-    expect(screenDirection(at('/grupos/g1/pagos'), NavigationType.Replace)).toBe('forward');
+    expect(screenDirection('/grupos', at('/grupos/g1'), NavigationType.Push)).toBe('forward');
+    expect(screenDirection('/grupos/g1', at('/grupos/g1/pagos'), NavigationType.Replace)).toBe(
+      'forward',
+    );
     popstate(false);
-    expect(screenDirection(at('/grupos'), NavigationType.Pop)).toBe('back');
-    expect(screenDirection(at('/grupos/g1', { back: true }), NavigationType.Replace)).toBe('back');
+    expect(screenDirection('/grupos/g1', at('/grupos'), NavigationType.Pop)).toBe('back');
+    expect(
+      screenDirection('/grupos/g1/pagos', at('/grupos/g1', { back: true }), NavigationType.Replace),
+    ).toBe('back');
+  });
+
+  it('going up to a screen that contains the current one is going back, even with a link', () => {
+    // "Mis grupos" from a group, the group from one of its expenses.
+    expect(screenDirection('/grupos/g1', at('/grupos'), NavigationType.Push)).toBe('back');
+    expect(screenDirection('/grupos/g1/gastos/e1', at('/grupos/g1'), NavigationType.Push)).toBe(
+      'back',
+    );
+    // A sibling or a screen with a similar name is not "up".
+    expect(screenDirection('/grupos/g1', at('/grupos/g2'), NavigationType.Push)).toBe('forward');
+    expect(screenDirection('/grupos-viejos', at('/grupos'), NavigationType.Push)).toBe('forward');
+    expect(screenDirection('/cuenta', at('/grupos'), NavigationType.Push)).toBe('forward');
   });
 
   it('no animation when the browser already animated the back (Safari swipe from the edge)', () => {
     popstate(true);
-    expect(screenDirection(at('/grupos'), NavigationType.Pop)).toBe('none');
+    expect(screenDirection('/grupos/g1', at('/grupos'), NavigationType.Pop)).toBe('none');
     // The next back with the button animates again.
     popstate(false);
-    expect(screenDirection(at('/grupos'), NavigationType.Pop)).toBe('back');
+    expect(screenDirection('/grupos/g1', at('/grupos'), NavigationType.Pop)).toBe('back');
   });
 });
 

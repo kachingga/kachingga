@@ -353,8 +353,9 @@
     oklch(0.88 0.09 150) 55%,
     oklch(0.82 0.1 165) 100%
   );
-  /* Split coins scattered on the login background (a mask: it takes the color of the text). */
-  --coin-pattern: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='72' height='72' viewBox='0 0 72 72'%3E%3Cg transform='rotate(-14 22 22)'%3E%3Cpath transform='translate(-1.5 0)' d='M22 10l-2 4 4 4-4 4 4 4-4 4 2 4a12 12 0 0 1 0-24z'/%3E%3Cpath transform='translate(1.5 0)' d='M22 10l-2 4 4 4-4 4 4 4-4 4 2 4a12 12 0 0 0 0-24z'/%3E%3C/g%3E%3Cg transform='rotate(20 54 52)'%3E%3Cpath transform='translate(-1 0)' d='M54 44l-1.5 3 3 3-3 3 3 3-1.5 4a8 8 0 0 1 0-16z'/%3E%3Cpath transform='translate(1 0)' d='M54 44l-1.5 3 3 3-3 3 3 3-1.5 4a8 8 0 0 0 0-16z'/%3E%3C/g%3E%3C/svg%3E");
+  /* Our logo's split coin (public/logo.svg), scattered on the login background (a mask: it takes
+     the color of the text). */
+  --coin-pattern: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='72' height='72' viewBox='0 0 72 72'%3E%3Csymbol id='c' viewBox='0 0 512 512'%3E%3CclipPath id='l'%3E%3Cpolygon points='0,0 300,0 212,512 0,512'/%3E%3C/clipPath%3E%3CclipPath id='r'%3E%3Cpolygon points='324,0 512,0 512,512 236,512'/%3E%3C/clipPath%3E%3Cg clip-path='url(%23l)' transform='translate(-14 6)'%3E%3Ccircle cx='256' cy='256' r='164'/%3E%3C/g%3E%3Cg clip-path='url(%23r)' transform='translate(14 -6)'%3E%3Ccircle cx='256' cy='256' r='164'/%3E%3C/g%3E%3C/symbol%3E%3Cuse href='%23c' x='3.27' y='3.27' width='37.46' height='37.46' transform='rotate(-14 22 22)'/%3E%3Cuse href='%23c' x='41.51' y='39.51' width='24.98' height='24.98' transform='rotate(20 54 52)'/%3E%3C/svg%3E");
 }
 
 .dark {

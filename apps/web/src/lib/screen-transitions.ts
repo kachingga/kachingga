@@ -42,11 +42,21 @@ if (typeof window !== 'undefined') {
   );
 }
 
-/** The direction of a navigation to a new screen (`location`, arrived at by `navType`). */
-export function screenDirection(location: Location, navType: NavigationType): Direction {
+/**
+ * The direction of a navigation from the screen at `from` (a path) to `location`, arrived at by
+ * `navType`. Going up to a screen that contains the current one (e.g. "Mis grupos" from a group,
+ * or the group from one of its expenses) is going back too, even with a link.
+ */
+export function screenDirection(
+  from: string,
+  location: Location,
+  navType: NavigationType,
+): Direction {
   // POP = the browser's back (button or gesture), `navigate(-1)` or `useGoBack()`.
   if (navType === 'POP') return browserAnimated ? 'none' : 'back';
-  return (location.state as BackState | null)?.back === true ? 'back' : 'forward';
+  if ((location.state as BackState | null)?.back === true) return 'back';
+  const up = from.startsWith(location.pathname.replace(/\/?$/, '/'));
+  return up ? 'back' : 'forward';
 }
 
 /**
