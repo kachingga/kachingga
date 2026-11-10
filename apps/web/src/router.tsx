@@ -6,6 +6,8 @@ import { RequireAuth } from '@/components/require-auth';
 import { RouteError } from '@/components/route-error';
 import { Login } from '@/routes/login';
 import { Register } from '@/routes/register';
+import { ForgotPassword } from '@/routes/forgot-password';
+import { NewPassword } from '@/routes/new-password';
 import { Account } from '@/routes/account';
 import { GroupList } from '@/routes/groups/list';
 import { CreateGroup } from '@/routes/groups/create';
@@ -25,12 +27,14 @@ export const router = createBrowserRouter([
     element: <Outlet />,
     errorElement: <RouteError />,
     children: [
-      // Login and register: full screen, no app frame.
+      // Login, register and password recovery: full screen, no app frame.
       {
         element: <AnimatedLayout />,
         children: [
           { path: '/login', element: <Login /> },
           { path: '/registro', element: <Register /> },
+          { path: '/recuperar-contrasena', element: <ForgotPassword /> },
+          { path: '/nueva-contrasena', element: <NewPassword /> },
         ],
       },
       {

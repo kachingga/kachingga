@@ -4,20 +4,25 @@ import { ArrowRight } from 'lucide-react';
 
 import { AuthLayout } from '@/components/auth-layout';
 import { GoogleSignIn } from '@/components/google-sign-in';
+import { Field } from '@/components/kit';
+import { ConfirmEmailSent } from '@/components/mail-sent';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import { signUp } from '@/lib/auth';
+import { authErrorMessage } from '@/lib/auth-errors';
 import { useReturnTo, withReturnTo } from '@/lib/return-to';
+import { useCaptcha } from '@/lib/use-captcha';
 
 export function Register() {
   const navigate = useNavigate();
   const returnTo = useReturnTo();
+  const captcha = useCaptcha();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirm, setConfirm] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [sentTo, setSentTo] = useState<string | null>(null);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -27,19 +32,43 @@ export function Register() {
     }
     setError(null);
     setLoading(true);
-    const { error: authError } = await signUp(email, password);
+    const { data, error: authError } = await signUp(email, password, {
+      returnTo,
+      captchaToken: captcha.token,
+    });
     setLoading(false);
-    if (authError) setError(authError.message);
+    if (authError) {
+      captcha.reset();
+      setError(authErrorMessage(authError));
+    }
+    // "Confirm email" on in Supabase: no session until the mail's link is opened.
+    else if (!data.session) setSentTo(email);
     else void navigate(returnTo, { replace: true });
   }
+
+  if (sentTo)
+    return (
+      <AuthLayout title="Revisá tu mail" subtitle="Falta un paso para crear tu cuenta.">
+        <ConfirmEmailSent email={sentTo} returnTo={returnTo} justSent>
+          <p className="pt-2 text-center text-sm text-muted-foreground">
+            ¿Ya lo confirmaste o ya tenías cuenta?{' '}
+            <Link
+              to={withReturnTo('/login', returnTo)}
+              className="font-semibold text-primary-ink hover:underline"
+            >
+              Entrá
+            </Link>
+          </p>
+        </ConfirmEmailSent>
+      </AuthLayout>
+    );
 
   return (
     <AuthLayout title="Creá tu cuenta" subtitle="Empezá a organizar tus gastos compartidos.">
       <GoogleSignIn returnTo={returnTo} />
 
       <form onSubmit={handleSubmit} className="space-y-4">
-        <div className="space-y-1.5">
-          <Label htmlFor="email">Email</Label>
+        <Field label="Email" htmlFor="email">
           <Input
             id="email"
             type="email"
@@ -50,10 +79,9 @@ export function Register() {
             inputMode="email"
             placeholder="vos@mail.com"
           />
-        </div>
+        </Field>
 
-        <div className="space-y-1.5">
-          <Label htmlFor="password">Contraseña</Label>
+        <Field label="Contraseña" htmlFor="password">
           <Input
             id="password"
             type="password"
@@ -62,10 +90,9 @@ export function Register() {
             required
             autoComplete="new-password"
           />
-        </div>
+        </Field>
 
-        <div className="space-y-1.5">
-          <Label htmlFor="confirm">Confirmar contraseña</Label>
+        <Field label="Confirmar contraseña" htmlFor="confirm">
           <Input
             id="confirm"
             type="password"
@@ -74,11 +101,19 @@ export function Register() {
             required
             autoComplete="new-password"
           />
-        </div>
+        </Field>
+
+        {captcha.widget}
 
         {error && <p className="text-sm text-destructive">{error}</p>}
 
-        <Button type="submit" disabled={loading} size="lg" className="w-full">
+        <Button
+          type="submit"
+          loading={loading}
+          disabled={captcha.waiting}
+          size="lg"
+          className="w-full"
+        >
           {loading ? 'Creando cuenta…' : 'Crear cuenta'}
           {!loading && <ArrowRight aria-hidden />}
         </Button>

@@ -27,6 +27,7 @@ expect(await screen.findByText('Todavía no hay gastos')).toBeInTheDocument();
 - Devuelve también el `queryClient`: para datos que cambian con la pantalla abierta (cambiar lo que responde el handler y `await act(() => queryClient.invalidateQueries())`; ej. "Saldo actualizado" en `detail.test.tsx`).
 - Buscar como el usuario: `getByRole`, `getByLabelText`, `getByText`.
 - Datos falsos con la forma real (`docs/claude/api/contrato.md` o `inferRouterOutputs<AppRouter>`).
+- **Login y sesión:** se mockea `@/lib/auth` entero (`vi.mock`, ej. `login.test.tsx`). **Captcha:** `vi.mock('@marsidev/react-turnstile', () => import('@/test/fake-turnstile'))` + `vi.stubEnv('VITE_TURNSTILE_SITE_KEY', …)` en el test: "Resolver captcha" da el token `captcha-token` (sin la variable no hay widget).
 - Optimistic updates: ver `datos-y-cache.md` (qué testear).
 
 ## Setup (`src/test/setup.ts`)
@@ -40,12 +41,12 @@ expect(await screen.findByText('Todavía no hay gastos')).toBeInTheDocument();
 
 - **Qué lleva E2E:** solo los recorridos críticos (registrarse / login, crear grupo, unirse con código, agregar gasto, ver saldos, registrar pago). El resto va en los tests de contenido.
 - Corre contra el **build de producción** (`build` + `preview` en :4173), en celular (WebKit) y compu (Chrome), con `locale: 'es-AR'`.
-- **Sin API** (siempre): `e2e/smoke.spec.ts` (la app carga), `e2e/pwa.spec.ts` (instalable), `e2e/offline.spec.ts` (abre sin red), `e2e/splash.spec.ts` (el logo mientras carga), `e2e/accesibilidad.spec.ts` (axe en login y registro, claro y oscuro: `e2e/axe.ts`) y `e2e/transiciones.spec.ts` (las pantallas cambian con View Transitions, y no con "reducir movimiento").
+- **Sin API** (siempre): `e2e/smoke.spec.ts` (la app carga), `e2e/pwa.spec.ts` (instalable), `e2e/offline.spec.ts` (abre sin red), `e2e/splash.spec.ts` (el logo mientras carga), `e2e/accesibilidad.spec.ts` (axe en login, registro y "¿Olvidaste tu contraseña?", claro y oscuro: `e2e/axe.ts`) y `e2e/transiciones.spec.ts` (las pantallas cambian con View Transitions, y no con "reducir movimiento").
 - **Con API — los recorridos críticos** (`e2e/recorridos.spec.ts`, solo en celular: son lentos y crean datos): registro → cerrar sesión → login; y en un solo test, con dos usuarios (dos `browser.newContext()`): crear grupo → agregar participante sin cuenta → gasto en partes iguales → saldos y "cómo quedar a mano" → el otro usuario se une con el código reclamando a ese participante → "Marcar como pagado" → los dos "al día". Tarda ~35 s.
   - Corren solo con **`E2E_API=1`**: Playwright levanta también la API (`bun run --cwd ../api start`, en :3000) y `preview` le reenvía `/trpc` (la web con `VITE_API_URL` vacía, sin CORS). Sin `E2E_API` se saltean.
   - **Local:** `E2E_API=1 bun run e2e` desde `apps/web`, con `apps/api/.env` y `apps/web/.env` de dev. Si ya tenés la API corriendo, la reusa.
   - **CI** (`e2e.yml`, a mano o con la label `e2e`): corren si existen los secrets `E2E_*` (`INFRA.md` → "GitHub"); si no, avisa y corre solo lo que no necesita API.
   - **Sin traces con `E2E_API=1`** (`playwright.config.ts`): el reporte del CI es un artifact público (dura 3 días) y un trace guarda tokens de sesión y contraseñas. Para depurar en local: `E2E_API=1 bunx playwright test --trace retain-on-failure` (queda en `test-results/`, gitignoreado).
-  - **Qué dejan en dev** (`staging-kachingga`): cada corrida registra usuarios nuevos (`e2e+…@example.com`, por eso no hace falta guardar contraseñas: registro abierto y sin confirmar el email) y un grupo `E2E <fecha>` que **se archiva al final**. Se puede limpiar con un filtro por esos nombres; nunca corren contra prod.
+  - **Qué dejan en dev** (`staging-kachingga`): cada corrida registra usuarios nuevos (`e2e+…@example.com`, por eso no hace falta guardar contraseñas: registro abierto, sin confirmar el email ni captcha; si se prenden en `staging-kachingga`, hay que adaptar estos recorridos: `INFRA.md` → "Supabase") y un grupo `E2E <fecha>` que **se archiva al final**. Se puede limpiar con un filtro por esos nombres; nunca corren contra prod.
 - Ponerle la label `e2e` a los PRs que cambian un recorrido crítico.
 - Ojo: Playwright con `locale: 'es-AR'` en Chromium reporta `navigator.language = 'es-419'` (como Chrome real en Argentina).
