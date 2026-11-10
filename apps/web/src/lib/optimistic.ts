@@ -64,7 +64,7 @@ export function buildExpense(
 ): Expense {
   // The category the expense will show: the one picked (from `categories.list`), or what it had.
   const shownCategory = category ??
-    previous?.category ?? { id: '', name: 'Otros', icon: 'shapes', color: 'muted' };
+    previous?.category ?? { id: '', name: 'Otros', icon: 'shapes', color: 'cocoa' };
   const now = new Date();
   return {
     id,

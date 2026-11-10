@@ -84,18 +84,21 @@ export const CATEGORY_ICONS: Record<CategoryIconName, typeof Utensils> = {
 };
 
 /**
- * Every color a category can have (`categoryColors` in the API): a soft background and the color
- * itself, always theme variables (they adapt to light and dark). Full class names so Tailwind sees them.
+ * Every color a category can have (`categoryColors` in the API): its soft background and the color
+ * itself for the icon (`--cat-*` / `--cat-*-soft` in index.css, AA contrast in light and dark).
+ * Full class names so Tailwind sees them.
  */
 export const CATEGORY_COLORS: Record<CategoryColor, string> = {
-  'chart-1': 'bg-chart-1/15 text-chart-1',
-  'chart-2': 'bg-chart-2/20 text-chart-2',
-  'chart-3': 'bg-chart-3/15 text-chart-3',
-  'chart-4': 'bg-chart-4/15 text-chart-4',
-  'chart-5': 'bg-chart-5/20 text-chart-5',
-  positive: 'bg-positive-soft text-positive',
-  negative: 'bg-negative-soft text-negative',
-  highlight: 'bg-highlight/25 text-highlight-foreground',
-  primary: 'bg-primary/15 text-primary',
-  muted: 'bg-muted text-muted-foreground',
+  tomato: 'bg-cat-tomato-soft text-cat-tomato',
+  tangerine: 'bg-cat-tangerine-soft text-cat-tangerine',
+  mango: 'bg-cat-mango-soft text-cat-mango',
+  lime: 'bg-cat-lime-soft text-cat-lime',
+  mint: 'bg-cat-mint-soft text-cat-mint',
+  teal: 'bg-cat-teal-soft text-cat-teal',
+  sky: 'bg-cat-sky-soft text-cat-sky',
+  indigo: 'bg-cat-indigo-soft text-cat-indigo',
+  grape: 'bg-cat-grape-soft text-cat-grape',
+  raspberry: 'bg-cat-raspberry-soft text-cat-raspberry',
+  pink: 'bg-cat-pink-soft text-cat-pink',
+  cocoa: 'bg-cat-cocoa-soft text-cat-cocoa',
 };

@@ -7,14 +7,14 @@ export const currencies = ['ARS', 'USD', 'EUR', 'BRL', 'UYU', 'CLP'] as const
 // Categories belong to each group (CLAUDE.md → "Gastos"): every group starts with these 8 and its
 // members can add, rename, recolor or archive them. `key` marks the built-in ones (Category.defaultKey).
 export const defaultCategories = [
-  { key: 'FOOD', name: 'Comida', icon: 'utensils', color: 'chart-2' },
-  { key: 'GROCERIES', name: 'Súper', icon: 'shopping-cart', color: 'chart-1' },
-  { key: 'TRANSPORT', name: 'Transporte', icon: 'car', color: 'chart-4' },
-  { key: 'LODGING', name: 'Alojamiento', icon: 'bed-double', color: 'chart-5' },
-  { key: 'ENTERTAINMENT', name: 'Salidas', icon: 'party-popper', color: 'chart-3' },
-  { key: 'SHOPPING', name: 'Compras', icon: 'shopping-bag', color: 'highlight' },
-  { key: 'SERVICES', name: 'Servicios', icon: 'zap', color: 'positive' },
-  { key: 'OTHER', name: 'Otros', icon: 'shapes', color: 'muted' },
+  { key: 'FOOD', name: 'Comida', icon: 'utensils', color: 'tangerine' },
+  { key: 'GROCERIES', name: 'Súper', icon: 'shopping-cart', color: 'lime' },
+  { key: 'TRANSPORT', name: 'Transporte', icon: 'car', color: 'sky' },
+  { key: 'LODGING', name: 'Alojamiento', icon: 'bed-double', color: 'indigo' },
+  { key: 'ENTERTAINMENT', name: 'Salidas', icon: 'party-popper', color: 'raspberry' },
+  { key: 'SHOPPING', name: 'Compras', icon: 'shopping-bag', color: 'grape' },
+  { key: 'SERVICES', name: 'Servicios', icon: 'zap', color: 'mango' },
+  { key: 'OTHER', name: 'Otros', icon: 'shapes', color: 'cocoa' },
 ] as const
 export type DefaultCategoryKey = (typeof defaultCategories)[number]['key']
 
@@ -59,16 +59,18 @@ export const categoryIcons = [
 ] as const
 // Colors a category can have: names of theme colors (never hex: the app resolves them in light and dark).
 export const categoryColors = [
-  'chart-1',
-  'chart-2',
-  'chart-3',
-  'chart-4',
-  'chart-5',
-  'positive',
-  'negative',
-  'highlight',
-  'primary',
-  'muted',
+  'tomato',
+  'tangerine',
+  'mango',
+  'lime',
+  'mint',
+  'teal',
+  'sky',
+  'indigo',
+  'grape',
+  'raspberry',
+  'pink',
+  'cocoa',
 ] as const
 
 export const currency = z.enum(currencies)

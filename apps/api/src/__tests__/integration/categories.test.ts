@@ -37,6 +37,16 @@ describe('categories', () => {
     expect(list.map((c) => c.defaultKey)).toEqual(defaultCategories.map((c) => c.key))
     expect(list.map((c) => c.name)).toEqual(['Comida', 'Súper', 'Transporte', 'Alojamiento', 'Salidas', 'Compras', 'Servicios', 'Otros'])
     expect(list.every((c) => !c.archived && c.expenseCount === 0)).toBe(true)
+    // Each built-in category has its own color (no two alike) from the category palette.
+    expect(new Set(list.map((c) => c.color)).size).toBe(8)
+    expect(list.map((c) => c.color)).toEqual(defaultCategories.map((c) => c.color))
+  })
+
+  test('only colors from the category palette (old theme names are rejected)', async () => {
+    const { ana, group } = await newGroup()
+    await expect(ana.categories.create({ groupId: group.id, name: 'Vieja', icon: 'gift', color: 'chart-1' as 'mint' })).rejects.toThrow()
+    const ok = await ana.categories.create({ groupId: group.id, name: 'Nueva', icon: 'gift', color: 'raspberry' })
+    expect(ok.color).toBe('raspberry')
   })
 
   test('an expense without category goes to the group\'s "Otros"', async () => {
@@ -46,9 +56,9 @@ describe('categories', () => {
 
   test('any member can create, rename, recolor and use a category', async () => {
     const { ana, beto, group, expense } = await newGroup()
-    const nafta = await beto.categories.create({ groupId: group.id, name: 'Nafta', icon: 'fuel', color: 'chart-4' })
-    const renamed = await ana.categories.update({ categoryId: nafta.id, name: 'Combustible', color: 'highlight' })
-    expect(renamed).toMatchObject({ name: 'Combustible', icon: 'fuel', color: 'highlight', defaultKey: null })
+    const nafta = await beto.categories.create({ groupId: group.id, name: 'Nafta', icon: 'fuel', color: 'teal' })
+    const renamed = await ana.categories.update({ categoryId: nafta.id, name: 'Combustible', color: 'pink' })
+    expect(renamed).toMatchObject({ name: 'Combustible', icon: 'fuel', color: 'pink', defaultKey: null })
     await expense(nafta.id)
     const list = await ana.categories.list({ groupId: group.id })
     expect(list.at(-1)).toMatchObject({ id: nafta.id, name: 'Combustible', expenseCount: 1 })
@@ -56,7 +66,7 @@ describe('categories', () => {
 
   test('names are unique among active categories (ignoring case)', async () => {
     const { ana, group } = await newGroup()
-    await expect(ana.categories.create({ groupId: group.id, name: 'comida', icon: 'pizza', color: 'chart-1' })).rejects.toThrow(
+    await expect(ana.categories.create({ groupId: group.id, name: 'comida', icon: 'pizza', color: 'mint' })).rejects.toThrow(
       'Ya hay una categoría',
     )
     const list = await ana.categories.list({ groupId: group.id })
@@ -65,7 +75,7 @@ describe('categories', () => {
     await expect(ana.categories.update({ categoryId: groceries.id, name: 'COMIDA' })).rejects.toThrow('Ya hay una categoría')
     // Archived names are free again; un-archiving then conflicts.
     await ana.categories.archive({ categoryId: food.id })
-    await ana.categories.create({ groupId: group.id, name: 'Comida', icon: 'pizza', color: 'chart-1' })
+    await ana.categories.create({ groupId: group.id, name: 'Comida', icon: 'pizza', color: 'mint' })
     await expect(ana.categories.unarchive({ categoryId: food.id })).rejects.toThrow('Ya hay una categoría')
   })
 
@@ -110,20 +120,20 @@ describe('categories', () => {
     const food = (await ana.categories.list({ groupId: group.id })).find((c) => c.defaultKey === 'FOOD')!
     await ana.groups.setArchived({ groupId: group.id, archived: true })
     expect(await ana.categories.list({ groupId: group.id })).toHaveLength(8)
-    await expect(ana.categories.create({ groupId: group.id, name: 'X', icon: 'gift', color: 'chart-1' })).rejects.toThrow('archivado')
+    await expect(ana.categories.create({ groupId: group.id, name: 'X', icon: 'gift', color: 'mint' })).rejects.toThrow('archivado')
     await expect(ana.categories.update({ categoryId: food.id, name: 'X' })).rejects.toThrow('archivado')
     await expect(ana.categories.archive({ categoryId: food.id })).rejects.toThrow('archivado')
   })
 
   test('only known icons and colors', async () => {
     const { ana, group } = await newGroup()
-    await expect(ana.categories.create({ groupId: group.id, name: 'X', icon: 'skull' as 'gift', color: 'chart-1' })).rejects.toThrow()
-    await expect(ana.categories.create({ groupId: group.id, name: 'X', icon: 'gift', color: '#ff0000' as 'chart-1' })).rejects.toThrow()
+    await expect(ana.categories.create({ groupId: group.id, name: 'X', icon: 'skull' as 'gift', color: 'mint' })).rejects.toThrow()
+    await expect(ana.categories.create({ groupId: group.id, name: 'X', icon: 'gift', color: '#ff0000' as 'mint' })).rejects.toThrow()
   })
 
   test('filters, totals and saved filters use the category ids', async () => {
     const { ana, group, expense } = await newGroup()
-    const nafta = await ana.categories.create({ groupId: group.id, name: 'Nafta', icon: 'fuel', color: 'chart-4' })
+    const nafta = await ana.categories.create({ groupId: group.id, name: 'Nafta', icon: 'fuel', color: 'teal' })
     await expense(nafta.id)
     await expense()
     const list = await ana.expenses.list({ groupId: group.id, filters: { categoryIds: [nafta.id] } })

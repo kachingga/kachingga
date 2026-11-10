@@ -24,7 +24,7 @@ const category = (
   id,
   name,
   icon: 'shapes',
-  color: 'muted',
+  color: 'cocoa',
   defaultKey: null,
   archived: false,
   expenseCount: 0,
@@ -88,11 +88,11 @@ describe('Categories', () => {
     await user.click(await screen.findByRole('button', { name: 'Nueva categoría' }));
     await user.type(screen.getByLabelText('Nombre de la categoría'), 'Nafta');
     await user.click(screen.getByRole('radio', { name: 'Nafta' }));
-    await user.click(screen.getByRole('radio', { name: 'Azul' }));
+    await user.click(screen.getByRole('radio', { name: 'Frambuesa' }));
     await user.click(screen.getByRole('button', { name: 'Crear' }));
     await waitFor(() =>
       expect(created).toEqual([
-        { groupId: undefined, name: 'Nafta', icon: 'fuel', color: 'chart-4' },
+        { groupId: undefined, name: 'Nafta', icon: 'fuel', color: 'raspberry' },
       ]),
     );
   });

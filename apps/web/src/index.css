@@ -105,11 +105,60 @@
   --radius-2xl: calc(var(--radius) + 8px);
   --radius-3xl: calc(var(--radius) + 12px);
   --radius-4xl: calc(var(--radius) + 16px);
+  --color-cat-tomato: var(--cat-tomato);
+  --color-cat-tomato-soft: var(--cat-tomato-soft);
+  --color-cat-tangerine: var(--cat-tangerine);
+  --color-cat-tangerine-soft: var(--cat-tangerine-soft);
+  --color-cat-mango: var(--cat-mango);
+  --color-cat-mango-soft: var(--cat-mango-soft);
+  --color-cat-lime: var(--cat-lime);
+  --color-cat-lime-soft: var(--cat-lime-soft);
+  --color-cat-mint: var(--cat-mint);
+  --color-cat-mint-soft: var(--cat-mint-soft);
+  --color-cat-teal: var(--cat-teal);
+  --color-cat-teal-soft: var(--cat-teal-soft);
+  --color-cat-sky: var(--cat-sky);
+  --color-cat-sky-soft: var(--cat-sky-soft);
+  --color-cat-indigo: var(--cat-indigo);
+  --color-cat-indigo-soft: var(--cat-indigo-soft);
+  --color-cat-grape: var(--cat-grape);
+  --color-cat-grape-soft: var(--cat-grape-soft);
+  --color-cat-raspberry: var(--cat-raspberry);
+  --color-cat-raspberry-soft: var(--cat-raspberry-soft);
+  --color-cat-pink: var(--cat-pink);
+  --color-cat-pink-soft: var(--cat-pink-soft);
+  --color-cat-cocoa: var(--cat-cocoa);
+  --color-cat-cocoa-soft: var(--cat-cocoa-soft);
 }
 
 /* Palette "yerba y durazno": deep trust green + warm peach (design from Lovable, nov 2026). */
 :root {
   color-scheme: light;
+  /* Category colors: the color (icon) and its soft background, AA contrast between them. */
+  --cat-tomato: oklch(0.49 0.18 29);
+  --cat-tomato-soft: oklch(0.93 0.065 29);
+  --cat-tangerine: oklch(0.49 0.16 50);
+  --cat-tangerine-soft: oklch(0.93 0.065 50);
+  --cat-mango: oklch(0.49 0.12 75);
+  --cat-mango-soft: oklch(0.93 0.065 75);
+  --cat-lime: oklch(0.49 0.13 130);
+  --cat-lime-soft: oklch(0.93 0.065 130);
+  --cat-mint: oklch(0.49 0.12 160);
+  --cat-mint-soft: oklch(0.93 0.065 160);
+  --cat-teal: oklch(0.49 0.1 195);
+  --cat-teal-soft: oklch(0.93 0.065 195);
+  --cat-sky: oklch(0.49 0.14 240);
+  --cat-sky-soft: oklch(0.93 0.065 240);
+  --cat-indigo: oklch(0.49 0.17 275);
+  --cat-indigo-soft: oklch(0.93 0.065 275);
+  --cat-grape: oklch(0.49 0.17 310);
+  --cat-grape-soft: oklch(0.93 0.065 310);
+  --cat-raspberry: oklch(0.49 0.18 5);
+  --cat-raspberry-soft: oklch(0.93 0.065 5);
+  --cat-pink: oklch(0.49 0.15 345);
+  --cat-pink-soft: oklch(0.93 0.065 345);
+  --cat-cocoa: oklch(0.49 0.05 50);
+  --cat-cocoa-soft: oklch(0.93 0.025 50);
   --radius: 1rem;
   --background: oklch(0.975 0.012 85);
   --foreground: oklch(0.22 0.025 160);
@@ -164,6 +213,31 @@
 
 .dark {
   color-scheme: dark;
+  /* Category colors (dark): light color on a deep soft background. */
+  --cat-tomato: oklch(0.83 0.13 29);
+  --cat-tomato-soft: oklch(0.3 0.07 29);
+  --cat-tangerine: oklch(0.83 0.12 50);
+  --cat-tangerine-soft: oklch(0.3 0.07 50);
+  --cat-mango: oklch(0.83 0.13 75);
+  --cat-mango-soft: oklch(0.3 0.07 75);
+  --cat-lime: oklch(0.83 0.15 130);
+  --cat-lime-soft: oklch(0.3 0.07 130);
+  --cat-mint: oklch(0.83 0.12 160);
+  --cat-mint-soft: oklch(0.3 0.07 160);
+  --cat-teal: oklch(0.83 0.1 195);
+  --cat-teal-soft: oklch(0.3 0.07 195);
+  --cat-sky: oklch(0.83 0.11 240);
+  --cat-sky-soft: oklch(0.3 0.07 240);
+  --cat-indigo: oklch(0.83 0.11 275);
+  --cat-indigo-soft: oklch(0.3 0.07 275);
+  --cat-grape: oklch(0.83 0.12 310);
+  --cat-grape-soft: oklch(0.3 0.07 310);
+  --cat-raspberry: oklch(0.83 0.12 5);
+  --cat-raspberry-soft: oklch(0.3 0.07 5);
+  --cat-pink: oklch(0.83 0.11 345);
+  --cat-pink-soft: oklch(0.3 0.07 345);
+  --cat-cocoa: oklch(0.83 0.04 50);
+  --cat-cocoa-soft: oklch(0.3 0.03 50);
   --background: oklch(0.17 0.015 165);
   --foreground: oklch(0.95 0.012 85);
   --card: oklch(0.215 0.018 165);

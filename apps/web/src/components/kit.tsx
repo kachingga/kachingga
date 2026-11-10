@@ -29,7 +29,7 @@ export function SectionTitle({ className, ...props }: ComponentProps<'h2'>) {
   return <h2 className={cn('text-lg font-bold', className)} {...props} />;
 }
 
-/** A category's icon on its color. Unknown values (old data) fall back to "shapes" on muted. */
+/** A category's icon in its color, on a soft background of that color. Unknown values fall back to "shapes" on cocoa. */
 export function CategoryIcon({
   icon,
   color,
@@ -45,7 +45,7 @@ export function CategoryIcon({
       aria-hidden
       className={cn(
         'grid size-10 shrink-0 place-items-center rounded-xl',
-        CATEGORY_COLORS[color as CategoryColor] ?? CATEGORY_COLORS.muted,
+        CATEGORY_COLORS[color as CategoryColor] ?? CATEGORY_COLORS.cocoa,
         className,
       )}
     >

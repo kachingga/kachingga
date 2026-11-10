@@ -100,7 +100,7 @@ describe('ExpenseForm (amounts, dates and currencies)', () => {
       id,
       name,
       icon: 'shapes',
-      color: 'muted',
+      color: 'cocoa',
       defaultKey,
       archived,
       expenseCount: 0,
