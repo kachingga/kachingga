@@ -136,6 +136,36 @@ describe('minimizeTransfers', () => {
     expect([...net.values()].every((v) => v === 0)).toBe(true)
   })
 
+  test('the biggest debtor pays the biggest creditor', () => {
+    expect(
+      minimizeTransfers([
+        { participantId: 'yo', amountCents: -50_000 },
+        { participantId: 'tuke', amountCents: 100_000 },
+        { participantId: 'manu', amountCents: -50_000 },
+        { participantId: 'roman', amountCents: 0 },
+      ]),
+    ).toEqual([
+      { fromId: 'yo', toId: 'tuke', amountCents: 50_000 },
+      { fromId: 'manu', toId: 'tuke', amountCents: 50_000 },
+    ])
+  })
+
+  test('stays fast with many people (sorts once instead of on every transfer)', () => {
+    const n = 20_000
+    const balances = Array.from({ length: n }, (_, i) => ({ participantId: `p${i}`, amountCents: i % 2 ? i : -(i + 1) }))
+    balances.push({ participantId: 'rest', amountCents: -balances.reduce((a, b) => a + b.amountCents, 0) })
+    const start = performance.now()
+    const transfers = minimizeTransfers(balances)
+    expect(performance.now() - start).toBeLessThan(1000)
+    expect(transfers.length).toBeLessThanOrEqual(balances.length - 1)
+    const net = new Map(balances.map((b) => [b.participantId, b.amountCents]))
+    for (const t of transfers) {
+      net.set(t.fromId, net.get(t.fromId)! + t.amountCents)
+      net.set(t.toId, net.get(t.toId)! - t.amountCents)
+    }
+    expect([...net.values()].every((v) => v === 0)).toBe(true)
+  })
+
   test('nothing to do when everyone is even', () => {
     expect(minimizeTransfers([{ participantId: 'a', amountCents: 0 }])).toEqual([])
   })

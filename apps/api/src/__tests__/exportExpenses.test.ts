@@ -74,6 +74,27 @@ describe('toCsv', () => {
     expect(lines[1]).toContain('Ana: 1500.00 | Beto: 1500.00')
   })
 
+  test("text that starts like a formula gets a leading ' (no formulas in someone else's sheet)", () => {
+    const evil = {
+      ...base,
+      description: '=HYPERLINK("http://evil.example","clic")',
+      category: { name: '+cmd' },
+      paidBy: { id: 'a', name: '@Ana' },
+      splits: [
+        { amountCents: 150000, participant: { id: 'a', name: '-Ana' } },
+        { amountCents: 150000, participant: { id: 'b', name: '\tBeto' } },
+      ],
+    }
+    const [, line] = toCsv(toExportRows('ARS', 'a', [evil])).split('\r\n')
+    expect(line).toContain(`,"'=HYPERLINK(""http://evil.example"",""clic"")",'+cmd,`)
+    expect(line).toContain(",'@Ana,")
+    expect(line).toContain(",'-Ana: 1500.00 | \tBeto: 1500.00,")
+    expect(toCsv(toExportRows('ARS', 'a', [{ ...base, description: '\rx' }]))).toContain(`,"'\rx",`)
+    // Numbers and normal text are untouched
+    expect(line).toContain(',3000.00,')
+    expect(toCsv(toExportRows('ARS', 'a', [base]))).toContain(',Asado,Comida,')
+  })
+
   test('empty export still has the header', () => {
     expect(toCsv([])).toBe(
       '﻿fecha,descripcion,categoria,moneda,monto,tipo_de_cambio,moneda_saldo,monto_en_moneda_saldo,pago,division,partes,mi_parte,mi_parte_en_moneda_saldo\r\n',
