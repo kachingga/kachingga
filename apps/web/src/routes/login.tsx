@@ -8,9 +8,11 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { signIn } from '@/lib/auth';
+import { useReturnTo, withReturnTo } from '@/lib/return-to';
 
 export function Login() {
   const navigate = useNavigate();
+  const returnTo = useReturnTo();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
@@ -23,7 +25,7 @@ export function Login() {
     const { error: authError } = await signIn(email, password);
     setLoading(false);
     if (authError) setError(authError.message);
-    else void navigate('/grupos');
+    else void navigate(returnTo, { replace: true });
   }
 
   return (
@@ -63,11 +65,14 @@ export function Login() {
         </Button>
       </form>
 
-      <GoogleSignIn />
+      <GoogleSignIn returnTo={returnTo} />
 
       <p className="mt-8 text-center text-sm text-muted-foreground">
         ¿No tenés cuenta?{' '}
-        <Link to="/registro" className="font-semibold text-primary hover:underline">
+        <Link
+          to={withReturnTo('/registro', returnTo)}
+          className="font-semibold text-primary hover:underline"
+        >
           Crear cuenta
         </Link>
       </p>
