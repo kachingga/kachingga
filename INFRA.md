@@ -11,7 +11,7 @@
 | Base de datos **DEV** | Supabase (`staging-kachingga`) | supabase.com/dashboard/project/nraoqdaplvvsakvtlcam | `https://nraoqdaplvvsakvtlcam.supabase.co` (ref `nraoqdaplvvsakvtlcam`) |
 | Auth | Supabase Auth (email + password y Google) | supabase.com/dashboard → Authentication | Ver "Supabase" (abajo) |
 | Login con Google (OAuth) | Google Cloud (proyecto `Kachingga` de Galo) | console.cloud.google.com → Google Auth Platform | Cliente OAuth *Web application* "Kachingga web", app publicada (*In production*). Detalle en "Supabase" |
-| CI | GitHub Actions | github.com/kachingga/kachingga/actions | `ci.yml` (checks obligatorios), `e2e.yml` (Playwright en la web, a demanda) y `backup.yml` (backup semanal cifrado de prod, ver `DEPLOY.md` → "Backups") |
+| CI | GitHub Actions | github.com/kachingga/kachingga/actions | `ci.yml` (checks obligatorios), `e2e.yml` (Playwright en la web, a demanda) y `backup.yml` (backup diario cifrado de prod, ver `DEPLOY.md` → "Backups") |
 | Errores (monitoreo) | Sentry (plan gratis, org `kachingga` de Galo) | sentry.io/organizations/kachingga | Proyectos `kachingga-web` (React) y `kachingga-api` (Bun); cada uno con `environment` `staging` / `production`. Cómo está hecho: `docs/claude/repo/monitoreo.md` |
 | Caídas (uptime) | UptimeRobot (plan gratis, cuenta de Galo) | uptimerobot.com | HTTP(s) a `kachingga.com` y `staging.kachingga.com`; Keyword (`"ok":true`) a `api.kachingga.com/health/db` y `api-staging.kachingga.com/health/db` (ver `DEPLOY.md` → "Monitoreo") |
 | Cotizaciones (dólar blue y oficial, oficial de EUR, BRL, UYU y CLP) | DolarApi (público, sin clave) | dolarapi.com | `https://dolarapi.com/v1/dolares/{blue,oficial}` y `/v1/cotizaciones/{eur,brl,uyu,clp}` |
@@ -76,7 +76,7 @@ Mismas variables en los dos entornos, con los valores de su base (staging = `app
 
 | Secret | Descripción |
 |--------|-------------|
-| `BACKUP_DATABASE_URL` | `DIRECT_URL` de prod (session pooler, puerto 5432). Lo usa `backup.yml` para el `pg_dump` semanal |
+| `BACKUP_DATABASE_URL` | `DIRECT_URL` de prod (session pooler, puerto 5432). Lo usa `backup.yml` para el `pg_dump` diario |
 | `BACKUP_PASSPHRASE` | Passphrase con la que `backup.yml` cifra cada backup. Copia en `apps/api/.env.prod` y en el gestor de contraseñas de Galo: **sin ella no se pueden abrir los backups** |
 | `E2E_DATABASE_URL` | `DATABASE_URL` de **dev** (`staging-kachingga`, pooler 6543). La usa la API que levanta `e2e.yml` para los recorridos con datos (`docs/claude/web/testing.md`) |
 | `E2E_SUPABASE_URL` | `SUPABASE_URL` de dev (la API y la web de los E2E) |

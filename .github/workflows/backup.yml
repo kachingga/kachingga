@@ -1,12 +1,12 @@
-# Weekly backup of the production database (schemas public + auth), encrypted.
+# Daily backup of the production database (schemas public + auth), encrypted.
 # The repo is public and anyone signed in to GitHub can download artifacts, so the dump is
 # streamed straight into gpg: nothing unencrypted is ever written, even on the runner.
 # Restore steps: DEPLOY.md → "Backups".
-name: Backup semanal de prod
+name: Backup diario de prod
 
 on:
   schedule:
-    - cron: '0 6 * * 1' # Mondays 06:00 UTC
+    - cron: '0 6 * * *' # Every day 06:00 UTC (03:00 in Argentina)
   workflow_dispatch:
 
 permissions:
