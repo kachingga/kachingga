@@ -2,15 +2,18 @@ import { useState } from 'react';
 
 import { Button } from '@/components/ui/button';
 import { signInWithGoogle } from '@/lib/auth';
+import { HOME, rememberReturnToForGoogle } from '@/lib/return-to';
 
 /** An "o" divider + "Continuar con Google", under the email form of login and register. */
-export function GoogleSignIn() {
+export function GoogleSignIn({ returnTo = HOME }: { returnTo?: string }) {
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
   async function handleClick() {
     setError(null);
     setLoading(true);
+    // Google comes back to `/`: remember where to go from there (e.g. an invite link).
+    rememberReturnToForGoogle(returnTo);
     const { error: authError } = await signInWithGoogle();
     // On success the browser is already leaving for Google: keep the button disabled.
     if (authError) {

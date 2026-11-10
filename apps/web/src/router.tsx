@@ -1,4 +1,4 @@
-import { createBrowserRouter, Navigate, Outlet } from 'react-router';
+import { createBrowserRouter, Outlet } from 'react-router';
 
 import { AnimatedLayout } from '@/components/animated-layout';
 import { AppShell } from '@/components/app-shell';
@@ -17,6 +17,7 @@ import { Settlements } from '@/routes/groups/settlements';
 import { Categories } from '@/routes/groups/categories';
 import { Participants } from '@/routes/groups/participants';
 import { Filters } from '@/routes/groups/filters';
+import { AfterGoogle } from '@/components/after-google';
 
 export const router = createBrowserRouter([
   {
@@ -38,7 +39,7 @@ export const router = createBrowserRouter([
             // Sidebar (compu) / header (celu), with the screen animated inside.
             element: <AppShell />,
             children: [
-              { path: '/', element: <Navigate to="/grupos" replace /> },
+              { path: '/', element: <AfterGoogle /> },
               { path: '/cuenta', element: <Account /> },
               { path: '/grupos', element: <GroupList /> },
               { path: '/grupos/crear', element: <CreateGroup /> },

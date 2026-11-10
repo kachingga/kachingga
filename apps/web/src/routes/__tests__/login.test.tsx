@@ -2,6 +2,8 @@ import { screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it, vi } from 'vitest';
 
+import { Route, Routes } from 'react-router';
+
 import { renderWithApi } from '@/test/render';
 import { Login } from '@/routes/login';
 
@@ -68,5 +70,34 @@ describe('Login', () => {
       await screen.findByText('No se pudo entrar con Google. Probá de nuevo o usá tu email.'),
     ).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Continuar con Google' })).toBeEnabled();
+  });
+
+  it('after logging in, comes back to the invite link it was opening', async () => {
+    const back = `/login?volver=${encodeURIComponent('/grupos/unirme?codigo=ABCDEFGH')}`;
+    const user = userEvent.setup();
+    renderWithApi(
+      <Routes>
+        <Route path="/login" element={<Login />} />
+        <Route path="/grupos/unirme" element={<p>Unirme al grupo</p>} />
+      </Routes>,
+      {},
+      back,
+    );
+
+    expect(screen.getByRole('link', { name: 'Crear cuenta' })).toHaveAttribute(
+      'href',
+      `/registro?volver=${encodeURIComponent('/grupos/unirme?codigo=ABCDEFGH')}`,
+    );
+    await user.type(screen.getByLabelText('Email'), 'test@example.com');
+    await user.type(screen.getByLabelText('Contraseña'), 'secret123');
+    await user.click(screen.getByRole('button', { name: 'Entrar' }));
+    expect(await screen.findByText('Unirme al grupo')).toBeInTheDocument();
+  });
+
+  it('remembers the invite link before going to Google', async () => {
+    const user = userEvent.setup();
+    renderWithApi(<Login />, {}, `/login?volver=${encodeURIComponent('/grupos/unirme?codigo=AB')}`);
+    await user.click(screen.getByRole('button', { name: 'Continuar con Google' }));
+    expect(sessionStorage.getItem('kachingga-volver')).toBe('/grupos/unirme?codigo=AB');
   });
 });
