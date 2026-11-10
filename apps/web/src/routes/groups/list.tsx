@@ -17,6 +17,7 @@ import { Avatar, AvatarStack, EmptyState, MyBalance, Page } from '@/components/k
 import { Button } from '@/components/ui/button';
 import { useSession } from '@/lib/auth';
 import { useTRPC } from '@/lib/trpc';
+import { usePageTitle } from '@/lib/use-page-title';
 import { prefetchOn, usePrefetch } from '@/lib/use-prefetch';
 
 /** First name from the Google account ("Galo Belloponce" → "Galo"); email accounts have none. */
@@ -35,6 +36,7 @@ export function GroupList() {
   const [swipedId, setSwipedId] = useState<string | null>(null);
   const touchStartX = useRef(0);
   const name = firstName(useSession());
+  usePageTitle(showArchived ? 'Archivados' : 'Mis grupos');
 
   // When showing archived, fetch all and filter to only archived
   const groups = useQuery(trpc.groups.list.queryOptions({ includeArchived: showArchived }));
@@ -159,7 +161,11 @@ export function GroupList() {
               onTouchEnd={(e) => handleTouchEnd(e, group.id)}
             >
               {/* Swipe actions (behind the card, on phones) */}
-              <div className="absolute top-0 right-0 bottom-[3px] flex items-center">
+              {/* Out of the keyboard and screen readers while hidden behind the card. */}
+              <div
+                inert={swipedId !== group.id}
+                className="absolute top-0 right-0 bottom-[3px] flex items-center"
+              >
                 <button
                   onClick={(e) => {
                     e.stopPropagation();
@@ -200,7 +206,7 @@ export function GroupList() {
                 }}
                 // `translate` (not `transform`): the tap bounce of `press` uses `transform`.
                 style={{ translate: swipedId === group.id ? '-160px 0' : undefined }}
-                className="press group relative z-10 block w-full rounded-lg border bg-card p-5 text-left shadow-sticker"
+                className="press group relative z-10 block w-full rounded-lg border bg-card p-5 text-left shadow-sticker focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-ring"
               >
                 <span className="flex items-start justify-between gap-3">
                   <Avatar

@@ -1,6 +1,6 @@
 import { act, render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { createMemoryRouter, RouterProvider, useSearchParams } from 'react-router';
 import { describe, expect, it } from 'vitest';
 
@@ -13,6 +13,16 @@ import { useGoBack } from '@/lib/use-go-back';
 function Form() {
   const goBack = useGoBack();
   return <button onClick={() => goBack('/grupo')}>Guardar</button>;
+}
+
+/** A screen that shows its title once its data arrives (a skeleton before). */
+function Loading() {
+  const [loaded, setLoaded] = useState(false);
+  useEffect(() => {
+    const timer = setTimeout(() => setLoaded(true), 10);
+    return () => clearTimeout(timer);
+  }, []);
+  return loaded ? <h1>Viaje</h1> : <p>Cargando…</p>;
 }
 
 /** Like the filters: state of its own + a search param typed into the URL. */
@@ -40,6 +50,9 @@ function setup(initialEntries: string[]) {
           { path: '/grupo', element: <p>Grupo</p> },
           { path: '/grupo/nuevo', element: <Form /> },
           { path: '/filtros', element: <Filters /> },
+          { path: '/gasto', element: <h1>Un gasto</h1> },
+          { path: '/editar', element: <input aria-label="Monto" autoFocus /> },
+          { path: '/viaje', element: <Loading /> },
         ],
       },
     ],
@@ -52,6 +65,27 @@ function setup(initialEntries: string[]) {
 const page = (text: string) => screen.getByText(text).parentElement!;
 
 describe('screen transitions', () => {
+  it('a new screen takes the focus to its title (screen readers announce it)', async () => {
+    const router = setup(['/gasto']);
+    // Opening the app: the focus isn't moved.
+    expect(screen.getByRole('heading', { name: 'Un gasto' })).not.toHaveFocus();
+    await act(() => router.navigate('/grupo'));
+    await act(() => router.navigate(-1));
+    expect(screen.getByRole('heading', { name: 'Un gasto' })).toHaveFocus();
+  });
+
+  it('a screen still loading gets the focus on its title as soon as it shows up', async () => {
+    const router = setup(['/grupo']);
+    await act(() => router.navigate('/viaje'));
+    expect(await screen.findByRole('heading', { name: 'Viaje' })).toHaveFocus();
+  });
+
+  it('unless the screen already focused a field (autoFocus)', async () => {
+    const router = setup(['/grupo']);
+    await act(() => router.navigate('/editar'));
+    expect(screen.getByRole('textbox', { name: 'Monto' })).toHaveFocus();
+  });
+
   it('the first screen when opening the app does not animate', () => {
     setup(['/grupo']);
     expect(page('Grupo')).not.toHaveClass('page-enter-right');

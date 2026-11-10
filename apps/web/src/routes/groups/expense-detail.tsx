@@ -11,6 +11,7 @@ import { ExpenseDetailSkeleton } from '@/components/skeletons';
 import { useTRPC } from '@/lib/trpc';
 import { useGoBack } from '@/lib/use-go-back';
 import { useConfirm } from '@/lib/use-confirm';
+import { usePageTitle } from '@/lib/use-page-title';
 import { formatCents, formatDate, formatNumber, splitTypeLabels } from '@/lib/format';
 
 export function ExpenseDetail() {
@@ -23,6 +24,7 @@ export function ExpenseDetail() {
 
   const expense = useQuery(trpc.expenses.get.queryOptions({ expenseId: expenseId! }));
   const group = useQuery(trpc.groups.get.queryOptions({ groupId: groupId! }));
+  usePageTitle(expense.data?.description);
   const base = group.data?.baseCurrency;
 
   // Optimistic: back to the group right away, without the expense; put back if it fails.

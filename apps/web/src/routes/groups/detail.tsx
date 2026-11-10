@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router';
 import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import type { inferRouterOutputs } from '@trpc/server';
@@ -38,6 +38,7 @@ import { useTRPC } from '@/lib/trpc';
 import { prefetchOn, usePrefetch } from '@/lib/use-prefetch';
 import { isTemp } from '@/lib/optimistic';
 import { useConfirm } from '@/lib/use-confirm';
+import { usePageTitle } from '@/lib/use-page-title';
 import { formatCents, formatDate, formatMyBalance, formatPlainAmount } from '@/lib/format';
 
 type GroupData = inferRouterOutputs<AppRouter>['groups']['get'];
@@ -273,11 +274,32 @@ export function GroupDetail() {
   const prefetch = usePrefetch();
 
   const [showMenu, setShowMenu] = useState(false);
+  const menuRef = useRef<HTMLDivElement>(null);
+  const menuButtonRef = useRef<HTMLButtonElement>(null);
+  // The group menu closes with Escape (focus back on "⋯") or tapping outside of it.
+  useEffect(() => {
+    if (!showMenu) return;
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key !== 'Escape') return;
+      setShowMenu(false);
+      menuButtonRef.current?.focus();
+    };
+    const onPointerDown = (e: PointerEvent) => {
+      if (!menuRef.current?.contains(e.target as Node)) setShowMenu(false);
+    };
+    document.addEventListener('keydown', onKeyDown);
+    document.addEventListener('pointerdown', onPointerDown);
+    return () => {
+      document.removeEventListener('keydown', onKeyDown);
+      document.removeEventListener('pointerdown', onPointerDown);
+    };
+  }, [showMenu]);
   const [renaming, setRenaming] = useState(false);
   const [newName, setNewName] = useState('');
 
   const group = useQuery(trpc.groups.get.queryOptions({ groupId: groupId! }));
   const balances = useQuery(trpc.balances.get.queryOptions({ groupId: groupId! }));
+  usePageTitle(group.data?.name);
   const expenses = useInfiniteQuery(
     trpc.expenses.list.infiniteQueryOptions(
       { groupId: groupId! },
@@ -385,7 +407,7 @@ export function GroupDetail() {
             </div>
           )}
 
-          <div className="relative flex gap-2">
+          <div ref={menuRef} className="relative flex gap-2">
             <Button asChild variant="outline" size="sm">
               <Link
                 to={`/grupos/${groupId}/pagos`}
@@ -405,6 +427,7 @@ export function GroupDetail() {
               </Link>
             </Button>
             <Button
+              ref={menuButtonRef}
               variant="outline"
               size="icon-sm"
               onClick={() => setShowMenu(!showMenu)}
@@ -596,7 +619,7 @@ export function GroupDetail() {
                               (cached) => cached ?? expense,
                             )
                           }
-                          className="flex items-center gap-3 p-4 transition-colors hover:bg-muted/60"
+                          className="flex items-center gap-3 p-4 transition-colors hover:bg-muted/60 focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-ring"
                         >
                           {content}
                         </Link>

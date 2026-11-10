@@ -11,6 +11,7 @@ import {
 } from '@/lib/categories';
 import { Label } from '@/components/ui/label';
 import { formatCentsParts, formatMyBalance } from '@/lib/format';
+import { usePageTitle } from '@/lib/use-page-title';
 
 // Visual building blocks of the design (palette "yerba y durazno"). Only presentation: no data.
 // How they're used: docs/claude/web/componentes-y-tema.md.
@@ -179,6 +180,7 @@ export function PageHeader({
   actions?: ReactNode;
   className?: string;
 }) {
+  usePageTitle(typeof title === 'string' ? title : undefined);
   return (
     <div className={cn('rise', className)}>
       {back &&

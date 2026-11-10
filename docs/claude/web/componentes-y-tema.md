@@ -60,7 +60,7 @@ Sale de un diseño hecho en Lovable que eligió Galo (#37), con una **segunda it
 | Un monto grande (saldo, gasto, transferencia) | `<Money cents currency>` (`kit.tsx`): tipografía de títulos, con los centavos más chicos (`formatCentsParts`) | Partir el texto a mano |
 | Nada para mostrar todavía | `<EmptyState icon title description>` (`kit.tsx`), con la acción para empezar como `children` | Un texto suelto o un emoji |
 | Mi saldo ("Te deben" / "Debés" / "Estás al día") | `<MyBalance cents currency>` (`kit.tsx`: verde / terracota / gris, en un solo texto) | Armar el texto y el color en cada pantalla |
-| Título de pantalla con "volver" y acciones | `<PageHeader>` (`kit.tsx`) | — |
+| Título de pantalla con "volver" y acciones | `<PageHeader>` (`kit.tsx`; también pone el título de la pestaña) | — |
 | Cargando | Skeletons con la forma de la pantalla (`skeletons.tsx`, sobre `Skeleton`) | Un spinner suelto |
 | Error de una query | `<ErrorState message onRetry={() => query.refetch()} />` (mensaje de la API + **Reintentar**) | Un error técnico crudo |
 | Confirmar algo destructivo | `useConfirm()` (`src/lib/use-confirm.ts` + `<ConfirmProvider>` en `main.tsx`): `if (await confirm({ title, description, confirmLabel, destructive }))` | `confirm()` del navegador |

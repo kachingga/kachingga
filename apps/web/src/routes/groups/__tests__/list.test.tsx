@@ -96,6 +96,14 @@ describe('GroupList', () => {
     );
   });
 
+  it('the swipe actions are out of the keyboard and screen readers while hidden', async () => {
+    renderWithApi(<GroupList />, { 'groups.list': () => fixGroups });
+    await screen.findByText('Viaje a Floripa');
+    const archive = screen.getAllByLabelText('Archivar')[0]!;
+    expect(archive.closest('[inert]')).not.toBeNull();
+    expect(document.title).toBe('Mis grupos · Kachingga');
+  });
+
   it('shows empty state when there are no groups', async () => {
     renderWithApi(<GroupList />, { 'groups.list': () => [] });
     expect(await screen.findByText('Todavía no tenés grupos')).toBeInTheDocument();

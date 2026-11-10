@@ -244,6 +244,36 @@ describe('GroupDetail', () => {
     expect(screen.getByText('Pizza').closest('li')).toHaveClass('pop-in');
   });
 
+  it('the group menu closes with Escape (focus back on "⋯") or tapping outside', async () => {
+    const user = userEvent.setup();
+    renderWithApi(<GroupDetail />, {
+      'groups.get': () => fixGroup,
+      'balances.get': () => fixBalances,
+      'expenses.list': () => fixExpenses,
+    });
+    const menuButton = await screen.findByRole('button', { name: 'Opciones del grupo' });
+    await user.click(menuButton);
+    expect(menuButton).toHaveAttribute('aria-expanded', 'true');
+    await user.keyboard('{Escape}');
+    expect(screen.queryByRole('link', { name: 'Participantes' })).not.toBeInTheDocument();
+    expect(menuButton).toHaveFocus();
+
+    await user.click(menuButton);
+    expect(screen.getByRole('link', { name: 'Participantes' })).toBeInTheDocument();
+    await user.click(screen.getByRole('heading', { name: 'Viaje a Floripa' }));
+    expect(screen.queryByRole('link', { name: 'Participantes' })).not.toBeInTheDocument();
+  });
+
+  it("the tab's title is the group's name", async () => {
+    renderWithApi(<GroupDetail />, {
+      'groups.get': () => fixGroup,
+      'balances.get': () => fixBalances,
+      'expenses.list': () => fixExpenses,
+    });
+    await screen.findByText('Viaje a Floripa');
+    await waitFor(() => expect(document.title).toBe('Viaje a Floripa · Kachingga'));
+  });
+
   it('archives the group after confirming', async () => {
     const user = userEvent.setup();
     const calls: unknown[] = [];

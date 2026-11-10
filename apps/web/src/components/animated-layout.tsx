@@ -1,4 +1,4 @@
-import { useLayoutEffect, useState } from 'react';
+import { useLayoutEffect, useRef, useState } from 'react';
 import { Outlet, useLocation, useNavigationType } from 'react-router';
 import { cn } from 'cn';
 
@@ -30,6 +30,7 @@ export function AnimatedLayout({ className }: { className?: string }) {
     });
   }
   const { path, direction } = screen;
+  const pageRef = useRef<HTMLDivElement>(null);
 
   // The View Transition's CSS (index.css) reads the direction from <html>. Layout effects run in
   // the commit, before the browser starts animating.
@@ -37,10 +38,34 @@ export function AnimatedLayout({ className }: { className?: string }) {
     document.documentElement.dataset.nav = direction;
   }, [path, direction]);
 
+  // A new screen: focus goes to its title (it was on the link that just went away), so screen
+  // readers announce it and the keyboard starts from there. If it's still loading (skeleton), as
+  // soon as the title shows up. Not on the first screen, nor if the focus is already somewhere
+  // (an `autoFocus` field in the screen, or the sidebar link that was used).
+  useLayoutEffect(() => {
+    const page = pageRef.current;
+    if (direction === 'none' || !page) return;
+    /** True when there's nothing left to do. */
+    const focusTitle = () => {
+      const active = document.activeElement;
+      if (active && active !== document.body) return true;
+      const title = page.querySelector('h1');
+      if (!title) return false;
+      title.tabIndex = -1;
+      title.focus({ preventScroll: true });
+      return true;
+    };
+    if (focusTitle()) return;
+    const observer = new MutationObserver(() => focusTitle() && observer.disconnect());
+    observer.observe(page, { childList: true, subtree: true });
+    return () => observer.disconnect();
+  }, [path, direction]);
+
   const viewTransitions = VIEW_TRANSITIONS && viewTransitionsSupported();
   return (
     <div
       key={path}
+      ref={pageRef}
       className={cn(
         className,
         // View Transitions: the old and the new screen are "page", the browser animates both.
