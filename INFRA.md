@@ -5,7 +5,7 @@
 | Servicio | Proveedor | Dashboard | Dominio / ID |
 |----------|-----------|-----------|--------------|
 | API | Railway (proyecto `kachingga`, servicio `api`) | railway.com/dashboard | Prod `https://api.kachingga.com` · staging `https://api-staging.kachingga.com` |
-| **Web** | Railway (proyecto `kachingga`, servicio `web`) | railway.com/dashboard | Prod `https://kachingga.com` · staging `https://staging.kachingga.com` |
+| **Web** | Railway (proyecto `kachingga`, servicio `web`) | railway.com/dashboard | Prod `https://app.kachingga.com` · staging `https://staging.kachingga.com`. `kachingga.com` (sin `app.`) es la landing (#100), no está en Railway |
 | Dominio y DNS | Cloudflare (Registrar + DNS) | dash.cloudflare.com | `kachingga.com`, con renovación automática |
 | Mails de la app (SMTP) | Resend (plan gratis, cuenta de Galo) | resend.com | Dominio `kachingga.com` verificado (registros DNS en Cloudflare). Supabase manda por acá los mails de auth (ver "Supabase"). 100 mails por día |
 | Captcha | Cloudflare Turnstile | dash.cloudflare.com → Turnstile | Widget "Kachingga" (prod). Dev usa las claves de prueba (ver "Supabase") |
@@ -17,7 +17,7 @@
 | Login con Google (OAuth) | Google Cloud (proyecto `Kachingga` de Galo) | console.cloud.google.com → Google Auth Platform | Cliente OAuth *Web application* "Kachingga web", app publicada (*In production*). Detalle en "Supabase" |
 | CI | GitHub Actions | github.com/kachingga/kachingga/actions | `ci.yml` (checks obligatorios), `e2e.yml` (Playwright en la web, a demanda) y `backup.yml` (backup diario cifrado de prod y alerta de tamaño de la base, ver `DEPLOY.md` → "Backups") |
 | Errores (monitoreo) | Sentry (plan gratis, org `kachingga` de Galo) | sentry.io/organizations/kachingga | Proyectos `kachingga-web` (React) y `kachingga-api` (Bun); cada uno con `environment` `staging` / `production`. Cómo está hecho: `docs/claude/repo/monitoreo.md` |
-| Caídas (uptime) | UptimeRobot (plan gratis, cuenta de Galo) | uptimerobot.com | HTTP(s) a `kachingga.com` y `staging.kachingga.com`; Keyword (`"ok":true`) a `api.kachingga.com/health/db` y `api-staging.kachingga.com/health/db` (ver `DEPLOY.md` → "Monitoreo") |
+| Caídas (uptime) | UptimeRobot (plan gratis, cuenta de Galo) | uptimerobot.com | HTTP(s) a `app.kachingga.com` y `staging.kachingga.com`; Keyword (`"ok":true`) a `api.kachingga.com/health/db` y `api-staging.kachingga.com/health/db` (ver `DEPLOY.md` → "Monitoreo") |
 | Cotizaciones (dólar blue y oficial, oficial de EUR, BRL, UYU y CLP) | DolarApi (público, sin clave) | dolarapi.com | `https://dolarapi.com/v1/dolares/{blue,oficial}` y `/v1/cotizaciones/{eur,brl,uyu,clp}` |
 | Repo | GitHub | github.com/kachingga/kachingga | — |
 
@@ -56,7 +56,7 @@ Mismas variables en los dos entornos, con los valores de su base (staging = `app
 | `SUPABASE_SECRET_KEY` | Clave **secret** de Supabase (`sb_secret_...`) — solo en el server. Se usa para validar los tokens de los usuarios |
 | `PORT` | Lo setea Railway automáticamente — no pisarlo |
 | `NODE_ENV` | `production` — evita que tRPC devuelva stack traces en los errores |
-| `CORS_ORIGINS` | Orígenes del front web que pueden llamar a la API, separados por coma. Prod: `https://kachingga.com`. Staging: `https://staging.kachingga.com`. Local (default): `http://localhost:5173,http://localhost:4173` |
+| `CORS_ORIGINS` | Orígenes del front web que pueden llamar a la API, separados por coma. Prod: `https://app.kachingga.com`. Staging: `https://staging.kachingga.com`. Local (default): `http://localhost:5173,http://localhost:4173` |
 | `SEED_USER_PASSWORD` | **Solo `apps/api/.env` (dev).** Contraseña de los usuarios de prueba de `bun run db:seed`. No va en Railway ni en `.env.prod` |
 | `SENTRY_DSN` | DSN del proyecto `kachingga-api` de Sentry (Settings → Client Keys). Sin él no se reporta nada (local, tests, CI) |
 | `SENTRY_ENVIRONMENT` | `production` o `staging` |
@@ -106,7 +106,7 @@ Sin los `E2E_*`, `e2e.yml` corre igual pero solo los specs que no necesitan la A
 
 - **Auth:** registro abierto (#40), **email + password con el email confirmado** (*Confirm email* prendido, #98) y **Google**, en los dos proyectos (Authentication → Sign In / Providers). Captcha (Cloudflare Turnstile) en el login con email, el registro y "¿Olvidaste tu contraseña?". También en los dos: *Secure email change* prendido, *Manual linking* y *Anonymous sign-ins* apagados, contraseña de al menos 8 caracteres.
 - **Google:** un cliente OAuth tipo *Web application* en Google Cloud (proyecto de Galo) con los dos *Authorized redirect URIs* de Supabase: `https://czrkjokurbmbbvobvmxd.supabase.co/auth/v1/callback` (prod) y `https://nraoqdaplvvsakvtlcam.supabase.co/auth/v1/callback` (staging). Su client ID y secret se cargan en el provider Google de cada proyecto de Supabase (el secret solo ahí, nunca en el repo).
-- **URLs de auth** (Authentication → URL Configuration): adónde puede volver el login con Google (y los links de los mails). En `prod`, *Site URL* `https://kachingga.com` y *Redirect URLs* `https://kachingga.com/**`; en `stg`, *Site URL* `http://localhost:5173` y *Redirect URLs* `https://staging.kachingga.com/**` y `http://localhost:5173/**`.
+- **URLs de auth** (Authentication → URL Configuration): adónde puede volver el login con Google (y los links de los mails). En `prod`, *Site URL* `https://app.kachingga.com` y *Redirect URLs* `https://app.kachingga.com/**`; en `stg`, *Site URL* `http://localhost:5173` y *Redirect URLs* `https://staging.kachingga.com/**` y `http://localhost:5173/**`.
 - **Mails (#98):** Supabase manda los mails (confirmar el email, recuperar la contraseña, cambiar el email) por el **SMTP de Resend** (Authentication → Emails → SMTP Settings, en los dos proyectos): host `smtp.resend.com`, puerto `465`, usuario `resend`, contraseña = una API key de Resend (solo ahí y en el gestor de contraseñas), remitente `no-responder@kachingga.com` con nombre `Kachingga`. **Límite de mails por hora** (Authentication → Rate Limits): **30 en prod y 10 en dev**. El tope real es el de Resend gratis, **100 mails por día para toda la cuenta**, compartidos por prod, dev y los E2E (si no alcanza: Resend Pro). El resto de los límites, como vienen.
 - **Plantillas de los mails** (Authentication → Emails → Templates, en español, en los dos proyectos): *Confirm signup*, *Reset password* y *Change email address* usan el link **`{{ .RedirectTo }}#token_hash={{ .TokenHash }}`**, que la web canjea (el link por defecto, `{{ .ConfirmationURL }}`, no anda si el mail se abre en otro navegador, ej. Safari con la app instalada: `docs/claude/web/usar-la-api.md` → "Login"). Los textos están en las descripciones de los PRs #113 y #125.
 - **Captcha en prod:** widget "Kachingga" de Cloudflare Turnstile (dash.cloudflare.com → Turnstile) con los dominios de prod (`kachingga.com`, `app.kachingga.com`). Su *site key* va en `VITE_TURNSTILE_SITE_KEY` del servicio `web` de prod; su *secret key*, **solo** en Supabase `prod` (Authentication → Attack Protection → Turnstile).
