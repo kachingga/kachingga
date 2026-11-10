@@ -18,6 +18,7 @@
 | Una pantalla nueva o un cambio visible | `docs/claude/web/ui-ux.md` (+ `V1.md` → "Pantallas") |
 | Tests (`renderWithApi`, setup, E2E) | `docs/claude/web/testing.md` |
 | Errores inesperados y Sentry (`src/lib/monitoring.ts`, `RouteError`, los `onError` de `api-provider.tsx`) | `docs/claude/repo/monitoreo.md` |
+| `server.ts`, los headers de seguridad y la CSP, o sumar algo de otro dominio (script, iframe, imagen, fuente, conexión) | `docs/claude/web/servidor-y-headers.md` |
 
 ## Reglas que valen siempre
 
@@ -56,6 +57,7 @@
 - Nada secreto en `VITE_*` ni en el código: todo lo del front es público.
 - Supabase solo para auth y solo desde `src/lib/supabase.ts`; la sesión la maneja la librería (no guardar ni loguear tokens).
 - No renderizar HTML de usuarios (`dangerouslySetInnerHTML`). Links externos con `rel="noopener noreferrer"`.
+- **CSP** (`server.ts`): nada de otro dominio (script, iframe, imagen, fuente, conexión) sin sumarlo ahí; nunca scripts inline ni `eval` (el tema va en `public/theme.js`, Zod sin `new Function`).
 
 **Lo que hace cumplir el lint** (`eslint.config.js`; no desactivar, y si de verdad hace falta una excepción, `eslint-disable-next-line` con el motivo y avisarlo en el PR): imports de runtime de `@kachingga/api`, `@supabase/supabase-js` fuera de `src/lib/supabase.ts`, `fetch` a mano, reglas de hooks.
 
@@ -102,7 +104,7 @@ src/
 │                             # email-link (links de los mails), use-captcha (Turnstile), format, optimistic,
 │                             # use-prefetch, use-exchange-rate, use-confirm, use-go-back, offline-cache,
 │                             # theme, use-sign-out, categories (ícono y color de cada categoría), use-debounced-value,
-│                             # screen-transitions (View Transitions entre pantallas)
+│                             # screen-transitions (View Transitions entre pantallas), zod-config (Zod sin eval, por la CSP)
 └── test/                     # setup.ts, render.tsx (renderWithApi), fake-turnstile.tsx (captcha de mentira)
 e2e/                          # Playwright
 ```
@@ -113,7 +115,7 @@ e2e/                          # Playwright
 - `tsconfig.app.json` sin `baseUrl` (TS 6 lo rechaza); el alias `@/` está en `paths`, en `vite.config.ts` y en `tsconfig.json` (para el CLI de shadcn).
 - **El service worker (PWA) guarda solo los archivos de la app, nunca datos de la API.** Los íconos salen de `public/logo.svg`: no agregar PNGs a mano.
 - La web typechequea archivos de la API (vía `AppRouter`): si la API importa algo que acá no resuelve, se rompe el typecheck de la web.
-- Deploy: servicio `web` en Railway (settings en `DEPLOY.md`): buildea con Vite y `server.ts` sirve `dist` (rutas → `index.html`, cache largo en `/assets/*`). Las `VITE_*` se leen **al buildear**: cambiarlas en Railway requiere un deploy nuevo. La API de cada entorno tiene que permitir la URL de su web en `CORS_ORIGINS`. Ver `DEPLOY.md`.
+- Deploy: servicio `web` en Railway (settings en `DEPLOY.md`): buildea con Vite y `server.ts` sirve `dist` (rutas → `index.html`, cache largo en `/assets/*`) con los headers de seguridad y la CSP (`docs/claude/web/servidor-y-headers.md`). Las `VITE_*` se leen **al buildear** (y `server.ts` lee las de la API, Supabase y Sentry al arrancar, para la CSP): cambiarlas en Railway requiere un deploy nuevo. La API de cada entorno tiene que permitir la URL de su web en `CORS_ORIGINS`. Ver `DEPLOY.md`.
 
 ## Conflictos (web)
 

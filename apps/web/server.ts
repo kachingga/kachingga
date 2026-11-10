@@ -36,6 +36,66 @@ async function load(file: string) {
   return entry;
 }
 
+// Cloudflare Turnstile: the captcha of the auth screens (its script and its iframe).
+const TURNSTILE = 'https://challenges.cloudflare.com';
+
+const originOf = (url: string | undefined) => {
+  try {
+    return url ? [new URL(url).origin] : [];
+  } catch {
+    return [];
+  }
+};
+
+/**
+ * What the page may load and where it may connect: only this origin, plus the API, Supabase (login)
+ * and Sentry of this environment (from the same variables the build reads; Railway gives them to the
+ * server too) and Turnstile. Styles allow 'unsafe-inline' (the splash in index.html, and toasts and
+ * dialogs inject theirs); scripts don't, nor eval. Details: docs/claude/web/servidor-y-headers.md.
+ */
+export function contentSecurityPolicy(env: NodeJS.ProcessEnv) {
+  const connect = [env.VITE_API_URL, env.VITE_SUPABASE_URL, env.VITE_SENTRY_DSN].flatMap(originOf);
+  return [
+    "default-src 'self'",
+    `script-src 'self' ${TURNSTILE}`,
+    "style-src 'self' 'unsafe-inline'",
+    "img-src 'self' data:",
+    // Vite inlines the smallest font files (subsets of the app's fonts) as data: URLs.
+    "font-src 'self' data:",
+    ["connect-src 'self'", ...connect].join(' '),
+    `frame-src ${TURNSTILE}`,
+    "worker-src 'self'",
+    "manifest-src 'self'",
+    "frame-ancestors 'none'",
+    "base-uri 'none'",
+    "form-action 'self'",
+    "object-src 'none'",
+  ].join('; ');
+}
+
+/**
+ * Sent with every response. The CSP goes as Report-Only (the browser only warns in the console)
+ * until CSP_ENFORCE=true is set on the `web` service.
+ */
+export function securityHeaders(env: NodeJS.ProcessEnv): Record<string, string> {
+  const csp =
+    env.CSP_ENFORCE === 'true' ? 'Content-Security-Policy' : 'Content-Security-Policy-Report-Only';
+  return {
+    [csp]: contentSecurityPolicy(env),
+    // A day to start with; raise it once it's been working a while (see the doc).
+    'Strict-Transport-Security': 'max-age=86400',
+    'X-Frame-Options': 'DENY',
+    'X-Content-Type-Options': 'nosniff',
+    'Referrer-Policy': 'strict-origin-when-cross-origin',
+    // Nothing of this is used. Clipboard (copy alias / amount) and sharing (invites) stay allowed.
+    'Permissions-Policy': 'camera=(), microphone=(), geolocation=(), payment=(), usb=()',
+    // No other site keeps a handle on this window. Google login is a full-page redirect, not a popup.
+    'Cross-Origin-Opener-Policy': 'same-origin',
+  };
+}
+
+const SECURITY_HEADERS = securityHeaders(process.env);
+
 async function isFile(path: string) {
   return (await stat(path).catch(() => null))?.isFile() ?? false;
 }
@@ -55,14 +115,21 @@ export async function resolveFile(urlPath: string, root = DIST): Promise<string 
   return extname(pathname) ? null : join(root, 'index.html');
 }
 
-export async function handle(req: IncomingMessage, res: ServerResponse, root = DIST) {
+export async function handle(
+  req: IncomingMessage,
+  res: ServerResponse,
+  root = DIST,
+  headers = SECURITY_HEADERS,
+) {
   if (req.method !== 'GET' && req.method !== 'HEAD') {
-    res.writeHead(405, { Allow: 'GET, HEAD' }).end();
+    res.writeHead(405, { ...headers, Allow: 'GET, HEAD' }).end();
     return;
   }
   const file = await resolveFile(req.url ?? '/', root);
   if (!file) {
-    res.writeHead(404, { 'Content-Type': 'text/plain; charset=utf-8' }).end('No encontrado');
+    res
+      .writeHead(404, { ...headers, 'Content-Type': 'text/plain; charset=utf-8' })
+      .end('No encontrado');
     return;
   }
   const { raw, gzip } = await load(file);
@@ -70,13 +137,13 @@ export async function handle(req: IncomingMessage, res: ServerResponse, root = D
     gzip !== undefined && /\bgzip\b/.test(String(req.headers['accept-encoding'] ?? ''));
   const body = useGzip ? gzip : raw;
   res.writeHead(200, {
+    ...headers,
     'Content-Type': TYPES[extname(file)] ?? 'application/octet-stream',
     'Content-Length': body.length,
     // Vite fingerprints /assets/*: they never change. Everything else is revalidated so a deploy shows up.
     'Cache-Control': file.startsWith(join(root, 'assets') + sep)
       ? 'public, max-age=31536000, immutable'
       : 'no-cache',
-    'X-Content-Type-Options': 'nosniff',
     ...(gzip !== undefined && { Vary: 'Accept-Encoding' }),
     ...(useGzip && { 'Content-Encoding': 'gzip' }),
   });

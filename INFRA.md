@@ -71,9 +71,10 @@ Mismas variables en los dos entornos, con los valores de su base (staging = `app
 | `VITE_TURNSTILE_SITE_KEY` | *Site key* del widget de Cloudflare Turnstile (captcha del login, registro y "¿Olvidaste tu contraseña?"). **Pública por diseño**; la *secret key* va solo en Supabase. Vacía = sin captcha. Ver "Supabase" (abajo) |
 | `SENTRY_AUTH_TOKEN` | **Secreto, solo para el build** (no es `VITE_*`): *Organization Token* de la org `kachingga` (Sentry → Settings → Developer Settings → Organization Tokens; solo se crean desde la web) para que el build suba los source maps. Opcional: sin él los errores se ven con el código minificado |
 | `SENTRY_ORG` / `SENTRY_PROJECT` | Slug de la org de Sentry y `kachingga-web`. Los usa el build junto con `SENTRY_AUTH_TOKEN` |
+| `CSP_ENFORCE` | `true` = la Content-Security-Policy bloquea; sin la variable (u otro valor) va como **Report-Only** (solo avisa en la consola). La lee `server.ts` al arrancar. Cuándo y cómo pasarla: `docs/claude/web/servidor-y-headers.md` |
 | `PORT` | Lo setea Railway — no pisarlo (lo lee `server.ts`) |
 
-> Todo lo `VITE_*` queda dentro del JavaScript que baja el navegador: es **público**. Nunca secretos. Vite las lee **al buildear**: si cambian, hay que redeployar el servicio `web`.
+> Todo lo `VITE_*` queda dentro del JavaScript que baja el navegador: es **público**. Nunca secretos. Vite las lee **al buildear**: si cambian, hay que redeployar el servicio `web`. `server.ts` además lee `VITE_API_URL`, `VITE_SUPABASE_URL` y `VITE_SENTRY_DSN` al arrancar, para armar el `connect-src` de la CSP de su entorno.
 
 ### GitHub (secrets)
 

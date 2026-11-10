@@ -5,10 +5,10 @@ import { describe, expect, it } from 'vitest';
 import { PALETTES } from '@/lib/theme';
 
 // The palettes live in index.css (one light and one dark block each) and their ids in theme.ts
-// and index.html: check they all say the same and every palette sets the same colors.
+// and public/theme.js: check they all say the same and every palette sets the same colors.
 // Tests run from apps/web.
 const css = readFileSync(resolve('src/index.css'), 'utf8');
-const html = readFileSync(resolve('index.html'), 'utf8');
+const bootScript = readFileSync(resolve('public/theme.js'), 'utf8');
 
 /** The custom properties set by the block whose selector contains `selector`. */
 function tokens(selector: string) {
@@ -35,8 +35,8 @@ describe('palettes', () => {
     },
   );
 
-  it('index.html applies the same palettes before the first paint', () => {
-    for (const { id } of PALETTES) expect(html).toContain(id);
-    expect(html).toMatch(/\^\((\w+\|)+\w+\)\$/);
+  it('public/theme.js applies the same palettes before the first paint', () => {
+    const [, ids] = bootScript.match(/\^\(([\w|]+)\)\$/) ?? [];
+    expect(ids?.split('|')).toEqual(PALETTES.map((p) => p.id));
   });
 });
