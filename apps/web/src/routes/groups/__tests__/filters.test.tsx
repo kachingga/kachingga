@@ -109,6 +109,26 @@ describe('Filters', () => {
     expect(screen.getByRole('button', { name: 'Este mes' })).toBeInTheDocument();
   });
 
+  it('shows the totals of each currency: spent, my share and what I paid', async () => {
+    renderWithApi(<Filters />, {
+      ...api(),
+      'expenses.summary': () => [
+        {
+          currency: 'ARS',
+          count: 3,
+          totalCents: 123456789,
+          myShareCents: 41152263,
+          myPaidCents: 98765432,
+          byCategory: [{ categoryId: 'cat-food', name: 'Comida', totalCents: 123456789 }],
+        },
+      ],
+    });
+    const total = (await screen.findByText('Gastos (3)')).parentElement!;
+    expect(total).toHaveTextContent(/1\.234\.567,89/);
+    expect(screen.getByText('Mi parte').parentElement).toHaveTextContent(/411\.522,63/);
+    expect(screen.getByText('Pagué').parentElement).toHaveTextContent(/987\.654,32/);
+  });
+
   it('shows empty expenses state', async () => {
     renderWithApi(<Filters />, {
       'groups.get': () => fixGroup,
