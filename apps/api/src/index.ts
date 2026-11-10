@@ -1,10 +1,11 @@
-import { Hono } from 'hono'
+import { Hono, type Context as HonoContext } from 'hono'
 import { trpcServer } from '@hono/trpc-server'
+import { bodyLimit } from 'hono/body-limit'
 import { getConnInfo } from 'hono/bun'
 import { cors } from 'hono/cors'
 import { appRouter } from './trpc/router'
 import { initMonitoring, reportError, reportTrpcError } from './lib/monitoring'
-import { clientIp, RateLimiter } from './lib/rateLimit'
+import { clientIp, RATE_LIMIT_MESSAGE, RateLimiter } from './lib/rateLimit'
 import { prisma } from './db'
 import { createContext } from './trpc/context'
 
@@ -41,6 +42,24 @@ app.get('/health/db', async (c) => {
   }
 })
 
+// Per-IP limits (lib/rateLimit.ts) before anything else: a rejected request isn't read, parsed or
+// authenticated (the token is validated with Supabase later, in createContext).
+const ipLimiter = new RateLimiter()
+app.use('/trpc/*', async (c, next) => {
+  const ip = clientIp(c.req.raw, socketAddress(c))
+  // Count every call (not short-circuit), like tRPC would run them all.
+  const allowed = trpcPaths(c).map((path) => ipLimiter.allow(ip, path))
+  if (allowed.includes(false)) return trpcError(c, 'TOO_MANY_REQUESTS', RATE_LIMIT_MESSAGE)
+  await next()
+})
+
+// No real request comes close (the biggest is an expense split among a whole group).
+export const MAX_BODY_BYTES = 1024 * 1024
+app.use(
+  '/trpc/*',
+  bodyLimit({ maxSize: MAX_BODY_BYTES, onError: (c) => trpcError(c, 'PAYLOAD_TOO_LARGE', 'El pedido es demasiado grande.') }),
+)
+
 app.use(
   '/trpc/*',
   trpcServer({
@@ -55,6 +74,29 @@ app.onError((err, c) => {
   reportError(err)
   return c.json({ error: 'Error interno' }, 500)
 })
+
+// Procedures a tRPC request calls, decoded like tRPC does: `/trpc/a,b?batch=1` → ['a', 'b'].
+function trpcPaths(c: HonoContext) {
+  const path = new URL(c.req.url).pathname.replace(/^\/trpc\/?/, '')
+  try {
+    return decodeURIComponent(path).split(',')
+  } catch {
+    return [path] // tRPC rejects it anyway
+  }
+}
+
+// An error answered outside tRPC, in the same shape tRPC uses (superjson, one entry per call when
+// batched), so the app reads it like any other API error and shows `message`.
+const ERRORS = {
+  TOO_MANY_REQUESTS: { rpcCode: -32029, httpStatus: 429 },
+  PAYLOAD_TOO_LARGE: { rpcCode: -32013, httpStatus: 413 },
+} as const
+function trpcError(c: HonoContext, code: keyof typeof ERRORS, message: string) {
+  const { rpcCode, httpStatus } = ERRORS[code]
+  const error = (path: string) => ({ error: { json: { message, code: rpcCode, data: { code, httpStatus, path } } } })
+  const paths = trpcPaths(c)
+  return c.json(c.req.query('batch') === '1' ? paths.map(error) : error(paths[0]!), httpStatus)
+}
 
 // Socket address when running under Bun.serve; undefined when called without a server (tests).
 function socketAddress(c: Parameters<typeof getConnInfo>[0]) {
