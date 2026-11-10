@@ -45,6 +45,7 @@ expect(await screen.findByText('Todavía no hay gastos')).toBeInTheDocument();
   - Corren solo con **`E2E_API=1`**: Playwright levanta también la API (`bun run --cwd ../api start`, en :3000) y `preview` le reenvía `/trpc` (la web con `VITE_API_URL` vacía, sin CORS). Sin `E2E_API` se saltean.
   - **Local:** `E2E_API=1 bun run e2e` desde `apps/web`, con `apps/api/.env` y `apps/web/.env` de dev. Si ya tenés la API corriendo, la reusa.
   - **CI** (`e2e.yml`, a mano o con la label `e2e`): corren si existen los secrets `E2E_*` (`INFRA.md` → "GitHub"); si no, avisa y corre solo lo que no necesita API.
+  - **Sin traces con `E2E_API=1`** (`playwright.config.ts`): el reporte del CI es un artifact público (dura 3 días) y un trace guarda tokens de sesión y contraseñas. Para depurar en local: `E2E_API=1 bunx playwright test --trace retain-on-failure` (queda en `test-results/`, gitignoreado).
   - **Qué dejan en dev** (`staging-kachingga`): cada corrida registra usuarios nuevos (`e2e+…@example.com`, por eso no hace falta guardar contraseñas: registro abierto y sin confirmar el email) y un grupo `E2E <fecha>` que **se archiva al final**. Se puede limpiar con un filtro por esos nombres; nunca corren contra prod.
 - Ponerle la label `e2e` a los PRs que cambian un recorrido crítico.
 - Ojo: Playwright con `locale: 'es-AR'` en Chromium reporta `navigator.language = 'es-419'` (como Chrome real en Argentina).

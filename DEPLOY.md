@@ -81,14 +81,25 @@ Nunca usar `prisma migrate reset` ni `prisma db push` contra ninguna base.
 
 **Siempre cifrado:** el repo es público y cualquiera logueado en GitHub puede bajar los artifacts. El dump pasa directo a `gpg` (AES256) con `BACKUP_PASSPHRASE`: nunca queda un archivo sin cifrar. **Sin la passphrase los backups no se abren**: está en `apps/api/.env.prod` y tiene que estar también en el gestor de contraseñas de Galo.
 
-**Setup (una vez, desde la raíz del repo):** carga los dos secrets del repo (`INFRA.md` → "GitHub") sin mostrarlos:
+**Sin sesiones vivas:** de `auth.sessions`, `auth.refresh_tokens`, `auth.one_time_tokens`, `auth.mfa_amr_claims` (cuelga de las sesiones) y `auth.flow_state` (el login con Google en curso) se guarda la estructura pero no los datos (`--exclude-table-data`): con un backup filtrado nadie puede usar una sesión. Al restaurar, todos tienen que volver a loguearse.
 
-```bash
-grep '^DIRECT_URL=' apps/api/.env.prod | cut -d= -f2- | tr -d '"' | gh secret set BACKUP_DATABASE_URL --repo kachingga/kachingga
-p=$(openssl rand -base64 32); echo "BACKUP_PASSPHRASE=$p" >> apps/api/.env.prod; printf %s "$p" | gh secret set BACKUP_PASSPHRASE --repo kachingga/kachingga; unset p
-```
+**Los secrets solo los ve `main`:** el job corre en el **environment `backup`**, restringido a `main`, y los dos secrets están ahí (no en los del repo). Así, un workflow de otra branch o de un PR no puede leer la credencial de prod.
 
-Después, guardar la passphrase en el gestor de contraseñas y correrlo una vez a mano para probarlo.
+**Setup (una vez):**
+
+1. GitHub → repo → *Settings → Environments → New environment* → `backup`. En *Deployment branches and tags*: *Selected branches and tags* → agregar `main`. Sin reviewers (el cron tiene que correr solo).
+2. Si todavía no hay passphrase (primera vez): `echo "BACKUP_PASSPHRASE=$(openssl rand -base64 32)" >> apps/api/.env.prod` y guardarla en el gestor de contraseñas.
+3. Cargar los dos secrets en el environment sin mostrarlos (desde la raíz del repo):
+
+   ```bash
+   grep '^DIRECT_URL=' apps/api/.env.prod | cut -d= -f2- | tr -d '"' | gh secret set BACKUP_DATABASE_URL --env backup --repo kachingga/kachingga
+   grep '^BACKUP_PASSPHRASE=' apps/api/.env.prod | cut -d= -f2- | tr -d '"' | gh secret set BACKUP_PASSPHRASE --env backup --repo kachingga/kachingga
+   ```
+
+4. Correrlo una vez a mano desde `main` (abajo) y comprobar que el run pasa y deja el artifact.
+5. Si quedaron copias en los secrets del repo (de antes del environment), borrarlas: si no, cualquier workflow las sigue pudiendo leer. `gh secret delete BACKUP_DATABASE_URL --repo kachingga/kachingga` y lo mismo con `BACKUP_PASSPHRASE`.
+
+**Imagen de Postgres fijada por digest** (`postgres:17@sha256:…` en `backup.yml`): Dependabot no la actualiza. Cada tanto, o si Supabase pasa la base a una versión mayor (el `pg_dump` tiene que ser de la misma versión o más nueva), tomar el digest nuevo con `docker buildx imagetools inspect postgres:17` (la línea `Digest:` de arriba) y actualizarlo junto con la versión del comentario.
 
 **Correrlo a mano:** `gh workflow run backup.yml` (o Actions → "Backup diario de prod" → *Run workflow*).
 
@@ -102,6 +113,7 @@ pg_restore --list kachingga.dump | less           # ver qué tiene
 ```
 
 - **Lo normal es restaurar `public` (los datos de la app) en una base nueva o vacía**, nunca encima de prod sin pensarlo: `pg_restore --schema=public --no-owner --no-privileges -d "<DIRECT_URL de la base destino>" kachingga.dump`. Después `bun run --cwd apps/api db:migrate:status` contra esa base para confirmar que el schema coincide con las migraciones.
+- Si `pg_restore` avisa `schema "public" already exists` (el dump incluye el `CREATE SCHEMA`), es esperable: restaura igual lo demás.
 - **`auth` es de Supabase:** las tablas ya existen en cualquier proyecto y Supabase las maneja. No restaurar el schema entero; si hace falta recuperar cuentas, restaurar solo los datos de `auth.users` / `auth.identities` (`pg_restore --data-only --table=...`) en un proyecto **nuevo**, y probarlo antes. Sin las cuentas, los participantes quedan sin dueño (sus gastos y saldos no se pierden).
 - Antes de restaurar algo en prod, hacer un backup a mano de cómo está.
 

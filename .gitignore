@@ -1,8 +1,7 @@
 node_modules/
-.env*.local
+.env*
+!.env.sample
 .DS_Store
-.env
-.env.prod
 .claude/worktrees/
 .claude/settings.local.json
 CLAUDE.local.md

@@ -74,16 +74,18 @@ Mismas variables en los dos entornos, con los valores de su base (staging = `app
 
 > Todo lo `VITE_*` queda dentro del JavaScript que baja el navegador: es **público**. Nunca secretos. Vite las lee **al buildear**: si cambian, hay que redeployar el servicio `web`.
 
-### GitHub (secrets del repo)
+### GitHub (secrets)
 
-| Secret | Descripción |
-|--------|-------------|
-| `BACKUP_DATABASE_URL` | `DIRECT_URL` de prod (session pooler, puerto 5432). Lo usa `backup.yml` para el `pg_dump` diario |
-| `BACKUP_PASSPHRASE` | Passphrase con la que `backup.yml` cifra cada backup. Copia en `apps/api/.env.prod` y en el gestor de contraseñas de Galo: **sin ella no se pueden abrir los backups** |
-| `E2E_DATABASE_URL` | `DATABASE_URL` de **dev** (`staging-kachingga`, pooler 6543). La usa la API que levanta `e2e.yml` para los recorridos con datos (`docs/claude/web/testing.md`) |
-| `E2E_SUPABASE_URL` | `SUPABASE_URL` de dev (la API y la web de los E2E) |
-| `E2E_SUPABASE_SECRET_KEY` | `SUPABASE_SECRET_KEY` de dev (solo la API de los E2E). Si se rota la de dev, actualizar este secret también |
-| `E2E_SUPABASE_PUBLISHABLE_KEY` | `VITE_SUPABASE_PUBLISHABLE_KEY` de dev (la web de los E2E; es pública, pero se guarda junto a las otras) |
+Los de prod (`BACKUP_*`) están en el **environment `backup`** (Settings → Environments), que solo puede usar `main`: un workflow de otra branch o de un PR no los ve. Los `E2E_*` (base de dev) son secrets del repo.
+
+| Secret | Dónde | Descripción |
+|--------|-------|-------------|
+| `BACKUP_DATABASE_URL` | Environment `backup` | `DIRECT_URL` de prod (session pooler, puerto 5432). Lo usa `backup.yml` para el `pg_dump` diario |
+| `BACKUP_PASSPHRASE` | Environment `backup` | Passphrase con la que `backup.yml` cifra cada backup. Copia en `apps/api/.env.prod` y en el gestor de contraseñas de Galo: **sin ella no se pueden abrir los backups** |
+| `E2E_DATABASE_URL` | Repo | `DATABASE_URL` de **dev** (`staging-kachingga`, pooler 6543). La usa la API que levanta `e2e.yml` para los recorridos con datos (`docs/claude/web/testing.md`) |
+| `E2E_SUPABASE_URL` | Repo | `SUPABASE_URL` de dev (la API y la web de los E2E) |
+| `E2E_SUPABASE_SECRET_KEY` | Repo | `SUPABASE_SECRET_KEY` de dev (solo la API de los E2E). Si se rota la de dev, actualizar este secret también |
+| `E2E_SUPABASE_PUBLISHABLE_KEY` | Repo | `VITE_SUPABASE_PUBLISHABLE_KEY` de dev (la web de los E2E; es pública, pero se guarda junto a las otras) |
 
 Sin los `E2E_*`, `e2e.yml` corre igual pero solo los specs que no necesitan la API.
 
@@ -110,6 +112,11 @@ Sin los `E2E_*`, `e2e.yml` corre igual pero solo los specs que no necesitan la A
 
 - **Escaneo de secretos de GitHub + protección de push: activos.** Si un push trae una clave (Supabase, tokens, etc.), GitHub lo rechaza. No saltear el bloqueo: sacar el secreto del commit.
 - **Alertas de vulnerabilidades de dependencias (Dependabot alerts): activas.** Dependabot además abre PRs mensuales para las GitHub Actions.
+- **Actions fijadas por SHA** (las de GitHub y `oven-sh/setup-bun`), con la versión en un comentario: un tag movido no cambia lo que corre. Dependabot actualiza SHA y comentario. Cómo agregar una: `docs/claude/repo/git-prs-y-conflictos.md`.
+- **El secret de prod solo lo lee el backup desde `main`:** environment `backup` (ver "GitHub (secrets)").
+- **Artifacts públicos** (cualquiera logueado en GitHub los baja): los backups van cifrados y sin los tokens de sesión (`DEPLOY.md` → "Backups"); el reporte de Playwright dura 3 días y, contra la API, va sin traces.
+- **RLS:** el CI falla si una tabla de `public` no tiene RLS (job "Migraciones al día con el schema").
+- **`.env*` gitignoreados en todo el repo**, salvo los `.env.sample`.
 - El repo es **público**: cualquier secreto que llegue a un commit hay que rotarlo, aunque se borre después.
 - **Branches protegidas:** `main` (todo por PR con el CI en verde: "Typecheck, tests y lint", "Migraciones al día con el schema" y "Formato de commits y título del PR"; solo squash) y `production` (sin force-push ni borrado; avanza con `bun run promote`).
 

@@ -16,10 +16,11 @@ gh pr create --fill                            # título = Conventional Commit (
 
 - Para mergear, el CI (`.github/workflows/ci.yml`) tiene que pasar entero:
   - **"Typecheck, tests y lint"** — `bun run check` (formato + typecheck + tests + lint).
-  - **"Migraciones al día con el schema"** — aplica todas las migraciones en un Postgres vacío y falla si el schema de Prisma tiene cambios sin migración.
+  - **"Migraciones al día con el schema"** — aplica todas las migraciones en un Postgres vacío y falla si el schema de Prisma tiene cambios sin migración o si alguna tabla de `public` queda sin RLS.
   - **"Formato de commits y título del PR"** — Conventional Commits.
 - **E2E** (`.github/workflows/e2e.yml`, no obligatorio): Playwright en la web (celular y compu). Corre a mano o en PRs con la label `e2e` — ponérsela a los PRs que cambian recorridos críticos (ver "Testing" en `apps/web/CLAUDE.md`).
 - Dependabot abre PRs mensuales solo para las GitHub Actions (las dependencias de las apps se actualizan a mano).
+- **Actions siempre fijadas por SHA**, con la versión en un comentario: `uses: oven-sh/setup-bun@<sha> # v2.2.0`. Para agregar o cambiar una: `gh api repos/<dueño>/<action>/commits/<tag> --jq .sha`. Dependabot actualiza el SHA y el comentario.
 - Se mergea solo con **squash**: el título del PR queda como el commit en `main`, por eso tiene que respetar el formato. La branch se borra sola al mergear.
 - **El PR tiene que estar al día con `main`** para poder mergearse (GitHub lo marca como *BEHIND* si entró otro PR antes). Se actualiza **siempre con rebase, nunca con merge** (el historial de `main` es lineal):
   ```bash
