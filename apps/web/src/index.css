@@ -197,6 +197,7 @@
   --color-primary-foreground: var(--primary-foreground);
   --color-primary: var(--primary);
   --color-primary-deep: var(--primary-deep);
+  --color-primary-ink: var(--primary-ink);
   --color-popover-foreground: var(--popover-foreground);
   --color-popover: var(--popover);
   --color-card-foreground: var(--card-foreground);
@@ -215,6 +216,10 @@
   --color-owe-foreground: var(--owe-foreground);
   --color-even-foreground: var(--even-foreground);
   --color-ledge: var(--ledge);
+  /* The logo's colors (LogoMark, app-shell.tsx): change with the palette. */
+  --color-logo-bg: var(--logo-bg);
+  --color-logo-a: var(--logo-a);
+  --color-logo-b: var(--logo-b);
   --color-google: var(--google);
   --color-google-foreground: var(--google-foreground);
   --color-google-border: var(--google-border);
@@ -257,7 +262,10 @@
   --color-cat-cocoa-soft: var(--cat-cocoa-soft);
 }
 
-/* Palette "yerba y durazno": deep trust green + warm peach (design from Lovable, nov 2026). */
+/*
+ * Theme "yerba y durazno" (design from Lovable, nov 2026): everything but the palette's own colors,
+ * which are in the palette blocks below (green = deep trust green + warm peach, the default).
+ */
 :root {
   color-scheme: light;
   /* Category colors: the color (icon) and its soft background, AA contrast between them. */
@@ -286,21 +294,30 @@
   --cat-cocoa: oklch(0.49 0.05 50);
   --cat-cocoa-soft: oklch(0.93 0.025 50);
   --radius: 1rem;
-  --background: oklch(0.975 0.014 85);
-  --foreground: oklch(0.22 0.025 160);
-  --card: oklch(0.995 0.006 85);
-  --card-foreground: oklch(0.22 0.025 160);
-  --popover: oklch(0.995 0.006 85);
-  --popover-foreground: oklch(0.22 0.025 160);
-  --primary: oklch(0.42 0.09 160);
-  --primary-foreground: oklch(0.98 0.01 85);
-  --primary-deep: oklch(0.3 0.07 162);
-  --secondary: oklch(0.94 0.025 90);
-  --secondary-foreground: oklch(0.25 0.03 160);
-  --muted: oklch(0.945 0.018 85);
-  --muted-foreground: oklch(0.5 0.02 150);
-  --accent: oklch(0.92 0.04 150);
-  --accent-foreground: oklch(0.25 0.05 160);
+  /*
+   * Surfaces and text take the hue of the palette (the blocks below): cream and green in "green".
+   * `--tint` is how much color they have (0 = grays, "mono").
+   */
+  --hue-surface: 85;
+  --hue-text: 160;
+  --tint: 1;
+  /* The palette's color as text (links, the active menu item): `primary` except where it doesn't read. */
+  --primary-ink: var(--primary);
+  --sidebar-primary: var(--primary);
+  --sidebar-primary-foreground: var(--primary-foreground);
+  --sidebar-accent: var(--accent);
+  --sidebar-accent-foreground: var(--accent-foreground);
+  --sidebar-ring: var(--ring);
+  --background: oklch(0.975 calc(0.014 * var(--tint)) var(--hue-surface));
+  --foreground: oklch(0.22 calc(0.025 * var(--tint)) var(--hue-text));
+  --card: oklch(0.995 calc(0.006 * var(--tint)) var(--hue-surface));
+  --card-foreground: var(--foreground);
+  --popover: var(--card);
+  --popover-foreground: var(--foreground);
+  --secondary: oklch(0.94 calc(0.025 * var(--tint)) var(--hue-surface));
+  --secondary-foreground: oklch(0.25 calc(0.03 * var(--tint)) var(--hue-text));
+  --muted: oklch(0.945 calc(0.018 * var(--tint)) var(--hue-surface));
+  --muted-foreground: oklch(0.5 calc(0.02 * var(--tint)) var(--hue-text));
   --destructive: oklch(0.58 0.2 27);
   --destructive-foreground: oklch(0.98 0.01 85);
   --positive: oklch(0.52 0.13 155);
@@ -309,38 +326,26 @@
   --negative-soft: oklch(0.94 0.04 45);
   --highlight: oklch(0.8 0.12 60);
   --highlight-foreground: oklch(0.25 0.04 50);
-  --hero-foreground: oklch(0.98 0.01 85);
   --owe-foreground: oklch(0.24 0.06 40);
   --even-foreground: oklch(0.24 0.05 160);
-  --ledge: oklch(0.88 0.03 80);
+  --ledge: oklch(0.88 calc(0.03 * var(--tint)) var(--hue-surface));
   --google: oklch(1 0 0);
   --google-foreground: oklch(0.21 0 0);
   --google-border: oklch(0.55 0.003 150);
-  --border: oklch(0.9 0.02 85);
-  --input: oklch(0.86 0.02 85);
-  --ring: oklch(0.55 0.09 160);
+  --border: oklch(0.9 calc(0.02 * var(--tint)) var(--hue-surface));
+  --input: oklch(0.86 calc(0.02 * var(--tint)) var(--hue-surface));
   --chart-1: oklch(0.55 0.13 155);
   --chart-2: oklch(0.72 0.14 60);
   --chart-3: oklch(0.6 0.16 35);
   --chart-4: oklch(0.6 0.08 230);
   --chart-5: oklch(0.7 0.1 110);
-  --sidebar: oklch(0.955 0.02 85);
-  --sidebar-foreground: oklch(0.22 0.025 160);
-  --sidebar-primary: oklch(0.42 0.09 160);
-  --sidebar-primary-foreground: oklch(0.98 0.01 85);
-  --sidebar-accent: oklch(0.92 0.035 150);
-  --sidebar-accent-foreground: oklch(0.25 0.05 160);
-  --sidebar-border: oklch(0.9 0.02 85);
-  --sidebar-ring: oklch(0.55 0.09 160);
-  --shadow-soft-v: 0 1px 2px oklch(0.3 0.03 160 / 6%), 0 4px 16px -6px oklch(0.3 0.03 160 / 10%);
-  --shadow-lift-v: 0 14px 34px -14px oklch(0.35 0.08 160 / 40%);
-  /* "My situation": green when they owe me, peach when I owe, lime when all square. */
-  --gradient-hero: radial-gradient(
-    120% 100% at 0% 0%,
-    oklch(0.52 0.1 160) 0%,
-    oklch(0.38 0.08 165) 55%,
-    oklch(0.3 0.06 170) 100%
-  );
+  --sidebar: oklch(0.955 calc(0.02 * var(--tint)) var(--hue-surface));
+  --sidebar-foreground: var(--foreground);
+  --sidebar-border: var(--border);
+  --shadow-soft-v:
+    0 1px 2px oklch(0.3 calc(0.03 * var(--tint)) var(--hue-text) / 6%),
+    0 4px 16px -6px oklch(0.3 calc(0.03 * var(--tint)) var(--hue-text) / 10%);
+  --shadow-lift-v: 0 14px 34px -14px color-mix(in oklch, var(--primary-deep) 40%, transparent);
   --gradient-owe: radial-gradient(
     120% 100% at 0% 0%,
     oklch(0.9 0.08 70) 0%,
@@ -385,21 +390,16 @@
   --cat-pink-soft: oklch(0.3 0.07 345);
   --cat-cocoa: oklch(0.83 0.04 50);
   --cat-cocoa-soft: oklch(0.3 0.03 50);
-  --background: oklch(0.17 0.015 165);
-  --foreground: oklch(0.95 0.012 85);
-  --card: oklch(0.215 0.018 165);
-  --card-foreground: oklch(0.95 0.012 85);
-  --popover: oklch(0.215 0.018 165);
-  --popover-foreground: oklch(0.95 0.012 85);
-  --primary: oklch(0.78 0.13 155);
-  --primary-foreground: oklch(0.18 0.03 165);
-  --primary-deep: oklch(0.52 0.11 158);
-  --secondary: oklch(0.26 0.02 165);
-  --secondary-foreground: oklch(0.95 0.012 85);
-  --muted: oklch(0.25 0.018 165);
-  --muted-foreground: oklch(0.7 0.02 150);
-  --accent: oklch(0.3 0.04 160);
-  --accent-foreground: oklch(0.95 0.012 85);
+  --background: oklch(0.17 calc(0.015 * var(--tint)) var(--hue-surface));
+  --foreground: oklch(0.95 calc(0.012 * var(--tint)) var(--hue-text));
+  --card: oklch(0.215 calc(0.018 * var(--tint)) var(--hue-surface));
+  --card-foreground: var(--foreground);
+  --popover: var(--card);
+  --popover-foreground: var(--foreground);
+  --secondary: oklch(0.26 calc(0.02 * var(--tint)) var(--hue-surface));
+  --secondary-foreground: var(--foreground);
+  --muted: oklch(0.25 calc(0.018 * var(--tint)) var(--hue-surface));
+  --muted-foreground: oklch(0.7 calc(0.02 * var(--tint)) var(--hue-surface));
   --destructive: oklch(0.68 0.18 27);
   --destructive-foreground: oklch(0.98 0.01 85);
   --positive: oklch(0.8 0.14 155);
@@ -408,32 +408,19 @@
   --negative-soft: oklch(0.3 0.05 40);
   --highlight: oklch(0.8 0.12 60);
   --highlight-foreground: oklch(0.2 0.04 50);
-  --hero-foreground: oklch(0.96 0.012 85);
   --owe-foreground: oklch(0.96 0.03 70);
   --even-foreground: oklch(0.96 0.02 140);
-  --ledge: oklch(0.11 0.01 165);
+  --ledge: oklch(0.11 calc(0.01 * var(--tint)) var(--hue-surface));
   --google: oklch(0.18 0.002 270);
   --google-foreground: oklch(0.91 0.003 150);
   --google-border: oklch(0.63 0.004 150);
   --border: oklch(1 0 0 / 10%);
   --input: oklch(1 0 0 / 16%);
-  --ring: oklch(0.7 0.12 155);
-  --sidebar: oklch(0.19 0.016 165);
-  --sidebar-foreground: oklch(0.95 0.012 85);
-  --sidebar-primary: oklch(0.78 0.13 155);
-  --sidebar-primary-foreground: oklch(0.18 0.03 165);
-  --sidebar-accent: oklch(0.26 0.03 160);
-  --sidebar-accent-foreground: oklch(0.95 0.012 85);
+  --sidebar: oklch(0.19 calc(0.016 * var(--tint)) var(--hue-surface));
+  --sidebar-foreground: var(--foreground);
   --sidebar-border: oklch(1 0 0 / 8%);
-  --sidebar-ring: oklch(0.7 0.12 155);
   --shadow-soft-v: 0 1px 2px oklch(0 0 0 / 30%), 0 6px 20px -8px oklch(0 0 0 / 50%);
-  --shadow-lift-v: 0 14px 34px -12px oklch(0.6 0.14 155 / 30%);
-  --gradient-hero: radial-gradient(
-    120% 100% at 0% 0%,
-    oklch(0.38 0.08 160) 0%,
-    oklch(0.27 0.05 165) 65%,
-    oklch(0.22 0.03 168) 100%
-  );
+  --shadow-lift-v: 0 14px 34px -12px color-mix(in oklch, var(--primary) 30%, transparent);
   --gradient-owe: radial-gradient(
     120% 100% at 0% 0%,
     oklch(0.44 0.1 55) 0%,
@@ -446,6 +433,224 @@
     oklch(0.31 0.06 158) 60%,
     oklch(0.24 0.04 165) 100%
   );
+}
+
+/*
+ * Palettes (Mi cuenta → "Colores de la app", saved on the device: src/lib/theme.ts). Each one sets,
+ * in light and dark: the hue of surfaces and text, the brand colors, the "they owe me" gradient and
+ * the logo's colors. `data-palette` on <html> picks one (none = green); on any element it previews
+ * one (the palette picker). To add one: a light and a dark block like these + `PALETTES` in theme.ts
+ * (src/lib/__tests__/palettes.test.ts checks every palette sets the same tokens).
+ */
+:root,
+[data-palette='green'] {
+  --hue-surface: 85;
+  --hue-text: 160;
+  --primary: oklch(0.42 0.09 160);
+  --primary-foreground: oklch(0.98 0.01 85);
+  --primary-deep: oklch(0.3 0.07 162);
+  --ring: oklch(0.55 0.09 160);
+  --accent: oklch(0.92 0.04 150);
+  --accent-foreground: oklch(0.25 0.05 160);
+  --gradient-hero: radial-gradient(
+    120% 100% at 0% 0%,
+    oklch(0.52 0.1 160) 0%,
+    oklch(0.38 0.08 165) 55%,
+    oklch(0.3 0.06 170) 100%
+  );
+  --hero-foreground: oklch(0.98 0.01 85);
+  --logo-bg: #0c5c3c;
+  --logo-a: #f6ab6b;
+  --logo-b: #fffdfa;
+}
+.dark,
+.dark [data-palette='green'] {
+  --hue-surface: 165;
+  --hue-text: 85;
+  --primary: oklch(0.78 0.13 155);
+  --primary-foreground: oklch(0.18 0.03 165);
+  --primary-deep: oklch(0.52 0.11 158);
+  --ring: oklch(0.7 0.12 155);
+  --accent: oklch(0.3 0.04 160);
+  --accent-foreground: oklch(0.95 0.012 85);
+  --gradient-hero: radial-gradient(
+    120% 100% at 0% 0%,
+    oklch(0.38 0.08 160) 0%,
+    oklch(0.27 0.05 165) 65%,
+    oklch(0.22 0.03 168) 100%
+  );
+  --hero-foreground: oklch(0.96 0.012 85);
+  --logo-bg: #0c5c3c;
+  --logo-a: #f6ab6b;
+  --logo-b: #fffdfa;
+}
+[data-palette='blue'] {
+  --hue-surface: 250;
+  --hue-text: 262;
+  --primary: oklch(0.5 0.16 258);
+  --primary-foreground: oklch(0.98 0.01 250);
+  --primary-deep: oklch(0.37 0.14 262);
+  --ring: oklch(0.6 0.14 258);
+  --accent: oklch(0.93 0.04 250);
+  --accent-foreground: oklch(0.3 0.09 262);
+  --gradient-hero: radial-gradient(
+    120% 100% at 0% 0%,
+    oklch(0.6 0.15 250) 0%,
+    oklch(0.47 0.16 258) 55%,
+    oklch(0.38 0.14 265) 100%
+  );
+  --hero-foreground: oklch(0.98 0.01 250);
+  --logo-bg: oklch(0.5 0.16 258);
+  --logo-a: #f6ab6b;
+  --logo-b: #fffdfa;
+}
+.dark[data-palette='blue'],
+.dark [data-palette='blue'] {
+  --hue-surface: 260;
+  --hue-text: 250;
+  --primary: oklch(0.76 0.12 250);
+  --primary-foreground: oklch(0.2 0.04 262);
+  --primary-deep: oklch(0.55 0.14 255);
+  --ring: oklch(0.7 0.12 250);
+  --accent: oklch(0.3 0.05 258);
+  --accent-foreground: oklch(0.95 0.012 250);
+  --gradient-hero: radial-gradient(
+    120% 100% at 0% 0%,
+    oklch(0.4 0.1 252) 0%,
+    oklch(0.29 0.07 258) 65%,
+    oklch(0.23 0.05 262) 100%
+  );
+  --hero-foreground: oklch(0.96 0.012 250);
+  --logo-bg: oklch(0.5 0.16 258);
+  --logo-a: #f6ab6b;
+  --logo-b: #fffdfa;
+}
+[data-palette='violet'] {
+  --hue-surface: 305;
+  --hue-text: 300;
+  --primary: oklch(0.5 0.17 300);
+  --primary-foreground: oklch(0.98 0.01 300);
+  --primary-deep: oklch(0.37 0.15 300);
+  --ring: oklch(0.62 0.15 300);
+  --accent: oklch(0.93 0.045 305);
+  --accent-foreground: oklch(0.3 0.1 300);
+  --gradient-hero: radial-gradient(
+    120% 100% at 0% 0%,
+    oklch(0.6 0.16 305) 0%,
+    oklch(0.48 0.17 300) 55%,
+    oklch(0.38 0.15 295) 100%
+  );
+  --hero-foreground: oklch(0.98 0.01 300);
+  --logo-bg: oklch(0.5 0.17 300);
+  --logo-a: #f6ab6b;
+  --logo-b: #fffdfa;
+}
+.dark[data-palette='violet'],
+.dark [data-palette='violet'] {
+  --hue-surface: 300;
+  --hue-text: 305;
+  --primary: oklch(0.76 0.13 305);
+  --primary-foreground: oklch(0.2 0.05 300);
+  --primary-deep: oklch(0.54 0.16 300);
+  --ring: oklch(0.7 0.13 305);
+  --accent: oklch(0.3 0.06 300);
+  --accent-foreground: oklch(0.95 0.012 305);
+  --gradient-hero: radial-gradient(
+    120% 100% at 0% 0%,
+    oklch(0.42 0.11 305) 0%,
+    oklch(0.3 0.08 300) 65%,
+    oklch(0.23 0.05 298) 100%
+  );
+  --hero-foreground: oklch(0.96 0.012 305);
+  --logo-bg: oklch(0.5 0.17 300);
+  --logo-a: #f6ab6b;
+  --logo-b: #fffdfa;
+}
+[data-palette='yellow'] {
+  --hue-surface: 90;
+  --hue-text: 60;
+  --primary: oklch(0.86 0.16 92);
+  --primary-foreground: oklch(0.25 0.05 65);
+  --primary-deep: oklch(0.7 0.15 80);
+  --primary-ink: oklch(0.5 0.11 70);
+  --ring: oklch(0.72 0.15 85);
+  --accent: oklch(0.94 0.06 95);
+  --accent-foreground: oklch(0.32 0.07 70);
+  --gradient-hero: radial-gradient(
+    120% 100% at 0% 0%,
+    oklch(0.93 0.12 98) 0%,
+    oklch(0.87 0.16 92) 55%,
+    oklch(0.8 0.16 82) 100%
+  );
+  --hero-foreground: oklch(0.25 0.05 65);
+  --logo-bg: oklch(0.86 0.16 92);
+  --logo-a: oklch(0.3 0.06 60);
+  --logo-b: #ffffff;
+}
+.dark[data-palette='yellow'],
+.dark [data-palette='yellow'] {
+  --hue-surface: 75;
+  --hue-text: 90;
+  --primary: oklch(0.86 0.15 92);
+  --primary-foreground: oklch(0.22 0.04 65);
+  --primary-deep: oklch(0.62 0.13 80);
+  --primary-ink: oklch(0.86 0.15 92);
+  --ring: oklch(0.75 0.14 88);
+  --accent: oklch(0.3 0.05 85);
+  --accent-foreground: oklch(0.95 0.02 90);
+  --gradient-hero: radial-gradient(
+    120% 100% at 0% 0%,
+    oklch(0.48 0.1 88) 0%,
+    oklch(0.36 0.08 82) 65%,
+    oklch(0.28 0.05 75) 100%
+  );
+  --hero-foreground: oklch(0.96 0.02 90);
+  --logo-bg: oklch(0.86 0.16 92);
+  --logo-a: oklch(0.3 0.06 60);
+  --logo-b: #ffffff;
+}
+[data-palette='mono'] {
+  --hue-surface: 0;
+  --hue-text: 0;
+  --tint: 0;
+  --primary: oklch(0.2 0 0);
+  --primary-foreground: oklch(0.99 0 0);
+  --primary-deep: oklch(0.05 0 0);
+  --ring: oklch(0.5 0 0);
+  --accent: oklch(0.93 0 0);
+  --accent-foreground: oklch(0.2 0 0);
+  --gradient-hero: radial-gradient(
+    120% 100% at 0% 0%,
+    oklch(0.38 0 0) 0%,
+    oklch(0.26 0 0) 55%,
+    oklch(0.18 0 0) 100%
+  );
+  --hero-foreground: oklch(0.98 0 0);
+  --logo-bg: oklch(0.2 0 0);
+  --logo-a: oklch(0.72 0 0);
+  --logo-b: #ffffff;
+}
+.dark[data-palette='mono'],
+.dark [data-palette='mono'] {
+  --hue-surface: 0;
+  --hue-text: 0;
+  --tint: 0;
+  --primary: oklch(0.95 0 0);
+  --primary-foreground: oklch(0.18 0 0);
+  --primary-deep: oklch(0.65 0 0);
+  --ring: oklch(0.7 0 0);
+  --accent: oklch(0.3 0 0);
+  --accent-foreground: oklch(0.95 0 0);
+  --gradient-hero: radial-gradient(
+    120% 100% at 0% 0%,
+    oklch(0.36 0 0) 0%,
+    oklch(0.26 0 0) 65%,
+    oklch(0.2 0 0) 100%
+  );
+  --hero-foreground: oklch(0.96 0 0);
+  --logo-bg: oklch(0.95 0 0);
+  --logo-a: oklch(0.55 0 0);
+  --logo-b: oklch(0.18 0 0);
 }
 
 /* "My situation" cards: they owe me (green), I owe (peach), all square (lime). Text: `text-*-foreground`. */

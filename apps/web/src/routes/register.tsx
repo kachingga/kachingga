@@ -88,7 +88,7 @@ export function Register() {
         ¿Ya tenés cuenta?{' '}
         <Link
           to={withReturnTo('/login', returnTo)}
-          className="font-semibold text-primary hover:underline"
+          className="font-semibold text-primary-ink hover:underline"
         >
           Entrar
         </Link>

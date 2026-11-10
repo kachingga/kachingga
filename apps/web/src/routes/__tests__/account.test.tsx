@@ -1,6 +1,6 @@
 import { screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { describe, expect, it, vi } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import { apiError, neverResolves, renderWithApi } from '@/test/render';
 import { Account } from '@/routes/account';
@@ -14,6 +14,25 @@ vi.mock('@/lib/auth', () => ({
 }));
 
 describe('Account', () => {
+  afterEach(() => {
+    localStorage.clear();
+    delete document.documentElement.dataset.palette;
+  });
+
+  it('picks the colors of the app (saved on this device)', async () => {
+    const user = userEvent.setup();
+    renderWithApi(<Account />, { 'profile.get': () => ({ paymentAlias: null }) });
+    const group = screen.getByRole('radiogroup', { name: 'Colores de la app' });
+    expect(group).toBeInTheDocument();
+    expect(screen.getByRole('radio', { name: 'Verde' })).toHaveAttribute('aria-checked', 'true');
+
+    await user.click(screen.getByRole('radio', { name: 'Azul' }));
+    expect(screen.getByRole('radio', { name: 'Azul' })).toHaveAttribute('aria-checked', 'true');
+    expect(screen.getByRole('radio', { name: 'Verde' })).toHaveAttribute('aria-checked', 'false');
+    expect(document.documentElement.dataset.palette).toBe('blue');
+    expect(localStorage.getItem('kachingga-palette')).toBe('blue');
+  });
+
   it('shows loading state for profile', () => {
     renderWithApi(<Account />, { 'profile.get': neverResolves });
     expect(screen.getByText('Cargando…')).toBeInTheDocument();

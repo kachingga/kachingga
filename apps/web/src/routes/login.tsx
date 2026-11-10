@@ -71,7 +71,7 @@ export function Login() {
         ¿Primera vez por acá?{' '}
         <Link
           to={withReturnTo('/registro', returnTo)}
-          className="font-semibold text-primary hover:underline"
+          className="font-semibold text-primary-ink hover:underline"
         >
           Creá tu cuenta
         </Link>

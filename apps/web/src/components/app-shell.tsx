@@ -1,4 +1,4 @@
-import type { ReactNode } from 'react';
+import { useId, type ReactNode } from 'react';
 import { Link, NavLink } from 'react-router';
 import { cn } from 'cn';
 import { LogOut, Moon, Sun, UserRound, Users } from 'lucide-react';
@@ -8,11 +8,38 @@ import { Button } from '@/components/ui/button';
 import { setTheme, useTheme } from '@/lib/theme';
 import { useSignOut } from '@/lib/use-sign-out';
 
-/** "Kachingga." with the peach dot. The icon is the same `public/logo.svg` the PWA icons come from. */
+/**
+ * The logo (a coin split in two) in the palette's colors (`--logo-*`, index.css). Same drawing as
+ * `public/logo.svg`, which the app icons come from (those stay green: they're generated once).
+ */
+export function LogoMark({ className }: { className?: string }) {
+  const id = useId();
+  return (
+    <svg viewBox="0 0 512 512" aria-hidden className={cn('size-8 shrink-0', className)}>
+      <defs>
+        <clipPath id={`${id}l`}>
+          <polygon points="0,0 300,0 212,512 0,512" />
+        </clipPath>
+        <clipPath id={`${id}r`}>
+          <polygon points="324,0 512,0 512,512 236,512" />
+        </clipPath>
+      </defs>
+      <rect width="512" height="512" rx="112" className="fill-logo-bg" />
+      <g clipPath={`url(#${id}l)`} transform="translate(-14 6)">
+        <circle cx="256" cy="256" r="164" className="fill-logo-a" />
+      </g>
+      <g clipPath={`url(#${id}r)`} transform="translate(14 -6)">
+        <circle cx="256" cy="256" r="164" className="fill-logo-b" />
+      </g>
+    </svg>
+  );
+}
+
+/** "Kachingga." with the peach dot, after the logo. */
 export function Wordmark({ className }: { className?: string }) {
   return (
     <span className={cn('flex items-center gap-2 font-display text-2xl font-extrabold', className)}>
-      <img src="/logo.svg" alt="" className="size-8 rounded-lg" />
+      <LogoMark />
       <span>
         Kachingga<span className="text-highlight">.</span>
       </span>
@@ -53,7 +80,7 @@ function NavItem({ to, icon, children }: { to: string; icon: ReactNode; children
       className={({ isActive }) =>
         cn(
           'press flex items-center gap-3 rounded-lg px-3 py-3 hover:bg-sidebar-accent',
-          isActive ? 'bg-accent text-primary' : 'text-muted-foreground hover:text-foreground',
+          isActive ? 'bg-accent text-primary-ink' : 'text-muted-foreground hover:text-foreground',
         )
       }
     >

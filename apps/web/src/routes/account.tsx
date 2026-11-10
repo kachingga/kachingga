@@ -2,13 +2,57 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
+import { cn } from 'cn';
+
 import { useSession } from '@/lib/auth';
+import { LogoMark } from '@/components/app-shell';
 import { ErrorState } from '@/components/error-state';
-import { Card, Page, PageHeader } from '@/components/kit';
+import { Card, Page, PageHeader, SectionTitle } from '@/components/kit';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useTRPC } from '@/lib/trpc';
 import { useSignOut } from '@/lib/use-sign-out';
+import { PALETTES, setPalette, usePalette } from '@/lib/theme';
+
+/**
+ * The app's colors, saved on this device. Each option previews its palette (`data-palette` on the
+ * option: the logo and the ring take its colors).
+ */
+function PalettePicker() {
+  const palette = usePalette();
+  return (
+    <Card>
+      <SectionTitle>Colores de la app</SectionTitle>
+      <p className="mt-1 text-sm text-muted-foreground">Se guardan en este dispositivo.</p>
+      <div
+        role="radiogroup"
+        aria-label="Colores de la app"
+        className="mt-4 grid grid-cols-2 gap-2 sm:grid-cols-3"
+      >
+        {PALETTES.map((p) => {
+          const checked = p.id === palette;
+          return (
+            <button
+              key={p.id}
+              type="button"
+              role="radio"
+              aria-checked={checked}
+              data-palette={p.id}
+              onClick={() => setPalette(p.id)}
+              className={cn(
+                'press flex min-h-14 items-center gap-3 rounded-lg border bg-card px-3 py-2 text-left text-sm font-semibold',
+                checked ? 'border-primary ring-2 ring-primary' : 'border-border hover:bg-muted',
+              )}
+            >
+              <LogoMark />
+              {p.name}
+            </button>
+          );
+        })}
+      </div>
+    </Card>
+  );
+}
 
 export function Account() {
   const navigate = useNavigate();
@@ -97,6 +141,8 @@ export function Account() {
             Se usa en todos tus grupos para recibir transferencias.
           </p>
         </Card>
+
+        <PalettePicker />
 
         <Button variant="destructive" className="w-full" onClick={handleSignOut}>
           Cerrar sesión

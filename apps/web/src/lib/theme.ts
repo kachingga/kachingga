@@ -60,3 +60,53 @@ function subscribe(listener: () => void) {
 export function useTheme(): Theme {
   return useSyncExternalStore(subscribe, currentTheme, () => 'light');
 }
+
+// ─── Palette ──────────────────────────────────────────────────────────────────
+// The app's colors (green by default), picked in Mi cuenta and saved on this device, like the
+// light / dark toggle. `data-palette` on <html> is what the CSS reads (index.css → "Palettes");
+// index.html applies it before the first paint too (same storage key).
+
+export const PALETTES = [
+  { id: 'green', name: 'Verde' },
+  { id: 'blue', name: 'Azul' },
+  { id: 'violet', name: 'Violeta' },
+  { id: 'yellow', name: 'Amarillo' },
+  { id: 'mono', name: 'Blanco y negro' },
+] as const;
+
+export type Palette = (typeof PALETTES)[number]['id'];
+
+const PALETTE_KEY = 'kachingga-palette';
+const paletteListeners = new Set<() => void>();
+
+/** The palette in use: the one picked on this device, or green. */
+export function currentPalette(): Palette {
+  try {
+    const value = window.localStorage.getItem(PALETTE_KEY);
+    return PALETTES.find((p) => p.id === value)?.id ?? 'green';
+  } catch {
+    return 'green';
+  }
+}
+
+/** Saves the choice on this device and applies it. */
+export function setPalette(palette: Palette) {
+  try {
+    window.localStorage.setItem(PALETTE_KEY, palette);
+  } catch {
+    // Storage blocked (private mode): it applies until the app is reloaded.
+  }
+  document.documentElement.dataset.palette = palette;
+  paletteListeners.forEach((listener) => listener());
+}
+
+export function usePalette(): Palette {
+  return useSyncExternalStore(
+    (listener) => {
+      paletteListeners.add(listener);
+      return () => paletteListeners.delete(listener);
+    },
+    () => (document.documentElement.dataset.palette as Palette | undefined) ?? currentPalette(),
+    () => 'green',
+  );
+}
