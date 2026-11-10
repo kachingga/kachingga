@@ -123,13 +123,15 @@ Sin los `E2E_*`, `e2e.yml` corre igual pero solo los specs que no necesitan la A
 
 - **Escaneo de secretos de GitHub + protección de push: activos.** Si un push trae una clave (Supabase, tokens, etc.), GitHub lo rechaza. No saltear el bloqueo: sacar el secreto del commit.
 - **Alertas de vulnerabilidades de dependencias (Dependabot alerts): activas.** Dependabot además abre PRs mensuales para las GitHub Actions.
+- **Solo se pueden usar las actions de GitHub y `oven-sh/setup-bun`** (Settings → Actions → General → *Allow select actions*). Sumar otra: agregarla ahí antes de usarla en un workflow.
 - **Actions fijadas por SHA** (las de GitHub y `oven-sh/setup-bun`), con la versión en un comentario: un tag movido no cambia lo que corre. Dependabot actualiza SHA y comentario. Cómo agregar una: `docs/claude/repo/git-prs-y-conflictos.md`.
 - **El secret de prod solo lo lee el backup desde `main`:** environment `backup` (ver "GitHub (secrets)").
 - **Artifacts públicos** (cualquiera logueado en GitHub los baja): los backups van cifrados y sin los tokens de sesión (`DEPLOY.md` → "Backups"); el reporte de Playwright dura 3 días y, contra la API, va sin traces.
 - **RLS:** el CI falla si una tabla de `public` no tiene RLS (job "Migraciones al día con el schema").
 - **`.env*` gitignoreados en todo el repo**, salvo los `.env.sample`.
 - El repo es **público**: cualquier secreto que llegue a un commit hay que rotarlo, aunque se borre después.
-- **Branches protegidas:** `main` (todo por PR con el CI en verde: "Typecheck, tests y lint", "Migraciones al día con el schema" y "Formato de commits y título del PR"; solo squash) y `production` (sin force-push ni borrado; avanza con `bun run promote`).
+- **Branches protegidas:** `main` (todo por PR con el CI en verde: "Typecheck, tests y lint", "Migraciones al día con el schema" y "Formato de commits y título del PR"; solo squash) y `production` (exige "Typecheck, tests y lint" y "Migraciones al día con el schema" en el commit que se sube, sin "strict"; vale para admins; sin force-push ni borrado; avanza con `bun run promote`: si el CI de ese commit de `main` todavía corre, el push se rechaza hasta que termine). "Formato de commits…" no se exige ahí porque solo corre en los PRs.
+- **La org exige 2FA** a todos sus miembros.
 
 ## Accesos
 
