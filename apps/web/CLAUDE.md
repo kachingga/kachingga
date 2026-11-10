@@ -14,7 +14,7 @@
 | Qué procedure llamar, login / sesión, tipo de cambio, monedas, alias, export, errores de la API, el proxy de Vite | `docs/claude/web/usar-la-api.md` |
 | Montos, porcentajes, tipos de cambio o fechas (`src/lib/format.ts`, `<NumberInput>`, `<input type="date">`) | `docs/claude/web/plata-y-fechas.md` |
 | Colores, tema claro / oscuro (toggle), `src/index.css`, componentes de `src/components/` o de shadcn, el marco (`AppShell`, `<Page>`), confirmaciones, toasts, skeletons | `docs/claude/web/componentes-y-tema.md` |
-| Transiciones, navegar al guardar o borrar, gestos, tamaño del bundle, carga diferida, PWA (service worker, manifest, íconos de `public/logo.svg`) | `docs/claude/web/sensacion-de-app.md` |
+| Transiciones (`AnimatedLayout`, `src/lib/screen-transitions.ts`, View Transitions), navegar al guardar o borrar, gestos, tamaño del bundle, carga diferida, PWA (service worker, manifest, íconos de `public/logo.svg`) | `docs/claude/web/sensacion-de-app.md` |
 | Una pantalla nueva o un cambio visible | `docs/claude/web/ui-ux.md` (+ `V1.md` → "Pantallas") |
 | Tests (`renderWithApi`, setup, E2E) | `docs/claude/web/testing.md` |
 | Errores inesperados y Sentry (`src/lib/monitoring.ts`, `RouteError`, los `onError` de `api-provider.tsx`) | `docs/claude/repo/monitoreo.md` |
@@ -99,7 +99,8 @@ src/
 │                             # category-picker, category-editor
 ├── lib/                      # trpc, supabase (ÚNICO que importa Supabase), auth, format, optimistic,
 │                             # use-prefetch, use-exchange-rate, use-confirm, use-go-back, offline-cache,
-│                             # theme, use-sign-out, categories (ícono y color de cada categoría), use-debounced-value
+│                             # theme, use-sign-out, categories (ícono y color de cada categoría), use-debounced-value,
+│                             # screen-transitions (View Transitions entre pantallas)
 └── test/                     # setup.ts, render.tsx (renderWithApi)
 e2e/                          # Playwright
 ```

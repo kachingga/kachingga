@@ -98,7 +98,8 @@ export function AppShell() {
       </aside>
 
       <div className="min-w-0">
-        <header className="sticky top-0 z-20 flex items-center justify-between border-b bg-background/95 px-5 pt-[calc(env(safe-area-inset-top)+0.75rem)] pb-3 backdrop-blur lg:hidden">
+        {/* Its own view-transition-name: stays still, above the screen that slides (index.css). */}
+        <header className="sticky top-0 z-20 flex items-center justify-between border-b bg-background/95 px-5 pt-[calc(env(safe-area-inset-top)+0.75rem)] pb-3 backdrop-blur [view-transition-name:app-header] lg:hidden">
           <Logo className="text-xl" />
           <div className="flex items-center gap-1">
             <Link
@@ -111,8 +112,9 @@ export function AppShell() {
             <ThemeToggle />
           </div>
         </header>
-        <main className="overflow-x-clip px-5 pt-6 pb-[calc(env(safe-area-inset-bottom)+7rem)] sm:px-8 lg:px-10 lg:pt-10 lg:pb-16">
-          <AnimatedLayout />
+        <main className="overflow-x-clip pt-6 pb-[calc(env(safe-area-inset-bottom)+7rem)] lg:pt-10 lg:pb-16">
+          {/* The side padding goes inside: the screen that slides is as wide as `main`. */}
+          <AnimatedLayout className="px-5 sm:px-8 lg:px-10" />
         </main>
       </div>
     </div>
