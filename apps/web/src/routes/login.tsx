@@ -8,7 +8,7 @@ import { Field } from '@/components/kit';
 import { ConfirmEmailSent } from '@/components/mail-sent';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { confirmEmail, signIn } from '@/lib/auth';
+import { confirmEmail, signIn, useSession } from '@/lib/auth';
 import { authErrorMessage } from '@/lib/auth-errors';
 import { useEmailLink } from '@/lib/email-link';
 import { useReturnTo, withReturnTo } from '@/lib/return-to';
@@ -19,6 +19,7 @@ export function Login() {
   const returnTo = useReturnTo();
   // The link of the confirmation mail comes here (src/lib/auth.ts → signUp).
   const emailLink = useEmailLink(confirmEmail);
+  const session = useSession();
   const captcha = useCaptcha();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -38,8 +39,9 @@ export function Login() {
     else setError(authErrorMessage(authError));
   }
 
-  // Email confirmed and logged in: on to where it was going.
-  if (emailLink === 'verified') return <Navigate to={returnTo} replace />;
+  // Email confirmed, or already logged in (confirming logs in and remounts the whole app, so this
+  // screen can come back without the token): on to where it was going.
+  if (emailLink === 'verified' || session) return <Navigate to={returnTo} replace />;
 
   if (unconfirmed)
     return (

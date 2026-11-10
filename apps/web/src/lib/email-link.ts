@@ -1,8 +1,13 @@
 import type { AuthError } from '@supabase/supabase-js';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router';
 
 type EmailLinkStatus = 'none' | 'verifying' | 'verified' | 'invalid';
+
+// Shared by every mount of a screen. Logging in remounts the whole app (ApiProvider keys its cache by
+// user), so the screen can mount again with the token still in the URL: it must reuse this result
+// instead of exchanging a single-use token twice (the second time it would say the link expired).
+const verifications = new Map<string, Promise<boolean>>();
 
 /**
  * The links in our mails (confirm the email, recover the password) come back to the app with a
@@ -18,23 +23,27 @@ export function useEmailLink(
   const navigate = useNavigate();
   const token = new URLSearchParams(location.hash.slice(1)).get('token_hash');
   const [status, setStatus] = useState<EmailLinkStatus>(token ? 'verifying' : 'none');
-  // Once: the token is single-use (and StrictMode runs effects twice in dev).
-  const started = useRef(false);
 
   useEffect(() => {
-    if (!token || started.current) return;
-    started.current = true;
-    verify(token).then(
-      ({ error }) => {
-        setStatus(error ? 'invalid' : 'verified');
-        if (!error)
-          void navigate(
-            { pathname: location.pathname, search: location.search },
-            { replace: true },
-          );
-      },
-      () => setStatus('invalid'),
-    );
+    if (!token) return;
+    let verification = verifications.get(token);
+    if (!verification) {
+      verification = verify(token).then(
+        ({ error }) => !error,
+        () => false,
+      );
+      verifications.set(token, verification);
+    }
+    let active = true;
+    void verification.then((ok) => {
+      if (!active) return;
+      setStatus(ok ? 'verified' : 'invalid');
+      if (ok)
+        void navigate({ pathname: location.pathname, search: location.search }, { replace: true });
+    });
+    return () => {
+      active = false;
+    };
   }, [token, verify, navigate, location.pathname, location.search]);
 
   return status;

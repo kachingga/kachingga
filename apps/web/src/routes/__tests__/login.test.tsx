@@ -14,7 +14,7 @@ vi.mock('@/lib/auth', () => ({
   signOut: vi.fn(),
   resendConfirmation: vi.fn().mockResolvedValue({ error: null }),
   confirmEmail: vi.fn().mockResolvedValue({ error: null }),
-  useSession: () => null,
+  useSession: vi.fn(() => null),
   getAccessToken: vi.fn().mockResolvedValue(null),
 }));
 vi.mock('@marsidev/react-turnstile', () => import('@/test/fake-turnstile'));
@@ -156,6 +156,22 @@ describe('Login', () => {
     expect(screen.getByRole('status')).toHaveTextContent('Confirmando tu email…');
     expect(await screen.findByText('Unirme al grupo')).toBeInTheDocument();
     expect(confirmEmail).toHaveBeenCalledWith('pkce_abc');
+  });
+
+  it('goes on when already logged in (confirming the email remounts the whole app)', async () => {
+    const { useSession } = await import('@/lib/auth');
+    vi.mocked(useSession).mockReturnValue({} as never);
+    renderWithApi(
+      <Routes>
+        <Route path="/login" element={<Login />} />
+        <Route path="/grupos/unirme" element={<p>Unirme al grupo</p>} />
+      </Routes>,
+      {},
+      `/login?volver=${encodeURIComponent(invite)}`,
+    );
+
+    expect(await screen.findByText('Unirme al grupo')).toBeInTheDocument();
+    vi.mocked(useSession).mockReturnValue(null);
   });
 
   it('says so when the confirmation link expired or was used', async () => {
