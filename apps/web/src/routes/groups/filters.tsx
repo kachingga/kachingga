@@ -469,7 +469,7 @@ export function Filters() {
                         (cached) => cached ?? e,
                       )
                     }
-                    className="flex items-center gap-3 p-4 transition-colors hover:bg-muted/60"
+                    className="flex items-center gap-3 p-4 transition-colors hover:bg-muted/60 focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-ring"
                   >
                     <CategoryIcon icon={e.category.icon} color={e.category.color} />
                     <div className="min-w-0 flex-1">

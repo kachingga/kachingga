@@ -33,7 +33,12 @@ La app la usamos nosotros todos los días, sobre todo en el celu: tiene que ser 
 
 ## Visual y accesibilidad
 - Modo claro y oscuro con las variables del tema (`componentes-y-tema.md`).
-- HTML semántico (`button`, `label`, `nav`, `main`, headings), foco visible, contraste suficiente, `aria-label` en botones con solo ícono.
+- HTML semántico (`button`, `label`, `nav`, `main`, headings), foco visible, contraste suficiente (AA: 4,5:1 en texto), `aria-label` en botones con solo ícono.
+- **Cada pantalla tiene un `h1` y un título de pestaña:** `<PageHeader>` pone los dos; si la pantalla arma su propio encabezado, `usePageTitle()` (`src/lib/use-page-title.ts`).
+- **Al abrir una pantalla, el foco va a su `h1`** (`AnimatedLayout`): el lector de pantalla la anuncia y el teclado arranca desde ahí. Si todavía carga, apenas aparece el título; no le saca el foco a un campo con `autoFocus` ni a la barra lateral.
+- **Lo que está escondido no se alcanza con Tab:** `inert` (ej. las acciones de deslizar de Mis grupos, detrás de la tarjeta). Un menú propio se cierra con Escape (y el foco vuelve al botón que lo abrió) y tocando afuera.
+- **Foco que no se recorta:** en filas o tarjetas que se tocan enteras dentro de un contenedor con `overflow-hidden`, el anillo va adentro (`focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-ring`).
+- **axe en los E2E** (`e2e/axe.ts` → `expectAccessible`): login y registro en claro y oscuro (`e2e/accesibilidad.spec.ts`) y la pantalla del grupo con datos (`e2e/recorridos.spec.ts`). No reemplaza probar con teclado y lector de pantalla.
 
 ## Antes de dar una pantalla por terminada
 - [ ] Cumple las reglas de negocio y `V1.md` → "Pantallas".

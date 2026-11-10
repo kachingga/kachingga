@@ -1,5 +1,7 @@
 import { type Browser, expect, type Page, test } from '@playwright/test';
 
+import { expectAccessible } from './axe.ts';
+
 // Critical flows against the real API and the dev database (staging-kachingga). Only with E2E_API=1
 // (it starts the API too: playwright.config.ts). Every run signs up new users with unique emails and
 // leaves its data in dev, named "E2E …" (the group gets archived at the end). docs/claude/web/testing.md.
@@ -90,6 +92,8 @@ test('grupo: gasto, saldos, unirse con código y saldar', async ({ browser }) =>
       /Te deben\s*\$\s?500/,
     );
     await expect(galo.getByText(/Naiara → Galo/)).toContainText('500');
+    // The main screen with data, accessible (axe): "Tu situación", balances, transfers, expenses.
+    await expectAccessible(galo);
   });
 
   const naiara = await newUserPage(browser, 'naiara');
