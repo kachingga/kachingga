@@ -13,7 +13,7 @@
 | **Tamaño, topes y cupos** | Pedido de hasta 1 MB, topes en todos los inputs y cupos por usuario / grupo: ver "Límites contra abuso" (abajo) | `index.ts`, `schemas.ts`, `lib/quotas.ts` |
 | **Base de datos** | RLS sin políticas en todas las tablas: la API REST de Supabase no ve nada con la clave pública. La API entra como `postgres` | migraciones |
 | **CORS** | Solo los orígenes de `CORS_ORIGINS` (el front web). En local no interviene (proxy de Vite) | `index.ts` |
-| **Errores** | Mensajes en español sin datos internos: el `errorFormatter` reemplaza el de **cualquier** `INTERNAL_SERVER_ERROR` por "Error interno. Intentá de nuevo." y a un input inválido le pone su primer problema (no el JSON de Zod). `NODE_ENV=production` en Railway para no devolver stack traces | `trpc/init.ts`, Railway |
+| **Errores** | Mensajes en español sin datos internos: el `errorFormatter` reemplaza por "Error interno. Intentá de nuevo." el texto de **cualquier** error inesperado (lo que tRPC envuelve como `INTERNAL_SERVER_ERROR` con el mensaje original: Prisma, un bug, Supabase…; un `INTERNAL` que tiramos con mensaje propio lo conserva) y a un input inválido le pone su primer problema (no el JSON de Zod). `NODE_ENV=production` en Railway para no devolver stack traces | `trpc/init.ts`, Railway |
 | **Secretos** | Solo en `.env` / `.env.prod` (gitignoreados) y en Railway. GitHub tiene escaneo de secretos y bloquea el push si detecta uno | repo |
 
 ## Límites del rate limiting
