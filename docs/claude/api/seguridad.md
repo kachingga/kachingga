@@ -23,4 +23,4 @@
 
 ## RLS
 
-Supabase expone el schema `public` por su API REST y la clave publishable está en la app: **RLS sin políticas** en todas las tablas bloquea esa API. Nuestra API entra como `postgres` y no le afecta. Verificado: la REST devuelve `[]` aunque haya datos. Toda tabla nueva lleva `ENABLE ROW LEVEL SECURITY` (lo agrega `db:migrate:new`).
+Supabase expone el schema `public` por su API REST y la clave publishable está en la app: **RLS sin políticas** en todas las tablas bloquea esa API. Nuestra API entra como `postgres` y no le afecta. Verificado: la REST devuelve `[]` aunque haya datos. Toda tabla nueva lleva `ENABLE ROW LEVEL SECURITY` (lo agrega `db:migrate:new`). El CI lo controla: el job "Migraciones al día con el schema" (`.github/workflows/ci.yml`) falla si una tabla de `public` queda sin RLS.

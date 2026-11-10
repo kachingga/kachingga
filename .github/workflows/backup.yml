@@ -1,6 +1,7 @@
 # Daily backup of the production database (schemas public + auth), encrypted.
 # The repo is public and anyone signed in to GitHub can download artifacts, so the dump is
 # streamed straight into gpg: nothing unencrypted is ever written, even on the runner.
+# The secrets live in the `backup` environment (only `main` can use it), not in the repo secrets.
 # Restore steps: DEPLOY.md → "Backups".
 name: Backup diario de prod
 
@@ -21,6 +22,7 @@ jobs:
     name: pg_dump cifrado
     runs-on: ubuntu-latest
     timeout-minutes: 30
+    environment: backup
     steps:
       - name: Check secrets
         env:
@@ -28,7 +30,7 @@ jobs:
           BACKUP_PASSPHRASE: ${{ secrets.BACKUP_PASSPHRASE }}
         run: |
           if [ -z "$BACKUP_DATABASE_URL" ] || [ -z "$BACKUP_PASSPHRASE" ]; then
-            echo "::error::Faltan los secrets BACKUP_DATABASE_URL y/o BACKUP_PASSPHRASE (DEPLOY.md → Backups)."
+            echo "::error::Faltan los secrets BACKUP_DATABASE_URL y/o BACKUP_PASSPHRASE en el environment 'backup' (DEPLOY.md → Backups)."
             exit 1
           fi
 
@@ -42,8 +44,16 @@ jobs:
           name="kachingga-prod-$(date -u +%Y-%m-%d)"
           mkdir -p out
           # pg_dump 17 can dump older servers. The URL goes in as an env var, never as an argument.
-          docker run --rm -e BACKUP_DATABASE_URL postgres:17 \
-            sh -c 'pg_dump "$BACKUP_DATABASE_URL" -Fc --schema=public --schema=auth --no-owner --no-privileges' \
+          # Image pinned by digest (postgres:17.11); how to update it: DEPLOY.md → "Backups".
+          # Live session data is left out (structure only): it's useless after a restore and
+          # whoever got it could take over a session. mfa_amr_claims references sessions;
+          # flow_state holds Google's tokens while logging in.
+          docker run --rm -e BACKUP_DATABASE_URL \
+            postgres:17@sha256:ff87138949ad9a46f32ff23bd6852b52ce024a13dffe9b4087be98292cdd3b4f \
+            sh -c 'pg_dump "$BACKUP_DATABASE_URL" -Fc --schema=public --schema=auth --no-owner --no-privileges \
+              --exclude-table-data=auth.refresh_tokens --exclude-table-data=auth.sessions \
+              --exclude-table-data=auth.one_time_tokens --exclude-table-data=auth.mfa_amr_claims \
+              --exclude-table-data=auth.flow_state' \
             | gpg --batch --yes --pinentry-mode loopback --passphrase-fd 3 \
                 --symmetric --cipher-algo AES256 -o "out/$name.dump.gpg" 3<<<"$BACKUP_PASSPHRASE"
           size=$(stat -c %s "out/$name.dump.gpg")
@@ -52,7 +62,7 @@ jobs:
           [ "$size" -gt 1000 ] || { echo "::error::El backup quedó demasiado chico ($size bytes)."; exit 1; }
           echo "name=$name" >> "$GITHUB_OUTPUT"
 
-      - uses: actions/upload-artifact@v7
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: ${{ steps.dump.outputs.name }}
           path: out/*.dump.gpg

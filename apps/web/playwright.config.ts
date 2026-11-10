@@ -25,7 +25,14 @@ export default defineConfig({
   fullyParallel: true,
   retries: process.env.CI ? 1 : 0,
   reporter: process.env.CI ? [['list'], ['html', { open: 'never' }]] : 'list',
-  use: { baseURL: 'http://localhost:4173', locale: 'es-AR', trace: 'retain-on-failure' },
+  use: {
+    baseURL: 'http://localhost:4173',
+    locale: 'es-AR',
+    // The CI report is a public artifact. Against the real API a trace would carry session tokens
+    // and passwords (requests, storage, typed text), so it's off. Screenshots and videos stay off
+    // (Playwright's default) for the same reason.
+    trace: withApi ? 'off' : 'retain-on-failure',
+  },
   projects: [
     { name: 'celular', use: { ...devices['iPhone 15'] } },
     // The flows with data run only on the phone: they're slow and create data in dev.
