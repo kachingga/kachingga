@@ -128,3 +128,13 @@ export function useOnline() {
     () => onlineManager.isOnline(),
   );
 }
+
+/**
+ * Whether the app opens read-only with the last user's saved cache, without waiting for the
+ * session: offline, with that cache on this device. Offline with an expired token Supabase can't
+ * refresh the session (it retries for ~25 s, then there's none). Mutations still fail offline
+ * (`createMutationCache`); back online, the session decides again.
+ */
+export function useOfflineReadOnly() {
+  return !useOnline() && cachedUser() !== null;
+}

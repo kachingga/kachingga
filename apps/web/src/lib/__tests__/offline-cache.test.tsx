@@ -2,7 +2,7 @@ import { onlineManager, QueryClient, useQuery } from '@tanstack/react-query';
 import { act, render, screen, waitFor } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { CachedApiProvider } from '@/components/api-provider';
+import { ApiProvider, CachedApiProvider } from '@/components/api-provider';
 import { OfflineBanner } from '@/components/offline-banner';
 import {
   cachedUser,
@@ -16,6 +16,10 @@ import {
 import { supabase } from '@/lib/supabase';
 import { useTRPC } from '@/lib/trpc';
 import { createFakeApiClient, neverResolves, type ApiHandlers } from '@/test/render';
+
+// The session ApiProvider sees (the rest of the file doesn't use it).
+const auth = vi.hoisted(() => ({ session: undefined as unknown }));
+vi.mock('@/lib/auth', () => ({ useSession: () => auth.session, getAccessToken: async () => null }));
 
 const groups = [{ id: 'g1', name: 'Viaje a Floripa', createdAt: new Date('2026-11-01T12:00:00Z') }];
 
@@ -198,5 +202,50 @@ describe('OfflineBanner', () => {
 
     act(() => onlineManager.setOnline(true));
     expect(screen.queryByRole('status')).not.toBeInTheDocument();
+  });
+});
+
+describe('ApiProvider while the session is being restored', () => {
+  // Offline with an expired token Supabase retries refreshing it for ~25 s: the session stays undefined.
+  async function saveCacheOf(userId: string) {
+    const first = renderAs(userId, { 'groups.list': () => groups });
+    await waitFor(() =>
+      expect(localStorage.getItem(`kachingga-cache:${userId}`)).toContain('Floripa'),
+    );
+    first.unmount();
+    rememberCachedUser(userId);
+  }
+  const renderApp = () =>
+    render(
+      <ApiProvider>
+        <GroupNames />
+      </ApiProvider>,
+    );
+
+  beforeEach(() => {
+    auth.session = undefined;
+  });
+  // Its persister saves with a 1 s throttle: that it doesn't write into the next test.
+  afterEach(() => clearOfflineCache());
+
+  it("offline with the last user's cache, shows the saved data right away", async () => {
+    await saveCacheOf('u1');
+    onlineManager.setOnline(false);
+    renderApp();
+    expect(await screen.findByText('Viaje a Floripa (fecha)')).toBeInTheDocument();
+  });
+
+  it('online, shows the splash and nothing saved until the session is restored', async () => {
+    await saveCacheOf('u1');
+    renderApp();
+    expect(screen.getByRole('status', { name: 'Cargando' })).toBeInTheDocument();
+    await act(() => new Promise((r) => setTimeout(r, 20)));
+    expect(screen.queryByText(/Viaje a Floripa/)).not.toBeInTheDocument();
+  });
+
+  it('offline with nothing saved, shows the splash', () => {
+    onlineManager.setOnline(false);
+    renderApp();
+    expect(screen.getByRole('status', { name: 'Cargando' })).toBeInTheDocument();
   });
 });

@@ -1,5 +1,5 @@
 import { onlineManager } from '@tanstack/react-query';
-import { render, screen } from '@testing-library/react';
+import { act, render, screen } from '@testing-library/react';
 import { MemoryRouter, Route, Routes, useLocation } from 'react-router';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -73,5 +73,43 @@ describe('RequireAuth', () => {
     onlineManager.setOnline(false);
     renderGuarded();
     expect(screen.getByText(/^Login/)).toBeInTheDocument();
+  });
+
+  describe('while the session is being restored', () => {
+    beforeEach(() => {
+      auth.session = undefined;
+    });
+
+    it('offline with the last user cache saved, opens the app (read-only) right away', () => {
+      rememberCachedUser('u1');
+      onlineManager.setOnline(false);
+      renderGuarded();
+      expect(screen.getByText('Adentro')).toBeInTheDocument();
+    });
+
+    it('online, shows the splash even with a saved cache', () => {
+      rememberCachedUser('u1');
+      renderGuarded();
+      expect(screen.getByRole('status', { name: 'Cargando' })).toBeInTheDocument();
+      expect(screen.queryByText('Adentro')).not.toBeInTheDocument();
+    });
+
+    it('offline with nothing saved, shows the splash', () => {
+      onlineManager.setOnline(false);
+      renderGuarded();
+      expect(screen.getByRole('status', { name: 'Cargando' })).toBeInTheDocument();
+      expect(screen.queryByText(/Login/)).not.toBeInTheDocument();
+    });
+
+    it('back online before it is restored, waits for it (splash)', () => {
+      rememberCachedUser('u1');
+      onlineManager.setOnline(false);
+      renderGuarded();
+      expect(screen.getByText('Adentro')).toBeInTheDocument();
+
+      act(() => onlineManager.setOnline(true));
+      expect(screen.getByRole('status', { name: 'Cargando' })).toBeInTheDocument();
+      expect(screen.queryByText('Adentro')).not.toBeInTheDocument();
+    });
   });
 });

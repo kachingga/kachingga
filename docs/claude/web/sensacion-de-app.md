@@ -54,7 +54,7 @@ Chicas, rápidas y nunca en el camino (todas en `src/index.css`; con "reducir mo
 Nunca una pantalla en blanco al abrir: el logo sobre el fondo, **del mismo tamaño y en el mismo lugar** en las tres etapas (40% del lado más corto de la pantalla, centrado), así no salta de una a otra:
 1. **Instalada en iPhone:** la imagen de arranque (`apple-touch-startup-image`), una por tamaño de pantalla de iPhone, vertical y horizontal, clara y oscura. Las genera `@vite-pwa/assets-generator` al buildear (`appleSplashScreens` en `pwa-assets.config.ts`) y `vite-plugin-pwa` pone los `<link>` en `index.html`. **El service worker no las guarda** (`globIgnores` en `vite.config.ts`): son decenas y iOS baja la suya una vez al instalar. Son verdes, como los íconos. Android arma la suya con el manifest (`name`, `background_color`, ícono).
 2. **Mientras baja y arranca el JS:** el splash **inline en `index.html`** (HTML + CSS, sin JS) adentro de `#root`, con los colores de la paleta elegida (las variables del tema; si todavía no cargaron, verde). React lo reemplaza al montar.
-3. **Mientras se recupera la sesión:** `<Splash>` (`src/components/splash.tsx`, en `RequireAuth`), el mismo en React.
+3. **Mientras se recupera la sesión:** `<Splash>` (`src/components/splash.tsx`, en `ApiProvider` y `RequireAuth`), el mismo en React. Sin conexión y con la cache del último usuario no se espera la sesión: abre en solo lectura (`datos-y-cache.md` → "Offline").
 
 Test: `e2e/splash.spec.ts` (se ve mientras el JS no llegó y después aparece la app) y `e2e/pwa.spec.ts` (están las imágenes de arranque).
 - **Test:** `e2e/pwa.spec.ts` (manifest válido + service worker activo).
