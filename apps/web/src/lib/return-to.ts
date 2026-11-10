@@ -8,11 +8,20 @@ const PARAM = 'volver';
 const GOOGLE_KEY = 'kachingga-volver';
 export const HOME = '/grupos';
 
-/** Only paths inside the app: never another site (`//evil.com`, `https://…`), so a link can't redirect out. */
+/**
+ * Only paths inside the app: never another site (`//evil.com`, `https://…`), so a link can't
+ * redirect out. Resolved the way the browser would (it ignores tabs and line breaks and reads `\` as
+ * `/`, so `/\t/evil.com` is `//evil.com`), and it has to stay on this origin.
+ */
 export function safeReturnTo(value: string | null | undefined): string {
-  if (!value || !value.startsWith('/') || value.startsWith('//') || value.startsWith('/\\'))
-    return HOME;
-  return value;
+  if (!value?.startsWith('/')) return HOME;
+  try {
+    const url = new URL(value, window.location.origin);
+    if (url.origin !== window.location.origin) return HOME;
+    return url.pathname + url.search + url.hash;
+  } catch {
+    return HOME; // Not even a URL (e.g. `//`: another site without a name).
+  }
 }
 
 /** `/login` (or `/registro`) keeping where to go back, if it isn't just the home. */

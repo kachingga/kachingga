@@ -12,8 +12,8 @@
 ## Privacidad (no mandar datos del grupo)
 
 - `dataCollection` apagado para IP, cookies, headers (el token), query strings (los GET de tRPC llevan el input, con montos) y bodies (montos, alias).
-- `beforeSend` (`scrubEvent`) lo vuelve a limpiar por las dudas: saca headers, cookies, body y query del request, y del usuario deja **solo el id**.
-- Web: `setMonitoringUser` identifica al usuario **solo por su id de Supabase** (nunca el email). `beforeBreadcrumb` (`scrubBreadcrumb`) descarta los breadcrumbs de `console` y saca la query de las URLs de fetch y navegación.
+- `beforeSend` (`scrubEvent`) lo vuelve a limpiar por las dudas: saca headers, cookies, body, y la query y el hash (`?…` y `#…`) de la URL del request, y del usuario deja **solo el id**.
+- Web: `setMonitoringUser` identifica al usuario **solo por su id de Supabase** (nunca el email). `beforeBreadcrumb` (`scrubBreadcrumb`) descarta los breadcrumbs de `console` y saca la query y el hash de las URLs de fetch y navegación.
 - Los mensajes de error del código no llevan datos de usuarios (regla de la API: mensajes en español, sin datos internos).
 
 ## Cuándo está prendido

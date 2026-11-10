@@ -53,16 +53,24 @@ describe('monitoring', () => {
     expect(
       scrubBreadcrumb({ category: 'navigation', data: { from: '/a?x=1', to: '/b?y=2' } }),
     ).toEqual({ category: 'navigation', data: { from: '/a', to: '/b' } });
+    expect(
+      scrubBreadcrumb({ category: 'navigation', data: { from: '/a#x', to: '/b?y=2#z' } }),
+    ).toEqual({ category: 'navigation', data: { from: '/a', to: '/b' } });
     expect(scrubBreadcrumb({ category: 'console', message: 'monto 1000' })).toBeNull();
   });
 
-  it('keeps only the user id and the URL without query', () => {
+  it('keeps only the user id and the URL without query or hash', () => {
     const event = scrubEvent({
       type: undefined,
-      request: { url: 'https://kachingga.com/grupos/1?q=1', headers: { a: 'b' } },
+      request: { url: 'https://kachingga.com/grupos/1?q=1#total', headers: { a: 'b' } },
       user: { id: 'user-1', email: 'galo@example.com' },
     });
     expect(event.request).toEqual({ url: 'https://kachingga.com/grupos/1' });
     expect(event.user).toEqual({ id: 'user-1' });
+
+    expect(scrubEvent({ type: undefined, request: { url: 'https://kachingga.com/a#b' } })).toEqual({
+      type: undefined,
+      request: { url: 'https://kachingga.com/a' },
+    });
   });
 });
