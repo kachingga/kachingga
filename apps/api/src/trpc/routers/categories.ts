@@ -3,10 +3,14 @@ import { z } from 'zod'
 import { prisma } from '../../db'
 import { requireActiveGroup, requireMembership } from '../../lib/access'
 import { assertCategoryNameFree } from '../../lib/categories'
-import { categoryInput } from '../../schemas'
+import { suggestDefaultKey, suggestFromHistory } from '../../lib/categorySuggestion'
+import { categoryInput, categorySuggestionInput } from '../../schemas'
 import { protectedProcedure, router } from '../init'
 
 const categoryId = z.object({ categoryId: z.string() })
+
+// How many of the group's latest expenses the suggestion compares against.
+const SUGGESTION_HISTORY = 500
 
 // A category to change: the caller has to be a member of its group, and the group active
 // (never trust a groupId from the input for something that already exists).
@@ -38,6 +42,29 @@ export const categoriesRouter = router({
       archived: archivedAt !== null,
       expenseCount: _count.expenses,
     }))
+  }),
+
+  // Automatic category for a new expense from its description (the form asks while typing): the
+  // category of a similar past expense of the group, else the built-in one its keywords point to,
+  // else null. Only active categories of the group are ever suggested. Logic: lib/categorySuggestion.
+  suggest: protectedProcedure.input(categorySuggestionInput).query(async ({ ctx, input }) => {
+    await requireMembership(input.groupId, ctx.user.id)
+    const history = await prisma.expense.findMany({
+      where: { groupId: input.groupId, deletedAt: null, category: { archivedAt: null } },
+      orderBy: [{ date: 'desc' }, { createdAt: 'desc' }],
+      take: SUGGESTION_HISTORY,
+      select: { description: true, categoryId: true },
+    })
+    const fromHistory = suggestFromHistory(input.description, history)
+    if (fromHistory) return { categoryId: fromHistory, source: 'history' as const }
+
+    const defaultKey = suggestDefaultKey(input.description)
+    if (!defaultKey) return null
+    const category = await prisma.category.findFirst({
+      where: { groupId: input.groupId, defaultKey, archivedAt: null },
+      select: { id: true },
+    })
+    return category && { categoryId: category.id, source: 'keyword' as const }
   }),
 
   create: protectedProcedure.input(categoryInput.extend({ groupId: z.string() })).mutation(async ({ ctx, input }) => {

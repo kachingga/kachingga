@@ -84,6 +84,8 @@ export const categoryIcon = z.enum(categoryIcons)
 export const categoryColor = z.enum(categoryColors)
 export const categoryName = z.string().trim().min(1).max(30)
 export const categoryInput = z.object({ name: categoryName, icon: categoryIcon, color: categoryColor })
+// Description being typed in the expense form, to suggest its category (`categories.suggest`)
+export const categorySuggestionInput = z.object({ groupId: id, description: z.string().trim().min(1).max(120) })
 // Postgres int4 limit (≈ 21.4M in the expense's currency)
 const amountCents = z.number().int().positive().max(2_147_483_647)
 

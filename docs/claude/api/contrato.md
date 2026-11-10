@@ -48,6 +48,7 @@ Todos con `protectedProcedure` salvo `health.ping`. Inputs en `src/schemas.ts`.
 | `profile.get` / `profile.update` | query / mutation | Alias de la cuenta del usuario logueado (`{ paymentAlias \| null }`) |
 | `categories.list` | query | `{ groupId }` → todas las categorías del grupo en orden (las 8 por defecto primero), con `archived` y `expenseCount` (gastos activos que la usan) |
 | `categories.create` / `update` | mutation | `{ groupId, name, icon, color }` / `{ categoryId, name?, icon?, color? }`. Cualquier miembro; grupo archivado = solo lectura. `CONFLICT` si el nombre ya está entre las activas |
+| `categories.suggest` | query | `{ groupId, description }` → `{ categoryId, source: 'history' \| 'keyword' }` o `null`: categoría sugerida para un gasto nuevo (historial del grupo, si no palabras clave → la por defecto con ese `defaultKey`). Solo activas del grupo. Lectura: anda en grupos archivados. Límite propio de 60/min por IP |
 | `categories.archive` / `unarchive` | mutation | `{ categoryId }`. Archivada: los gastos la conservan, no se puede elegir para gastos nuevos. No se puede archivar la última activa; desarchivar choca si ya hay una activa con ese nombre |
 | `expenses.list` | query | `{ groupId, filters, cursor }` → `{ items, nextCursor }` (páginas de 50, más nuevo primero). Cada item tiene la misma forma que `expenses.get` |
 | `expenses.export` | query | `{ groupId, filters, format: 'csv' \| 'json' }` → `{ filename, mimeType, content }`: **todos** los gastos que coinciden (sin paginar), del más viejo al más nuevo, con mi parte |
@@ -72,6 +73,7 @@ Todos con `protectedProcedure` salvo `health.ping`. Inputs en `src/schemas.ts`.
 | Exportar (formato de cada fila, CSV) | `lib/exportExpenses.ts` (`toExportRows`, `toCsv`; mismas reglas de moneda y redondeo que los saldos) |
 | Totales por filtro | `lib/summary.ts` (`summarizeExpenses`, puro; mismas reglas de moneda y redondeo que los saldos) |
 | Unirse / reclamar participante | `routers/groups.ts` (`preview`, `join`) |
+| Categoría automática (historial, palabras clave) | `lib/categorySuggestion.ts` (`suggestFromHistory`, `suggestDefaultKey`, puros; la lista de palabras clave está ahí) + `categories.suggest` en `routers/categories.ts` (últimos 500 gastos activos con categoría activa) |
 | Categorías por grupo (las por defecto, cuál usa un gasto, nombres únicos) | `lib/categories.ts` (`defaultCategoryRows`, `resolveExpenseCategory`, `assertCategoryNameFree`) + `routers/categories.ts`; las 8 por defecto, íconos y colores válidos en `schemas.ts` (`defaultCategories`, `categoryIcons`, `categoryColors`) |
 | Alias para cobrar (cuál vale en cada grupo) | `lib/paymentAlias.ts`; formato en `schemas.ts` (`paymentAlias`) |
 

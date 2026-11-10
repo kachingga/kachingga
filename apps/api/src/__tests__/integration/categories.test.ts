@@ -147,3 +147,92 @@ describe('categories', () => {
     expect((await ana.savedFilters.list({ groupId: group.id }))[0]!.filters).toEqual({ categoryIds: [nafta.id] })
   })
 })
+
+describe('categories.suggest', () => {
+  const suggest = (who: Awaited<ReturnType<typeof newGroup>>['ana'], groupId: string, description: string) =>
+    who.categories.suggest({ groupId, description })
+  async function named(ana: Awaited<ReturnType<typeof newGroup>>['ana'], groupId: string, key: string) {
+    return (await ana.categories.list({ groupId })).find((c) => c.defaultKey === key)!
+  }
+  async function expenseWith(ctx: Awaited<ReturnType<typeof newGroup>>, description: string, categoryId?: string) {
+    const created = await ctx.expense(categoryId)
+    const { ana } = ctx
+    return ana.expenses.update({
+      expenseId: created.id,
+      description,
+      date: created.date,
+      amountCents: created.amountCents,
+      currency: 'ARS',
+      paidById: created.paidById,
+      split: { type: 'EQUAL', participantIds: [created.paidById] },
+      ...(categoryId && { categoryId }),
+    })
+  }
+
+  test('requires login; non-members get "not found"', async () => {
+    const { group } = await newGroup()
+    await expect(anonymous.categories.suggest({ groupId: group.id, description: 'Coto' })).rejects.toThrow('UNAUTHORIZED')
+    await expect(suggest(caller('intruso-suggest'), group.id, 'Coto')).rejects.toMatchObject({ code: 'NOT_FOUND' })
+  })
+
+  test('keywords → the built-in category of the group (even renamed)', async () => {
+    const { ana, beto, group } = await newGroup()
+    const groceries = await named(ana, group.id, 'GROCERIES')
+    const transport = await named(ana, group.id, 'TRANSPORT')
+    expect(await suggest(beto, group.id, 'Coto')).toEqual({ categoryId: groceries.id, source: 'keyword' })
+    expect(await suggest(ana, group.id, 'Uber a casa')).toEqual({ categoryId: transport.id, source: 'keyword' })
+    await ana.categories.update({ categoryId: groceries.id, name: 'Supermercado' })
+    expect(await suggest(ana, group.id, 'Carrefour')).toMatchObject({ categoryId: groceries.id })
+  })
+
+  test('nothing matches → null', async () => {
+    const { ana, group } = await newGroup()
+    expect(await suggest(ana, group.id, 'Varios')).toBeNull()
+  })
+
+  test("the group's history comes first, with its custom categories", async () => {
+    const ctx = await newGroup()
+    const { ana, group } = ctx
+    const nafta = await ana.categories.create({ groupId: group.id, name: 'Nafta', icon: 'fuel', color: 'teal' })
+    await expenseWith(ctx, 'YPF ruta 2', nafta.id)
+    // "YPF" is a transport keyword, but the group already used "Nafta" for it.
+    expect(await suggest(ana, group.id, 'ypf Ruta 2')).toEqual({ categoryId: nafta.id, source: 'history' })
+    expect(await suggest(ana, group.id, 'YPF ruta 11')).toEqual({ categoryId: nafta.id, source: 'history' })
+    const transport = await named(ana, group.id, 'TRANSPORT')
+    expect(await suggest(ana, group.id, 'Shell')).toEqual({ categoryId: transport.id, source: 'keyword' })
+  })
+
+  test('deleted expenses and archived categories are never suggested', async () => {
+    const ctx = await newGroup()
+    const { ana, group } = ctx
+    const nafta = await ana.categories.create({ groupId: group.id, name: 'Nafta', icon: 'fuel', color: 'teal' })
+    await expenseWith(ctx, 'YPF', nafta.id)
+    const deleted = await expenseWith(ctx, 'Cosas raras', nafta.id)
+    await ana.expenses.delete({ expenseId: deleted.id })
+    expect(await suggest(ana, group.id, 'Cosas raras')).toBeNull()
+
+    await ana.categories.archive({ categoryId: nafta.id })
+    const transport = await named(ana, group.id, 'TRANSPORT')
+    expect(await suggest(ana, group.id, 'YPF')).toEqual({ categoryId: transport.id, source: 'keyword' })
+    await ana.categories.archive({ categoryId: transport.id })
+    expect(await suggest(ana, group.id, 'YPF')).toBeNull()
+  })
+
+  test("another group's history and categories are never suggested", async () => {
+    const mine = await newGroup()
+    const other = await newGroup()
+    const nafta = await other.ana.categories.create({ groupId: other.group.id, name: 'Nafta', icon: 'fuel', color: 'teal' })
+    await expenseWith(other, 'Cosas raras', nafta.id)
+    expect(await suggest(mine.ana, mine.group.id, 'Cosas raras')).toBeNull()
+    const result = await suggest(mine.ana, mine.group.id, 'Coto')
+    expect(result!.categoryId).toBe((await named(mine.ana, mine.group.id, 'GROCERIES')).id)
+  })
+
+  test('works on archived groups too (read-only) and validates the description', async () => {
+    const { ana, group } = await newGroup()
+    await ana.groups.setArchived({ groupId: group.id, archived: true })
+    expect(await suggest(ana, group.id, 'Coto')).toMatchObject({ source: 'keyword' })
+    await expect(suggest(ana, group.id, '   ')).rejects.toThrow()
+    await expect(suggest(ana, group.id, 'x'.repeat(121))).rejects.toThrow()
+  })
+})
