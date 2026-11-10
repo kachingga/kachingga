@@ -63,7 +63,7 @@ Sale de un diseño hecho en Lovable que eligió Galo (#37), con una **segunda it
 | Título de pantalla con "volver" y acciones | `<PageHeader>` (`kit.tsx`; también pone el título de la pestaña) | — |
 | Cargando | Skeletons con la forma de la pantalla (`skeletons.tsx`, sobre `Skeleton`) | Un spinner suelto |
 | Error de una query | `<ErrorState message onRetry={() => query.refetch()} />` (mensaje de la API + **Reintentar**) | Un error técnico crudo |
-| Confirmar algo destructivo | `useConfirm()` (`src/lib/use-confirm.ts` + `<ConfirmProvider>` en `main.tsx`): `if (await confirm({ title, description, confirmLabel, destructive }))` | `confirm()` del navegador |
+| Confirmar algo destructivo | `useConfirm()` (`src/lib/use-confirm.ts` + `<ConfirmProvider>` en `main.tsx`): `if (await confirm({ title, description, confirmLabel, destructive }))`. `description` es texto o JSX si necesita más (ej. la lista de saldos de "Borrar mi cuenta") | `confirm()` del navegador |
 | Avisar éxito o error de una acción | `toast()` / `toast.error()` de `sonner` (`<Toaster>` en `main.tsx`) | `alert()` |
 | Botón | `<Button>` (`src/components/ui/button.tsx`; todos rebotan al tocar con `press`). Variantes: `default` (acción principal, con borde de abajo que se hunde al tocarlo), `outline` (secundaria), `secondary`, `soft` (confirmar algo chico en línea, ej. "OK"), `ghost` (acciones de texto o de solo ícono, ítems de menú), `destructive` (borrar, quitar), `link`, `google` (solo "Continuar con Google"). Tamaños `default` / `sm` / `xs` / `lg` e `icon*` (los de solo ícono **siempre** con `aria-label`). **`loading`**: deshabilita y marca `aria-busy`; el texto lo pone la pantalla ("Guardando…") | `<button>` con clases a mano |
 | Campo de texto | `<Input>` (`src/components/ui/input.tsx`); fechas, `<Input type="date">` | `<input>` con clases a mano |
@@ -72,6 +72,6 @@ Sale de un diseño hecho en Lovable que eligió Galo (#37), con una **segunda it
 | Elegir una opción entre pocas (dividir, convertir/mantener, blue/oficial, categorías en filtros) | `<Chip active>` (`kit.tsx`, con `aria-pressed`) dentro de un `role="group"` con etiqueta | Botones con estilos condicionales a mano |
 | Campo numérico | `<NumberInput>` (ver `plata-y-fechas.md`): ya es un `Input` por dentro | `<input>` + `parseFloat` |
 | Moneda y tipo de cambio | `<ExchangeRateFields>` + `useExchangeRate` | Repetir la lógica en cada form |
-| Cerrar sesión | `useSignOut()` (`src/lib/use-sign-out.ts`: borra la cache offline y la de memoria) | `signOut()` suelto |
+| Cerrar sesión (también después de borrar la cuenta) | `useSignOut()` (`src/lib/use-sign-out.ts`: borra la cache offline y la de memoria) | `signOut()` suelto |
 
 Falta: selector de participantes reutilizable (hoy cada pantalla resuelve el suyo).

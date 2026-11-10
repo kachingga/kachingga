@@ -17,6 +17,8 @@ export const PROCEDURE_RULES: Record<string, Rule> = {
   'expenses.export': { limit: 20, windowMs: MINUTE },
   // Asked while typing (debounced): reads the group's latest expenses on every call
   'categories.suggest': { limit: 60, windowMs: MINUTE },
+  // Calls Supabase's admin API; a person needs it once (maybe a retry)
+  'profile.deleteAccount': { limit: 5, windowMs: 10 * MINUTE },
 }
 
 export class RateLimiter {

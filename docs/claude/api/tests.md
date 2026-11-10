@@ -20,6 +20,7 @@ await ana.groups.create({ ... })
 ```
 
 - `setupTestApi` reemplaza `../../db` por un Prisma sobre PGlite (`mock.module`). Cada archivo arranca con una base vacía y con todas las migraciones aplicadas: si una migración nueva rompe, estos tests fallan.
+- **Supabase** no se usa en los tests (el caller arma el usuario a mano). Lo que llama a su API de admin (`profile.deleteAccount`) se prueba reemplazando `../../lib/supabase` con `mock.module` antes de `setupTestApi()`, con un `getSupabase()` falso (ver `deleteAccount.test.ts`).
 - Usar usuarios distintos por test (ver `users()` en `routers.test.ts`) para que los tests no dependan entre sí.
 - **Cada procedure nuevo o cambiado lleva tests de integración** que cubran: sin login (`UNAUTHORIZED`), no miembro (`NOT_FOUND`), grupo archivado si escribe, el caso feliz y cada regla de negocio que valide (con el mensaje en español).
 - Lógica nueva en `lib/` → test unit además.
