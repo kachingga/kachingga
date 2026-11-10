@@ -111,6 +111,14 @@ describe('computeBalances', () => {
 })
 
 describe('minimizeTransfers', () => {
+  test('throws instead of looping forever on a non-finite balance', () => {
+    expect(() =>
+      minimizeTransfers([
+        { participantId: 'a', amountCents: Infinity },
+        { participantId: 'b', amountCents: -Infinity },
+      ]),
+    ).toThrow('Non-finite balance')
+  })
   test('settles everything with at most n - 1 transfers', () => {
     const balances = [
       { participantId: 'a', amountCents: 5000 },
