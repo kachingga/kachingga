@@ -11,11 +11,13 @@ import { OfflineBanner } from '@/components/offline-banner';
 import { Toaster } from '@/components/ui/sonner';
 import { initMonitoring } from '@/lib/monitoring';
 import { syncOfflineCacheWithSession, syncOnlineAtStartup } from '@/lib/offline-cache';
+import { registerServiceWorker } from '@/lib/service-worker';
 import { router } from '@/router';
 
 initMonitoring();
 syncOnlineAtStartup();
 syncOfflineCacheWithSession();
+registerServiceWorker();
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
