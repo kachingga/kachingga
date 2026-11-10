@@ -34,6 +34,8 @@ export function balanceCurrency(movement: Movement, baseCurrency: Currency): { c
 
 // Greedy: repeatedly match the biggest debtor with the biggest creditor. At most n - 1 transfers.
 export function minimizeTransfers(balances: { participantId: string; amountCents: number }[]): Transfer[] {
+  // A non-finite balance never reaches zero and would loop forever, blocking the whole API.
+  if (balances.some((b) => !Number.isFinite(b.amountCents))) throw new Error('Non-finite balance')
   const creditors = balances.filter((b) => b.amountCents > 0).map((b) => ({ ...b }))
   const debtors = balances.filter((b) => b.amountCents < 0).map((b) => ({ ...b, amountCents: -b.amountCents }))
   const transfers: Transfer[] = []

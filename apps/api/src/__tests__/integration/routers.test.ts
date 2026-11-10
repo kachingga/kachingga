@@ -232,6 +232,34 @@ describe('expenses and balances', () => {
     expect(e.exchangeRate).toBe(1500)
   })
 
+  test('rejects an exchange rate above the cap (would break or hang the balances)', async () => {
+    const { ana, group, pAna, pBeto } = await groupWithMembers()
+    await expect(
+      ana.settlements.create({
+        groupId: group.id,
+        fromId: pAna,
+        toId: pBeto,
+        amountCents: 2,
+        currency: 'USD',
+        exchangeRate: 1e308,
+        date: day('01'),
+      }),
+    ).rejects.toThrow()
+    await expect(
+      ana.expenses.create({
+        groupId: group.id,
+        description: 'x',
+        date: day('01'),
+        amountCents: 100,
+        currency: 'USD',
+        exchangeRate: 1_000_001,
+        paidById: pAna,
+        split: { type: 'EQUAL', participantIds: [pAna, pBeto] },
+      }),
+    ).rejects.toThrow()
+    expect(await ana.balances.get({ groupId: group.id })).toHaveLength(1)
+  })
+
   test('rejects participants from another group', async () => {
     const { ana, group, pAna } = await groupWithMembers()
     const other = await groupWithMembers()

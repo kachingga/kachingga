@@ -105,9 +105,14 @@ export const splitInput = z.discriminatedUnion('type', [
 // - same as the group's base → no conversion
 // - keepCurrency: true → settled in its own currency, separate balance
 // - otherwise converted to base with exchangeRate (omitted → automatic blue midpoint for ARS ↔ USD)
+// Cap for a manual exchange rate: far above any real one (ARS per USD is in the thousands) and low
+// enough that amount × rate stays an exact integer (otherwise balances stop adding up to zero, or an
+// infinite rate hangs the transfer calculation).
+export const MAX_EXCHANGE_RATE = 1_000_000
+
 const movementCurrency = {
   currency,
-  exchangeRate: z.number().positive().nullish(),
+  exchangeRate: z.number().positive().max(MAX_EXCHANGE_RATE).nullish(),
   keepCurrency: z.boolean().default(false),
 }
 
