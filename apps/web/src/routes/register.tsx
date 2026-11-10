@@ -6,6 +6,7 @@ import { AuthLayout } from '@/components/auth-layout';
 import { GoogleSignIn } from '@/components/google-sign-in';
 import { Field } from '@/components/kit';
 import { ConfirmEmailSent } from '@/components/mail-sent';
+import { PasswordInput } from '@/components/password-input';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { signUp } from '@/lib/auth';
@@ -82,9 +83,8 @@ export function Register() {
         </Field>
 
         <Field label="Contraseña" htmlFor="password">
-          <Input
+          <PasswordInput
             id="password"
-            type="password"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             required
@@ -93,9 +93,8 @@ export function Register() {
         </Field>
 
         <Field label="Confirmar contraseña" htmlFor="confirm">
-          <Input
+          <PasswordInput
             id="confirm"
-            type="password"
             value={confirm}
             onChange={(e) => setConfirm(e.target.value)}
             required

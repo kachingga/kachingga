@@ -4,8 +4,8 @@ import { toast } from 'sonner';
 
 import { AuthLayout } from '@/components/auth-layout';
 import { Field } from '@/components/kit';
+import { PasswordInput } from '@/components/password-input';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { updatePassword, useSession, verifyPasswordReset } from '@/lib/auth';
 import { authErrorMessage } from '@/lib/auth-errors';
 import { useEmailLink } from '@/lib/email-link';
@@ -73,9 +73,8 @@ export function NewPassword() {
     <AuthLayout title="Elegí tu contraseña nueva" subtitle="Después entrás directo a la app.">
       <form onSubmit={handleSubmit} className="space-y-4">
         <Field label="Contraseña nueva" htmlFor="password">
-          <Input
+          <PasswordInput
             id="password"
-            type="password"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             required
@@ -84,9 +83,8 @@ export function NewPassword() {
         </Field>
 
         <Field label="Confirmar contraseña" htmlFor="confirm">
-          <Input
+          <PasswordInput
             id="confirm"
-            type="password"
             value={confirm}
             onChange={(e) => setConfirm(e.target.value)}
             required
