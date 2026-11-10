@@ -118,6 +118,7 @@ pg_restore --list kachingga.dump | less           # ver qué tiene
 - Si `pg_restore` avisa `schema "public" already exists` (el dump incluye el `CREATE SCHEMA`), es esperable: restaura igual lo demás.
 - **`auth` es de Supabase:** las tablas ya existen en cualquier proyecto y Supabase las maneja. No restaurar el schema entero; si hace falta recuperar cuentas, restaurar solo los datos de `auth.users` / `auth.identities` (`pg_restore --data-only --table=...`) en un proyecto **nuevo**, y probarlo antes. Sin las cuentas, los participantes quedan sin dueño (sus gastos y saldos no se pierden).
 - Antes de restaurar algo en prod, hacer un backup a mano de cómo está.
+- **Probado el 10/11/2026** (#109) con el backup del día, en un Postgres 17 local descartable (Docker, la misma imagen que el backup): descifrado al vuelo (`gpg -d … | docker exec -i <contenedor> pg_restore …`, así el dump sin cifrar no queda en disco), `public` restaurado sin errores, `db:migrate:status` al día con las migraciones de `main`, RLS en todas las tablas, y en `auth` solo datos de usuarios e identidades (ninguna sesión). Después se borró todo. Repetirlo de vez en cuando (ej. cada unos meses o al cambiar `backup.yml`).
 
 ---
 

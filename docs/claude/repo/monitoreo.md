@@ -15,6 +15,7 @@
 - `beforeSend` (`scrubEvent`) lo vuelve a limpiar por las dudas: saca headers, cookies, body, y la query y el hash (`?…` y `#…`) de la URL del request, y del usuario deja **solo el id**.
 - Web: `setMonitoringUser` identifica al usuario **solo por su id de Supabase** (nunca el email). `beforeBreadcrumb` (`scrubBreadcrumb`) descarta los breadcrumbs de `console` y saca la query y el hash de las URLs de fetch y navegación.
 - Los mensajes de error del código no llevan datos de usuarios (regla de la API: mensajes en español, sin datos internos).
+- **En Sentry** (los dos proyectos, #109): *Prevent Storing of IP Addresses* prendido, y la clave (DSN) solo acepta eventos de nuestros dominios (*Allowed Domains*: `kachingga.com`, `app.kachingga.com`, `staging.kachingga.com`), así nadie llena la cuota con eventos falsos desde otro sitio.
 
 ## Cuándo está prendido
 
