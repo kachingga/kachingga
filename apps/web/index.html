@@ -21,9 +21,45 @@
           document.documentElement.dataset.palette = p;
       } catch (e) {}
     </script>
+    <!--
+      Splash while the JS downloads and starts: the logo on the app's background (with the
+      palette's colors once index.css loaded; the fallbacks are green). React replaces it when it
+      mounts. Same size and place as the iPhone startup images (pwa-assets.config.ts), so going from
+      one to the other doesn't jump. <Splash> (src/components/splash.tsx) is the same in React.
+    -->
+    <style>
+      .splash {
+        position: fixed;
+        inset: 0;
+        display: grid;
+        place-items: center;
+        background: var(--background, #faf6ee);
+      }
+      .dark .splash {
+        background: var(--background, #101a16);
+      }
+      .splash svg {
+        width: 40vmin;
+        height: 40vmin;
+      }
+    </style>
   </head>
   <body>
-    <div id="root"></div>
+    <div id="root">
+      <div class="splash" role="status" aria-label="Cargando">
+        <svg viewBox="0 0 512 512" aria-hidden="true">
+          <clipPath id="splash-l"><polygon points="0,0 300,0 212,512 0,512" /></clipPath>
+          <clipPath id="splash-r"><polygon points="324,0 512,0 512,512 236,512" /></clipPath>
+          <rect width="512" height="512" rx="112" style="fill: var(--logo-bg, #0c5c3c)" />
+          <g clip-path="url(#splash-l)" transform="translate(-14 6)">
+            <circle cx="256" cy="256" r="164" style="fill: var(--logo-a, #f6ab6b)" />
+          </g>
+          <g clip-path="url(#splash-r)" transform="translate(14 -6)">
+            <circle cx="256" cy="256" r="164" style="fill: var(--logo-b, #fffdfa)" />
+          </g>
+        </svg>
+      </div>
+    </div>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>
