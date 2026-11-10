@@ -65,6 +65,7 @@ Proyecto de **Kachingga**, una organización de amigos (repo: `github.com/kachin
 ### Usuarios y login
 - Cada persona entra con **email + password** o con **Google** (Supabase Auth). Si ya tenía cuenta con email y entra con Google con el mismo mail, es la misma cuenta. Sin Apple (exige la cuenta de Apple Developer, USD 99/año) ni magic link.
 - Un usuario puede estar en muchos grupos.
+- **Cambiar el email** (desde Mi cuenta): cada uno el suyo. Se confirma **desde el email actual y desde el nuevo** (un link en cada uno); recién con los dos cambia. Quien entra con Google puede cambiarlo y sigue entrando con Google.
 - **Borrar mi cuenta** (desde Mi cuenta): cualquiera puede borrar la suya, y solo la suya. **No lo saca de sus grupos:** su participante queda **sin cuenta** (como "Juan", que no usa la app), con su nombre, sus gastos, sus pagos y sus saldos tal cual; nada de los grupos se borra. **Sus deudas quedan en el grupo, a su nombre** (cualquiera puede registrar después un pago suyo). Antes de confirmar se le muestran sus saldos pendientes en cada grupo: avisa, no bloquea.
   - Se borra lo que sin cuenta no sirve: su **alias** (el de la cuenta y los de cada grupo) y sus **filtros guardados**.
   - La cuenta de Supabase se borra con **borrado lógico** (soft delete): no se puede volver a entrar con ella. No se puede deshacer.

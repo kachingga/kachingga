@@ -10,7 +10,7 @@ import { useCaptcha } from '@/lib/use-captcha';
 // Supabase lets each address ask for a mail once a minute.
 const RESEND_COOLDOWN_SECONDS = 60;
 
-/** "We sent you a mail": the notice of the login screens that send one. */
+/** "We sent you a mail": the notice of the screens that send one (login, Mi cuenta). */
 export function MailSent({ children }: { children: ReactNode }) {
   return (
     <div className="flex items-start gap-3 rounded-lg bg-accent p-4 text-sm text-accent-foreground">

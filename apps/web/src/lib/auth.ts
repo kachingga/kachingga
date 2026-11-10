@@ -64,6 +64,27 @@ export const verifyPasswordReset = (tokenHash: string) =>
 
 export const updatePassword = (password: string) => supabase.auth.updateUser({ password });
 
+/**
+ * Asks to change the account's email. With "Secure email change" on in Supabase, it sends a mail to
+ * the current address and another to the new one, and the email changes once both links are opened
+ * (they land on /cambiar-email). Logged in, so no captcha (Supabase doesn't ask for one here).
+ */
+export const requestEmailChange = (email: string) =>
+  supabase.auth.updateUser(
+    { email },
+    { emailRedirectTo: `${window.location.origin}/cambiar-email` },
+  );
+
+/**
+ * The token of an email-change mail's link. The first of the two links answers without user nor
+ * session (the other one is still missing); the second one changes the email and logs in.
+ */
+export const verifyEmailChange = (tokenHash: string) =>
+  supabase.auth.verifyOtp({ token_hash: tokenHash, type: 'email_change' });
+
+/** The session again from Supabase, with the account as it is now (e.g. the email just changed). */
+export const refreshSession = () => supabase.auth.refreshSession();
+
 /** Current session. `undefined` while it's being restored from storage, `null` when logged out. */
 export function useSession() {
   const [session, setSession] = useState<Session | null | undefined>(undefined);
