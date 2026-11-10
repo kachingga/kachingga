@@ -44,7 +44,7 @@ Proyecto de **Kachingga**, una organización de amigos (repo: `github.com/kachin
 | Mercado Pago | `docs/decisiones/mercado-pago.md` (no es parte de ninguna versión) |
 | Conflictos de git, rebases, PRs | `docs/claude/repo/git-prs-y-conflictos.md` + "Conflictos" del `CLAUDE.md` de cada app |
 | Hooks, `package.json`, `bunfig.toml`, Prettier, versiones de TS / React | `docs/claude/repo/tooling.md` |
-| Cualquier cosa que toque permisos, login, secretos o datos de otros | "Seguridad" (abajo) + checklist de `apps/api/CLAUDE.md` + `docs/claude/api/seguridad.md` |
+| Cualquier cosa que toque permisos, login, secretos o datos de otros | "Seguridad" (abajo) + checklist de `apps/api/CLAUDE.md` + `docs/claude/api/seguridad.md` (+ `docs/claude/web/servidor-y-headers.md` para los headers y la CSP de la web) |
 | Errores en prod, Sentry, UptimeRobot | `docs/claude/repo/monitoreo.md` + `DEPLOY.md` → "Monitoreo" |
 | Saber si una tarea está terminada | "Cuándo una tarea está terminada" (abajo) + plantilla de PR (`.github/pull_request_template.md`) |
 

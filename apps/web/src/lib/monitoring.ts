@@ -50,11 +50,12 @@ export function setMonitoringUser(userId: string | null) {
   if (enabled) Sentry.setUser(userId ? { id: userId } : null);
 }
 
-const withoutQuery = (url: unknown) => (typeof url === 'string' ? url.split('?')[0] : url);
+/** The URL without its query or hash (tRPC inputs carry amounts; filters may be in the URL). */
+const withoutQuery = (url: unknown) => (typeof url === 'string' ? url.split(/[?#]/)[0] : url);
 
 /**
- * Drops console breadcrumbs (they may print data from the screens) and removes the query from
- * fetch and navigation URLs (tRPC inputs carry amounts; filters may be in the URL).
+ * Drops console breadcrumbs (they may print data from the screens) and removes the query and the
+ * hash from fetch and navigation URLs.
  */
 export function scrubBreadcrumb(breadcrumb: Sentry.Breadcrumb): Sentry.Breadcrumb | null {
   if (breadcrumb.category === 'console') return null;
@@ -72,7 +73,7 @@ export function scrubEvent(event: Sentry.ErrorEvent): Sentry.ErrorEvent {
     delete event.request.cookies;
     delete event.request.query_string;
     delete event.request.data;
-    if (event.request.url) event.request.url = event.request.url.split('?')[0];
+    if (event.request.url) event.request.url = event.request.url.split(/[?#]/)[0];
   }
   if (event.user) event.user = { id: event.user.id };
   return event;

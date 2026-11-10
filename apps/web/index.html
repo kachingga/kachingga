@@ -10,17 +10,8 @@
     <meta name="apple-mobile-web-app-title" content="Kachingga" />
     <meta name="apple-mobile-web-app-status-bar-style" content="default" />
     <title>Kachingga</title>
-    <!-- Theme and palette before the first paint (no flash). Same logic and keys as src/lib/theme.ts. -->
-    <script>
-      try {
-        var t = localStorage.getItem('kachingga-theme');
-        if (t === 'dark' || (t !== 'light' && matchMedia('(prefers-color-scheme: dark)').matches))
-          document.documentElement.classList.add('dark');
-        var p = localStorage.getItem('kachingga-palette');
-        if (/^(green|blue|violet|yellow|mono)$/.test(p))
-          document.documentElement.dataset.palette = p;
-      } catch (e) {}
-    </script>
+    <!-- Theme and palette before the first paint (no flash): blocking on purpose. -->
+    <script src="/theme.js"></script>
     <!--
       Splash while the JS downloads and starts: the logo on the app's background (with the
       palette's colors once index.css loaded; the fallbacks are green). React replaces it when it

@@ -39,7 +39,7 @@ URLs, variables y bases de cada entorno: `INFRA.md`.
 7. **Branch `production`** creada desde `main`, con protección contra force-push y borrado.
 8. Comprobar: `GET /health` de cada API responde, y en cada web se puede registrar, loguear y cargar un gasto.
 
-> La web se sirve con `apps/web/server.ts` (Bun): archivos de `apps/web/dist`, todas las rutas a `index.html` (las resuelve React Router) y cache largo en `/assets/*` (tienen hash en el nombre). Las `VITE_*` se leen al buildear: si se cambian en Railway, hay que redeployar `web`.
+> La web se sirve con `apps/web/server.ts` (Bun): archivos de `apps/web/dist`, todas las rutas a `index.html` (las resuelve React Router), cache largo en `/assets/*` (tienen hash en el nombre) y los headers de seguridad. La CSP va como Report-Only hasta cargar `CSP_ENFORCE=true` en el servicio `web` (cuándo y cómo: `docs/claude/web/servidor-y-headers.md`). Las `VITE_*` se leen al buildear: si se cambian en Railway, hay que redeployar `web`.
 
 ## Deploys habituales
 

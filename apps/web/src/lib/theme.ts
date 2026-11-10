@@ -1,8 +1,8 @@
 import { useSyncExternalStore } from 'react';
 
 // Light / dark theme. By default it follows the system; the toggle saves an override in this
-// device. The `.dark` class on <html> is what the CSS reads (index.css). index.html applies the
-// same logic before the first paint, so there's no flash: keep both in sync (same storage key).
+// device. The `.dark` class on <html> is what the CSS reads (index.css). public/theme.js applies
+// the same logic before the first paint, so there's no flash: keep both in sync (same storage key).
 
 export type Theme = 'light' | 'dark';
 
@@ -64,7 +64,7 @@ export function useTheme(): Theme {
 // ─── Palette ──────────────────────────────────────────────────────────────────
 // The app's colors (green by default), picked in Mi cuenta and saved on this device, like the
 // light / dark toggle. `data-palette` on <html> is what the CSS reads (index.css → "Palettes");
-// index.html applies it before the first paint too (same storage key).
+// public/theme.js applies it before the first paint too (same storage key).
 
 export const PALETTES = [
   { id: 'green', name: 'Verde' },

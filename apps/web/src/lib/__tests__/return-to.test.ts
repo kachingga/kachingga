@@ -13,12 +13,28 @@ afterEach(() => sessionStorage.clear());
 describe('safeReturnTo', () => {
   it('keeps paths inside the app', () => {
     expect(safeReturnTo('/grupos/unirme?codigo=ABCDEFGH')).toBe('/grupos/unirme?codigo=ABCDEFGH');
+    expect(safeReturnTo('/grupos/g1/gastos?q=cena#total')).toBe('/grupos/g1/gastos?q=cena#total');
   });
 
   it('never sends to another site', () => {
-    for (const evil of ['https://evil.com', '//evil.com', '/\\evil.com', 'evil.com', '', null]) {
-      expect(safeReturnTo(evil)).toBe('/grupos');
-    }
+    const evil = [
+      'https://evil.com',
+      '//evil.com',
+      '/\\evil.com',
+      '/\\/evil.com',
+      // The browser ignores tabs and line breaks in a URL: these are //evil.com.
+      '/\t/evil.com',
+      '/\n/evil.com',
+      '/\r\n/evil.com',
+      '\t//evil.com',
+      'javascript:alert(1)',
+      '//',
+      'evil.com',
+      '',
+      null,
+      undefined,
+    ];
+    for (const value of evil) expect(safeReturnTo(value), JSON.stringify(value)).toBe('/grupos');
   });
 });
 

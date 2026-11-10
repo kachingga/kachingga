@@ -1,3 +1,5 @@
+import { readFileSync } from 'node:fs';
+import { resolve } from 'node:path';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import { currentPalette, currentTheme, PALETTES, setPalette, setTheme } from '@/lib/theme';
@@ -39,6 +41,41 @@ describe('theme', () => {
     setTheme('light');
     expect(document.documentElement.classList.contains('dark')).toBe(false);
     expect(currentTheme()).toBe('light');
+  });
+});
+
+describe('public/theme.js (before the first paint)', () => {
+  // Tests run from apps/web.
+  const run = () => window.eval(readFileSync(resolve('public/theme.js'), 'utf8'));
+
+  afterEach(() => {
+    localStorage.clear();
+    document.documentElement.classList.remove('dark');
+    delete document.documentElement.dataset.palette;
+    vi.restoreAllMocks();
+  });
+
+  it('applies what theme.ts saved, with the same keys', () => {
+    mockSystem(false);
+    setTheme('dark');
+    setPalette('violet');
+    document.documentElement.classList.remove('dark');
+    delete document.documentElement.dataset.palette;
+
+    run();
+
+    expect(document.documentElement.classList.contains('dark')).toBe(true);
+    expect(document.documentElement.dataset.palette).toBe('violet');
+  });
+
+  it('follows the system when nothing was picked, and ignores unknown palettes', () => {
+    mockSystem(true);
+    localStorage.setItem('kachingga-palette', 'rosa');
+
+    run();
+
+    expect(document.documentElement.classList.contains('dark')).toBe(true);
+    expect(document.documentElement.dataset.palette).toBeUndefined();
   });
 });
 
