@@ -30,8 +30,9 @@ export async function setupTestApi() {
   const { createCallerFactory } = await import('../../trpc/init')
   const createCaller = createCallerFactory(appRouter)
 
-  // A tRPC caller authenticated as a fake Supabase user.
-  const caller = (userId: string) => createCaller({ user: { id: userId, email: `${userId}@test.dev` } as User })
+  // A tRPC caller authenticated as a fake Supabase user. With `ip`, it's rate limited like a real
+  // HTTP request (per-user write limit).
+  const caller = (userId: string, ip?: string) => createCaller({ user: { id: userId, email: `${userId}@test.dev` } as User, ip })
 
   // Id of one of the group's built-in categories (FOOD, OTHER…), as a member sees it.
   const categoryId = async (userId: string, groupId: string, key: string) =>

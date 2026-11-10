@@ -7,8 +7,9 @@
 | Tipo | Dónde | Qué |
 |------|-------|-----|
 | Unit | `src/__tests__/*.test.ts` | Lógica pura (`lib/`, `buildExpenseWhere`) |
-| HTTP | `src/__tests__/http.test.ts` | El servidor real (`index.ts`) por HTTP sin red: Hono + adaptador tRPC + superjson, 401 sin token, 404 |
-| **Integración** | `src/__tests__/integration/` | Routers reales + Prisma contra **PGlite** (Postgres en memoria) armado con las **migraciones reales**. `routers.test.ts` = reglas por router; `scenarios.test.ts` = casos reales del grupo (pagarle a un tercero, quién pagó / entre quiénes, "mis gastos", totales del mes); `authorization.test.ts` = todos los procedures contra un atacante |
+| HTTP | `src/__tests__/http.test.ts` | El servidor real (`index.ts`) por HTTP sin red (Supabase falso): Hono + adaptador tRPC + superjson, 401 sin token, 503 con Supabase caído, 404, CORS, límite por IP (antes de validar el token) y de 1 MB |
+| Errores | `src/__tests__/errors.test.ts` | Qué mensaje llega por HTTP: lo inesperado sale genérico, lo de negocio tal cual, un input inválido con su primer problema |
+| **Integración** | `src/__tests__/integration/` | Routers reales + Prisma contra **PGlite** (Postgres en memoria) armado con las **migraciones reales**. `routers.test.ts` = reglas por router; `scenarios.test.ts` = casos reales del grupo (pagarle a un tercero, quién pagó / entre quiénes, "mis gastos", totales del mes); `authorization.test.ts` = todos los procedures contra un atacante y todas las mutations contra un grupo archivado; `limits.test.ts` = cupos, topes, carreras y límite de escrituras por usuario |
 
 ## Integración (`setupTestApi`)
 
@@ -22,5 +23,7 @@ await ana.groups.create({ ... })
 - `setupTestApi` reemplaza `../../db` por un Prisma sobre PGlite (`mock.module`). Cada archivo arranca con una base vacía y con todas las migraciones aplicadas: si una migración nueva rompe, estos tests fallan.
 - **Supabase** no se usa en los tests (el caller arma el usuario a mano). Lo que llama a su API de admin (`profile.deleteAccount`) se prueba reemplazando `../../lib/supabase` con `mock.module` antes de `setupTestApi()`, con un `getSupabase()` falso (ver `deleteAccount.test.ts`).
 - Usar usuarios distintos por test (ver `users()` en `routers.test.ts`) para que los tests no dependan entre sí.
+- `caller(userId)` no tiene límite de escrituras; `caller(userId, ip)` sí, como un pedido HTTP real.
+- **Carreras:** `Promise.all` de dos llamadas sirve en PGlite (las consultas de cada una se intercalan y las transacciones esperan su turno). Chequear la invariante (ej. "queda al menos una categoría activa"), no un orden.
 - **Cada procedure nuevo o cambiado lleva tests de integración** que cubran: sin login (`UNAUTHORIZED`), no miembro (`NOT_FOUND`), grupo archivado si escribe, el caso feliz y cada regla de negocio que valide (con el mensaje en español).
 - Lógica nueva en `lib/` → test unit además.

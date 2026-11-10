@@ -29,9 +29,9 @@ API en Hono + tRPC sobre Bun, con Prisma contra PostgreSQL en Supabase. Paquete 
 2. Si toca un grupo: `requireMembership` / `requireActiveGroup` **antes** de leer o escribir nada. Si recibe un id de gasto, pago o participante, buscarlo y chequear su `groupId` (nunca confiar en un `groupId` del input para un recurso que ya existe).
 3. Ids de participantes en el input → `assertParticipantsInGroup`.
 4. Datos de una persona → filtrar por `ctx.user.id`.
-5. Input validado con Zod, con límites de largo y de montos.
-6. **Agregarlo a `src/__tests__/integration/authorization.test.ts`**: en `attacks` si toca un grupo, o en `notGroupScoped` con el motivo. Si no, ese test falla.
-7. Si es caro o se presta a fuerza bruta, sumarle un límite en `PROCEDURE_RULES` (`lib/rateLimit.ts`).
+5. Input validado con Zod, **con tope en todo**: largo de los textos, montos, ids con `id` de `schemas.ts` (nunca `z.string()` suelto) y `.max()` en todo array. Sin tope, un solo pedido puede llenar la base.
+6. **Agregarlo a `src/__tests__/integration/authorization.test.ts`**: en `attacks` si toca un grupo, o en `notGroupScoped` con el motivo. Si es una mutation, además en `archivedWrites` (se rechaza en un grupo archivado) o en `writableWhenArchived` con el motivo. Si no, ese test falla.
+7. Si es caro o se presta a fuerza bruta, sumarle un límite en `PROCEDURE_RULES` (`lib/rateLimit.ts`). Si crea filas que crecen con el uso, ¿necesita un cupo? (`lib/quotas.ts`, y la regla en el `CLAUDE.md` raíz).
 8. Tests de integración: sin login, no miembro, grupo archivado si escribe, caso feliz y cada regla de negocio (`docs/claude/api/tests.md`).
 
 ## Comandos
@@ -71,13 +71,13 @@ bun run db:seed                  # datos de prueba en DEV
 
 ```
 src/
-├── index.ts              # Hono: GET /health, GET /health/db (monitoreo) + tRPC en /trpc/*
+├── index.ts              # Hono: GET /health, GET /health/db (monitoreo) + tRPC en /trpc/* (antes: límite por IP y de 1 MB)
 ├── schemas.ts            # Zod + helpers puros compartidos con la web (@kachingga/api/schemas)
-├── trpc/                 # init.ts (superjson, errores Prisma, rate limit, procedures base), context.ts
+├── trpc/                 # init.ts (superjson, errorFormatter, errores Prisma, límite de escrituras, procedures base), context.ts
 │                         # (token de Supabase → ctx.user), router.ts (AppRouter), routers/ (uno por dominio)
 ├── db/                   # schema.prisma (generator + datasource), models/*.prisma (uno por dominio), migrations/,
 │                         # index.ts (`prisma`: PrismaClient con @prisma/adapter-pg), generated/ (gitignoreado)
-├── lib/                  # access, splits, balances, summary, rates, exportExpenses, paymentAlias, rateLimit…
+├── lib/                  # access, splits, balances, summary, rates, exportExpenses, paymentAlias, rateLimit, quotas…
 └── __tests__/            # bun:test (unit, HTTP, integración con PGlite)
 scripts/                  # new-migration.ts (db:migrate:new), seed.ts (db:seed)
 ```

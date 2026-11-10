@@ -3,13 +3,13 @@ import { z } from 'zod'
 import { prisma } from '../../db'
 import { assertParticipantsInGroup, requireActiveGroup, requireMembership } from '../../lib/access'
 import { resolveExchangeRate } from '../../lib/rates'
-import { settlementInput } from '../../schemas'
+import { id, settlementInput } from '../../schemas'
 import { protectedProcedure, router } from '../init'
 
 const people = { from: { select: { id: true, name: true } }, to: { select: { id: true, name: true } } }
 
 export const settlementsRouter = router({
-  list: protectedProcedure.input(z.object({ groupId: z.string() })).query(async ({ ctx, input }) => {
+  list: protectedProcedure.input(z.object({ groupId: id })).query(async ({ ctx, input }) => {
     await requireMembership(input.groupId, ctx.user.id)
     return prisma.settlement.findMany({
       where: { groupId: input.groupId, deletedAt: null },
@@ -40,7 +40,7 @@ export const settlementsRouter = router({
     })
   }),
 
-  delete: protectedProcedure.input(z.object({ settlementId: z.string() })).mutation(async ({ ctx, input }) => {
+  delete: protectedProcedure.input(z.object({ settlementId: id })).mutation(async ({ ctx, input }) => {
     const settlement = await prisma.settlement.findUnique({ where: { id: input.settlementId } })
     if (!settlement || settlement.deletedAt) throw new TRPCError({ code: 'NOT_FOUND', message: 'Pago no encontrado' })
     await requireActiveGroup(settlement.groupId, ctx.user.id)

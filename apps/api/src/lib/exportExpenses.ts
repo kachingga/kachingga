@@ -73,9 +73,13 @@ const CSV_COLUMNS = [
   'mi_parte_en_moneda_saldo',
 ] as const
 
+// A text cell starting like a formula (=, +, -, @, tab, CR) gets a leading ' so Excel / Sheets show it as
+// text: otherwise anyone in the group could put a formula in a description and run it in another's sheet.
+const FORMULA_START = /^[=+\-@\t\r]/
+
 function csvCell(value: string | number | null) {
   if (value === null) return ''
-  const text = typeof value === 'number' ? value.toFixed(2) : value
+  const text = typeof value === 'number' ? value.toFixed(2) : FORMULA_START.test(value) ? `'${value}` : value
   return /[",\n\r]/.test(text) ? `"${text.replace(/"/g, '""')}"` : text
 }
 

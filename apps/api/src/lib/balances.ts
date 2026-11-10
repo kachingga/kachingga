@@ -32,26 +32,30 @@ export function balanceCurrency(movement: Movement, baseCurrency: Currency): { c
   return { currency: movement.currency, rate: 1 }
 }
 
-// Greedy: repeatedly match the biggest debtor with the biggest creditor. At most n - 1 transfers.
+// Greedy: the biggest debtor pays the biggest creditor, and so on down both lists (sorted once, so
+// it stays fast with many people). Each transfer settles at least one of the two: at most n - 1.
 export function minimizeTransfers(balances: { participantId: string; amountCents: number }[]): Transfer[] {
   // A non-finite balance never reaches zero and would loop forever, blocking the whole API.
   if (balances.some((b) => !Number.isFinite(b.amountCents))) throw new Error('Non-finite balance')
+  const byAmount = (a: { amountCents: number }, b: { amountCents: number }) => b.amountCents - a.amountCents
   const creditors = balances.filter((b) => b.amountCents > 0).map((b) => ({ ...b }))
   const debtors = balances.filter((b) => b.amountCents < 0).map((b) => ({ ...b, amountCents: -b.amountCents }))
+  creditors.sort(byAmount)
+  debtors.sort(byAmount)
   const transfers: Transfer[] = []
 
-  while (creditors.length > 0 && debtors.length > 0) {
-    creditors.sort((a, b) => b.amountCents - a.amountCents)
-    debtors.sort((a, b) => b.amountCents - a.amountCents)
-    const creditor = creditors[0]!
-    const debtor = debtors[0]!
+  let c = 0
+  let d = 0
+  while (c < creditors.length && d < debtors.length) {
+    const creditor = creditors[c]!
+    const debtor = debtors[d]!
     const amountCents = Math.min(creditor.amountCents, debtor.amountCents)
 
     transfers.push({ fromId: debtor.participantId, toId: creditor.participantId, amountCents })
     creditor.amountCents -= amountCents
     debtor.amountCents -= amountCents
-    if (creditor.amountCents === 0) creditors.shift()
-    if (debtor.amountCents === 0) debtors.shift()
+    if (creditor.amountCents === 0) c += 1
+    if (debtor.amountCents === 0) d += 1
   }
   return transfers
 }

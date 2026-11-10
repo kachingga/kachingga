@@ -2,7 +2,8 @@ import { TRPCError } from '@trpc/server'
 import { z } from 'zod'
 import { prisma } from '../../db'
 import { requireActiveGroup } from '../../lib/access'
-import { participantName, paymentAlias } from '../../schemas'
+import { assertRoomForParticipant } from '../../lib/quotas'
+import { id, participantName, paymentAlias } from '../../schemas'
 import { protectedProcedure, router } from '../init'
 
 async function findParticipant(participantId: string, userId: string) {
@@ -14,12 +15,13 @@ async function findParticipant(participantId: string, userId: string) {
 
 export const participantsRouter = router({
   // Someone without an account (yet). They can claim it later with the invite code.
-  add: protectedProcedure.input(z.object({ groupId: z.string(), name: participantName })).mutation(async ({ ctx, input }) => {
+  add: protectedProcedure.input(z.object({ groupId: id, name: participantName })).mutation(async ({ ctx, input }) => {
     await requireActiveGroup(input.groupId, ctx.user.id)
+    await assertRoomForParticipant(input.groupId)
     return prisma.participant.create({ data: { groupId: input.groupId, name: input.name } })
   }),
 
-  rename: protectedProcedure.input(z.object({ participantId: z.string(), name: participantName })).mutation(async ({ ctx, input }) => {
+  rename: protectedProcedure.input(z.object({ participantId: id, name: participantName })).mutation(async ({ ctx, input }) => {
     await findParticipant(input.participantId, ctx.user.id)
     return prisma.participant.update({ where: { id: input.participantId }, data: { name: input.name } })
   }),
@@ -35,7 +37,7 @@ export const participantsRouter = router({
   }),
 
   // Only for participants without account that never appear in an expense or settlement.
-  remove: protectedProcedure.input(z.object({ participantId: z.string() })).mutation(async ({ ctx, input }) => {
+  remove: protectedProcedure.input(z.object({ participantId: id })).mutation(async ({ ctx, input }) => {
     const participant = await findParticipant(input.participantId, ctx.user.id)
     if (participant.userId) {
       throw new TRPCError({ code: 'BAD_REQUEST', message: 'No se puede quitar a alguien que ya tiene cuenta' })
@@ -48,7 +50,9 @@ export const participantsRouter = router({
     if (counts && counts.expensesPaid + counts.splits + counts.settlementsPaid + counts.settlementsGotten > 0) {
       throw new TRPCError({ code: 'BAD_REQUEST', message: 'Tiene gastos o pagos cargados; no se puede quitar' })
     }
-    await prisma.participant.delete({ where: { id: participant.id } })
+    // Only while it still has no account: someone may have claimed it with the invite code meanwhile.
+    const { count } = await prisma.participant.deleteMany({ where: { id: participant.id, userId: null } })
+    if (count === 0) throw new TRPCError({ code: 'BAD_REQUEST', message: 'No se puede quitar a alguien que ya tiene cuenta' })
     return { ok: true }
   }),
 })

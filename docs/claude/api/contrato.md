@@ -11,7 +11,7 @@ Schema en `src/db/models/*.prisma`.
 | `Group` | `name`, `baseCurrency`, `inviteCode` (único), `createdById`, `archivedAt` |
 | `Participant` | `groupId`, `name`, `userId?` (Supabase; `null` = sin cuenta), `paymentAlias?` (alias propio del grupo). Único `(groupId, userId)` |
 | `UserProfile` | `userId` (id de Supabase, clave), `paymentAlias?` (alias de la cuenta, para todos los grupos) |
-| `Category` | `groupId`, `name`, `icon` (uno de `categoryIcons`), `color` (uno de `categoryColors`: 12 nombres de la paleta de categorías, `tomato` … `cocoa`, nunca hex; la migración `colores_de_categorias` pasó los nombres viejos a estos), `defaultKey?` (`FOOD`…`OTHER` en las 8 que trae cada grupo; `null` = creada por alguien), `archivedAt?`. Nombre único entre las activas del grupo (en la API, sin distinguir mayúsculas) |
+| `Category` | `groupId`, `name`, `icon` (uno de `categoryIcons`), `color` (uno de `categoryColors`: 12 nombres de la paleta de categorías, `tomato` … `cocoa`, nunca hex; la migración `colores_de_categorias` pasó los nombres viejos a estos), `defaultKey?` (`FOOD`…`OTHER` en las 8 que trae cada grupo; `null` = creada por alguien), `archivedAt?`. Nombre único entre las activas del grupo, sin distinguir mayúsculas: lo chequea la API y lo asegura el índice parcial `Category_active_name_key` (solo en la migración `nombre_de_categoria_unico`: Prisma no lo puede expresar) |
 | `Expense` | `description`, `categoryId` (del mismo grupo), `date`, `amountCents`, `currency`, `exchangeRate?`, `splitType`, `paidById`, `createdById`, `deletedAt?` |
 | `ExpenseSplit` | `expenseId`, `participantId`, `amountCents` (parte ya resuelta), `percentage?` (solo `PERCENTAGE`). Único `(expenseId, participantId)`, cascade al borrar el gasto |
 | `Settlement` | `fromId`, `toId`, `amountCents`, `currency`, `exchangeRate?`, `date`, `note?`, `createdById`, `deletedAt?` |
@@ -23,13 +23,13 @@ Schema en `src/db/models/*.prisma`.
   - `currency != base` y `exchangeRate != null` → convertido (1 unidad = `exchangeRate` de la base)
   - `currency != base` y `exchangeRate == null` → "mantener moneda", saldo propio
 - En el input de la API eso se expresa con `currency`, `exchangeRate?` y `keepCurrency` (`resolveExchangeRate` decide qué se guarda). Sin `exchangeRate`, usa la cotización por defecto (blue para USD, oficial para el resto) si el par es ARS ↔ otra moneda; entre dos extranjeras responde pidiéndolo a mano. El oficial del dólar o uno manual los manda la app; en la base se guarda solo el número, no de dónde salió. Un `exchangeRate` manual tiene tope (`MAX_EXCHANGE_RATE` = 1.000.000 en `schemas.ts`): más arriba, monto × tipo de cambio deja de ser exacto y un valor infinito colgaba el cálculo de transferencias.
-- **`date` de `Expense` y `Settlement` es un día del calendario**, no un instante: se guarda a las **12:00 UTC** de ese día y se lee siempre en UTC (`toISOString().slice(0, 10)`, como el export). Así todos ven el mismo día, estén en la zona horaria que estén. Los filtros por fecha van de 00:00 a 23:59:59.999 UTC. (Lo cargado antes al mediodía de Argentina, 15:00 UTC, cae en el mismo día.)
+- **`date` de `Expense` y `Settlement` es un día del calendario**, no un instante: se guarda a las **12:00 UTC** de ese día y se lee siempre en UTC (`toISOString().slice(0, 10)`, como el export). Así todos ven el mismo día, estén en la zona horaria que estén. Los filtros por fecha van de 00:00 a 23:59:59.999 UTC. Toda fecha del input (gasto, pago, filtros) va de 2000 a 2100. (Lo cargado antes al mediodía de Argentina, 15:00 UTC, cae en el mismo día.)
 - `userId` / `createdById` son ids de Supabase Auth (no hay tabla de usuarios propia). Al borrar una cuenta, los `createdById` no se tocan (historial de quién cargó qué).
 - Borrados lógicos con `deletedAt` en `Expense` y `Settlement`: **toda query de gastos / pagos filtra `deletedAt: null`**.
 
 ## Procedures tRPC
 
-Todos con `protectedProcedure` salvo `health.ping`. Inputs en `src/schemas.ts`.
+Todos con `protectedProcedure` salvo `health.ping`. Inputs en `src/schemas.ts`, con topes (ids ≤ 40, listas ≤ 100: `docs/claude/api/seguridad.md` → "Límites contra abuso"). Los que crean algo con cupo (`groups.create`, `participants.add`, `groups.join` como nuevo, `categories.create`, `savedFilters.create`) responden `BAD_REQUEST` con el mensaje al llegar al cupo (`lib/quotas.ts`).
 
 | Procedure | Tipo | Qué hace |
 |-----------|------|----------|
@@ -57,7 +57,7 @@ Todos con `protectedProcedure` salvo `health.ping`. Inputs en `src/schemas.ts`.
 | `expenses.get` / `create` / `update` / `delete` | query / mutation | Cada gasto trae `category` (`{ id, name, icon, color }`). `categoryId` del input tiene que ser del grupo y activa (al editar se puede dejar la que ya tenía aunque esté archivada); sin `categoryId` → "Otros" del grupo. `update` reemplaza el gasto y sus partes; `delete` es lógico |
 | `settlements.list` / `create` / `delete` | query / mutation | Pagos manuales (más nuevo primero) |
 | `balances.get` | query | `[{ currency, balances: [{ participantId, amountCents }], transfers: [{ fromId, toId, amountCents }] }]`, base primero |
-| `savedFilters.list` / `create` / `delete` | query / mutation | Solo los del usuario |
+| `savedFilters.list` / `create` / `delete` | query / mutation | Solo los del usuario; andan también en grupos archivados (son personales). `create` guarda lo que parseó `expenseFilters`, no el JSON que llegó |
 | `rates.get` | query | `{ currency (no ARS), source?: 'blue' \| 'oficial' }` → `{ buy, sell, mid, updatedAt, source }`: 1 unidad en ARS, para precargar el tipo de cambio. Sin `source`: blue para USD, oficial para el resto. `blue` con otra moneda → `BAD_REQUEST` |
 
 **`expenseFilters`:** `paidById`, `splitParticipantId`, `involvedParticipantId` (pagó **o** participa), `categoryIds[]` (ids de categorías del grupo), `dateFrom`, `dateTo`, `minAmountCents`, `maxAmountCents`, `search`.
@@ -78,6 +78,7 @@ Todos con `protectedProcedure` salvo `health.ping`. Inputs en `src/schemas.ts`.
 | Categorías por grupo (las por defecto, cuál usa un gasto, nombres únicos) | `lib/categories.ts` (`defaultCategoryRows`, `resolveExpenseCategory`, `assertCategoryNameFree`) + `routers/categories.ts`; las 8 por defecto, íconos y colores válidos en `schemas.ts` (`defaultCategories`, `categoryIcons`, `categoryColors`) |
 | Alias para cobrar (cuál vale en cada grupo) | `lib/paymentAlias.ts`; formato en `schemas.ts` (`paymentAlias`) |
 | Borrar mi cuenta (desvincular, no sacar de los grupos) | `profile.deleteAccount` en `routers/profile.ts`; lo que queda pendiente, `myBalances` de `groups.list` |
+| Cupos (grupos por usuario, personas y categorías por grupo, filtros guardados) | `lib/quotas.ts` (valores y mensajes) |
 
 ## Convenciones de routers
 
@@ -85,4 +86,4 @@ Todos con `protectedProcedure` salvo `health.ping`. Inputs en `src/schemas.ts`.
 - Al principio de cada procedure: `requireMembership` (lectura) o `requireActiveGroup` (escritura). Si recibe ids de participantes: `assertParticipantsInGroup`. Si no es miembro → `NOT_FOUND` (no revelar que existe).
 - Input siempre validado con Zod. Schemas reusables por la app → `schemas.ts`.
 - Prisma directo desde el procedure; a `lib/` solo lo que se reusa o es lógica pura testeable.
-- Errores con `TRPCError` y mensaje **en español** (la app lo muestra tal cual). P2002 / P2025 de Prisma ya se traducen a `CONFLICT` / `NOT_FOUND` en `init.ts`.
+- Errores con `TRPCError` y mensaje **en español** (la app lo muestra tal cual). P2002 / P2025 de Prisma ya se traducen a `CONFLICT` / `NOT_FOUND` en `init.ts`; cualquier otro error inesperado sale como "Error interno. Intentá de nuevo." (`errorFormatter`; un `INTERNAL_SERVER_ERROR` que tiramos con mensaje propio lo conserva), y un input inválido, con el mensaje de su primer problema (por eso los mensajes de Zod que puede ver alguien van en español).
