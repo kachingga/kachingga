@@ -77,7 +77,7 @@ Nunca usar `prisma migrate reset` ni `prisma db push` contra ninguna base.
 
 ## Backups
 
-**Qué:** cada lunes a las 06:00 UTC, `.github/workflows/backup.yml` hace un `pg_dump` de la base de **prod** (schemas `public` = los datos de la app, y `auth` = las cuentas de Supabase), formato custom (`-Fc`). **Dónde:** como artifact del run en GitHub Actions (`kachingga-prod-AAAA-MM-DD`), **90 días** (~12 backups). Si falla, GitHub le manda un mail a quien tocó el cron por última vez.
+**Qué:** todos los días a las 06:00 UTC (03:00 en Argentina), `.github/workflows/backup.yml` hace un `pg_dump` de la base de **prod** (schemas `public` = los datos de la app, y `auth` = las cuentas de Supabase), formato custom (`-Fc`). **Dónde:** como artifact del run en GitHub Actions (`kachingga-prod-AAAA-MM-DD`), **90 días** (~90 backups). Si falla, GitHub le manda un mail a quien tocó el cron por última vez.
 
 **Siempre cifrado:** el repo es público y cualquiera logueado en GitHub puede bajar los artifacts. El dump pasa directo a `gpg` (AES256) con `BACKUP_PASSPHRASE`: nunca queda un archivo sin cifrar. **Sin la passphrase los backups no se abren**: está en `apps/api/.env.prod` y tiene que estar también en el gestor de contraseñas de Galo.
 
@@ -90,7 +90,7 @@ p=$(openssl rand -base64 32); echo "BACKUP_PASSPHRASE=$p" >> apps/api/.env.prod;
 
 Después, guardar la passphrase en el gestor de contraseñas y correrlo una vez a mano para probarlo.
 
-**Correrlo a mano:** `gh workflow run backup.yml` (o Actions → "Backup semanal de prod" → *Run workflow*).
+**Correrlo a mano:** `gh workflow run backup.yml` (o Actions → "Backup diario de prod" → *Run workflow*).
 
 **Restaurar** (necesita `gpg` y el cliente de Postgres 17: `brew install gnupg libpq`):
 
