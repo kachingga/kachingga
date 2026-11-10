@@ -24,7 +24,7 @@ Schema en `src/db/models/*.prisma`.
   - `currency != base` y `exchangeRate == null` → "mantener moneda", saldo propio
 - En el input de la API eso se expresa con `currency`, `exchangeRate?` y `keepCurrency` (`resolveExchangeRate` decide qué se guarda). Sin `exchangeRate`, usa la cotización por defecto (blue para USD, oficial para el resto) si el par es ARS ↔ otra moneda; entre dos extranjeras responde pidiéndolo a mano. El oficial del dólar o uno manual los manda la app; en la base se guarda solo el número, no de dónde salió. Un `exchangeRate` manual tiene tope (`MAX_EXCHANGE_RATE` = 1.000.000 en `schemas.ts`): más arriba, monto × tipo de cambio deja de ser exacto y un valor infinito colgaba el cálculo de transferencias.
 - **`date` de `Expense` y `Settlement` es un día del calendario**, no un instante: se guarda a las **12:00 UTC** de ese día y se lee siempre en UTC (`toISOString().slice(0, 10)`, como el export). Así todos ven el mismo día, estén en la zona horaria que estén. Los filtros por fecha van de 00:00 a 23:59:59.999 UTC. (Lo cargado antes al mediodía de Argentina, 15:00 UTC, cae en el mismo día.)
-- `userId` / `createdById` son ids de Supabase Auth (no hay tabla de usuarios propia).
+- `userId` / `createdById` son ids de Supabase Auth (no hay tabla de usuarios propia). Al borrar una cuenta, los `createdById` no se tocan (historial de quién cargó qué).
 - Borrados lógicos con `deletedAt` en `Expense` y `Settlement`: **toda query de gastos / pagos filtra `deletedAt: null`**.
 
 ## Procedures tRPC
@@ -35,7 +35,7 @@ Todos con `protectedProcedure` salvo `health.ping`. Inputs en `src/schemas.ts`.
 |-----------|------|----------|
 | `health.ping` | query | Público. Chequeo de vida |
 | `health.me` | query | Usuario logueado (id, email) |
-| `groups.list` | query | Mis grupos (`includeArchived?`), con `_count.participants`, `participants` (id y nombre de cada uno, del más viejo al más nuevo: las caritas de la lista) y `myBalanceCents` (mi saldo en la moneda base: positivo = me deben; lo mantenido en otras monedas no cuenta). 3 queries en total, no una por grupo |
+| `groups.list` | query | Mis grupos (`includeArchived?`), con `_count.participants`, `participants` (id y nombre de cada uno, del más viejo al más nuevo: las caritas de la lista), `myName` (mi nombre en el grupo), `myBalanceCents` (mi saldo en la moneda base: positivo = me deben; lo mantenido en otras monedas no cuenta) y `myBalances` (`[{ currency, amountCents }]`: mis saldos distintos de cero en cada moneda, base primero; lo usa la confirmación de "Borrar mi cuenta"). 3 queries en total, no una por grupo |
 | `groups.get` | query | Grupo + participantes (`isMe`, `hasAccount`, `paymentAlias`, `paymentAliasSource`: `'group'` / `'account'` / `null`; sin cuenta, siempre `null`) + `myParticipantId` |
 | `groups.create` | mutation | Crea grupo + mi participante (`myName`) + sus 8 categorías por defecto |
 | `groups.rename` | mutation | Cambia el nombre |
@@ -46,6 +46,7 @@ Todos con `protectedProcedure` salvo `health.ping`. Inputs en `src/schemas.ts`.
 | `participants.add` / `rename` / `remove` | mutation | ABM de participantes |
 | `participants.setPaymentAlias` | mutation | `{ participantId, paymentAlias \| null }`: alias propio del grupo. **Solo el propio participante** (`FORBIDDEN` con cualquier otro, tenga cuenta o no). `null` = volver al de la cuenta |
 | `profile.get` / `profile.update` | query / mutation | Alias de la cuenta del usuario logueado (`{ paymentAlias \| null }`) |
+| `profile.deleteAccount` | mutation | Sin input: borra **la cuenta del que llama**. En una transacción desvincula todos sus participantes (`userId` y `paymentAlias` en `null`: quedan sin cuenta, con sus gastos, pagos y saldos) y borra su `UserProfile` y sus `SavedFilter`; después, borrado lógico en Supabase Auth (`auth.admin.deleteUser(id, true)`). Primero la base y después Supabase: nunca queda una cuenta borrada vinculada a un grupo, y como la parte de la base se puede repetir, si Supabase falla (`INTERNAL_SERVER_ERROR`, "Intentá de nuevo") reintentar termina el trabajo. Los `createdById` quedan como historial. Límite propio de 5 cada 10 min por IP |
 | `categories.list` | query | `{ groupId }` → todas las categorías del grupo en orden (las 8 por defecto primero), con `archived` y `expenseCount` (gastos activos que la usan) |
 | `categories.create` / `update` | mutation | `{ groupId, name, icon, color }` / `{ categoryId, name?, icon?, color? }`. Cualquier miembro; grupo archivado = solo lectura. `CONFLICT` si el nombre ya está entre las activas |
 | `categories.suggest` | query | `{ groupId, description }` → `{ categoryId, source: 'history' \| 'keyword' }` o `null`: categoría sugerida para un gasto nuevo (historial del grupo, si no palabras clave → la por defecto con ese `defaultKey`). Solo activas del grupo. Lectura: anda en grupos archivados. Límite propio de 60/min por IP |
@@ -76,6 +77,7 @@ Todos con `protectedProcedure` salvo `health.ping`. Inputs en `src/schemas.ts`.
 | Categoría automática (historial, palabras clave) | `lib/categorySuggestion.ts` (`suggestFromHistory`, `suggestDefaultKey`, puros; la lista de palabras clave está ahí) + `categories.suggest` en `routers/categories.ts` (últimos 500 gastos activos con categoría activa) |
 | Categorías por grupo (las por defecto, cuál usa un gasto, nombres únicos) | `lib/categories.ts` (`defaultCategoryRows`, `resolveExpenseCategory`, `assertCategoryNameFree`) + `routers/categories.ts`; las 8 por defecto, íconos y colores válidos en `schemas.ts` (`defaultCategories`, `categoryIcons`, `categoryColors`) |
 | Alias para cobrar (cuál vale en cada grupo) | `lib/paymentAlias.ts`; formato en `schemas.ts` (`paymentAlias`) |
+| Borrar mi cuenta (desvincular, no sacar de los grupos) | `profile.deleteAccount` en `routers/profile.ts`; lo que queda pendiente, `myBalances` de `groups.list` |
 
 ## Convenciones de routers
 

@@ -87,6 +87,7 @@ const notGroupScoped: Record<string, string> = {
   'groups.join': 'by invite code, on purpose (rate limited)',
   'profile.get': "only the caller's profile",
   'profile.update': "only the caller's profile",
+  'profile.deleteAccount': "only the caller's account (takes no input; tested in deleteAccount.test.ts)",
   'rates.get': 'public exchange rate',
 }
 

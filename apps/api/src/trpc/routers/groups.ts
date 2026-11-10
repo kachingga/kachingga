@@ -14,8 +14,9 @@ const inviteCode = z.string().trim().toUpperCase().min(1)
 
 export const groupsRouter = router({
   // My groups, each with its people (`participants`: id and name, oldest first, for the faces on the
-  // list) and my balance in its base currency (`myBalanceCents`: positive = they owe me).
-  // Three queries in total, whatever the number of groups.
+  // list), my name in it (`myName`) and my balance in its base currency (`myBalanceCents`: positive =
+  // they owe me). `myBalances`: every currency where my balance isn't zero, base first (what I'd
+  // leave pending if I deleted my account). Three queries in total, whatever the number of groups.
   list: protectedProcedure.input(z.object({ includeArchived: z.boolean().default(false) }).optional()).query(async ({ ctx, input }) => {
     const groups = await prisma.group.findMany({
       where: {
@@ -46,15 +47,21 @@ export const groupsRouter = router({
       }),
     ])
     return groups.map(({ participants, ...group }) => {
-      const myId = participants.find((p) => p.userId === ctx.user.id)!.id
-      const base = computeBalances(
+      const me = participants.find((p) => p.userId === ctx.user.id)!
+      const myBalances = computeBalances(
         group.baseCurrency,
-        [myId],
+        [me.id],
         expenses.filter((e) => e.groupId === group.id),
         settlements.filter((s) => s.groupId === group.id),
-      ).find((b) => b.currency === group.baseCurrency)!
-      const myBalanceCents = base.balances.find((b) => b.participantId === myId)?.amountCents ?? 0
-      return { ...group, participants: participants.map(({ id, name }) => ({ id, name })), myBalanceCents }
+      ).map((b) => ({ currency: b.currency, amountCents: b.balances.find((p) => p.participantId === me.id)?.amountCents ?? 0 }))
+      const myBalanceCents = myBalances.find((b) => b.currency === group.baseCurrency)!.amountCents
+      return {
+        ...group,
+        participants: participants.map(({ id, name }) => ({ id, name })),
+        myName: me.name,
+        myBalanceCents,
+        myBalances: myBalances.filter((b) => b.amountCents !== 0),
+      }
     })
   }),
 
