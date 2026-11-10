@@ -1,5 +1,7 @@
 import { useEffect, useRef } from 'react';
 
+import { Button } from '@/components/ui/button';
+
 /**
  * Infinite scroll for paginated lists: an invisible marker at the end of the list that loads the
  * next page when it comes into view. Where IntersectionObserver isn't available it falls back to
@@ -34,13 +36,14 @@ export function LoadMore({
   if (!hasMore) return null;
   if (!canObserve) {
     return (
-      <button
+      <Button
+        variant="outline"
+        className="mt-4 w-full text-muted-foreground"
         onClick={onLoadMore}
-        disabled={loading}
-        className="press mt-4 w-full rounded-full border bg-card py-2.5 text-sm font-medium text-muted-foreground shadow-soft disabled:opacity-50"
+        loading={loading}
       >
         {loading ? 'Cargando…' : 'Cargar más'}
-      </button>
+      </Button>
     );
   }
   return (

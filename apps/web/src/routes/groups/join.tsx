@@ -1,8 +1,9 @@
 import { useState } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router';
 import { useMutation, useQuery } from '@tanstack/react-query';
-import { ArrowLeft } from 'lucide-react';
-
+import { Card, Field, Page, PageHeader } from '@/components/kit';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import { useTRPC } from '@/lib/trpc';
 
 export function JoinGroup() {
@@ -46,45 +47,31 @@ export function JoinGroup() {
   const showPreview = submittedCode !== null && !preview.isError;
 
   return (
-    <div className="mx-auto w-full max-w-2xl space-y-6">
-      <div className="rise flex items-center gap-3">
-        <button
-          onClick={() => navigate(-1)}
-          aria-label="Volver"
-          className="press grid size-9 shrink-0 place-items-center rounded-full text-lg text-muted-foreground hover:bg-muted"
-        >
-          <ArrowLeft className="size-5" />
-        </button>
-        <h1 className="text-2xl font-bold lg:text-3xl">Unirme con código</h1>
-      </div>
+    <Page>
+      <PageHeader
+        title="Unirme con código"
+        back={{ onClick: () => navigate(-1), label: 'Volver' }}
+      />
 
       {!showPreview && (
-        <form
-          onSubmit={handleCodeSubmit}
-          className="rise rounded-2xl border bg-card p-5 shadow-soft space-y-4"
-        >
-          <div>
-            <label className="block text-sm font-medium text-foreground" htmlFor="code">
-              Código de invitación
-            </label>
-            <input
-              id="code"
-              value={codeInput}
-              onChange={(e) => setCodeInput(e.target.value.toUpperCase())}
-              required
-              placeholder="AB3X7K2M"
-              className="mt-1.5 text-center font-mono uppercase tracking-widest h-11 w-full rounded-xl border border-input bg-card px-3.5 text-base text-foreground placeholder:text-muted-foreground outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 disabled:opacity-50 dark:bg-input/30"
-            />
-          </div>
-          {preview.isError && <p className="text-sm text-destructive">{preview.error.message}</p>}
-          <button
-            type="submit"
-            disabled={preview.isFetching}
-            className="press w-full rounded-full bg-primary py-3 font-semibold text-primary-foreground disabled:opacity-50 shadow-soft"
-          >
-            {preview.isFetching ? 'Buscando…' : 'Buscar grupo'}
-          </button>
-        </form>
+        <Card className="rise">
+          <form onSubmit={handleCodeSubmit} className="space-y-4">
+            <Field label="Código de invitación" htmlFor="code">
+              <Input
+                id="code"
+                value={codeInput}
+                onChange={(e) => setCodeInput(e.target.value.toUpperCase())}
+                required
+                placeholder="AB3X7K2M"
+                className="text-center font-mono uppercase tracking-widest"
+              />
+            </Field>
+            {preview.isError && <p className="text-sm text-destructive">{preview.error.message}</p>}
+            <Button type="submit" size="lg" className="w-full" loading={preview.isFetching}>
+              {preview.isFetching ? 'Buscando…' : 'Buscar grupo'}
+            </Button>
+          </form>
+        </Card>
       )}
 
       {showPreview && preview.isPending && (
@@ -93,26 +80,23 @@ export function JoinGroup() {
 
       {showPreview && preview.isSuccess && (
         <div className="space-y-6">
-          <div className="rounded-2xl border bg-card p-5 shadow-soft">
+          <Card>
             <p className="text-sm text-muted-foreground">Vas a unirte a</p>
             <p className="text-2xl font-bold lg:text-3xl">{preview.data.name}</p>
             <p className="text-sm text-muted-foreground">
               Moneda base: {preview.data.baseCurrency}
             </p>
-          </div>
+          </Card>
 
           {preview.data.alreadyMember ? (
             <div className="space-y-3">
               <p className="text-muted-foreground">Ya sos parte de este grupo.</p>
-              <Link
-                to={`/grupos/${preview.data.id}`}
-                className="press block w-full rounded-full bg-primary py-3 text-center font-semibold text-primary-foreground shadow-soft"
-              >
-                Ir al grupo
-              </Link>
+              <Button asChild size="lg" className="w-full">
+                <Link to={`/grupos/${preview.data.id}`}>Ir al grupo</Link>
+              </Button>
             </div>
           ) : (
-            <div className="rise rounded-2xl border bg-card p-5 shadow-soft space-y-4">
+            <Card className="rise space-y-4">
               <p className="font-medium">¿Quién sos?</p>
 
               {preview.data.unclaimedParticipants.map((p) => (
@@ -123,6 +107,7 @@ export function JoinGroup() {
                   <input
                     type="radio"
                     name="who"
+                    className="size-4 accent-primary"
                     checked={joinAs === 'claim' && selectedParticipantId === p.id}
                     onChange={() => {
                       setJoinAs('claim');
@@ -137,6 +122,7 @@ export function JoinGroup() {
                 <input
                   type="radio"
                   name="who"
+                  className="size-4 accent-primary"
                   checked={joinAs === 'new'}
                   onChange={() => {
                     setJoinAs('new');
@@ -147,34 +133,37 @@ export function JoinGroup() {
               </label>
 
               {joinAs === 'new' && (
-                <input
+                <Input
                   value={newName}
                   onChange={(e) => setNewName(e.target.value)}
                   placeholder="¿Cómo te llamás?"
-                  className="h-11 w-full rounded-xl border border-input bg-card px-3.5 text-base text-foreground placeholder:text-muted-foreground outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 disabled:opacity-50 dark:bg-input/30"
+                  aria-label="Tu nombre"
                 />
               )}
 
               {join.isError && <p className="text-sm text-destructive">{join.error.message}</p>}
 
-              <button
+              <Button
+                size="lg"
+                className="w-full"
                 onClick={handleJoin}
-                disabled={join.isPending || (joinAs === 'new' && !newName.trim())}
-                className="press w-full rounded-full bg-primary py-3 font-semibold text-primary-foreground disabled:opacity-50 shadow-soft"
+                loading={join.isPending}
+                disabled={joinAs === 'new' && !newName.trim()}
               >
                 {join.isPending ? 'Uniéndome…' : 'Unirme'}
-              </button>
-            </div>
+              </Button>
+            </Card>
           )}
 
-          <button
+          <Button
+            variant="link"
+            className="w-full text-muted-foreground"
             onClick={() => setSubmittedCode(null)}
-            className="w-full py-2 text-sm text-muted-foreground underline"
           >
             Ingresar otro código
-          </button>
+          </Button>
         </div>
       )}
-    </div>
+    </Page>
   );
 }

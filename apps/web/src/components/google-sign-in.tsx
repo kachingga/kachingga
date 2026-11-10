@@ -1,5 +1,6 @@
 import { useState } from 'react';
 
+import { Button } from '@/components/ui/button';
 import { signInWithGoogle } from '@/lib/auth';
 
 /** An "o" divider + "Continuar con Google", under the email form of login and register. */
@@ -23,15 +24,16 @@ export function GoogleSignIn() {
       <div className="my-6 flex items-center gap-3 text-xs text-muted-foreground">
         <span className="h-px flex-1 bg-border" />o<span className="h-px flex-1 bg-border" />
       </div>
-      <button
+      <Button
         type="button"
+        variant="google"
+        className="w-full gap-2.5"
         onClick={handleClick}
-        disabled={loading}
-        className="press flex h-11 w-full items-center justify-center gap-2.5 rounded-full border border-google-border bg-google px-3 text-sm font-medium text-google-foreground disabled:opacity-50"
+        loading={loading}
       >
         <GoogleIcon />
         {loading ? 'Abriendo Google…' : 'Continuar con Google'}
-      </button>
+      </Button>
       {error && <p className="mt-2 text-sm text-destructive">{error}</p>}
     </div>
   );

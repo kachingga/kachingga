@@ -2,7 +2,6 @@ import { useState } from 'react';
 import { Link, useLocation, useNavigate, useParams } from 'react-router';
 import { toast } from 'sonner';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { ArrowLeft } from 'lucide-react';
 import type { inferRouterOutputs } from '@trpc/server';
 import type { AppRouter } from '@kachingga/api';
 import { currencies, distributeCents } from '@kachingga/api/schemas';
@@ -13,7 +12,12 @@ import { useExchangeRate } from '@/lib/use-exchange-rate';
 import { ArchivedNotice } from '@/components/archived-notice';
 import { CategoryPicker } from '@/components/category-picker';
 import { ErrorState } from '@/components/error-state';
+import { Card, Chip, Field, Page, PageHeader } from '@/components/kit';
 import { FormSkeleton } from '@/components/skeletons';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { NativeSelect } from '@/components/ui/native-select';
 import { useTRPC } from '@/lib/trpc';
 import { useGoBack } from '@/lib/use-go-back';
 import { buildExpense, byDateDesc, tempId, type Expense } from '@/lib/optimistic';
@@ -280,257 +284,221 @@ function ExpenseFormBody({ groupId, group, expenseId, expense }: FormProps) {
   );
 
   return (
-    <div className="mx-auto w-full max-w-2xl space-y-6">
-      <div className="rise flex items-center gap-3">
-        <button
-          onClick={() => navigate(-1)}
-          aria-label="Volver"
-          className="press grid size-9 shrink-0 place-items-center rounded-full text-lg text-muted-foreground hover:bg-muted"
-        >
-          <ArrowLeft className="size-5" />
-        </button>
-        <h1 className="text-2xl font-bold lg:text-3xl">
-          {isEdit ? 'Editar gasto' : 'Agregar gasto'}
-        </h1>
-      </div>
+    <Page>
+      <PageHeader
+        title={isEdit ? 'Editar gasto' : 'Agregar gasto'}
+        back={{ onClick: () => navigate(-1), label: 'Volver' }}
+      />
 
-      <form
-        onSubmit={handleSubmit}
-        className="rise space-y-5 rounded-2xl border bg-card p-5 shadow-soft"
-      >
-        {/* Monto */}
-        <div>
-          <label className="block text-sm font-medium text-foreground" htmlFor="amount">
-            Monto
-          </label>
-          <NumberInput
-            id="amount"
-            value={amountInput}
-            onValueChange={setAmountInput}
-            required
-            placeholder="0"
-            className="mt-1.5 h-14 font-display text-3xl font-bold tabular w-full rounded-xl border border-input bg-card px-3.5 text-foreground placeholder:text-muted-foreground outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 disabled:opacity-50 dark:bg-input/30"
-          />
-        </div>
+      <Card className="rise">
+        <form onSubmit={handleSubmit} className="space-y-5">
+          <Field label="Monto" htmlFor="amount">
+            <NumberInput
+              id="amount"
+              value={amountInput}
+              onValueChange={setAmountInput}
+              required
+              placeholder="0"
+              className="h-14 font-display text-3xl font-bold tabular"
+            />
+          </Field>
 
-        {/* Descripción */}
-        <div>
-          <label className="block text-sm font-medium text-foreground" htmlFor="description">
-            Descripción
-          </label>
-          <input
-            id="description"
-            value={description}
-            onChange={(e) => setDescription(e.target.value)}
-            required
-            placeholder="Cena"
-            className="mt-1.5 h-11 w-full rounded-xl border border-input bg-card px-3.5 text-base text-foreground placeholder:text-muted-foreground outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 disabled:opacity-50 dark:bg-input/30"
-          />
-        </div>
+          <Field label="Descripción" htmlFor="description">
+            <Input
+              id="description"
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+              required
+              placeholder="Cena"
+            />
+          </Field>
 
-        {/* Categoría */}
-        <div>
-          <div className="flex items-baseline justify-between gap-3">
-            <p className="text-sm font-medium text-foreground" id="category-label">
-              Categoría
-            </p>
-            <Link
-              to={`/grupos/${groupId}/categorias`}
-              className="text-xs text-muted-foreground underline-offset-2 hover:text-foreground hover:underline"
-            >
-              Editar categorías
-            </Link>
+          {/* Categoría */}
+          <div>
+            <div className="flex items-baseline justify-between gap-3">
+              <p className="text-sm font-medium text-foreground" id="category-label">
+                Categoría
+              </p>
+              <Link
+                to={`/grupos/${groupId}/categorias`}
+                className="text-xs text-muted-foreground underline-offset-2 hover:text-foreground hover:underline"
+              >
+                Editar categorías
+              </Link>
+            </div>
+            <div className="mt-1.5">
+              {categories.isPending ? (
+                <div className="h-10 animate-pulse rounded-xl bg-muted" />
+              ) : (
+                <CategoryPicker
+                  categories={categoryOptions}
+                  value={categoryId}
+                  onChange={setCategoryId}
+                />
+              )}
+            </div>
           </div>
-          <div className="mt-1.5">
-            {categories.isPending ? (
-              <div className="h-10 animate-pulse rounded-xl bg-muted" />
-            ) : (
-              <CategoryPicker
-                categories={categoryOptions}
-                value={categoryId}
-                onChange={setCategoryId}
+
+          {/* Fecha y quién pagó, juntos (como el diseño) */}
+          <div className="grid grid-cols-2 gap-3 [&>*]:min-w-0">
+            <Field label="Fecha" htmlFor="date">
+              <Input
+                id="date"
+                type="date"
+                value={dateInput}
+                onChange={(e) => setDateInput(e.target.value)}
+                required
               />
+            </Field>
+            <Field label="Quién pagó" htmlFor="paidBy">
+              <NativeSelect
+                id="paidBy"
+                value={paidById}
+                onChange={(e) => setPaidById(e.target.value)}
+              >
+                {participants.map((p) => (
+                  <option key={p.id} value={p.id}>
+                    {p.name}
+                    {p.isMe ? ' (yo)' : ''}
+                  </option>
+                ))}
+              </NativeSelect>
+            </Field>
+          </div>
+
+          <Field label="Moneda" htmlFor="currency">
+            <NativeSelect
+              id="currency"
+              value={currency}
+              onChange={(e) => {
+                const c = e.target.value as Currency;
+                setCurrency(c);
+                rate.resetFor(c);
+              }}
+            >
+              {currencies.map((c) => (
+                <option key={c} value={c}>
+                  {currencyLabels[c]}
+                </option>
+              ))}
+            </NativeSelect>
+          </Field>
+
+          <ExchangeRateFields rate={rate} amountCents={totalCents} />
+
+          {/* División */}
+          <div>
+            <Label id="split-label">Dividir</Label>
+            <div className="mt-1.5 flex gap-2" role="group" aria-labelledby="split-label">
+              {(['EQUAL', 'AMOUNT', 'PERCENTAGE'] as const).map((t) => (
+                <Chip
+                  key={t}
+                  active={splitType === t}
+                  onClick={() => setSplitType(t)}
+                  className="flex-1"
+                >
+                  {t === 'EQUAL' ? 'Igual' : t === 'AMOUNT' ? 'Por monto' : 'Por %'}
+                </Chip>
+              ))}
+            </div>
+
+            {splitType === 'EQUAL' && (
+              <div className="mt-3 space-y-2">
+                {participants.map((p) => (
+                  <label key={p.id} className="flex items-center gap-3">
+                    <input
+                      type="checkbox"
+                      className="size-4 accent-primary"
+                      checked={equalIds.includes(p.id)}
+                      onChange={(e) =>
+                        setEqualIds(
+                          e.target.checked
+                            ? [...equalIds, p.id]
+                            : equalIds.filter((id) => id !== p.id),
+                        )
+                      }
+                    />
+                    <span className="text-sm">
+                      {p.name}
+                      {p.isMe ? ' (yo)' : ''}
+                    </span>
+                    {equalShares.has(p.id) && (
+                      <span className="ml-auto text-xs text-muted-foreground">
+                        {formatCents(equalShares.get(p.id)!, currency)}
+                      </span>
+                    )}
+                  </label>
+                ))}
+              </div>
+            )}
+
+            {splitType === 'AMOUNT' && (
+              <div className="mt-3 space-y-2">
+                {participants.map((p) => (
+                  <div key={p.id} className="flex items-center gap-3">
+                    <span className="flex-1 text-sm">
+                      {p.name}
+                      {p.isMe ? ' (yo)' : ''}
+                    </span>
+                    <NumberInput
+                      aria-label={`Monto de ${p.name}`}
+                      value={amountShares[p.id] ?? ''}
+                      onValueChange={(v) => setAmountShares({ ...amountShares, [p.id]: v })}
+                      placeholder="0"
+                      className="w-28 text-right"
+                    />
+                  </div>
+                ))}
+                <p
+                  className={`text-xs ${amountSumCents === totalCents ? 'text-positive' : 'text-muted-foreground'}`}
+                >
+                  Suma: {formatCents(amountSumCents, currency)} /{' '}
+                  {formatCents(totalCents, currency)}
+                  {amountSumCents !== totalCents &&
+                    ` (faltan ${formatCents(totalCents - amountSumCents, currency)})`}
+                </p>
+              </div>
+            )}
+
+            {splitType === 'PERCENTAGE' && (
+              <div className="mt-3 space-y-2">
+                {participants.map((p) => (
+                  <div key={p.id} className="flex items-center gap-3">
+                    <span className="flex-1 text-sm">
+                      {p.name}
+                      {p.isMe ? ' (yo)' : ''}
+                    </span>
+                    <div className="flex items-center gap-1">
+                      <NumberInput
+                        aria-label={`Porcentaje de ${p.name}`}
+                        value={percentShares[p.id] ?? ''}
+                        onValueChange={(v) => setPercentShares({ ...percentShares, [p.id]: v })}
+                        placeholder="0"
+                        className="w-24 text-right"
+                      />
+                      <span className="text-sm text-muted-foreground">%</span>
+                    </div>
+                  </div>
+                ))}
+                <p
+                  className={`text-xs ${Math.abs(percentSum - 100) < 0.01 ? 'text-positive' : 'text-muted-foreground'}`}
+                >
+                  Total: {formatNumber(percentSum, 2)}% / 100%
+                  {Math.abs(percentSum - 100) >= 0.01 &&
+                    ` (faltan ${formatNumber(100 - percentSum, 2)}%)`}
+                </p>
+              </div>
             )}
           </div>
-        </div>
 
-        {/* Fecha */}
-        <div className="grid grid-cols-2 gap-3 [&>*]:min-w-0">
-          <div>
-            <label className="block text-sm font-medium text-foreground" htmlFor="date">
-              Fecha
-            </label>
-            <input
-              id="date"
-              type="date"
-              value={dateInput}
-              onChange={(e) => setDateInput(e.target.value)}
-              required
-              className="mt-1.5 h-11 w-full rounded-xl border border-input bg-card px-3.5 text-base text-foreground placeholder:text-muted-foreground outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 disabled:opacity-50 dark:bg-input/30"
-            />
-          </div>
-        </div>
+          {formError && <p className="text-sm text-destructive">{formError}</p>}
 
-        {/* Quién pagó */}
-        <div>
-          <label className="block text-sm font-medium text-foreground" htmlFor="paidBy">
-            Quién pagó
-          </label>
-          <select
-            id="paidBy"
-            value={paidById}
-            onChange={(e) => setPaidById(e.target.value)}
-            className="mt-1.5 h-11 w-full rounded-xl border border-input bg-card px-3.5 text-base text-foreground placeholder:text-muted-foreground outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 disabled:opacity-50 dark:bg-input/30"
-          >
-            {participants.map((p) => (
-              <option key={p.id} value={p.id}>
-                {p.name}
-                {p.isMe ? ' (yo)' : ''}
-              </option>
-            ))}
-          </select>
-        </div>
-
-        {/* Moneda */}
-        <div>
-          <label className="block text-sm font-medium text-foreground" htmlFor="currency">
-            Moneda
-          </label>
-          <select
-            id="currency"
-            value={currency}
-            onChange={(e) => {
-              const c = e.target.value as Currency;
-              setCurrency(c);
-              rate.resetFor(c);
-            }}
-            className="mt-1.5 h-11 w-full rounded-xl border border-input bg-card px-3.5 text-base text-foreground placeholder:text-muted-foreground outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 disabled:opacity-50 dark:bg-input/30"
-          >
-            {currencies.map((c) => (
-              <option key={c} value={c}>
-                {currencyLabels[c]}
-              </option>
-            ))}
-          </select>
-        </div>
-
-        <ExchangeRateFields rate={rate} amountCents={totalCents} />
-
-        {/* División */}
-        <div>
-          <label className="block text-sm font-medium text-foreground">Dividir</label>
-          <div className="mt-1 flex gap-2">
-            {(['EQUAL', 'AMOUNT', 'PERCENTAGE'] as const).map((t) => (
-              <button
-                key={t}
-                type="button"
-                onClick={() => setSplitType(t)}
-                className={`press flex-1 rounded-full py-2 text-sm font-medium ${splitType === t ? 'bg-primary text-primary-foreground' : 'border border-input bg-card text-muted-foreground'}`}
-              >
-                {t === 'EQUAL' ? 'Igual' : t === 'AMOUNT' ? 'Por monto' : 'Por %'}
-              </button>
-            ))}
-          </div>
-
-          {splitType === 'EQUAL' && (
-            <div className="mt-3 space-y-2">
-              {participants.map((p) => (
-                <label key={p.id} className="flex items-center gap-3">
-                  <input
-                    type="checkbox"
-                    className="size-4 accent-primary"
-                    checked={equalIds.includes(p.id)}
-                    onChange={(e) =>
-                      setEqualIds(
-                        e.target.checked
-                          ? [...equalIds, p.id]
-                          : equalIds.filter((id) => id !== p.id),
-                      )
-                    }
-                  />
-                  <span className="text-sm">
-                    {p.name}
-                    {p.isMe ? ' (yo)' : ''}
-                  </span>
-                  {equalShares.has(p.id) && (
-                    <span className="ml-auto text-xs text-muted-foreground">
-                      {formatCents(equalShares.get(p.id)!, currency)}
-                    </span>
-                  )}
-                </label>
-              ))}
-            </div>
-          )}
-
-          {splitType === 'AMOUNT' && (
-            <div className="mt-3 space-y-2">
-              {participants.map((p) => (
-                <div key={p.id} className="flex items-center gap-3">
-                  <span className="flex-1 text-sm">
-                    {p.name}
-                    {p.isMe ? ' (yo)' : ''}
-                  </span>
-                  <NumberInput
-                    aria-label={`Monto de ${p.name}`}
-                    value={amountShares[p.id] ?? ''}
-                    onValueChange={(v) => setAmountShares({ ...amountShares, [p.id]: v })}
-                    placeholder="0"
-                    className="w-24 text-right h-11 rounded-xl border border-input bg-card px-3.5 text-base text-foreground placeholder:text-muted-foreground outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 disabled:opacity-50 dark:bg-input/30"
-                  />
-                </div>
-              ))}
-              <p
-                className={`text-xs ${amountSumCents === totalCents ? 'text-positive' : 'text-muted-foreground'}`}
-              >
-                Suma: {formatCents(amountSumCents, currency)} / {formatCents(totalCents, currency)}
-                {amountSumCents !== totalCents &&
-                  ` (faltan ${formatCents(totalCents - amountSumCents, currency)})`}
-              </p>
-            </div>
-          )}
-
-          {splitType === 'PERCENTAGE' && (
-            <div className="mt-3 space-y-2">
-              {participants.map((p) => (
-                <div key={p.id} className="flex items-center gap-3">
-                  <span className="flex-1 text-sm">
-                    {p.name}
-                    {p.isMe ? ' (yo)' : ''}
-                  </span>
-                  <div className="flex items-center gap-1">
-                    <NumberInput
-                      aria-label={`Porcentaje de ${p.name}`}
-                      value={percentShares[p.id] ?? ''}
-                      onValueChange={(v) => setPercentShares({ ...percentShares, [p.id]: v })}
-                      placeholder="0"
-                      className="w-20 text-right h-11 rounded-xl border border-input bg-card px-3.5 text-base text-foreground placeholder:text-muted-foreground outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 disabled:opacity-50 dark:bg-input/30"
-                    />
-                    <span className="text-sm text-muted-foreground">%</span>
-                  </div>
-                </div>
-              ))}
-              <p
-                className={`text-xs ${Math.abs(percentSum - 100) < 0.01 ? 'text-positive' : 'text-muted-foreground'}`}
-              >
-                Total: {formatNumber(percentSum, 2)}% / 100%
-                {Math.abs(percentSum - 100) >= 0.01 &&
-                  ` (faltan ${formatNumber(100 - percentSum, 2)}%)`}
-              </p>
-            </div>
-          )}
-        </div>
-
-        {formError && <p className="text-sm text-destructive">{formError}</p>}
-
-        <button
-          type="submit"
-          disabled={isSaving}
-          className="press h-12 w-full rounded-full bg-primary text-base font-semibold text-primary-foreground shadow-soft disabled:opacity-50"
-        >
-          {isSaving ? 'Guardando…' : isEdit ? 'Guardar cambios' : 'Agregar gasto'}
-        </button>
-      </form>
-    </div>
+          <Button type="submit" size="lg" className="w-full" loading={isSaving}>
+            {isSaving ? 'Guardando…' : isEdit ? 'Guardar cambios' : 'Agregar gasto'}
+          </Button>
+        </form>
+      </Card>
+    </Page>
   );
 }
 
@@ -575,12 +543,12 @@ export function ExpenseForm() {
 
   if (group.data.archivedAt) {
     return (
-      <div className="mx-auto w-full max-w-2xl space-y-6">
+      <Page>
         <ArchivedNotice groupId={groupId!} />
-        <button onClick={() => navigate(-1)} className="text-sm text-muted-foreground underline">
+        <Button variant="link" className="text-muted-foreground" onClick={() => navigate(-1)}>
           Volver
-        </button>
-      </div>
+        </Button>
+      </Page>
     );
   }
 

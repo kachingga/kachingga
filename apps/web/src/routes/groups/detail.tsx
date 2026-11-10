@@ -340,29 +340,31 @@ export function GroupDetail() {
                 >
                   Categorías
                 </Link>
-                <button
+                <Button
                   onClick={() => {
                     void shareInviteCode(g.name, g.inviteCode);
                     setShowMenu(false);
                   }}
-                  className="block w-full rounded-xl px-3 py-2 text-left text-sm hover:bg-muted"
+                  variant="ghost"
+                  className="h-auto w-full justify-start rounded-xl px-3 py-2 font-normal"
                 >
                   Compartir código de invitación ({g.inviteCode})
-                </button>
+                </Button>
                 {!g.archivedAt && (
-                  <button
+                  <Button
                     onClick={() => {
                       setNewName(g.name);
                       setRenaming(true);
                       setShowMenu(false);
                     }}
-                    className="block w-full rounded-xl px-3 py-2 text-left text-sm hover:bg-muted"
+                    variant="ghost"
+                    className="h-auto w-full justify-start rounded-xl px-3 py-2 font-normal"
                   >
                     Renombrar grupo
-                  </button>
+                  </Button>
                 )}
                 {!g.archivedAt ? (
-                  <button
+                  <Button
                     onClick={async () => {
                       setShowMenu(false);
                       const ok = await confirm({
@@ -372,20 +374,22 @@ export function GroupDetail() {
                       });
                       if (ok) setArchived.mutate({ groupId: groupId!, archived: true });
                     }}
-                    className="block w-full rounded-xl px-3 py-2 text-left text-sm text-muted-foreground hover:bg-muted"
+                    variant="ghost"
+                    className="h-auto w-full justify-start rounded-xl px-3 py-2 font-normal text-muted-foreground"
                   >
                     Archivar grupo
-                  </button>
+                  </Button>
                 ) : (
-                  <button
+                  <Button
                     onClick={() => {
                       setArchived.mutate({ groupId: groupId!, archived: false });
                       setShowMenu(false);
                     }}
-                    className="block w-full rounded-xl px-3 py-2 text-left text-sm hover:bg-muted"
+                    variant="ghost"
+                    className="h-auto w-full justify-start rounded-xl px-3 py-2 font-normal"
                   >
                     Desarchivar grupo
-                  </button>
+                  </Button>
                 )}
               </div>
             )}

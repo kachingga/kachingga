@@ -1,9 +1,8 @@
 import { canAutoSuggest, type ExchangeRateState } from '@/lib/use-exchange-rate';
+import { Card, Chip } from '@/components/kit';
 import { NumberInput } from '@/components/number-input';
+import { Label } from '@/components/ui/label';
 import { formatCents, toNumeric } from '@/lib/format';
-
-const chip = (active: boolean) =>
-  `press rounded-full px-3 py-1.5 text-xs font-medium ${active ? 'bg-primary text-primary-foreground' : 'border border-input bg-card text-muted-foreground'}`;
 
 export function ExchangeRateFields({
   rate,
@@ -23,22 +22,14 @@ export function ExchangeRateFields({
     source === 'manual' ? rate.manualRate : rateQuery.data ? toNumeric(rateQuery.data.mid) : '';
 
   return (
-    <div className="space-y-3 rounded-2xl border bg-card p-5 shadow-soft">
+    <Card className="space-y-3">
       <div className="flex gap-2">
-        <button
-          type="button"
-          onClick={() => rate.setKeepCurrency(false)}
-          className={`press flex-1 rounded-full py-2 text-sm font-medium ${!keepCurrency ? 'bg-primary text-primary-foreground' : 'border border-input bg-card text-muted-foreground'}`}
-        >
+        <Chip active={!keepCurrency} className="flex-1" onClick={() => rate.setKeepCurrency(false)}>
           Convertir a {base}
-        </button>
-        <button
-          type="button"
-          onClick={() => rate.setKeepCurrency(true)}
-          className={`press flex-1 rounded-full py-2 text-sm font-medium ${keepCurrency ? 'bg-primary text-primary-foreground' : 'border border-input bg-card text-muted-foreground'}`}
-        >
+        </Chip>
+        <Chip active={keepCurrency} className="flex-1" onClick={() => rate.setKeepCurrency(true)}>
           Mantener en {currency}
-        </button>
+        </Chip>
       </div>
 
       {!keepCurrency && (
@@ -46,37 +37,37 @@ export function ExchangeRateFields({
           {autoSuggest && (
             <div className="flex gap-2">
               {isUsdQuote && (
-                <button
-                  type="button"
+                <Chip
+                  active={source === 'blue'}
+                  className="px-3 py-1.5 text-xs"
                   onClick={() => rate.setSource('blue')}
-                  className={chip(source === 'blue')}
                 >
                   Blue
-                </button>
+                </Chip>
               )}
-              <button
-                type="button"
+              <Chip
+                active={source === 'oficial'}
+                className="px-3 py-1.5 text-xs"
                 onClick={() => rate.setSource('oficial')}
-                className={chip(source === 'oficial')}
               >
                 Oficial
-              </button>
-              <button
-                type="button"
+              </Chip>
+              <Chip
+                active={source === 'manual'}
+                className="px-3 py-1.5 text-xs"
                 onClick={() => rate.setSource('manual')}
-                className={chip(source === 'manual')}
               >
                 A mano
-              </button>
+              </Chip>
             </div>
           )}
 
           <div>
-            <label className="block text-xs text-muted-foreground" htmlFor="exchange-rate">
+            <Label htmlFor="exchange-rate" className="text-xs text-muted-foreground">
               Tipo de cambio: 1 {from} ={' '}
               {source !== 'manual' && rateQuery.isPending ? 'cargando…' : ''}
-            </label>
-            <div className="mt-1 flex items-center gap-2">
+            </Label>
+            <div className="mt-1.5 flex items-center gap-2">
               <NumberInput
                 id="exchange-rate"
                 value={shown}
@@ -84,7 +75,7 @@ export function ExchangeRateFields({
                 decimals={6}
                 readOnly={source !== 'manual'}
                 placeholder="0"
-                className="flex-1 h-11 rounded-xl border border-input bg-card px-3.5 text-base text-foreground placeholder:text-muted-foreground outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 disabled:opacity-50 dark:bg-input/30"
+                className="flex-1"
               />
               <span className="text-sm text-muted-foreground">{to}</span>
             </div>
@@ -101,6 +92,6 @@ export function ExchangeRateFields({
           </div>
         </>
       )}
-    </div>
+    </Card>
   );
 }

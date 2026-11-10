@@ -1,10 +1,13 @@
 import { useState } from 'react';
 import { useNavigate, useParams } from 'react-router';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { ArrowLeft } from 'lucide-react';
+import { Plus, X } from 'lucide-react';
 
 import { ArchivedNotice } from '@/components/archived-notice';
 import { ErrorState } from '@/components/error-state';
+import { Card, Page, PageHeader } from '@/components/kit';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import { ListScreenSkeleton } from '@/components/skeletons';
 import { shareInviteCode } from '@/lib/share';
 import { useTRPC } from '@/lib/trpc';
@@ -82,26 +85,13 @@ export function Participants() {
   const myId = g.myParticipantId;
 
   return (
-    <div className="mx-auto w-full max-w-2xl space-y-6">
-      <div className="rise flex items-center gap-3">
-        <button
-          onClick={() => navigate(-1)}
-          aria-label="Volver"
-          className="press grid size-9 shrink-0 place-items-center rounded-full text-lg text-muted-foreground hover:bg-muted"
-        >
-          <ArrowLeft className="size-5" />
-        </button>
-        <h1 className="text-2xl font-bold lg:text-3xl">Participantes</h1>
-      </div>
+    <Page>
+      <PageHeader title="Participantes" back={{ onClick: () => navigate(-1), label: 'Volver' }} />
 
-      {isArchived && (
-        <div className="mb-6">
-          <ArchivedNotice groupId={g.id} />
-        </div>
-      )}
+      {isArchived && <ArchivedNotice groupId={g.id} />}
 
       {/* Código de invitación */}
-      <div className="rise rounded-2xl border bg-card p-5 shadow-soft">
+      <Card className="rise">
         <p className="mb-1 text-sm font-medium text-muted-foreground">Código de invitación</p>
         {showCode ? (
           <div className="space-y-2">
@@ -109,14 +99,17 @@ export function Participants() {
               {g.inviteCode}
             </p>
             <div className="flex gap-2">
-              <button
+              <Button
+                variant="outline"
+                className="flex-1"
                 onClick={() => void shareInviteCode(g.name, g.inviteCode)}
-                className="press flex-1 rounded-full border border-input py-2 text-sm text-foreground bg-card"
               >
                 Compartir código
-              </button>
+              </Button>
               {!isArchived && (
-                <button
+                <Button
+                  variant="outline"
+                  className="flex-1 text-muted-foreground"
                   onClick={async () => {
                     const ok = await confirm({
                       title: '¿Regenerar el código?',
@@ -125,32 +118,33 @@ export function Participants() {
                     });
                     if (ok) regenerateCode.mutate({ groupId: groupId! });
                   }}
-                  disabled={regenerateCode.isPending}
-                  className="press flex-1 rounded-full border border-input py-2 text-sm text-muted-foreground disabled:opacity-50 bg-card"
+                  loading={regenerateCode.isPending}
                 >
                   Regenerar
-                </button>
+                </Button>
               )}
             </div>
           </div>
         ) : (
-          <button
+          <Button
+            variant="link"
+            size="sm"
+            className="px-0 text-muted-foreground"
             onClick={() => setShowCode(true)}
-            className="text-sm text-muted-foreground underline"
           >
             Ver código para compartir
-          </button>
+          </Button>
         )}
-      </div>
+      </Card>
 
       {/* Lista */}
-      <ul className="mb-6 space-y-3">
+      <ul className="space-y-3">
         {g.participants.map((p) => {
           const canSetAlias = !p.hasAccount || p.isMe;
           const canRemove = !p.hasAccount;
 
           return (
-            <li key={p.id} className="rounded-2xl bg-card p-3">
+            <li key={p.id} className="rounded-2xl border bg-card p-4 shadow-soft">
               {renamingId === p.id ? (
                 <form
                   className="flex gap-2"
@@ -159,22 +153,25 @@ export function Participants() {
                     rename.mutate({ participantId: p.id, name: renameValue });
                   }}
                 >
-                  <input
+                  <Input
                     value={renameValue}
                     onChange={(e) => setRenameValue(e.target.value)}
+                    aria-label={`Nuevo nombre de ${p.name}`}
                     autoFocus
-                    className="flex-1 h-11 rounded-xl border border-input bg-card px-3.5 text-base text-foreground placeholder:text-muted-foreground outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 disabled:opacity-50 dark:bg-input/30"
+                    className="flex-1"
                   />
-                  <button type="submit" disabled={rename.isPending} className="text-sm font-medium">
+                  <Button type="submit" variant="soft" loading={rename.isPending}>
                     OK
-                  </button>
-                  <button
+                  </Button>
+                  <Button
                     type="button"
+                    variant="ghost"
+                    size="icon"
+                    aria-label="Cancelar"
                     onClick={() => setRenamingId(null)}
-                    className="text-sm text-muted-foreground"
                   >
-                    ×
-                  </button>
+                    <X />
+                  </Button>
                 </form>
               ) : (
                 <div className="flex items-start justify-between">
@@ -199,27 +196,26 @@ export function Participants() {
                           });
                         }}
                       >
-                        <input
+                        <Input
                           value={aliasValue}
                           onChange={(e) => setAliasValue(e.target.value)}
                           placeholder="alias o CBU"
+                          aria-label={`Alias de ${p.name}`}
                           autoFocus
-                          className="flex-1 h-11 rounded-xl border border-input bg-card px-3.5 text-base text-foreground placeholder:text-muted-foreground outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 disabled:opacity-50 dark:bg-input/30"
+                          className="flex-1"
                         />
-                        <button
-                          type="submit"
-                          disabled={setAlias.isPending}
-                          className="text-xs font-medium"
-                        >
+                        <Button type="submit" variant="soft" loading={setAlias.isPending}>
                           OK
-                        </button>
-                        <button
+                        </Button>
+                        <Button
                           type="button"
+                          variant="ghost"
+                          size="icon"
+                          aria-label="Cancelar"
                           onClick={() => setAliasingId(null)}
-                          className="text-xs text-muted-foreground"
                         >
-                          ×
-                        </button>
+                          <X />
+                        </Button>
                       </form>
                     ) : (
                       <p className="mt-1 text-xs text-muted-foreground">
@@ -232,15 +228,17 @@ export function Participants() {
                           'Sin alias'
                         )}
                         {canSetAlias && !isArchived && (
-                          <button
+                          <Button
+                            variant="link"
+                            size="xs"
+                            className="ml-1 text-muted-foreground"
                             onClick={() => {
                               setAliasingId(p.id);
                               setAliasValue(p.paymentAlias ?? '');
                             }}
-                            className="ml-2 underline"
                           >
                             {p.paymentAlias ? 'Cambiar' : 'Agregar'}
-                          </button>
+                          </Button>
                         )}
                       </p>
                     )}
@@ -248,17 +246,22 @@ export function Participants() {
 
                   {!isArchived && (
                     <div className="ml-2 flex gap-2">
-                      <button
+                      <Button
+                        variant="ghost"
+                        size="xs"
+                        className="text-muted-foreground"
                         onClick={() => {
                           setRenamingId(p.id);
                           setRenameValue(p.name);
                         }}
-                        className="text-xs text-muted-foreground underline"
                       >
                         Renombrar
-                      </button>
+                      </Button>
                       {canRemove && p.id !== myId && (
-                        <button
+                        <Button
+                          variant="ghost"
+                          size="xs"
+                          className="text-destructive"
                           onClick={async () => {
                             const ok = await confirm({
                               title: `¿Quitar a ${p.name}?`,
@@ -267,11 +270,10 @@ export function Participants() {
                             });
                             if (ok) remove.mutate({ participantId: p.id });
                           }}
-                          disabled={remove.isPending}
-                          className="text-xs text-destructive underline disabled:opacity-50"
+                          loading={remove.isPending}
                         >
                           Quitar
-                        </button>
+                        </Button>
                       )}
                     </div>
                   )}
@@ -292,26 +294,26 @@ export function Participants() {
           }}
           className="flex gap-2"
         >
-          <input
+          <Input
             value={addName}
             onChange={(e) => setAddName(e.target.value)}
             required
             placeholder="Nombre (sin cuenta)"
             aria-label="Nombre de la persona sin cuenta"
-            className="flex-1 h-11 rounded-xl border border-input bg-card px-3.5 text-base text-foreground placeholder:text-muted-foreground outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 disabled:opacity-50 dark:bg-input/30"
+            className="flex-1"
           />
-          <button
+          <Button
             type="submit"
+            size="icon-lg"
             aria-label="Agregar persona"
-            disabled={addParticipant.isPending}
-            className="press rounded-full bg-primary px-4 py-2 font-semibold text-primary-foreground disabled:opacity-50 shadow-soft"
+            loading={addParticipant.isPending}
           >
-            +
-          </button>
+            <Plus />
+          </Button>
         </form>
       )}
 
-      {error && <p className="mt-2 text-sm text-destructive">{error}</p>}
-    </div>
+      {error && <p className="text-sm text-destructive">{error}</p>}
+    </Page>
   );
 }

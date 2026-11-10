@@ -4,6 +4,7 @@ import { cn } from 'cn';
 import { LogOut, Moon, Sun, UserRound, Users } from 'lucide-react';
 
 import { AnimatedLayout } from '@/components/animated-layout';
+import { Button } from '@/components/ui/button';
 import { setTheme, useTheme } from '@/lib/theme';
 import { useSignOut } from '@/lib/use-sign-out';
 
@@ -24,14 +25,16 @@ export function ThemeToggle() {
   const theme = useTheme();
   const next = theme === 'dark' ? 'light' : 'dark';
   return (
-    <button
+    <Button
       type="button"
+      variant="ghost"
+      size="icon-sm"
+      className="text-muted-foreground"
       onClick={() => setTheme(next)}
       aria-label={next === 'dark' ? 'Usar modo oscuro' : 'Usar modo claro'}
-      className="press grid size-9 place-items-center rounded-full text-muted-foreground hover:bg-muted hover:text-foreground"
     >
       {theme === 'dark' ? <Sun className="size-[18px]" /> : <Moon className="size-[18px]" />}
-    </button>
+    </Button>
   );
 }
 
@@ -71,14 +74,16 @@ export function AppShell() {
           </NavItem>
         </nav>
         <div className="mt-auto flex items-center justify-between">
-          <button
+          <Button
             type="button"
+            variant="ghost"
+            size="sm"
+            className="-ml-2 font-normal text-muted-foreground"
             onClick={() => void signOut()}
-            className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground"
           >
             <LogOut className="size-4" />
             Salir
-          </button>
+          </Button>
           <ThemeToggle />
         </div>
       </aside>

@@ -1,9 +1,12 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router';
 import { useMutation } from '@tanstack/react-query';
-import { ArrowLeft } from 'lucide-react';
 
 import { currencies } from '@kachingga/api/schemas';
+import { Card, Field, Page, PageHeader } from '@/components/kit';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { NativeSelect } from '@/components/ui/native-select';
 import { shareInviteCode } from '@/lib/share';
 import { useTRPC } from '@/lib/trpc';
 import { currencyLabels, type Currency } from '@/lib/format';
@@ -32,7 +35,7 @@ export function CreateGroup() {
 
   if (created) {
     return (
-      <div className="mx-auto w-full max-w-2xl space-y-6 flex min-h-[60dvh] flex-col justify-center">
+      <Page className="flex min-h-[60dvh] flex-col justify-center">
         <h2 className="text-3xl font-bold">Grupo creado</h2>
         <p className="-mt-3 text-muted-foreground">Compartí este código para que otros se unan:</p>
 
@@ -41,100 +44,76 @@ export function CreateGroup() {
         </div>
 
         <div className="flex gap-2">
-          <button
+          <Button
+            variant="outline"
+            size="lg"
+            className="flex-1"
             onClick={() => void shareInviteCode(created.name, created.inviteCode)}
-            className="press flex-1 rounded-full border border-input py-3 font-semibold text-foreground bg-card"
           >
             Compartir código
-          </button>
-          <button
-            onClick={() => navigate(`/grupos/${created.id}`)}
-            className="press flex-1 rounded-full bg-primary py-3 font-semibold text-primary-foreground shadow-soft"
-          >
+          </Button>
+          <Button size="lg" className="flex-1" onClick={() => navigate(`/grupos/${created.id}`)}>
             Ir al grupo
-          </button>
+          </Button>
         </div>
-      </div>
+      </Page>
     );
   }
 
   return (
-    <div className="mx-auto w-full max-w-2xl space-y-6">
-      <div className="rise flex items-center gap-3">
-        <button
-          onClick={() => navigate(-1)}
-          aria-label="Volver"
-          className="press grid size-9 shrink-0 place-items-center rounded-full text-lg text-muted-foreground hover:bg-muted"
+    <Page>
+      <PageHeader title="Crear grupo" back={{ onClick: () => navigate(-1), label: 'Volver' }} />
+
+      <Card className="rise">
+        <form
+          onSubmit={(e) => {
+            e.preventDefault();
+            setError(null);
+            createGroup.mutate({ name, baseCurrency, myName });
+          }}
+          className="space-y-4"
         >
-          <ArrowLeft className="size-5" />
-        </button>
-        <h1 className="text-2xl font-bold lg:text-3xl">Crear grupo</h1>
-      </div>
+          <Field label="Nombre del grupo" htmlFor="name">
+            <Input
+              id="name"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              required
+              placeholder="Viaje a Bariloche"
+            />
+          </Field>
 
-      <form
-        onSubmit={(e) => {
-          e.preventDefault();
-          setError(null);
-          createGroup.mutate({ name, baseCurrency, myName });
-        }}
-        className="rise rounded-2xl border bg-card p-5 shadow-soft space-y-4"
-      >
-        <div>
-          <label className="block text-sm font-medium text-foreground" htmlFor="name">
-            Nombre del grupo
-          </label>
-          <input
-            id="name"
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            required
-            placeholder="Viaje a Bariloche"
-            className="mt-1.5 h-11 w-full rounded-xl border border-input bg-card px-3.5 text-base text-foreground placeholder:text-muted-foreground outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 disabled:opacity-50 dark:bg-input/30"
-          />
-        </div>
+          <Field label="Moneda base" htmlFor="currency">
+            <NativeSelect
+              id="currency"
+              value={baseCurrency}
+              onChange={(e) => setBaseCurrency(e.target.value as Currency)}
+            >
+              {currencies.map((c) => (
+                <option key={c} value={c}>
+                  {currencyLabels[c]}
+                </option>
+              ))}
+            </NativeSelect>
+          </Field>
 
-        <div>
-          <label className="block text-sm font-medium text-foreground" htmlFor="currency">
-            Moneda base
-          </label>
-          <select
-            id="currency"
-            value={baseCurrency}
-            onChange={(e) => setBaseCurrency(e.target.value as Currency)}
-            className="mt-1.5 h-11 w-full rounded-xl border border-input bg-card px-3.5 text-base text-foreground placeholder:text-muted-foreground outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 disabled:opacity-50 dark:bg-input/30"
-          >
-            {currencies.map((c) => (
-              <option key={c} value={c}>
-                {currencyLabels[c]}
-              </option>
-            ))}
-          </select>
-        </div>
+          <Field label="¿Cómo te llamás en este grupo?" htmlFor="myName">
+            <Input
+              id="myName"
+              value={myName}
+              onChange={(e) => setMyName(e.target.value)}
+              required
+              placeholder="Juan"
+            />
+          </Field>
 
-        <div>
-          <label className="block text-sm font-medium text-foreground" htmlFor="myName">
-            ¿Cómo te llamás en este grupo?
-          </label>
-          <input
-            id="myName"
-            value={myName}
-            onChange={(e) => setMyName(e.target.value)}
-            required
-            placeholder="Juan"
-            className="mt-1.5 h-11 w-full rounded-xl border border-input bg-card px-3.5 text-base text-foreground placeholder:text-muted-foreground outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 disabled:opacity-50 dark:bg-input/30"
-          />
-        </div>
+          {error && <p className="text-sm text-destructive">{error}</p>}
 
-        {error && <p className="text-sm text-destructive">{error}</p>}
-
-        <button
-          type="submit"
-          disabled={createGroup.isPending}
-          className="press w-full rounded-full bg-primary py-3 font-semibold text-primary-foreground disabled:opacity-50 shadow-soft"
-        >
-          {createGroup.isPending ? 'Creando…' : 'Crear grupo'}
-        </button>
-      </form>
-    </div>
+          <Button type="submit" size="lg" className="w-full" loading={createGroup.isPending}>
+            {createGroup.isPending ? 'Creando…' : 'Crear grupo'}
+          </Button>
+        </form>
+      </Card>
+    </Page>
   );
 }

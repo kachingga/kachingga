@@ -1,6 +1,7 @@
 import type { InputHTMLAttributes } from 'react';
 import { NumericFormat } from 'react-number-format';
 
+import { Input } from '@/components/ui/input';
 import { numberSeparators } from '@/lib/format';
 
 type Props = Omit<
@@ -24,6 +25,7 @@ export function NumberInput({ value, onValueChange, decimals = 2, ...props }: Pr
   return (
     <NumericFormat
       {...props}
+      customInput={Input}
       value={value}
       valueIsNumericString
       onValueChange={(values) => onValueChange(values.value)}

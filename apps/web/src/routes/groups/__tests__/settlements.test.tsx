@@ -49,7 +49,7 @@ describe('Settlements', () => {
       'groups.get': () => fixGroup,
       'settlements.list': () => [],
     });
-    expect(await screen.findByRole('button', { name: '+ Registrar pago' })).toBeInTheDocument();
+    expect(await screen.findByRole('button', { name: 'Registrar pago' })).toBeInTheDocument();
   });
 
   it('shows empty state when no settlements', async () => {
@@ -120,7 +120,7 @@ describe('Settlements', () => {
       'groups.get': () => ({ ...fixGroup, baseCurrency: 'USD' }),
       'settlements.list': () => [],
     });
-    await user.click(await screen.findByRole('button', { name: '+ Registrar pago' }));
+    await user.click(await screen.findByRole('button', { name: 'Registrar pago' }));
     expect(screen.getByLabelText('Moneda')).toHaveValue('USD');
   });
 
@@ -137,7 +137,7 @@ describe('Settlements', () => {
         source: 'blue',
       }),
     });
-    await user.click(await screen.findByRole('button', { name: '+ Registrar pago' }));
+    await user.click(await screen.findByRole('button', { name: 'Registrar pago' }));
     await user.selectOptions(screen.getByLabelText('Moneda'), 'USD');
     expect(await screen.findByLabelText(/Tipo de cambio: 1 USD =/)).toHaveValue('1.555');
   });
