@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router';
 import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import type { inferRouterOutputs } from '@trpc/server';
@@ -7,16 +7,28 @@ import {
   ArrowLeft,
   ArrowRight,
   Check,
+  CheckCheck,
   Copy,
   HandCoins,
   MoreHorizontal,
   PieChart,
   Plus,
+  ReceiptText,
 } from 'lucide-react';
+import { cn } from 'cn';
 
 import { ArchivedNotice } from '@/components/archived-notice';
 import { ErrorState } from '@/components/error-state';
-import { Avatar, Card, CategoryIcon, Page, SectionTitle } from '@/components/kit';
+import {
+  Avatar,
+  AvatarStack,
+  Card,
+  CategoryIcon,
+  EmptyState,
+  Money,
+  Page,
+  SectionTitle,
+} from '@/components/kit';
 import { LoadMore } from '@/components/load-more';
 import { BalancesSkeleton, ExpenseListSkeleton, GroupSkeleton } from '@/components/skeletons';
 import { Button } from '@/components/ui/button';
@@ -35,27 +47,95 @@ function participantName(group: GroupData, id: string) {
   return group.participants.find((p) => p.id === id)?.name ?? id;
 }
 
-/** "Tu situación" in the base currency: the big green card at the top of the group. */
+/** How "Tu situación" looks: green when they owe me, peach when I owe, lime when all square. */
+const moods = {
+  owed: { card: 'bg-hero text-hero-foreground', status: 'Te deben' },
+  owe: { card: 'bg-owe text-owe-foreground', status: 'Debés' },
+  even: { card: 'bg-even text-even-foreground', status: 'Estás al día' },
+} as const;
+
+/** "Tu situación" in the base currency: the big card at the top of the group (+ kept currencies). */
 function MySituation({ group, balances }: { group: GroupData; balances: BalancesData }) {
   const base = balances.find((b) => b.currency === group.baseCurrency) ?? balances[0];
   const mine = base?.balances.find((b) => b.participantId === group.myParticipantId);
+  const cents = mine?.amountCents ?? 0;
+  const mood = cents > 0 ? 'owed' : cents < 0 ? 'owe' : 'even';
+
+  // "Saldo actualizado" for a moment when it turns all square while on screen (e.g. back from
+  // registering the payment, once the balances come back from the API).
+  const [prevMood, setPrevMood] = useState(mood);
+  const [squared, setSquared] = useState(false);
+  if (prevMood !== mood) {
+    setPrevMood(mood);
+    setSquared(mood === 'even');
+  }
+  useEffect(() => {
+    if (!squared) return;
+    const timer = setTimeout(() => setSquared(false), 2500);
+    return () => clearTimeout(timer);
+  }, [squared]);
+
   if (!base || !mine) return null;
   const others = balances.filter((b) => b !== base);
+  const myTransfers = base.transfers.filter((t) => t.fromId === group.myParticipantId);
+  const single = myTransfers.length === 1 ? myTransfers[0] : undefined;
+  const note =
+    mood === 'even'
+      ? 'No tenés pagos pendientes.'
+      : mood === 'owed'
+        ? 'Tu saldo pendiente de recibir en este grupo.'
+        : single
+          ? `Pago pendiente a ${participantName(group, single.toId)}.`
+          : 'Tenés pagos pendientes en este grupo.';
+
   return (
-    <div className="rise rounded-3xl bg-hero p-6 text-primary-foreground shadow-lift dark:text-foreground">
-      <p className="text-sm opacity-75">Tu situación</p>
-      <p className="mt-1 font-display text-3xl font-bold tabular">
-        {formatMyBalance(mine.amountCents, base.currency)}
-      </p>
+    <section
+      aria-label="Tu situación"
+      className={cn('rise flex min-h-48 flex-col rounded-lg p-6', moods[mood].card)}
+    >
+      <p className="text-sm font-semibold opacity-80">Tu situación</p>
+      {mood === 'even' ? (
+        <p className="mt-4 font-display text-4xl font-bold">Estás al día</p>
+      ) : (
+        <>
+          <p className="mt-4 text-sm font-semibold">{moods[mood].status}</p>
+          <Money
+            cents={Math.abs(cents)}
+            currency={base.currency}
+            className="text-4xl sm:text-5xl"
+          />
+        </>
+      )}
+      <p className="mt-3 max-w-sm text-sm leading-relaxed opacity-85">{note}</p>
       {others.map((b) => {
         const m = b.balances.find((x) => x.participantId === group.myParticipantId);
         return m ? (
-          <p key={b.currency} className="mt-1 text-sm opacity-80 tabular">
+          <p key={b.currency} className="mt-1 text-sm font-semibold tabular">
             En {b.currency}: {formatMyBalance(m.amountCents, b.currency)}
           </p>
         ) : null;
       })}
-    </div>
+      {mood === 'owe' && !group.archivedAt && (
+        <Button asChild variant="secondary" className="mt-5 self-start">
+          <Link
+            to={
+              single
+                ? `/grupos/${group.id}/pagos?from=${single.fromId}&to=${single.toId}&amount=${single.amountCents}&currency=${base.currency}`
+                : `/grupos/${group.id}/pagos`
+            }
+          >
+            <HandCoins />
+            Registrar pago
+          </Link>
+        </Button>
+      )}
+      {squared && (
+        <p role="status" className="rise mt-4 inline-flex items-center gap-2 text-sm font-semibold">
+          <Check aria-hidden className="size-4" />
+          Saldo actualizado
+        </p>
+      )}
+    </section>
   );
 }
 
@@ -66,8 +146,8 @@ function BalanceSection({ group, balances }: { group: GroupData; balances: Balan
   return (
     <div className="space-y-6">
       {balances.map(({ currency, balances: bals, transfers }) => (
-        <div key={currency} className="space-y-6">
-          <Card>
+        <div key={currency} className="space-y-5 border-b pb-5 last:border-0">
+          <section>
             <div className="flex items-center justify-between">
               <SectionTitle>Saldos</SectionTitle>
               <span className="rounded-full bg-muted px-2.5 py-0.5 text-xs font-semibold text-muted-foreground">
@@ -77,8 +157,8 @@ function BalanceSection({ group, balances }: { group: GroupData; balances: Balan
             <ul className="mt-3 divide-y">
               {bals.map((b) => (
                 <li key={b.participantId} className="flex items-center gap-3 py-2.5">
-                  <Avatar name={participantName(group, b.participantId)} />
-                  <span className="flex-1 font-medium">
+                  <Avatar id={b.participantId} name={participantName(group, b.participantId)} />
+                  <span className="flex-1 font-semibold">
                     {participantName(group, b.participantId)}
                   </span>
                   <span
@@ -93,14 +173,17 @@ function BalanceSection({ group, balances }: { group: GroupData; balances: Balan
                 </li>
               ))}
             </ul>
-          </Card>
+          </section>
 
-          <Card>
+          <section>
             <SectionTitle>Cómo quedar a mano</SectionTitle>
             {transfers.length === 0 ? (
-              <p className="mt-2 text-sm text-muted-foreground">
-                Nadie le debe nada a nadie. ¡Impecable!
-              </p>
+              <EmptyState
+                icon={CheckCheck}
+                title="Todos al día"
+                description="No hay transferencias pendientes en este grupo."
+                className="py-6"
+              />
             ) : (
               <ul className="mt-3 space-y-3">
                 {transfers.map((t) => {
@@ -110,16 +193,18 @@ function BalanceSection({ group, balances }: { group: GroupData; balances: Balan
                   return (
                     <li
                       key={`${t.fromId}-${t.toId}`}
-                      className={`rounded-xl p-3 ${isMyTransfer ? 'bg-negative-soft' : 'bg-muted'}`}
+                      className={`rounded-lg p-3 ${isMyTransfer ? 'bg-negative-soft' : 'bg-muted'}`}
                     >
                       <p className="flex flex-wrap items-center gap-x-2 font-medium">
                         <span>{participantName(group, t.fromId)}</span>
                         <span className="sr-only"> → </span>
                         <ArrowRight aria-hidden className="size-4 text-muted-foreground" />
                         <span>{participantName(group, t.toId)}</span>
-                        <span className="ml-auto font-display text-lg font-bold tabular">
-                          {formatCents(t.amountCents, currency)}
-                        </span>
+                        <Money
+                          cents={t.amountCents}
+                          currency={currency}
+                          className="ml-auto text-lg"
+                        />
                       </p>
 
                       {isMyTransfer && (
@@ -172,7 +257,7 @@ function BalanceSection({ group, balances }: { group: GroupData; balances: Balan
                 })}
               </ul>
             )}
-          </Card>
+          </section>
         </div>
       ))}
     </div>
@@ -284,14 +369,18 @@ export function GroupDetail() {
             </form>
           ) : (
             <div className="flex min-w-0 items-center gap-3">
-              <Avatar name={g.name} className="size-12 rounded-xl bg-muted text-lg ring-0" />
+              <Avatar id={g.id} name={g.name} className="size-14 rounded-lg text-2xl ring-0" />
               <div className="min-w-0">
                 <h1 className="truncate text-2xl font-bold lg:text-3xl">{g.name}</h1>
-                <p className="text-sm text-muted-foreground">
-                  Moneda base: {g.baseCurrency} · {g.participants.length}{' '}
-                  {g.participants.length === 1 ? 'persona' : 'personas'}
-                  {g.archivedAt ? ' · Archivado' : ''}
-                </p>
+                <div className="mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-1">
+                  <AvatarStack people={g.participants} />
+                  <p className="text-xs text-muted-foreground">
+                    {g.participants.length}{' '}
+                    {g.participants.length === 1 ? 'participante' : 'participantes'} · Moneda base:{' '}
+                    {g.baseCurrency}
+                    {g.archivedAt ? ' · Archivado' : ''}
+                  </p>
+                </div>
               </div>
             </div>
           )}
@@ -327,7 +416,7 @@ export function GroupDetail() {
 
             {/* Menu */}
             {showMenu && (
-              <div className="absolute top-full left-0 z-30 mt-2 w-64 sm:right-0 sm:left-auto rounded-2xl border bg-popover p-2 text-popover-foreground shadow-lift">
+              <div className="absolute top-full left-0 z-30 mt-2 w-64 sm:right-0 sm:left-auto rounded-lg border bg-popover p-2 text-popover-foreground shadow-lift">
                 <Link
                   to={`/grupos/${groupId}/participantes`}
                   className="block rounded-xl px-3 py-2 text-sm hover:bg-muted"
@@ -441,17 +530,11 @@ export function GroupDetail() {
           )}
 
           {expenses.isSuccess && allExpenses.length === 0 && (
-            <Card className="mt-3 text-center text-sm text-muted-foreground">
-              <p>Todavía no hay gastos.</p>
-              {!g.archivedAt && (
-                <Link
-                  to={`/grupos/${groupId}/gastos/nuevo`}
-                  className="mt-1 inline-block font-semibold text-primary hover:underline"
-                >
-                  Agregar uno
-                </Link>
-              )}
-            </Card>
+            <EmptyState
+              icon={ReceiptText}
+              title="Todavía no hay gastos"
+              description={g.archivedAt ? undefined : 'Agregá el primer gasto del grupo.'}
+            />
           )}
 
           {days.map(({ day, items }) => (
@@ -459,7 +542,7 @@ export function GroupDetail() {
               <p className="mb-2 text-xs font-semibold tracking-wider text-muted-foreground uppercase">
                 {day}
               </p>
-              <ul className="overflow-hidden rounded-2xl border bg-card shadow-soft">
+              <ul className="overflow-hidden rounded-lg border bg-card shadow-sticker">
                 {items.map((expense) => {
                   const myShare = expense.splits.find((s) => s.participantId === g.myParticipantId);
                   const saving = isTemp(expense.id);
@@ -475,9 +558,11 @@ export function GroupDetail() {
                         </p>
                       </div>
                       <div className="text-right">
-                        <p className="font-semibold tabular">
-                          {formatCents(expense.amountCents, expense.currency)}
-                        </p>
+                        <Money
+                          cents={expense.amountCents}
+                          currency={expense.currency}
+                          className="text-lg"
+                        />
                         {myShare ? (
                           <p className="text-xs text-muted-foreground tabular">
                             vos: {formatCents(myShare.amountCents, expense.currency)}
@@ -489,7 +574,11 @@ export function GroupDetail() {
                     </>
                   );
                   return (
-                    <li key={expense.id} className="border-b last:border-0">
+                    // The one you just added (still saving) drops in with a green flash.
+                    <li
+                      key={expense.id}
+                      className={cn('border-b last:border-0', saving && 'pop-in')}
+                    >
                       {saving ? (
                         <div aria-busy="true" className="flex items-center gap-3 p-4 opacity-60">
                           {content}
@@ -528,7 +617,7 @@ export function GroupDetail() {
       {!g.archivedAt && (
         <Link
           to={`/grupos/${groupId}/gastos/nuevo`}
-          className="press fixed bottom-safe left-1/2 z-30 flex h-14 -translate-x-1/2 items-center gap-2 rounded-full bg-primary px-7 font-semibold text-primary-foreground shadow-lift lg:hidden"
+          className="press fixed bottom-safe left-1/2 z-30 flex h-14 -translate-x-1/2 items-center gap-2 rounded-full bg-primary px-7 font-bold text-primary-foreground shadow-lift lg:hidden"
         >
           <Plus className="size-5" />
           Agregar gasto

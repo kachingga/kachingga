@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useNavigate, useParams, useSearchParams } from 'react-router';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
-import { Plus } from 'lucide-react';
+import { HandCoins, Plus } from 'lucide-react';
 
 import type { inferRouterOutputs } from '@trpc/server';
 import type { AppRouter } from '@kachingga/api';
@@ -12,7 +12,7 @@ import { NumberInput } from '@/components/number-input';
 import { useExchangeRate } from '@/lib/use-exchange-rate';
 import { ArchivedNotice } from '@/components/archived-notice';
 import { ErrorState } from '@/components/error-state';
-import { Card, Field, Page, PageHeader } from '@/components/kit';
+import { Avatar, Card, EmptyState, Field, Page, PageHeader } from '@/components/kit';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { NativeSelect } from '@/components/ui/native-select';
@@ -315,9 +315,11 @@ function SettlementsBody({ groupId, group }: { groupId: string; group: GroupData
       )}
 
       {settlements.isSuccess && settlements.data.length === 0 && (
-        <p className="py-8 text-center text-sm text-muted-foreground">
-          Todavía no hay pagos registrados.
-        </p>
+        <EmptyState
+          icon={HandCoins}
+          title="Todavía no hay pagos registrados"
+          description="Cuando alguien le transfiera a otro, registralo acá para que se actualicen los saldos."
+        />
       )}
 
       {settlements.isSuccess && settlements.data.length > 0 && (
@@ -326,10 +328,14 @@ function SettlementsBody({ groupId, group }: { groupId: string; group: GroupData
             <li
               key={s.id}
               aria-busy={isTemp(s.id) || undefined}
-              className={`flex items-center justify-between rounded-2xl border bg-card p-4 shadow-soft ${isTemp(s.id) ? 'opacity-60' : ''}`}
+              className={`flex items-center gap-3 rounded-lg border bg-card p-4 shadow-sticker ${isTemp(s.id) ? 'pop-in opacity-60' : ''}`}
             >
-              <div>
-                <p className="text-sm font-medium">
+              <div aria-hidden className="flex shrink-0 items-center -space-x-2">
+                <Avatar id={s.from.id} name={s.from.name} className="size-8 text-xs" />
+                <Avatar id={s.to.id} name={s.to.name} className="size-8 text-xs" />
+              </div>
+              <div className="min-w-0 flex-1">
+                <p className="text-sm font-semibold">
                   {s.from.name} → {s.to.name}
                 </p>
                 <p className="text-xs text-muted-foreground">

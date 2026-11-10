@@ -8,15 +8,23 @@ import { Button } from '@/components/ui/button';
 import { setTheme, useTheme } from '@/lib/theme';
 import { useSignOut } from '@/lib/use-sign-out';
 
-/** Logo + name. The icon is the same `public/logo.svg` the PWA icons come from. */
+/** "Kachingga." with the peach dot. The icon is the same `public/logo.svg` the PWA icons come from. */
+export function Wordmark({ className }: { className?: string }) {
+  return (
+    <span className={cn('flex items-center gap-2 font-display text-2xl font-extrabold', className)}>
+      <img src="/logo.svg" alt="" className="size-8 rounded-lg" />
+      <span>
+        Kachingga<span className="text-highlight">.</span>
+      </span>
+    </span>
+  );
+}
+
+/** The wordmark, linking to "Mis grupos". */
 export function Logo({ className }: { className?: string }) {
   return (
-    <Link
-      to="/grupos"
-      className={cn('flex items-center gap-2 font-display text-xl font-bold', className)}
-    >
-      <img src="/logo.svg" alt="" className="size-8 rounded-lg" />
-      Kachingga
+    <Link to="/grupos" className="inline-flex">
+      <Wordmark className={className} />
     </Link>
   );
 }
@@ -44,8 +52,8 @@ function NavItem({ to, icon, children }: { to: string; icon: ReactNode; children
       to={to}
       className={({ isActive }) =>
         cn(
-          'flex items-center gap-3 rounded-xl px-3 py-2.5 transition-colors hover:bg-sidebar-accent',
-          isActive ? 'bg-sidebar-accent text-sidebar-foreground' : 'text-sidebar-foreground/75',
+          'press flex items-center gap-3 rounded-lg px-3 py-3 hover:bg-sidebar-accent',
+          isActive ? 'bg-accent text-primary' : 'text-muted-foreground hover:text-foreground',
         )
       }
     >
@@ -63,17 +71,18 @@ export function AppShell() {
   const signOut = useSignOut();
   return (
     <div className="min-h-dvh lg:grid lg:grid-cols-[240px_1fr]">
-      <aside className="sticky top-0 hidden h-dvh flex-col border-r bg-sidebar p-5 lg:flex">
+      <aside className="sticky top-0 hidden h-dvh flex-col border-r bg-sidebar px-5 py-8 lg:flex">
         <Logo />
-        <nav aria-label="Principal" className="mt-10 flex flex-col gap-1 text-sm font-medium">
-          <NavItem to="/grupos" icon={<Users className="size-4" />}>
+        <p className="mt-2 text-xs text-muted-foreground">Cuentas claras. Amistades intactas.</p>
+        <nav aria-label="Principal" className="mt-12 flex flex-col gap-2 text-sm font-semibold">
+          <NavItem to="/grupos" icon={<Users className="size-5" />}>
             Mis grupos
           </NavItem>
-          <NavItem to="/cuenta" icon={<UserRound className="size-4" />}>
+          <NavItem to="/cuenta" icon={<UserRound className="size-5" />}>
             Mi cuenta
           </NavItem>
         </nav>
-        <div className="mt-auto flex items-center justify-between">
+        <div className="mt-auto flex items-center justify-between border-t pt-5">
           <Button
             type="button"
             variant="ghost"
@@ -89,8 +98,8 @@ export function AppShell() {
       </aside>
 
       <div className="min-w-0">
-        <header className="sticky top-0 z-20 flex items-center justify-between border-b bg-background/85 px-4 pt-[calc(env(safe-area-inset-top)+0.75rem)] pb-3 backdrop-blur lg:hidden">
-          <Logo className="text-lg" />
+        <header className="sticky top-0 z-20 flex items-center justify-between border-b bg-background/95 px-5 pt-[calc(env(safe-area-inset-top)+0.75rem)] pb-3 backdrop-blur lg:hidden">
+          <Logo className="text-xl" />
           <div className="flex items-center gap-1">
             <Link
               to="/cuenta"
@@ -102,7 +111,7 @@ export function AppShell() {
             <ThemeToggle />
           </div>
         </header>
-        <main className="overflow-x-clip px-4 pt-5 pb-[calc(env(safe-area-inset-bottom)+7rem)] lg:px-10 lg:pt-10 lg:pb-16">
+        <main className="overflow-x-clip px-5 pt-6 pb-[calc(env(safe-area-inset-bottom)+7rem)] sm:px-8 lg:px-10 lg:pt-10 lg:pb-16">
           <AnimatedLayout />
         </main>
       </div>

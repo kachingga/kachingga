@@ -50,8 +50,8 @@ export function LoadMore({
     <div ref={marker} className="py-4">
       {loading && (
         <div role="status" aria-label="Cargando más gastos" className="space-y-2">
-          <div className="h-14 animate-pulse rounded-2xl bg-muted" />
-          <div className="h-14 animate-pulse rounded-2xl bg-muted" />
+          <div className="h-14 animate-pulse rounded-lg bg-muted" />
+          <div className="h-14 animate-pulse rounded-lg bg-muted" />
         </div>
       )}
     </div>

@@ -57,7 +57,7 @@ describe('Settlements', () => {
       'groups.get': () => fixGroup,
       'settlements.list': () => [],
     });
-    expect(await screen.findByText('Todavía no hay pagos registrados.')).toBeInTheDocument();
+    expect(await screen.findByText('Todavía no hay pagos registrados')).toBeInTheDocument();
   });
 
   it('shows settlements list', async () => {

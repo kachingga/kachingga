@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { signInWithGoogle } from '@/lib/auth';
 import { HOME, rememberReturnToForGoogle } from '@/lib/return-to';
 
-/** An "o" divider + "Continuar con Google", under the email form of login and register. */
+/** "Continuar con Google" + an "o con tu email" divider, above the email form of login and register. */
 export function GoogleSignIn({ returnTo = HOME }: { returnTo?: string }) {
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
@@ -24,12 +24,10 @@ export function GoogleSignIn({ returnTo = HOME }: { returnTo?: string }) {
 
   return (
     <div>
-      <div className="my-6 flex items-center gap-3 text-xs text-muted-foreground">
-        <span className="h-px flex-1 bg-border" />o<span className="h-px flex-1 bg-border" />
-      </div>
       <Button
         type="button"
         variant="google"
+        size="lg"
         className="w-full gap-2.5"
         onClick={handleClick}
         loading={loading}
@@ -38,6 +36,10 @@ export function GoogleSignIn({ returnTo = HOME }: { returnTo?: string }) {
         {loading ? 'Abriendo Google…' : 'Continuar con Google'}
       </Button>
       {error && <p className="mt-2 text-sm text-destructive">{error}</p>}
+      <div className="my-5 flex items-center gap-3 text-xs text-muted-foreground">
+        <span className="h-px flex-1 bg-border" />o con tu email
+        <span className="h-px flex-1 bg-border" />
+      </div>
     </div>
   );
 }

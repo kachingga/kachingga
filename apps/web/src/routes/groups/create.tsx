@@ -39,8 +39,8 @@ export function CreateGroup() {
         <h2 className="text-3xl font-bold">Grupo creado</h2>
         <p className="-mt-3 text-muted-foreground">Compartí este código para que otros se unan:</p>
 
-        <div className="rounded-3xl bg-hero p-8 text-center text-primary-foreground shadow-lift dark:text-foreground">
-          <p className="font-mono text-4xl font-bold tracking-widest">{created.inviteCode}</p>
+        <div className="rise rounded-lg bg-hero p-8 text-center text-hero-foreground shadow-lift">
+          <p className="font-display text-4xl font-bold tracking-wider">{created.inviteCode}</p>
         </div>
 
         <div className="flex gap-2">

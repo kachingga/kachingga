@@ -37,8 +37,9 @@
 
 **UI**
 - **Colores del tema** (`bg-card`, `text-muted-foreground`, `text-positive`…), **nunca fijos** (`bg-neutral-900`, `text-white`). Claro y oscuro siguen al sistema salvo que la persona elija con el toggle (`src/lib/theme.ts`).
-- **Marco y piezas del diseño:** toda pantalla logueada va dentro de `AppShell` (lo pone el router) y define su ancho con `<Page>`; tarjetas, íconos de categoría, avatares y saldos con los de `src/components/kit.tsx`, no a mano. Formularios con `Button` (con `loading`), `Input`, `NativeSelect`, `<Field>` y `<Chip>`, nunca `<button>` / `<input>` con clases a mano.
-- Cargando = **skeleton** (nunca un spinner suelto); error = **`ErrorState`** con Reintentar; confirmar = **`useConfirm`** (nunca `confirm()`); avisar = **toast**.
+- **Marco y piezas del diseño:** toda pantalla logueada va dentro de `AppShell` (lo pone el router) y define su ancho con `<Page>`; tarjetas, íconos de categoría, avatares (con `id`: cada persona tiene su color), montos grandes (`Money`), saldos y estados vacíos (`EmptyState`) con los de `src/components/kit.tsx`, no a mano. Formularios con `Button` (con `loading`), `Input`, `NativeSelect`, `<Field>` y `<Chip>`, nunca `<button>` / `<input>` con clases a mano.
+- Cargando = **skeleton** (nunca un spinner suelto); vacío = **`EmptyState`**; error = **`ErrorState`** con Reintentar; confirmar = **`useConfirm`** (nunca `confirm()`); avisar = **toast**.
+- Animaciones cortas y apagadas con **"reducir movimiento"** (ya lo hace la regla global de `src/index.css`; ver `docs/claude/web/sensacion-de-app.md` → "Micro-interacciones").
 - Cerrar una pantalla después de guardar o borrar: **`useGoBack()(fallback)`**, no `navigate(ruta)`.
 - Componentes generados de shadcn (`src/components/ui/`): no se editan salvo estilo.
 - Copy en español argentino; código en inglés.
@@ -92,7 +93,7 @@ src/
 ├── main.tsx · router.tsx     # providers (ApiProvider, ConfirmProvider, Toaster) · todas las rutas
 ├── index.css                 # Tailwind + variables del tema (claro / oscuro) + transiciones
 ├── routes/                   # una pantalla por archivo (groups/ = lo de un grupo), tests en __tests__/
-├── components/               # ui/ (shadcn), kit (Card, CategoryIcon, Avatar, MyBalance, Page…), app-shell,
+├── components/               # ui/ (shadcn), kit (Card, CategoryIcon, Avatar, Money, EmptyState, Page…), app-shell,
 │                             # auth-layout, skeletons, error-state, number-input, exchange-rate-fields,
 │                             # confirm-provider, animated-layout, api-provider, require-auth, offline-banner,
 │                             # category-picker, category-editor

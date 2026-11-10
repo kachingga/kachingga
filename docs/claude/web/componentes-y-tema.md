@@ -4,14 +4,18 @@
 
 ## Diseño: paleta "yerba y durazno" (nov 2026)
 
-Sale de un diseño hecho en Lovable que eligió Galo (#37): **no se copió el proyecto** (usaba otro router y datos falsos), se llevaron el tema, las tipografías, el layout y el estilo de los componentes a nuestras pantallas.
+Sale de un diseño hecho en Lovable que eligió Galo (#37), con una **segunda iteración "con más onda"** (#84: el último commit del proyecto de Lovable). En las dos **no se copió el proyecto** (usaba otro router y datos falsos): se llevaron el tema, las tipografías, el layout, los componentes y las animaciones a nuestras pantallas.
 
 - **Colores:** verde profundo de confianza (`primary`) + durazno cálido (`highlight`), fondo crema. Claro en `:root` y oscuro en `.dark`, en `src/index.css`.
-- **Tokens propios** además de los de shadcn: `positive` / `positive-soft` (te deben), `negative` / `negative-soft` (debés), `highlight` / `highlight-foreground` (acento durazno: avisos, detalles), `google` / `google-foreground` / `google-border` (botón de Google), sombras `shadow-soft` (tarjetas) y `shadow-lift` (lo que flota o se destaca).
+- **Tokens propios** además de los de shadcn: `positive` / `positive-soft` (te deben), `negative` / `negative-soft` (debés), `highlight` / `highlight-foreground` (acento durazno: avisos, detalles, el punto de "Kachingga." y la selección de texto), `google` / `google-foreground` / `google-border` (botón de Google), `primary-deep` (el borde de abajo del botón principal), `ledge` (el borde "sticker" de las tarjetas) y el texto de cada estado de "Tu situación": `hero-foreground` / `owe-foreground` / `even-foreground`.
+- **Sombras:** `shadow-sticker` (tarjetas: un borde plano abajo, como una calcomanía), `shadow-ledge` / `shadow-ledge-pressed` (botón principal: se hunde al tocarlo), `shadow-lift` (lo que flota: botón "Agregar gasto", menús) y `shadow-soft` (queda para lo que no es tarjeta).
+- **"Tu situación" con 3 estados** (`MySituation` en `routes/groups/detail.tsx`): degradé verde `bg-hero` (te deben), durazno `bg-owe` (debés, con "Registrar pago") y lima `bg-even` (al día). Cada uno con su color de texto (arriba).
 - **Colores de categorías** (#84): 12 colores vivos y distintos — tomate, mandarina, mango, lima, menta, turquesa, cielo, índigo, uva, frambuesa, rosa y cacao (`tomato` … `cocoa`, `categoryColors` en la API). Cada uno es un par de tokens `--cat-<color>` (el ícono) y `--cat-<color>-soft` (su fondo), definidos en claro y oscuro con contraste AA entre ellos (≥4.8:1 en claro, ≥7.4:1 en oscuro). Las 8 por defecto tienen un color cada una (comida mandarina, súper lima, transporte cielo, alojamiento índigo, salidas frambuesa, compras uva, servicios mango, otros cacao). Para sumar un color: los dos tokens en `:root` y `.dark` + `@theme`, `categoryColors` en la API, `CATEGORY_COLORS` en `src/lib/categories.ts` y su nombre en el editor.
 - **Tipografías self-hosted** (`@fontsource-variable/*`, andan offline con la PWA): **Manrope** para el texto (`font-sans`) y **Bricolage Grotesque** para títulos y montos grandes (`font-display`; los `h1`–`h3` ya la usan).
-- **Utilidades** (`@utility` en `index.css`): `bg-hero` (degradé verde de "Tu situación" y del login), `tabular` (números de ancho fijo en montos), `press` (se achica apenas al tocar), `rise` (entra subiendo; apagada con "reducir movimiento"), y las de zonas seguras del iPhone: `pb-safe`, `pt-safe`, `bottom-safe`.
-- **Radios:** `--radius` 1rem; tarjetas `rounded-2xl`, botones y chips `rounded-full`, campos `rounded-xl`.
+- **Utilidades** (`@utility` en `index.css`): `bg-hero` / `bg-owe` / `bg-even` (los degradés de "Tu situación"; `bg-hero` también en el código de invitación), `coin-pattern` (monedas partidas de fondo en el login: una máscara que toma el color del texto, con opacidad baja), `tabular` (números de ancho fijo en montos), `press` (se achica al tocar y rebota un poco al soltar), `rise` (entra subiendo), `pop-in` (lo recién agregado cae con un destello verde) y las de zonas seguras del iPhone: `pb-safe`, `pt-safe`, `bottom-safe`.
+- **"Reducir movimiento"** del sistema apaga **todas** las animaciones y transiciones (regla global en `index.css`, además de las de pantallas, `rise` y `pop-in`). Una animación nueva no necesita nada más.
+- **Radios:** `--radius` 1rem; tarjetas, íconos de categoría y chips de categoría `rounded-lg`, botones y chips de opciones `rounded-full`, campos `rounded-xl`.
+- **Personalidad, con tono claro** (lo que eligió Galo en Lovable): saludo "¡Hola, {nombre}!" en Mis grupos (el nombre de la cuenta de Google; con email, "¡Hola!"), "Cuentas claras. Amistades intactas." en el login y la barra lateral, y estados vacíos con ícono. Sin chistes forzados ni emojis en los textos.
 
 ## shadcn/ui
 
@@ -32,8 +36,8 @@ Sale de un diseño hecho en Lovable que eligió Galo (#37): **no se copió el pr
 
 ## Marco de las pantallas
 
-- **`AppShell`** (`src/components/app-shell.tsx`, ruta padre de todo lo logueado en `src/router.tsx`): en compu (`lg`) barra lateral con el logo, "Mis grupos", "Mi cuenta", "Salir" y el toggle; en el celu un header fijo arriba con el logo, "Mi cuenta" y el toggle. Adentro va la pantalla animada (`AnimatedLayout`). El logo es `public/logo.svg` (el mismo de los íconos de la PWA).
-- **Login y registro** van sin marco, con `AuthLayout` (`src/components/auth-layout.tsx`): en compu, panel verde (`bg-hero`) a la izquierda y el formulario a la derecha.
+- **`AppShell`** (`src/components/app-shell.tsx`, ruta padre de todo lo logueado en `src/router.tsx`): en compu (`lg`) barra lateral con el logo, la frase, "Mis grupos", "Mi cuenta", "Salir" y el toggle; en el celu un header fijo arriba con el logo, "Mi cuenta" y el toggle. Adentro va la pantalla animada (`AnimatedLayout`). El logo (`Logo` / `Wordmark`) es `public/logo.svg` (el mismo de los íconos de la PWA) + "Kachingga." con el punto durazno.
+- **Login y registro** van sin marco, con `AuthLayout` (`src/components/auth-layout.tsx`): fondo crema con monedas (`coin-pattern`), la marca (el `h1`) y el formulario, uno al lado del otro en compu y uno arriba del otro en el celu. "Continuar con Google" va primero y después "o con tu email".
 - **Ancho de cada pantalla:** `<Page>` (`src/components/kit.tsx`): angosta por defecto (formularios, listas: `max-w-2xl`) y `wide` (`max-w-6xl`) para el grupo y filtros, que en compu van en **dos columnas** (saldos o filtros a un costado, gastos al lado).
 - **Botón flotante** ("Agregar gasto") solo en el celu, con `bottom-safe`; en compu va en el título de la columna de gastos.
 
@@ -41,18 +45,21 @@ Sale de un diseño hecho en Lovable que eligió Galo (#37): **no se copió el pr
 
 | Para | Usar | Nunca |
 |------|------|-------|
-| Superficie de contenido | `<Card>` (`kit.tsx`): `rounded-2xl`, borde, `shadow-soft` | Un `div` con estilos repetidos |
+| Superficie de contenido | `<Card>` (`kit.tsx`): `rounded-lg`, borde, `shadow-sticker` | Un `div` con estilos repetidos |
 | Ícono de una categoría | `<CategoryIcon icon color>` (`kit.tsx`) con el `icon` y `color` que trae la categoría de la API. Los nombres se traducen en `src/lib/categories.ts`: ícono → componente de lucide, color → clases del tema (`CATEGORY_COLORS`, fondo suave + color, siempre variables del tema). Si se suma un ícono o color a la API (`categoryIcons` / `categoryColors`), sumarlo ahí | Emojis, íconos sueltos o colores hex |
-| Elegir una categoría (formulario de gasto) | `<CategoryPicker>` (`components/category-picker.tsx`): grupo de opciones con ícono, color y nombre | Un `<select>` (no muestra íconos) |
+| Elegir una categoría (formulario de gasto) | `<CategoryPicker>` (`components/category-picker.tsx`): chips del color de cada categoría con ícono y nombre (la elegida, rellena de su color: `CATEGORY_COLORS_STRONG`), como grupo de opciones (`radio`) | Un `<select>` (no muestra íconos) |
 | Crear o editar una categoría | `<CategoryEditor>` (`components/category-editor.tsx`): nombre, ícono y color, todos con nombre accesible | — |
-| Inicial de una persona o grupo | `<Avatar name>` (`kit.tsx`, colores del tema) | Colores fijos por nombre |
+| Inicial de una persona o grupo | `<Avatar id name>` (`kit.tsx`): cada uno con su color, uno de los mismos 12 de las categorías elegido por su `id` (`colorForId` en `src/lib/categories.ts`: misma persona, mismo color en todas las pantallas) | Colores fijos por nombre |
+| Quiénes están en un grupo | `<AvatarStack people>` (`kit.tsx`): hasta 5 caritas superpuestas y "+N" (decorativo: al lado va "N participantes") | — |
+| Un monto grande (saldo, gasto, transferencia) | `<Money cents currency>` (`kit.tsx`): tipografía de títulos, con los centavos más chicos (`formatCentsParts`) | Partir el texto a mano |
+| Nada para mostrar todavía | `<EmptyState icon title description>` (`kit.tsx`), con la acción para empezar como `children` | Un texto suelto o un emoji |
 | Mi saldo ("Te deben" / "Debés" / "Estás al día") | `<MyBalance cents currency>` (`kit.tsx`: verde / terracota / gris, en un solo texto) | Armar el texto y el color en cada pantalla |
 | Título de pantalla con "volver" y acciones | `<PageHeader>` (`kit.tsx`) | — |
 | Cargando | Skeletons con la forma de la pantalla (`skeletons.tsx`, sobre `Skeleton`) | Un spinner suelto |
 | Error de una query | `<ErrorState message onRetry={() => query.refetch()} />` (mensaje de la API + **Reintentar**) | Un error técnico crudo |
 | Confirmar algo destructivo | `useConfirm()` (`src/lib/use-confirm.ts` + `<ConfirmProvider>` en `main.tsx`): `if (await confirm({ title, description, confirmLabel, destructive }))` | `confirm()` del navegador |
 | Avisar éxito o error de una acción | `toast()` / `toast.error()` de `sonner` (`<Toaster>` en `main.tsx`) | `alert()` |
-| Botón | `<Button>` (`src/components/ui/button.tsx`). Variantes: `default` (acción principal), `outline` (secundaria), `secondary`, `soft` (confirmar algo chico en línea, ej. "OK"), `ghost` (acciones de texto o de solo ícono, ítems de menú), `destructive` (borrar, quitar), `link`, `google` (solo "Continuar con Google"). Tamaños `default` / `sm` / `xs` / `lg` e `icon*` (los de solo ícono **siempre** con `aria-label`). **`loading`**: deshabilita y marca `aria-busy`; el texto lo pone la pantalla ("Guardando…") | `<button>` con clases a mano |
+| Botón | `<Button>` (`src/components/ui/button.tsx`; todos rebotan al tocar con `press`). Variantes: `default` (acción principal, con borde de abajo que se hunde al tocarlo), `outline` (secundaria), `secondary`, `soft` (confirmar algo chico en línea, ej. "OK"), `ghost` (acciones de texto o de solo ícono, ítems de menú), `destructive` (borrar, quitar), `link`, `google` (solo "Continuar con Google"). Tamaños `default` / `sm` / `xs` / `lg` e `icon*` (los de solo ícono **siempre** con `aria-label`). **`loading`**: deshabilita y marca `aria-busy`; el texto lo pone la pantalla ("Guardando…") | `<button>` con clases a mano |
 | Campo de texto | `<Input>` (`src/components/ui/input.tsx`); fechas, `<Input type="date">` | `<input>` con clases a mano |
 | Elegir de una lista (participante, moneda) | `<NativeSelect>` (`src/components/ui/native-select.tsx`): `<select>` nativo con el estilo de `Input` | Un dropdown propio (en el celu es peor que el del sistema) |
 | Etiqueta + campo | `<Field label htmlFor>` (`kit.tsx`, usa `Label`); `small` para formularios densos (filtros) | `<label>` + `<div>` con márgenes a mano |
@@ -61,4 +68,4 @@ Sale de un diseño hecho en Lovable que eligió Galo (#37): **no se copió el pr
 | Moneda y tipo de cambio | `<ExchangeRateFields>` + `useExchangeRate` | Repetir la lógica en cada form |
 | Cerrar sesión | `useSignOut()` (`src/lib/use-sign-out.ts`: borra la cache offline y la de memoria) | `signOut()` suelto |
 
-Falta: texto de monto y selector de participantes reutilizables (hoy cada pantalla resuelve el suyo).
+Falta: selector de participantes reutilizable (hoy cada pantalla resuelve el suyo).

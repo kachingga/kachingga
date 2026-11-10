@@ -5,6 +5,7 @@ import {
   dayToDate,
   endOfDay,
   formatCents,
+  formatCentsParts,
   formatDate,
   formatPlainAmount,
   monthRange,
@@ -107,5 +108,19 @@ describe('calendar days', () => {
   it('gives the first and last day of a month', () => {
     expect(monthRange('2026-11-04')).toEqual({ from: '2026-11-01', to: '2026-11-30' });
     expect(monthRange('2028-02-10')).toEqual({ from: '2028-02-01', to: '2028-02-29' });
+  });
+});
+
+describe('formatCentsParts', () => {
+  it('splits an amount at the decimal separator, so the cents can go smaller', () => {
+    const big = formatCentsParts(150050, 'ARS');
+    expect(big.whole).toMatch(/^\$\s1\.500$/);
+    expect(big.fraction).toBe(',50');
+    const negative = formatCentsParts(-2500, 'ARS');
+    expect(negative.whole).toMatch(/^-\$\s25$/);
+    expect(negative.fraction).toBe(',00');
+    // Together they're exactly formatCents.
+    const { whole, fraction } = formatCentsParts(123456789, 'USD');
+    expect(whole + fraction).toBe(formatCents(123456789, 'USD'));
   });
 });

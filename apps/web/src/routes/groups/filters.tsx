@@ -358,7 +358,7 @@ export function Filters() {
           {/* Totales */}
           {summary.isPending && (
             <div role="status" aria-label="Calculando totales" className="space-y-2">
-              <div className="h-24 animate-pulse rounded-2xl bg-muted" />
+              <div className="h-24 animate-pulse rounded-lg bg-muted" />
             </div>
           )}
           {summary.isError && (
@@ -372,7 +372,7 @@ export function Filters() {
               {summary.data.map((s) => (
                 <div
                   key={s.currency}
-                  className="rise rounded-2xl border bg-card p-5 text-sm shadow-soft"
+                  className="rise rounded-lg border bg-card p-5 text-sm shadow-sticker"
                 >
                   <p className="w-fit rounded-full bg-muted px-2.5 py-0.5 text-xs font-semibold text-muted-foreground">
                     {s.currency}
@@ -457,7 +457,7 @@ export function Filters() {
                 No hay gastos con estos filtros.
               </p>
             )}
-            <ul className="overflow-hidden rounded-2xl border bg-card shadow-soft empty:hidden">
+            <ul className="overflow-hidden rounded-lg border bg-card shadow-sticker empty:hidden">
               {allExpenses.map((e) => (
                 <li key={e.id} className="border-b last:border-0">
                   <Link

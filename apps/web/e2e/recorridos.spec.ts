@@ -49,7 +49,7 @@ test('registro, cerrar sesión y volver a entrar', async ({ page }) => {
 
   await page.getByLabel('Email').fill(account.email);
   await page.getByLabel('Contraseña').fill(account.password);
-  await page.getByRole('button', { name: 'Entrar' }).click();
+  await page.getByRole('button', { name: 'Dale, entremos' }).click();
   await expect(page).toHaveURL(/\/grupos$/);
 });
 
@@ -86,7 +86,9 @@ test('grupo: gasto, saldos, unirse con código y saldar', async ({ browser }) =>
     await galo.getByLabel('Descripción').fill('E2E cena');
     await galo.getByRole('button', { name: 'Agregar gasto' }).click();
     await expect(galo.getByText('E2E cena')).toBeVisible();
-    await expect(galo.getByText(/^Te deben \$\s?500/)).toBeVisible();
+    await expect(galo.getByRole('region', { name: 'Tu situación' })).toContainText(
+      /Te deben\s*\$\s?500/,
+    );
     await expect(galo.getByText(/Naiara → Galo/)).toContainText('500');
   });
 
@@ -99,7 +101,9 @@ test('grupo: gasto, saldos, unirse con código y saldar', async ({ browser }) =>
     await naiara.getByLabel('Soy Naiara').check();
     await naiara.getByRole('button', { name: 'Unirme', exact: true }).click();
     await expect(naiara.getByText(groupName)).toBeVisible();
-    await expect(naiara.getByText(/^Debés \$\s?500/)).toBeVisible();
+    await expect(naiara.getByRole('region', { name: 'Tu situación' })).toContainText(
+      /Debés\s*\$\s?500/,
+    );
   });
 
   await test.step('marcar como pagado y quedar al día', async () => {

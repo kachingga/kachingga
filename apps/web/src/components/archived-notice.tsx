@@ -19,7 +19,7 @@ export function ArchivedNotice({ groupId }: { groupId: string }) {
   return (
     <div
       role="status"
-      className="rise flex items-center justify-between gap-3 rounded-2xl border bg-highlight/15 p-4 text-sm shadow-soft"
+      className="rise flex items-center justify-between gap-3 rounded-lg border bg-highlight/15 p-4 text-sm shadow-sticker"
     >
       <p className="text-muted-foreground">
         <span className="font-medium text-foreground">Grupo archivado.</span> Se puede ver pero no

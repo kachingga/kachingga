@@ -1,12 +1,20 @@
 import { cn } from 'cn';
+import { Shapes } from 'lucide-react';
 
-import { CategoryIcon } from '@/components/kit';
+import {
+  CATEGORY_COLORS,
+  CATEGORY_COLORS_STRONG,
+  CATEGORY_ICONS,
+  type CategoryColor,
+  type CategoryIconName,
+} from '@/lib/categories';
 
 export type PickableCategory = { id: string; name: string; icon: string; color: string };
 
 /**
- * Pick one of the group's categories (expense form): each one with its icon and color, as a
- * radio group (keyboard and screen readers treat it as one choice).
+ * Pick one of the group's categories (expense form): a chip in each category's color with its icon
+ * and name (the picked one, filled with its color), as a radio group (keyboard and screen readers
+ * treat it as one choice).
  */
 export function CategoryPicker({
   categories,
@@ -20,9 +28,11 @@ export function CategoryPicker({
   label?: string;
 }) {
   return (
-    <div role="radiogroup" aria-label={label} className="flex flex-wrap gap-2">
+    <div role="radiogroup" aria-label={label} className="grid grid-cols-2 gap-2 sm:grid-cols-3">
       {categories.map((c) => {
         const checked = c.id === value;
+        const color = (c.color in CATEGORY_COLORS ? c.color : 'cocoa') as CategoryColor;
+        const Icon = CATEGORY_ICONS[c.icon as CategoryIconName] ?? Shapes;
         return (
           <button
             key={c.id}
@@ -31,18 +41,14 @@ export function CategoryPicker({
             aria-checked={checked}
             onClick={() => onChange(c.id)}
             className={cn(
-              'press flex items-center gap-2 rounded-xl border py-1.5 pr-3 pl-1.5 text-sm font-medium transition-colors',
+              'press flex min-h-11 min-w-0 items-center gap-2 rounded-lg px-3 py-2 text-left text-sm font-semibold',
               checked
-                ? 'border-primary bg-accent text-accent-foreground ring-2 ring-primary/30'
-                : 'border-border bg-card text-foreground hover:bg-muted',
+                ? cn(CATEGORY_COLORS_STRONG[color], 'ring-2 ring-offset-2 ring-offset-card')
+                : CATEGORY_COLORS[color],
             )}
           >
-            <CategoryIcon
-              icon={c.icon}
-              color={c.color}
-              className="size-7 rounded-lg [&_svg]:size-4"
-            />
-            {c.name}
+            <Icon aria-hidden className="size-4 shrink-0" />
+            <span className="truncate">{c.name}</span>
           </button>
         );
       })}

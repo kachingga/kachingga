@@ -1,10 +1,11 @@
 import type { ReactNode } from 'react';
+import { Heart } from 'lucide-react';
 
-import { ThemeToggle } from '@/components/app-shell';
+import { ThemeToggle, Wordmark } from '@/components/app-shell';
 
 /**
- * Login / register frame: green hero on the left on wide screens, the form on the right. The brand
- * is the page's h1: in the hero on wide screens, above the form on phones (only one is visible).
+ * Login / register frame: cream background with faint split coins, the brand (the page's h1) and
+ * the form. Side by side on wide screens, one above the other on phones.
  */
 export function AuthLayout({
   title,
@@ -16,43 +17,37 @@ export function AuthLayout({
   children: ReactNode;
 }) {
   return (
-    <div className="min-h-dvh lg:grid lg:grid-cols-2">
-      <section className="relative hidden flex-col justify-between overflow-hidden bg-hero p-12 text-primary-foreground lg:flex dark:text-foreground">
-        <h1 className="flex items-center gap-2 font-display text-2xl font-bold">
-          <img src="/logo.svg" alt="" className="size-9 rounded-lg" />
-          Kachingga
-        </h1>
-        <div className="rise max-w-md">
-          <p className="font-display text-5xl leading-[1.05] font-bold">
-            Las cuentas claras conservan la amistad.
-          </p>
-          <p className="mt-5 text-lg opacity-80">
-            Cargá los gastos del viaje, del depto o del asado. Kachingga te dice quién le transfiere
-            a quién.
-          </p>
-        </div>
-        <div className="rise w-72 rounded-2xl bg-background/10 p-4 backdrop-blur-sm [animation-delay:150ms]">
-          <p className="text-xs tracking-wider uppercase opacity-70">Cómo quedar a mano</p>
-          <p className="mt-2 font-display text-xl">
-            Ana → Beto <span className="text-highlight">$ 7.775</span>
-          </p>
-        </div>
-      </section>
+    <div className="relative min-h-dvh overflow-hidden bg-background">
+      <div
+        aria-hidden
+        className="pointer-events-none absolute inset-0 coin-pattern text-primary opacity-[0.045] dark:opacity-[0.05]"
+      />
+      <header className="relative mx-auto flex max-w-6xl items-center justify-between px-6 pt-[calc(env(safe-area-inset-top)+1.25rem)] pb-5 sm:px-10">
+        <Wordmark />
+        <ThemeToggle />
+      </header>
 
-      <section className="flex min-h-dvh flex-col px-6 pt-[calc(env(safe-area-inset-top)+1.5rem)] pb-6 sm:px-10">
-        <div className="flex items-center justify-between">
-          <h1 className="flex items-center gap-2 font-display text-xl font-bold lg:invisible">
-            <img src="/logo.svg" alt="" className="size-8 rounded-lg" />
-            Kachingga
+      <main className="relative mx-auto grid max-w-5xl items-center gap-8 px-6 pt-2 pb-10 sm:px-10 lg:min-h-[640px] lg:grid-cols-[1.15fr_1fr] lg:gap-20 lg:pt-10">
+        <section className="text-center lg:text-left">
+          <p className="inline-flex items-center gap-2 rounded-full bg-accent px-3 py-1.5 text-xs font-semibold text-accent-foreground">
+            <Heart aria-hidden className="size-3.5" />
+            Cuentas claras. Amistades intactas.
+          </p>
+          <h1 className="mt-4 text-4xl font-extrabold sm:text-5xl">
+            Kachingga<span className="text-highlight">.</span>
           </h1>
-          <ThemeToggle />
-        </div>
-        <div className="rise mx-auto my-auto w-full max-w-sm py-10">
+          <p className="mx-auto mt-4 max-w-sm leading-relaxed text-muted-foreground lg:mx-0">
+            Compartí gastos. Organizá tus cuentas. Tené claro quién pagó y cuánto le toca a cada
+            uno.
+          </p>
+        </section>
+
+        <section className="rise mx-auto w-full max-w-sm">
           <h2 className="text-3xl font-bold">{title}</h2>
-          <p className="mt-2 text-muted-foreground">{subtitle}</p>
-          <div className="mt-8">{children}</div>
-        </div>
-      </section>
+          <p className="mt-2 text-sm text-muted-foreground">{subtitle}</p>
+          <div className="mt-6">{children}</div>
+        </section>
+      </main>
     </div>
   );
 }
