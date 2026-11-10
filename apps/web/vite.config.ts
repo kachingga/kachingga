@@ -22,6 +22,8 @@ export default defineConfig({
     // autoUpdate: a new deploy replaces the old version on the next open.
     VitePWA({
       registerType: 'autoUpdate',
+      // Registered by src/lib/service-worker.ts (the generated registerSW.js doesn't catch a refused registration).
+      injectRegister: false,
       pwaAssets: { config: true, overrideManifestIcons: true, injectThemeColor: false },
       manifest: {
         name: 'Kachingga',
