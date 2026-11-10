@@ -27,7 +27,7 @@
 - Mutations: **callbacks en `useMutation(trpc.x.mutationOptions({ … }))`**, nunca en `mutate(input, { … })`. Optimistic updates con `src/lib/optimistic.ts`; lo provisorio (`isTemp`) sin link ni acciones.
 - Precarga: los inputs tienen que ser **idénticos** a los de la pantalla.
 - Si a la web le falta algo de la API, se agrega en `apps/api`, nunca un workaround en el front.
-- **Offline es solo lectura:** la cache guardada en el dispositivo es **por usuario** y **se borra al cerrar sesión**; sin conexión las mutations fallan antes del optimistic update. No persistir mutations ni nada de la sesión.
+- **Offline es solo lectura:** la cache guardada en el dispositivo es **por usuario** y **se borra cuando termina la sesión** (por cualquier camino); sin conexión las mutations fallan antes del optimistic update. No persistir mutations ni nada de la sesión.
 
 **Plata y fechas**
 - Plata en **centavos enteros**. Campos numéricos con **`<NumberInput>`**, nunca `parseFloat` sobre lo que escribe el usuario. Mostrar con `formatCents`.

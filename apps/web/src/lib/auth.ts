@@ -2,7 +2,7 @@ import type { Session } from '@supabase/supabase-js';
 import { useEffect, useState } from 'react';
 
 import { withReturnTo } from '@/lib/return-to';
-import { supabase } from '@/lib/supabase';
+import { signOutOfDevice, supabase } from '@/lib/supabase';
 
 // Email + password or Google with Supabase Auth (decision in CLAUDE.md). Screens call these; errors
 // come back as Supabase AuthError (show them with `authErrorMessage`, src/lib/auth-errors.ts).
@@ -28,7 +28,8 @@ export const signInWithGoogle = () =>
     provider: 'google',
     options: { redirectTo: `${window.location.origin}/` },
   });
-export const signOut = () => supabase.auth.signOut();
+// Even without connection: see `signOutOfDevice`.
+export const signOut = () => signOutOfDevice();
 
 // The confirmation mail's link goes to the login, which confirms the email with the token the mail
 // adds (`#token_hash=…`) and goes on to `returnTo` (e.g. an invite link).
