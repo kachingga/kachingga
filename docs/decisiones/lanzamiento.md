@@ -28,7 +28,7 @@ Costos y la decisión de front (web app vs. nativa): [`costos-y-alternativas.md`
 Varias decisiones de producto se tomaron pensando en un grupo de amigos y hay que revisarlas. Si se sigue como web app, solo aplica lo que no es de las stores. **Si se decide publicar (#44), cada punto pasa a ser un issue del milestone de la Fase 2.**
 
 ### Requisitos de las stores (solo app nativa)
-- **Borrar la cuenta desde la app** (Apple lo exige): procedure + pantalla, borrando también en Supabase Auth y definiendo qué pasa con sus gastos en grupos compartidos.
+- ~~**Borrar la cuenta desde la app** (Apple lo exige)~~: **ya está** (#104, Mi cuenta → "Borrar mi cuenta"; la regla, en `CLAUDE.md` → "Usuarios y login").
 - Política de privacidad (URL), declaración de datos, términos de uso y URL o mail de soporte.
 - Ícono, capturas, descripción y categoría.
 - **Apple:** revisión de App Store. Publicando como persona, figura **el nombre de Galo** como vendedor; para que diga "Kachingga" hace falta una organización (con número D-U-N-S).
