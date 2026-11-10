@@ -6,6 +6,7 @@
 |----------|-----------|-----------|--------------|
 | API | Railway (proyecto `kachingga`, servicio `api`) | railway.com/dashboard | Prod `https://api.kachingga.com` · staging `https://api-staging.kachingga.com` |
 | **Web** | Railway (proyecto `kachingga`, servicio `web`) | railway.com/dashboard | Prod `https://app.kachingga.com` · staging `https://staging.kachingga.com`. `kachingga.com` (sin `app.`) es la landing (#100), no está en Railway |
+| **Landing** | Lovable (plan Pro) | lovable.dev | `https://kachingga.com`, con la política de privacidad en `https://kachingga.com/privacidad` (#100). Código en el repo `kachingga/landing`, sincronizado con Lovable. Dominio propio conectado en Lovable: en Cloudflare, solo los registros de la raíz que pidió Lovable, en "DNS only" (los MX y TXT de la raíz son de los mails y de Search Console: no tocarlos). Sirve un `sw.js` que da de baja el service worker de la app vieja y borra del `localStorage` lo que dejó (`sb-*`, `kachingga-*`, #99): no sacarlos mientras algún navegador pueda tener la app vieja |
 | Dominio y DNS | Cloudflare (Registrar + DNS) | dash.cloudflare.com | `kachingga.com`, con renovación automática |
 | Mails de la app (SMTP) | Resend (plan gratis, cuenta de Galo) | resend.com | Dominio `kachingga.com` verificado (registros DNS en Cloudflare). Supabase manda por acá los mails de auth (ver "Supabase"). 100 mails por día |
 | Captcha | Cloudflare Turnstile | dash.cloudflare.com → Turnstile | Widget "Kachingga" (prod). Dev usa las claves de prueba (ver "Supabase") |
@@ -17,7 +18,7 @@
 | Login con Google (OAuth) | Google Cloud (proyecto `Kachingga` de Galo) | console.cloud.google.com → Google Auth Platform | Cliente OAuth *Web application* "Kachingga web", app publicada (*In production*). Detalle en "Supabase" |
 | CI | GitHub Actions | github.com/kachingga/kachingga/actions | `ci.yml` (checks obligatorios), `e2e.yml` (Playwright en la web, a demanda) y `backup.yml` (backup diario cifrado de prod y alerta de tamaño de la base, ver `DEPLOY.md` → "Backups") |
 | Errores (monitoreo) | Sentry (plan gratis, org `kachingga` de Galo) | sentry.io/organizations/kachingga | Proyectos `kachingga-web` (React) y `kachingga-api` (Bun); cada uno con `environment` `staging` / `production`. Cómo está hecho: `docs/claude/repo/monitoreo.md` |
-| Caídas (uptime) | UptimeRobot (plan gratis, cuenta de Galo) | uptimerobot.com | HTTP(s) a `app.kachingga.com` y `staging.kachingga.com`; Keyword (`"ok":true`) a `api.kachingga.com/health/db` y `api-staging.kachingga.com/health/db` (ver `DEPLOY.md` → "Monitoreo") |
+| Caídas (uptime) | UptimeRobot (plan gratis, cuenta de Galo) | uptimerobot.com | HTTP(s) a `kachingga.com` (landing), `app.kachingga.com` y `staging.kachingga.com`; Keyword (`"ok":true`) a `api.kachingga.com/health/db` y `api-staging.kachingga.com/health/db` (ver `DEPLOY.md` → "Monitoreo") |
 | Cotizaciones (dólar blue y oficial, oficial de EUR, BRL, UYU y CLP) | DolarApi (público, sin clave) | dolarapi.com | `https://dolarapi.com/v1/dolares/{blue,oficial}` y `/v1/cotizaciones/{eur,brl,uyu,clp}` |
 | Repo | GitHub | github.com/kachingga/kachingga | — |
 
