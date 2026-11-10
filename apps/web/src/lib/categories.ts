@@ -38,7 +38,7 @@ import {
   Wrench,
   Zap,
 } from 'lucide-react';
-import type { categoryColors, categoryIcons } from '@kachingga/api/schemas';
+import { categoryColors, type categoryIcons } from '@kachingga/api/schemas';
 
 export type CategoryIconName = (typeof categoryIcons)[number];
 export type CategoryColor = (typeof categoryColors)[number];
@@ -102,3 +102,29 @@ export const CATEGORY_COLORS: Record<CategoryColor, string> = {
   pink: 'bg-cat-pink-soft text-cat-pink',
   cocoa: 'bg-cat-cocoa-soft text-cat-cocoa',
 };
+
+/** A picked category (the chip in the expense form): the color as background, ring of the same color. */
+export const CATEGORY_COLORS_STRONG: Record<CategoryColor, string> = {
+  tomato: 'bg-cat-tomato text-cat-tomato-soft ring-cat-tomato',
+  tangerine: 'bg-cat-tangerine text-cat-tangerine-soft ring-cat-tangerine',
+  mango: 'bg-cat-mango text-cat-mango-soft ring-cat-mango',
+  lime: 'bg-cat-lime text-cat-lime-soft ring-cat-lime',
+  mint: 'bg-cat-mint text-cat-mint-soft ring-cat-mint',
+  teal: 'bg-cat-teal text-cat-teal-soft ring-cat-teal',
+  sky: 'bg-cat-sky text-cat-sky-soft ring-cat-sky',
+  indigo: 'bg-cat-indigo text-cat-indigo-soft ring-cat-indigo',
+  grape: 'bg-cat-grape text-cat-grape-soft ring-cat-grape',
+  raspberry: 'bg-cat-raspberry text-cat-raspberry-soft ring-cat-raspberry',
+  pink: 'bg-cat-pink text-cat-pink-soft ring-cat-pink',
+  cocoa: 'bg-cat-cocoa text-cat-cocoa-soft ring-cat-cocoa',
+};
+
+/**
+ * A stable color for a person or a group, from its id: one of the same 12 colors. Same id, same
+ * color on every screen (avatars, the faces of a group, the group's tile).
+ */
+export function colorForId(id: string): CategoryColor {
+  let hash = 0;
+  for (const char of id) hash = (hash * 31 + char.charCodeAt(0)) >>> 0;
+  return categoryColors[hash % categoryColors.length]!;
+}

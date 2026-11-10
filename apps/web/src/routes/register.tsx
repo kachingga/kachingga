@@ -34,7 +34,9 @@ export function Register() {
   }
 
   return (
-    <AuthLayout title="Creá tu cuenta" subtitle="Es gratis y tarda un minuto.">
+    <AuthLayout title="Creá tu cuenta" subtitle="Empezá a organizar tus gastos compartidos.">
+      <GoogleSignIn returnTo={returnTo} />
+
       <form onSubmit={handleSubmit} className="space-y-4">
         <div className="space-y-1.5">
           <Label htmlFor="email">Email</Label>
@@ -76,15 +78,13 @@ export function Register() {
 
         {error && <p className="text-sm text-destructive">{error}</p>}
 
-        <Button type="submit" disabled={loading} className="w-full text-base">
+        <Button type="submit" disabled={loading} size="lg" className="w-full">
           {loading ? 'Creando cuenta…' : 'Crear cuenta'}
           {!loading && <ArrowRight aria-hidden />}
         </Button>
       </form>
 
-      <GoogleSignIn returnTo={returnTo} />
-
-      <p className="mt-8 text-center text-sm text-muted-foreground">
+      <p className="mt-6 text-center text-sm text-muted-foreground">
         ¿Ya tenés cuenta?{' '}
         <Link
           to={withReturnTo('/login', returnTo)}

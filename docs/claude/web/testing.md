@@ -24,6 +24,7 @@ expect(await screen.findByText('Todavía no hay gastos')).toBeInTheDocument();
 - Un test por estado (cargando con `neverResolves`, vacío, error con `throw apiError(...)`, datos) + las interacciones principales (`@testing-library/user-event`), verificando qué procedure se llamó y con qué input.
 - Un procedure sin handler responde `NOT_FOUND` ("Sin handler de test para …").
 - El 3er argumento es la URL inicial (sirve para `?from=…` y otros search params). La pantalla se renderiza sin `<Routes>`, así que `useParams` viene vacío.
+- Devuelve también el `queryClient`: para datos que cambian con la pantalla abierta (cambiar lo que responde el handler y `await act(() => queryClient.invalidateQueries())`; ej. "Saldo actualizado" en `detail.test.tsx`).
 - Buscar como el usuario: `getByRole`, `getByLabelText`, `getByText`.
 - Datos falsos con la forma real (`docs/claude/api/contrato.md` o `inferRouterOutputs<AppRouter>`).
 - Optimistic updates: ver `datos-y-cache.md` (qué testear).

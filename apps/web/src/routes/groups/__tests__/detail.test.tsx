@@ -1,4 +1,4 @@
-import { screen, waitFor, within } from '@testing-library/react';
+import { act, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it } from 'vitest';
 
@@ -63,7 +63,8 @@ describe('GroupDetail', () => {
       'expenses.list': () => fixExpenses,
     });
     expect(await screen.findByText('Viaje a Floripa')).toBeInTheDocument();
-    expect(await screen.findByText('Todavía no hay gastos.')).toBeInTheDocument();
+    expect(await screen.findByText('Todavía no hay gastos')).toBeInTheDocument();
+    expect(screen.getByText('Agregá el primer gasto del grupo.')).toBeInTheDocument();
   });
 
   it('shows balances', async () => {
@@ -73,6 +74,101 @@ describe('GroupDetail', () => {
       'expenses.list': () => fixExpenses,
     });
     expect(await screen.findByText(/Te deben/)).toBeInTheDocument();
+  });
+
+  it('my situation when they owe me: the amount and what it means', async () => {
+    renderWithApi(<GroupDetail />, {
+      'groups.get': () => fixGroup,
+      'balances.get': () => fixBalances,
+      'expenses.list': () => fixExpenses,
+    });
+    const situation = await screen.findByRole('region', { name: 'Tu situación' });
+    expect(situation).toHaveTextContent(/Te deben\s*\$\s?5\.000,00/);
+    expect(situation).toHaveTextContent('Tu saldo pendiente de recibir en este grupo.');
+    expect(within(situation).queryByRole('link', { name: 'Registrar pago' })).toBeNull();
+  });
+
+  it('my situation when I owe: to whom, with a shortcut to register the payment', async () => {
+    const iOwe = [
+      {
+        currency: 'ARS',
+        balances: [
+          { participantId: 'p1', amountCents: -250050 },
+          { participantId: 'p2', amountCents: 250050 },
+        ],
+        transfers: [{ fromId: 'p1', toId: 'p2', amountCents: 250050 }],
+      },
+    ];
+    renderWithApi(<GroupDetail />, {
+      'groups.get': () => fixGroup,
+      'balances.get': () => iOwe,
+      'expenses.list': () => fixExpenses,
+    });
+    const situation = await screen.findByRole('region', { name: 'Tu situación' });
+    expect(situation).toHaveTextContent(/Debés\s*\$\s?2\.500,50/);
+    expect(situation).toHaveTextContent('Pago pendiente a Tuke.');
+    expect(within(situation).getByRole('link', { name: 'Registrar pago' })).toHaveAttribute(
+      'href',
+      '/grupos/g1/pagos?from=p1&to=p2&amount=250050&currency=ARS',
+    );
+  });
+
+  it('when everyone is square: says so, without transfers', async () => {
+    const square = [
+      {
+        currency: 'ARS',
+        balances: [
+          { participantId: 'p1', amountCents: 0 },
+          { participantId: 'p2', amountCents: 0 },
+        ],
+        transfers: [],
+      },
+    ];
+    renderWithApi(<GroupDetail />, {
+      'groups.get': () => fixGroup,
+      'balances.get': () => square,
+      'expenses.list': () => fixExpenses,
+    });
+    const situation = await screen.findByRole('region', { name: 'Tu situación' });
+    expect(situation).toHaveTextContent('Estás al día');
+    expect(situation).toHaveTextContent('No tenés pagos pendientes.');
+    expect(screen.getByText('Todos al día')).toBeInTheDocument();
+    // Nothing to celebrate: it was already square when the screen opened.
+    expect(screen.queryByText('Saldo actualizado')).not.toBeInTheDocument();
+  });
+
+  it('says "Saldo actualizado" when my balance turns square while the screen is open', async () => {
+    let balances: unknown = [
+      {
+        currency: 'ARS',
+        balances: [
+          { participantId: 'p1', amountCents: -1000 },
+          { participantId: 'p2', amountCents: 1000 },
+        ],
+        transfers: [{ fromId: 'p1', toId: 'p2', amountCents: 1000 }],
+      },
+    ];
+    const { queryClient } = renderWithApi(<GroupDetail />, {
+      'groups.get': () => fixGroup,
+      'balances.get': () => balances,
+      'expenses.list': () => fixExpenses,
+    });
+    expect(await screen.findByText('Debés')).toBeInTheDocument();
+
+    // The payment is registered (e.g. from another screen) and the balances come back square.
+    balances = [
+      {
+        currency: 'ARS',
+        balances: [
+          { participantId: 'p1', amountCents: 0 },
+          { participantId: 'p2', amountCents: 0 },
+        ],
+        transfers: [],
+      },
+    ];
+    await act(() => queryClient.invalidateQueries());
+    expect(await screen.findByText('Saldo actualizado')).toHaveAttribute('role', 'status');
+    expect(screen.getByRole('region', { name: 'Tu situación' })).toHaveTextContent('Estás al día');
   });
 
   it('shows expenses in the list', async () => {
@@ -144,6 +240,8 @@ describe('GroupDetail', () => {
     expect(await screen.findByText('Pizza')).toBeInTheDocument();
     expect(screen.getByText('Guardando…')).toBeInTheDocument();
     expect(screen.queryByRole('link', { name: /Pizza/ })).not.toBeInTheDocument();
+    // The one you just added drops in with a highlight.
+    expect(screen.getByText('Pizza').closest('li')).toHaveClass('pop-in');
   });
 
   it('archives the group after confirming', async () => {
@@ -202,7 +300,8 @@ describe('GroupDetail', () => {
     expect(await screen.findByText('Grupo archivado.')).toBeInTheDocument();
     expect(await screen.findByText(/Te deben/)).toBeInTheDocument();
     expect(screen.queryByRole('link', { name: 'Agregar gasto' })).not.toBeInTheDocument();
-    expect(screen.queryByRole('link', { name: 'Agregar uno' })).not.toBeInTheDocument();
+    expect(screen.queryByText('Agregá el primer gasto del grupo.')).not.toBeInTheDocument();
+    expect(screen.queryByRole('link', { name: 'Registrar pago' })).not.toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'Marcar como pagado' })).not.toBeInTheDocument();
 
     await user.click(screen.getByRole('button', { name: 'Opciones del grupo' }));

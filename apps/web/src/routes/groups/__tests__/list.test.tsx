@@ -1,9 +1,16 @@
 import { fireEvent, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { describe, expect, it } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { apiError, neverResolves, renderWithApi } from '@/test/render';
 import { GroupList } from '@/routes/groups/list';
+
+// The greeting uses the name of the Google account, when there is one.
+const auth = vi.hoisted(() => ({ session: null as unknown }));
+vi.mock('@/lib/auth', () => ({ useSession: () => auth.session }));
+beforeEach(() => {
+  auth.session = null;
+});
 
 const fixGroups = [
   {
@@ -12,6 +19,11 @@ const fixGroups = [
     baseCurrency: 'ARS',
     archivedAt: null,
     _count: { participants: 3 },
+    participants: [
+      { id: 'p1', name: 'Juan' },
+      { id: 'p2', name: 'Tuke' },
+      { id: 'p3', name: 'Flor' },
+    ],
     myBalanceCents: 150000,
   },
   {
@@ -20,6 +32,10 @@ const fixGroups = [
     baseCurrency: 'ARS',
     archivedAt: null,
     _count: { participants: 2 },
+    participants: [
+      { id: 'p4', name: 'Juan' },
+      { id: 'p5', name: 'Naiara' },
+    ],
     myBalanceCents: -2550,
   },
 ];
@@ -46,6 +62,38 @@ describe('GroupList', () => {
     expect(await screen.findByText(/Te deben \$\s?1\.500,00/)).toBeInTheDocument();
     expect(screen.getByText(/Debés \$\s?25,50/)).toBeInTheDocument();
     expect(screen.getByText('Estás al día')).toBeInTheDocument();
+  });
+
+  it('greets by the first name of the Google account, or just "¡Hola!"', async () => {
+    auth.session = { user: { user_metadata: { full_name: 'Galo Belloponce' } } };
+    const { unmount } = renderWithApi(<GroupList />, { 'groups.list': () => fixGroups });
+    expect(screen.getByText('¡Hola, Galo!')).toBeInTheDocument();
+    unmount();
+
+    auth.session = { user: { email: 'juan@example.com', user_metadata: {} } };
+    renderWithApi(<GroupList />, { 'groups.list': () => fixGroups });
+    expect(screen.getByText('¡Hola!')).toBeInTheDocument();
+  });
+
+  it('shows how many people each group has, with their faces', async () => {
+    const big = {
+      ...fixGroups[0],
+      id: 'g3',
+      name: 'Egresados',
+      _count: { participants: 7 },
+      participants: ['Ana', 'Beto', 'Caro', 'Dani', 'Eli', 'Fede', 'Gabi'].map((name, i) => ({
+        id: `q${i}`,
+        name,
+      })),
+    };
+    renderWithApi(<GroupList />, { 'groups.list': () => [...fixGroups, big] });
+    const card = await screen.findByRole('button', { name: /Egresados/ });
+    expect(card).toHaveTextContent('7 participantes');
+    // Up to 5 faces (initials) and "+2" for the rest.
+    expect(card).toHaveTextContent(/ABCDE\+2/);
+    expect(screen.getByRole('button', { name: /Depto Palermo/ })).toHaveTextContent(
+      '2 participantes',
+    );
   });
 
   it('shows empty state when there are no groups', async () => {

@@ -5,7 +5,7 @@ import { ArrowLeft, Pencil } from 'lucide-react';
 
 import { ArchivedNotice } from '@/components/archived-notice';
 import { ErrorState } from '@/components/error-state';
-import { Avatar, Card, CategoryIcon } from '@/components/kit';
+import { Avatar, Card, CategoryIcon, Money, SectionTitle } from '@/components/kit';
 import { Button } from '@/components/ui/button';
 import { ExpenseDetailSkeleton } from '@/components/skeletons';
 import { useTRPC } from '@/lib/trpc';
@@ -120,63 +120,59 @@ export function ExpenseDetail() {
 
       {isArchived && <ArchivedNotice groupId={groupId!} />}
 
-      <div className="rise space-y-5">
-        <div className="flex items-center gap-3">
-          <CategoryIcon icon={e.category.icon} color={e.category.color} className="size-12" />
-          <div className="min-w-0">
-            <h1 className="truncate text-2xl font-bold lg:text-3xl">{e.description}</h1>
-            <p className="text-muted-foreground">
-              {e.category.name} · {formatDate(e.date)}
-            </p>
-          </div>
-        </div>
-
-        <div className="rounded-3xl bg-hero p-6 text-primary-foreground shadow-lift dark:text-foreground">
-          <p className="font-display text-4xl font-bold tabular">
-            {formatCents(e.amountCents, e.currency)}
+      <Card className="rise text-center">
+        <CategoryIcon
+          icon={e.category.icon}
+          color={e.category.color}
+          className="mx-auto size-14 [&_svg]:size-6"
+        />
+        <h1 className="mt-4 text-2xl font-bold break-words lg:text-3xl">{e.description}</h1>
+        <p className="mt-1 text-sm text-muted-foreground">
+          {e.category.name} · {formatDate(e.date)}
+        </p>
+        <Money
+          cents={e.amountCents}
+          currency={e.currency}
+          className="mt-5 block text-4xl sm:text-5xl"
+        />
+        {base && e.exchangeRate !== null && (
+          <p className="mt-2 text-sm text-muted-foreground">
+            ≈ {formatCents(Math.round(e.amountCents * e.exchangeRate), base)} · Tipo de cambio:{' '}
+            {e.currency === 'ARS'
+              ? `1 ${base} = ${formatNumber(1 / e.exchangeRate)} ARS`
+              : `1 ${e.currency} = ${formatNumber(e.exchangeRate)} ${base}`}
           </p>
-          {base && e.exchangeRate !== null && (
-            <p className="mt-1 text-sm opacity-80">
-              ≈ {formatCents(Math.round(e.amountCents * e.exchangeRate), base)} · Tipo de cambio:{' '}
-              {e.currency === 'ARS'
-                ? `1 ${base} = ${formatNumber(1 / e.exchangeRate)} ARS`
-                : `1 ${e.currency} = ${formatNumber(e.exchangeRate)} ${base}`}
-            </p>
-          )}
-          {base && e.exchangeRate === null && e.currency !== base && (
-            <p className="mt-1 text-sm opacity-80">Se mantiene en {e.currency} (saldo aparte)</p>
-          )}
-        </div>
+        )}
+        {base && e.exchangeRate === null && e.currency !== base && (
+          <p className="mt-2 text-sm text-muted-foreground">
+            Se mantiene en {e.currency} (saldo aparte)
+          </p>
+        )}
+        <p className="mt-4 inline-flex items-center gap-2 rounded-full bg-muted py-1.5 pr-3 pl-1.5 text-sm">
+          <Avatar id={e.paidBy.id} name={e.paidBy.name} className="size-6 text-xs ring-0" />
+          Pagó {e.paidBy.name}
+        </p>
+      </Card>
 
-        <Card className="space-y-4">
-          <div className="flex items-center gap-3">
-            <Avatar name={e.paidBy.name} />
-            <div>
-              <p className="text-sm text-muted-foreground">Pagó</p>
-              <p className="font-medium">{e.paidBy.name}</p>
-            </div>
-          </div>
-
-          <div className="border-t pt-4">
-            <p className="mb-2 text-sm text-muted-foreground">
-              División ({splitTypeLabels[e.splitType as keyof typeof splitTypeLabels]})
-            </p>
-            <ul className="space-y-2">
-              {e.splits.map((split) => (
-                <li key={split.participantId} className="flex justify-between text-sm">
-                  <span className="text-foreground">{split.participant.name}</span>
-                  <span className="font-medium tabular">
-                    {formatCents(split.amountCents, e.currency)}
-                    {split.percentage != null && (
-                      <span className="text-muted-foreground"> ({split.percentage}%)</span>
-                    )}
-                  </span>
-                </li>
-              ))}
-            </ul>
-          </div>
-        </Card>
-      </div>
+      <Card className="rise">
+        <SectionTitle>
+          {`División (${splitTypeLabels[e.splitType as keyof typeof splitTypeLabels]})`}
+        </SectionTitle>
+        <ul className="mt-3 divide-y">
+          {e.splits.map((split) => (
+            <li key={split.participantId} className="flex items-center gap-3 py-2.5">
+              <Avatar id={split.participantId} name={split.participant.name} />
+              <span className="flex-1 font-medium">{split.participant.name}</span>
+              <span className="font-semibold tabular">
+                {formatCents(split.amountCents, e.currency)}
+                {split.percentage != null && (
+                  <span className="font-normal text-muted-foreground"> ({split.percentage}%)</span>
+                )}
+              </span>
+            </li>
+          ))}
+        </ul>
+      </Card>
     </div>
   );
 }

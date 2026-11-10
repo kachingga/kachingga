@@ -29,7 +29,9 @@ export function Login() {
   }
 
   return (
-    <AuthLayout title="¡Hola de nuevo!" subtitle="Entrá para ver cómo vienen tus cuentas.">
+    <AuthLayout title="Qué bueno verte" subtitle="Entrá a tu cuenta.">
+      <GoogleSignIn returnTo={returnTo} />
+
       <form onSubmit={handleSubmit} className="space-y-4">
         <div className="space-y-1.5">
           <Label htmlFor="email">Email</Label>
@@ -59,21 +61,19 @@ export function Login() {
 
         {error && <p className="text-sm text-destructive">{error}</p>}
 
-        <Button type="submit" disabled={loading} className="w-full text-base">
-          {loading ? 'Entrando…' : 'Entrar'}
+        <Button type="submit" disabled={loading} size="lg" className="w-full">
+          {loading ? 'Entrando…' : 'Dale, entremos'}
           {!loading && <ArrowRight aria-hidden />}
         </Button>
       </form>
 
-      <GoogleSignIn returnTo={returnTo} />
-
-      <p className="mt-8 text-center text-sm text-muted-foreground">
-        ¿No tenés cuenta?{' '}
+      <p className="mt-6 text-center text-sm text-muted-foreground">
+        ¿Primera vez por acá?{' '}
         <Link
           to={withReturnTo('/registro', returnTo)}
           className="font-semibold text-primary hover:underline"
         >
-          Crear cuenta
+          Creá tu cuenta
         </Link>
       </p>
     </AuthLayout>

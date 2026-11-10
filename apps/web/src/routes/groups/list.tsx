@@ -1,6 +1,7 @@
 import { useRef, useState } from 'react';
 import { Link, useNavigate } from 'react-router';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import type { Session } from '@supabase/supabase-js';
 import {
   Archive,
   ArchiveRestore,
@@ -8,13 +9,22 @@ import {
   KeyRound,
   MoreHorizontal,
   Plus,
+  Users,
 } from 'lucide-react';
 
 import { ErrorState } from '@/components/error-state';
-import { Avatar, Card, MyBalance, Page } from '@/components/kit';
+import { Avatar, AvatarStack, EmptyState, MyBalance, Page } from '@/components/kit';
 import { Button } from '@/components/ui/button';
+import { useSession } from '@/lib/auth';
 import { useTRPC } from '@/lib/trpc';
 import { prefetchOn, usePrefetch } from '@/lib/use-prefetch';
+
+/** First name from the Google account ("Galo Belloponce" → "Galo"); email accounts have none. */
+function firstName(session: Session | null | undefined): string | null {
+  const meta: { full_name?: unknown; name?: unknown } = session?.user.user_metadata ?? {};
+  const full = [meta.full_name, meta.name].find((v): v is string => typeof v === 'string') ?? '';
+  return full.trim().split(/\s+/)[0] || null;
+}
 
 export function GroupList() {
   const trpc = useTRPC();
@@ -24,6 +34,7 @@ export function GroupList() {
   const [showArchived, setShowArchived] = useState(false);
   const [swipedId, setSwipedId] = useState<string | null>(null);
   const touchStartX = useRef(0);
+  const name = firstName(useSession());
 
   // When showing archived, fetch all and filter to only archived
   const groups = useQuery(trpc.groups.list.queryOptions({ includeArchived: showArchived }));
@@ -57,10 +68,17 @@ export function GroupList() {
   return (
     <Page onClick={() => swipedId && setSwipedId(null)}>
       {/* Title, actions and archived toggle: on phones the actions go full width under the title. */}
-      <div className="rise flex flex-wrap items-center gap-3">
-        <h1 className="flex-1 text-3xl font-bold lg:text-4xl">
-          {showArchived ? 'Archivados' : 'Mis grupos'}
-        </h1>
+      <div className="rise flex flex-wrap items-end gap-3">
+        <div className="flex-1">
+          {!showArchived && (
+            <p className="mb-1 font-display text-xl font-semibold">
+              {name ? `¡Hola, ${name}!` : '¡Hola!'}
+            </p>
+          )}
+          <h1 className="text-3xl font-bold lg:text-4xl">
+            {showArchived ? 'Archivados' : 'Mis grupos'}
+          </h1>
+        </div>
         {!isEmpty && !showArchived && (
           <div className="order-last grid w-full grid-cols-2 gap-2 sm:order-none sm:flex sm:w-auto">
             <Button asChild variant="outline" className="px-3 sm:px-5">
@@ -92,9 +110,9 @@ export function GroupList() {
       </div>
 
       {groups.isPending && (
-        <div role="status" aria-label="Cargando" className="grid gap-3 md:grid-cols-2">
+        <div role="status" aria-label="Cargando" className="grid gap-5 md:grid-cols-2">
           {[1, 2, 3].map((i) => (
-            <div key={i} className="h-20 animate-pulse rounded-2xl bg-muted" />
+            <div key={i} className="h-56 animate-pulse rounded-lg bg-muted" />
           ))}
         </div>
       )}
@@ -105,22 +123,13 @@ export function GroupList() {
 
       {isEmpty &&
         (showArchived ? (
-          <Card className="rise py-12 text-center">
-            <p className="text-lg font-medium">No tenés grupos archivados</p>
-          </Card>
+          <EmptyState icon={Archive} title="No tenés grupos archivados" />
         ) : (
-          <Card className="rise flex flex-col items-center py-14 text-center">
-            <span
-              aria-hidden
-              className="grid size-16 place-items-center rounded-2xl bg-accent text-3xl"
-            >
-              🧉
-            </span>
-            <h2 className="mt-5 text-xl font-bold">Todavía no tenés grupos</h2>
-            <p className="mt-2 max-w-xs text-muted-foreground">
-              Un grupo junta los gastos compartidos con tus amigos (un viaje, la casa, una salida) y
-              calcula quién le debe a quién.
-            </p>
+          <EmptyState
+            icon={Users}
+            title="Todavía no tenés grupos"
+            description="Un grupo junta los gastos compartidos con tus amigos (un viaje, la casa, una salida) y calcula quién le debe a quién."
+          >
             <div className="mt-6 flex w-full max-w-xs flex-col gap-3">
               <Button asChild>
                 <Link to="/grupos/crear">
@@ -135,21 +144,22 @@ export function GroupList() {
                 </Link>
               </Button>
             </div>
-          </Card>
+          </EmptyState>
         ))}
 
       {groups.isSuccess && displayGroups.length > 0 && (
-        <ul className="grid gap-3 md:grid-cols-2">
+        <ul className="grid gap-5 md:grid-cols-2">
           {displayGroups.map((group, i) => (
             <li
               key={group.id}
-              className="rise relative overflow-hidden rounded-2xl"
+              // Bottom padding = the card's sticker edge (the li clips the swipe actions).
+              className="rise relative overflow-hidden rounded-lg pb-[3px]"
               style={{ animationDelay: `${i * 60}ms` }}
               onTouchStart={handleTouchStart}
               onTouchEnd={(e) => handleTouchEnd(e, group.id)}
             >
               {/* Swipe actions (behind the card, on phones) */}
-              <div className="absolute inset-y-0 right-0 flex items-center">
+              <div className="absolute top-0 right-0 bottom-[3px] flex items-center">
                 <button
                   onClick={(e) => {
                     e.stopPropagation();
@@ -171,7 +181,7 @@ export function GroupList() {
                     navigate(`/grupos/${group.id}`);
                   }}
                   aria-label="Opciones"
-                  className="flex h-full w-20 items-center justify-center rounded-r-2xl bg-accent text-accent-foreground"
+                  className="flex h-full w-20 items-center justify-center rounded-r-lg bg-accent text-accent-foreground"
                 >
                   <MoreHorizontal className="size-5" />
                 </button>
@@ -188,28 +198,36 @@ export function GroupList() {
                     navigate(`/grupos/${group.id}`);
                   }
                 }}
-                style={{
-                  transform: swipedId === group.id ? 'translateX(-160px)' : 'translateX(0)',
-                }}
-                className="press group relative z-10 flex w-full items-center gap-4 rounded-2xl border bg-card p-4 text-left shadow-soft transition-transform duration-200 hover:shadow-lift"
+                // `translate` (not `transform`): the tap bounce of `press` uses `transform`.
+                style={{ translate: swipedId === group.id ? '-160px 0' : undefined }}
+                className="press group relative z-10 block w-full rounded-lg border bg-card p-5 text-left shadow-sticker"
               >
-                <Avatar name={group.name} className="size-12 rounded-xl bg-muted text-lg ring-0" />
-                <div className="min-w-0 flex-1">
-                  <p className="truncate font-semibold">{group.name}</p>
-                  <p className="text-sm text-muted-foreground">
-                    {group._count.participants}{' '}
-                    {group._count.participants === 1 ? 'persona' : 'personas'}
-                  </p>
-                  <MyBalance
-                    cents={group.myBalanceCents}
-                    currency={group.baseCurrency}
-                    className="text-sm font-medium"
+                <span className="flex items-start justify-between gap-3">
+                  <Avatar
+                    id={group.id}
+                    name={group.name}
+                    className="size-14 rounded-lg text-2xl ring-0"
                   />
-                </div>
-                <ChevronRight
-                  aria-hidden
-                  className="size-4 text-muted-foreground transition-transform group-hover:translate-x-0.5"
+                  <ChevronRight
+                    aria-hidden
+                    className="mt-2 size-5 text-muted-foreground transition-transform group-hover:translate-x-1"
+                  />
+                </span>
+                <span className="mt-4 block truncate font-display text-xl font-bold">
+                  {group.name}
+                </span>
+                <MyBalance
+                  cents={group.myBalanceCents}
+                  currency={group.baseCurrency}
+                  className="mt-1 block font-semibold"
                 />
+                <span className="mt-5 flex items-center justify-between gap-3 border-t pt-4">
+                  <AvatarStack people={group.participants} />
+                  <span className="text-xs text-muted-foreground">
+                    {group._count.participants}{' '}
+                    {group._count.participants === 1 ? 'participante' : 'participantes'}
+                  </span>
+                </span>
               </button>
             </li>
           ))}

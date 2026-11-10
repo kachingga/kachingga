@@ -64,7 +64,7 @@ export function renderWithApi(ui: ReactElement, api: ApiHandlers = {}, route = '
     },
   });
   const trpcClient = createFakeApiClient(api);
-  return render(
+  const result = render(
     <QueryClientProvider client={queryClient}>
       <TRPCProvider trpcClient={trpcClient} queryClient={queryClient}>
         <ConfirmProvider>
@@ -74,4 +74,6 @@ export function renderWithApi(ui: ReactElement, api: ApiHandlers = {}, route = '
       </TRPCProvider>
     </QueryClientProvider>,
   );
+  // `queryClient` lets a test make the screen refetch (e.g. data that changes while it's open).
+  return { ...result, queryClient };
 }

@@ -3,14 +3,43 @@ import { render, screen } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
 
 import { CategoryEditor } from '@/components/category-editor';
+import { CategoryPicker } from '@/components/category-picker';
 import { CategoryIcon } from '@/components/kit';
-import { CATEGORY_COLORS } from '@/lib/categories';
+import { CATEGORY_COLORS, CATEGORY_COLORS_STRONG } from '@/lib/categories';
 
 describe('category colors', () => {
   it('every color is a theme token pair (soft background + strong icon), never a fixed color', () => {
     for (const color of categoryColors) {
       expect(CATEGORY_COLORS[color]).toBe(`bg-cat-${color}-soft text-cat-${color}`);
     }
+  });
+
+  it('a picked category fills with its own color (the same tokens, swapped)', () => {
+    for (const color of categoryColors) {
+      expect(CATEGORY_COLORS_STRONG[color]).toBe(
+        `bg-cat-${color} text-cat-${color}-soft ring-cat-${color}`,
+      );
+    }
+  });
+
+  it('the picker shows each category in its color and fills the picked one', () => {
+    render(
+      <CategoryPicker
+        categories={[
+          { id: 'c1', name: 'Comida', icon: 'utensils', color: 'tangerine' },
+          { id: 'c2', name: 'Súper', icon: 'shopping-cart', color: 'lime' },
+        ]}
+        value="c2"
+        onChange={() => {}}
+      />,
+    );
+    expect(screen.getByRole('radio', { name: 'Comida' })).toHaveClass(
+      'bg-cat-tangerine-soft',
+      'text-cat-tangerine',
+    );
+    const picked = screen.getByRole('radio', { name: 'Súper' });
+    expect(picked).toHaveAttribute('aria-checked', 'true');
+    expect(picked).toHaveClass('bg-cat-lime', 'text-cat-lime-soft', 'ring-2');
   });
 
   it('the built-in categories have 8 different colors', () => {

@@ -13,7 +13,8 @@ const groupId = z.object({ groupId: z.string() })
 const inviteCode = z.string().trim().toUpperCase().min(1)
 
 export const groupsRouter = router({
-  // My groups, each with my balance in its base currency (`myBalanceCents`: positive = they owe me).
+  // My groups, each with its people (`participants`: id and name, oldest first, for the faces on the
+  // list) and my balance in its base currency (`myBalanceCents`: positive = they owe me).
   // Three queries in total, whatever the number of groups.
   list: protectedProcedure.input(z.object({ includeArchived: z.boolean().default(false) }).optional()).query(async ({ ctx, input }) => {
     const groups = await prisma.group.findMany({
@@ -23,7 +24,7 @@ export const groupsRouter = router({
       },
       include: {
         _count: { select: { participants: true } },
-        participants: { where: { userId: ctx.user.id }, select: { id: true } },
+        participants: { select: { id: true, name: true, userId: true }, orderBy: { createdAt: 'asc' } },
       },
       orderBy: { createdAt: 'desc' },
     })
@@ -45,7 +46,7 @@ export const groupsRouter = router({
       }),
     ])
     return groups.map(({ participants, ...group }) => {
-      const myId = participants[0]!.id
+      const myId = participants.find((p) => p.userId === ctx.user.id)!.id
       const base = computeBalances(
         group.baseCurrency,
         [myId],
@@ -53,7 +54,7 @@ export const groupsRouter = router({
         settlements.filter((s) => s.groupId === group.id),
       ).find((b) => b.currency === group.baseCurrency)!
       const myBalanceCents = base.balances.find((b) => b.participantId === myId)?.amountCents ?? 0
-      return { ...group, myBalanceCents }
+      return { ...group, participants: participants.map(({ id, name }) => ({ id, name })), myBalanceCents }
     })
   }),
 

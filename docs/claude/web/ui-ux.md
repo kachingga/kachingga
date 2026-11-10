@@ -11,7 +11,7 @@ La app la usamos nosotros todos los días, sobre todo en el celu: tiene que ser 
 
 ## Los 4 estados de toda pantalla con datos
 1. **Cargando:** skeletons con la forma del contenido. En recargas, mantener los datos viejos visibles.
-2. **Vacío:** mensaje que explique qué va ahí + la acción para empezar.
+2. **Vacío:** mensaje que explique qué va ahí + la acción para empezar (`EmptyState`).
 3. **Error:** el `message` de la API + **Reintentar** (`ErrorState`).
 4. **Con datos.** Listas largas con scroll infinito donde haya paginación.
 

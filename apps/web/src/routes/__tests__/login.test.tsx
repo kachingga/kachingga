@@ -21,12 +21,12 @@ describe('Login', () => {
     renderWithApi(<Login />);
     expect(screen.getByLabelText('Email')).toBeInTheDocument();
     expect(screen.getByLabelText('Contraseña')).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'Entrar' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Dale, entremos' })).toBeInTheDocument();
   });
 
   it('shows link to register', () => {
     renderWithApi(<Login />);
-    expect(screen.getByRole('link', { name: 'Crear cuenta' })).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: 'Creá tu cuenta' })).toBeInTheDocument();
   });
 
   it('shows error when login fails', async () => {
@@ -41,7 +41,7 @@ describe('Login', () => {
 
     await user.type(screen.getByLabelText('Email'), 'test@example.com');
     await user.type(screen.getByLabelText('Contraseña'), 'wrongpass');
-    await user.click(screen.getByRole('button', { name: 'Entrar' }));
+    await user.click(screen.getByRole('button', { name: 'Dale, entremos' }));
 
     expect(await screen.findByText('Credenciales inválidas')).toBeInTheDocument();
   });
@@ -84,13 +84,13 @@ describe('Login', () => {
       back,
     );
 
-    expect(screen.getByRole('link', { name: 'Crear cuenta' })).toHaveAttribute(
+    expect(screen.getByRole('link', { name: 'Creá tu cuenta' })).toHaveAttribute(
       'href',
       `/registro?volver=${encodeURIComponent('/grupos/unirme?codigo=ABCDEFGH')}`,
     );
     await user.type(screen.getByLabelText('Email'), 'test@example.com');
     await user.type(screen.getByLabelText('Contraseña'), 'secret123');
-    await user.click(screen.getByRole('button', { name: 'Entrar' }));
+    await user.click(screen.getByRole('button', { name: 'Dale, entremos' }));
     expect(await screen.findByText('Unirme al grupo')).toBeInTheDocument();
   });
 

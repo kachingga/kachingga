@@ -129,6 +129,19 @@ describe('groups', () => {
     expect(betoGroups.find((g) => g.id === group.id)!.myBalanceCents).toBe(-600)
     expect(betoGroups.find((g) => g.id === other.id)!.myBalanceCents).toBe(0)
   })
+
+  test('list returns the people of each group (id and name, oldest first) for its faces', async () => {
+    const { ana, beto, group, pAna, pBeto, pJuan } = await groupWithMembers()
+    const [anaGroup] = await ana.groups.list()
+    expect(anaGroup!.participants).toEqual([
+      { id: pAna, name: 'Ana' },
+      { id: pBeto, name: 'Beto' },
+      { id: pJuan, name: 'Juan' },
+    ])
+    // Beto sees the same people: inside a group everything is public to its members.
+    const betoGroup = (await beto.groups.list()).find((g) => g.id === group.id)!
+    expect(betoGroup.participants.map((p) => p.name)).toEqual(['Ana', 'Beto', 'Juan'])
+  })
 })
 
 describe('participants', () => {

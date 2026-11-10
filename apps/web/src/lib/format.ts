@@ -27,13 +27,25 @@ export function numberSeparators(): { group: string; decimal: string } {
   };
 }
 
+const currencyFormat = (currency: string) =>
+  new Intl.NumberFormat(getLocale(), { style: 'currency', currency, minimumFractionDigits: 2 });
+
 /** Format cents as a localized currency string (150050 → "$ 1.500,50" in es-AR). */
 export function formatCents(cents: number, currency: string): string {
-  return new Intl.NumberFormat(getLocale(), {
-    style: 'currency',
-    currency,
-    minimumFractionDigits: 2,
-  }).format(cents / 100);
+  return currencyFormat(currency).format(cents / 100);
+}
+
+/**
+ * `formatCents` split at the decimal separator, so big amounts can show the cents smaller
+ * (150050 → { whole: "$ 1.500", fraction: ",50" } in es-AR; "1.500,50 €" → "1.500" + ",50 €").
+ */
+export function formatCentsParts(cents: number, currency: string) {
+  const parts = currencyFormat(currency).formatToParts(cents / 100);
+  const decimal = parts.findIndex((p) => p.type === 'decimal');
+  const join = (list: Intl.NumberFormatPart[]) => list.map((p) => p.value).join('');
+  return decimal === -1
+    ? { whole: join(parts), fraction: '' }
+    : { whole: join(parts.slice(0, decimal)), fraction: join(parts.slice(decimal)) };
 }
 
 /** My balance as text: positive = they owe me ("Te deben $ 10,00"), negative = I owe ("Debés $ 10,00"). */

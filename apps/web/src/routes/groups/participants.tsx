@@ -5,7 +5,7 @@ import { Plus, X } from 'lucide-react';
 
 import { ArchivedNotice } from '@/components/archived-notice';
 import { ErrorState } from '@/components/error-state';
-import { Card, Page, PageHeader } from '@/components/kit';
+import { Avatar, Page, PageHeader } from '@/components/kit';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { ListScreenSkeleton } from '@/components/skeletons';
@@ -91,16 +91,14 @@ export function Participants() {
       {isArchived && <ArchivedNotice groupId={g.id} />}
 
       {/* Código de invitación */}
-      <Card className="rise">
-        <p className="mb-1 text-sm font-medium text-muted-foreground">Código de invitación</p>
+      <section className="rise rounded-lg bg-hero p-6 text-hero-foreground">
+        <p className="mb-1 text-sm font-semibold opacity-80">Código de invitación</p>
         {showCode ? (
-          <div className="space-y-2">
-            <p className="py-2 text-center font-mono text-2xl font-bold tracking-widest">
-              {g.inviteCode}
-            </p>
+          <div className="space-y-3">
+            <p className="py-2 font-display text-3xl font-bold tracking-wider">{g.inviteCode}</p>
             <div className="flex gap-2">
               <Button
-                variant="outline"
+                variant="secondary"
                 className="flex-1"
                 onClick={() => void shareInviteCode(g.name, g.inviteCode)}
               >
@@ -108,8 +106,8 @@ export function Participants() {
               </Button>
               {!isArchived && (
                 <Button
-                  variant="outline"
-                  className="flex-1 text-muted-foreground"
+                  variant="secondary"
+                  className="flex-1"
                   onClick={async () => {
                     const ok = await confirm({
                       title: '¿Regenerar el código?',
@@ -126,16 +124,11 @@ export function Participants() {
             </div>
           </div>
         ) : (
-          <Button
-            variant="link"
-            size="sm"
-            className="px-0 text-muted-foreground"
-            onClick={() => setShowCode(true)}
-          >
+          <Button variant="secondary" size="sm" className="mt-2" onClick={() => setShowCode(true)}>
             Ver código para compartir
           </Button>
         )}
-      </Card>
+      </section>
 
       {/* Lista */}
       <ul className="space-y-3">
@@ -144,7 +137,7 @@ export function Participants() {
           const canRemove = !p.hasAccount;
 
           return (
-            <li key={p.id} className="rounded-2xl border bg-card p-4 shadow-soft">
+            <li key={p.id} className="rounded-lg border bg-card p-4 shadow-sticker">
               {renamingId === p.id ? (
                 <form
                   className="flex gap-2"
@@ -174,8 +167,9 @@ export function Participants() {
                   </Button>
                 </form>
               ) : (
-                <div className="flex items-start justify-between">
-                  <div>
+                <div className="flex items-start gap-3">
+                  <Avatar id={p.id} name={p.name} />
+                  <div className="min-w-0 flex-1">
                     <p className="font-medium">
                       {p.name}
                       {p.isMe && <span className="ml-2 text-xs text-muted-foreground">yo</span>}

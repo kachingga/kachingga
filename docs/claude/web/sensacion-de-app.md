@@ -16,6 +16,14 @@ Optimistic updates en lo frecuente, precarga de la próxima pantalla, skeletons 
 - **Limitación:** solo se anima la pantalla que entra; la vieja desaparece de golpe (por un instante se ve el fondo). Reemplazarlas por la View Transitions API (las dos pantallas a la vez, como iOS) es opcional y se evalúa con la PWA instalada en un iPhone real: #35. En Safari dentro del navegador, el gesto de volver ya tiene su animación y una de la app encima puede verse doble.
 - Hojas y modales: animación corta (150–250 ms) que no bloquee (los de shadcn ya la traen).
 
+## Micro-interacciones
+
+Chicas, rápidas y nunca en el camino (todas en `src/index.css`; con "reducir movimiento" no hay ninguna, por la regla global):
+- **Tocar:** botones, tarjetas y chips se achican y rebotan un poco al soltar (`press`); el botón principal además se hunde (borde de abajo, `shadow-ledge` → `shadow-ledge-pressed`). En la tarjeta de un grupo, el deslizar para archivar mueve `translate` (no `transform`) para no pisar el rebote.
+- **Lo que acabás de agregar:** el gasto nuevo entra en la lista con un destello verde (`pop-in`) mientras se guarda (la fila provisoria del optimistic update, `isTemp`); lo mismo un pago nuevo.
+- **Quedar a mano:** si con la pantalla del grupo abierta tu saldo pasa a cero (ej. al volver de registrar el pago, cuando llegan los saldos de la API), "Tu situación" pasa a lima y muestra "Saldo actualizado" ✓ un par de segundos (`role="status"`, lo anuncia el lector de pantalla). Si ya estabas al día al abrir, no.
+- **Entradas:** las secciones suben al aparecer (`rise`; en listas, escalonadas).
+
 ## Comportamiento de app
 
 - Sin rebote ni "pull to refresh" del navegador donde no corresponde (`overscroll-behavior`), sin selección de texto ni resaltado gris al tocar en controles (`-webkit-tap-highlight-color: transparent`, `user-select` donde aplique), `100dvh` para alturas, zonas seguras con `env(safe-area-inset-*)` (`viewport-fit=cover` ya está; utilidades `pb-safe`, `pt-safe` y `bottom-safe` en `src/index.css`).
