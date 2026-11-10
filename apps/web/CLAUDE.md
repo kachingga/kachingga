@@ -85,7 +85,7 @@ Copiar `.env.sample` a `.env` (valores de **dev**). Todo lo `VITE_*` es **públi
 - `VITE_API_URL` — **vacía en local** (Vite reenvía `/trpc` a la API: sin CORS y anda desde el celu). Prod: la URL de Railway.
 - `VITE_SUPABASE_URL` / `VITE_SUPABASE_PUBLISHABLE_KEY` — solo login y sesión.
 - `VITE_SENTRY_DSN` / `VITE_SENTRY_ENVIRONMENT` — errores a Sentry; vacías = apagado (local, tests, CI).
-- `VITE_TURNSTILE_SITE_KEY` — captcha (Cloudflare Turnstile) del login con email, el registro y "¿Olvidaste tu contraseña?"; vacía = sin captcha (local, tests, CI).
+- `VITE_TURNSTILE_SITE_KEY` — captcha (Cloudflare Turnstile) del login con email, el registro y "¿Olvidaste tu contraseña?"; vacía = sin captcha (tests de Vitest). Local, staging y los E2E usan la *site key* de prueba de Cloudflare (`.env.sample`; prod, la real).
 
 Si agregás una: `src/vite-env.d.ts`, `.env.sample`, `INFRA.md` y `test.env` de `vite.config.ts`.
 

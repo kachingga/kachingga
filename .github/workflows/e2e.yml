@@ -47,7 +47,13 @@ jobs:
           VITE_API_URL: ''
           VITE_SUPABASE_URL: ${{ secrets.E2E_SUPABASE_URL || 'https://example.supabase.co' }}
           VITE_SUPABASE_PUBLISHABLE_KEY: ${{ secrets.E2E_SUPABASE_PUBLISHABLE_KEY || 'sb_publishable_ci' }}
+          # Cloudflare Turnstile's test site key: public, always passes (token XXXX.DUMMY.TOKEN.XXXX).
+          # The captcha widget shows up as in prod, and the dev Supabase has the matching test secret
+          # (INFRA.md → "Supabase"); with the captcha off there, the token is ignored.
+          VITE_TURNSTILE_SITE_KEY: 1x00000000000000000000AA
           DATABASE_URL: ${{ secrets.E2E_DATABASE_URL }}
+          # For the API, and for apps/web/e2e/accounts.ts (the flows' accounts, already confirmed, made
+          # with Supabase's admin API).
           SUPABASE_URL: ${{ secrets.E2E_SUPABASE_URL }}
           SUPABASE_SECRET_KEY: ${{ secrets.E2E_SUPABASE_SECRET_KEY }}
         run: bun run e2e
