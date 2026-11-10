@@ -1,25 +1,29 @@
 import { type Browser, expect, type Page, test } from '@playwright/test';
 
+import { type Account, confirmationTokenHash, createConfirmedAccount } from './accounts.ts';
 import { expectAccessible } from './axe.ts';
 
-// Critical flows against the real API and the dev database (staging-kachingga). Only with E2E_API=1
-// (it starts the API too: playwright.config.ts). Every run signs up new users with unique emails and
-// leaves its data in dev, named "E2E …" (the group gets archived at the end). docs/claude/web/testing.md.
+// Critical flows against the real API and the dev Supabase and database (staging-kachingga). Only with
+// E2E_API=1 (it starts the API too: playwright.config.ts). Every run makes new accounts with unique
+// emails and leaves its data in dev, named "E2E …" (the group gets archived at the end).
+// With "Confirm email" and the captcha (Turnstile test keys) on or off: docs/claude/web/testing.md.
 test.skip(!process.env.E2E_API, 'Sin E2E_API: estos recorridos necesitan la API (ver testing.md)');
 test.describe.configure({ timeout: 120_000 });
 
 const run = `${Date.now()}-${Math.floor(Math.random() * 1e4)}`;
+const password = `E2e-${run}-pass`;
 
-function newAccount(name: string) {
-  return { email: `e2e+${name}-${run}@example.com`, password: `E2e-${run}-pass` };
+/** Made with the admin API, already confirmed: no mail goes to example.com. */
+function newAccount(name: string): Account {
+  return { email: `e2e+${name}-${run}@example.com`, password };
 }
 
-async function signUp(page: Page, account: { email: string; password: string }) {
-  await page.goto('/registro');
+// With the captcha on, submit buttons stay disabled until the widget has its token: `click()` waits.
+async function logIn(page: Page, account: Account) {
+  await page.goto('/login');
   await page.getByLabel('Email').fill(account.email);
   await page.getByLabel('Contraseña', { exact: true }).fill(account.password);
-  await page.getByLabel('Confirmar contraseña').fill(account.password);
-  await page.getByRole('button', { name: 'Crear cuenta' }).click();
+  await page.getByRole('button', { name: 'Dale, entremos' }).click();
   await expect(page).toHaveURL(/\/grupos$/);
 }
 
@@ -37,22 +41,37 @@ async function newUserPage(browser: Browser, name: string) {
     baseURL,
   });
   const page = await context.newPage();
-  await signUp(page, newAccount(name));
+  const account = newAccount(name);
+  await createConfirmedAccount(account);
+  await logIn(page, account);
   return page;
 }
 
-test('registro, cerrar sesión y volver a entrar', async ({ page }) => {
-  const account = newAccount('login');
-  await signUp(page, account);
+test('registro (confirmando el email), cerrar sesión y volver a entrar', async ({ page }) => {
+  // The only account made from the register screen. With "Confirm email" on, Supabase mails it, and
+  // it won't mail example.com: a Resend test address, which counts as delivered (no bounce).
+  const account = { email: `delivered+e2e-registro-${run}@resend.dev`, password };
+  await page.goto('/registro');
+  await page.getByLabel('Email').fill(account.email);
+  await page.getByLabel('Contraseña', { exact: true }).fill(account.password);
+  await page.getByLabel('Confirmar contraseña').fill(account.password);
+  await page.getByRole('button', { name: 'Crear cuenta' }).click();
+
+  // "Confirm email" off: straight in. On: "Revisá tu mail", and the mail's link (a token made with
+  // the admin API, as in the template) confirms the email and logs in from the login screen.
+  const mailSent = page.getByRole('heading', { name: 'Revisá tu mail' });
+  const groups = page.getByRole('heading', { name: 'Mis grupos' });
+  await expect(mailSent.or(groups)).toBeVisible();
+  if (await mailSent.isVisible())
+    await page.goto(`/login#token_hash=${await confirmationTokenHash(account)}`);
+  await expect(groups).toBeVisible();
+  await expect(page).toHaveURL(/\/grupos$/);
 
   await page.goto('/cuenta');
   await page.getByRole('button', { name: 'Cerrar sesión' }).click();
   await expect(page).toHaveURL(/\/login$/);
 
-  await page.getByLabel('Email').fill(account.email);
-  await page.getByLabel('Contraseña').fill(account.password);
-  await page.getByRole('button', { name: 'Dale, entremos' }).click();
-  await expect(page).toHaveURL(/\/grupos$/);
+  await logIn(page, account);
 });
 
 test('grupo: gasto, saldos, unirse con código y saldar', async ({ browser }) => {

@@ -26,7 +26,8 @@ const EMAILS = {
   roman: 'roman.demo@example.com',
 }
 
-// Creates the auth user, or resets its password if it already exists.
+// Creates the auth user with its email already confirmed (admin API: no mail, works with "Confirm
+// email" on), or resets its password and confirms it if it already exists.
 async function ensureUser(email: string) {
   const auth = getSupabase().auth.admin
   const created = await auth.createUser({ email, password, email_confirm: true })
@@ -35,7 +36,7 @@ async function ensureUser(email: string) {
   if (error) throw error
   const existing = data.users.find((u) => u.email === email)
   if (!existing) throw created.error
-  await auth.updateUserById(existing.id, { password })
+  await auth.updateUserById(existing.id, { password, email_confirm: true })
   return existing.id
 }
 
