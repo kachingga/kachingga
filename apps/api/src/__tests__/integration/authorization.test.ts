@@ -33,7 +33,7 @@ const settlement = await owner.settlements.create({
   date: new Date(),
 })
 const saved = await owner.savedFilters.create({ groupId: group.id, name: 'Míos', filters: {} })
-const category = await owner.categories.create({ groupId: group.id, name: 'Nafta', icon: 'fuel', color: 'chart-4' })
+const category = await owner.categories.create({ groupId: group.id, name: 'Nafta', icon: 'fuel', color: 'teal' })
 
 const expenseFields = {
   description: 'Hackeado',
@@ -70,7 +70,7 @@ const attacks: Record<string, () => Promise<unknown>> = {
   'savedFilters.create': () => outsider.savedFilters.create({ groupId: group.id, name: 'X', filters: {} }),
   'savedFilters.delete': () => outsider.savedFilters.delete({ savedFilterId: saved.id }),
   'categories.list': () => outsider.categories.list({ groupId: group.id }),
-  'categories.create': () => outsider.categories.create({ groupId: group.id, name: 'Intrusa', icon: 'shapes', color: 'muted' }),
+  'categories.create': () => outsider.categories.create({ groupId: group.id, name: 'Intrusa', icon: 'shapes', color: 'cocoa' }),
   'categories.update': () => outsider.categories.update({ categoryId: category.id, name: 'Hackeada' }),
   'categories.archive': () => outsider.categories.archive({ categoryId: category.id }),
   'categories.unarchive': () => outsider.categories.unarchive({ categoryId: category.id }),

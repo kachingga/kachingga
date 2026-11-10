@@ -11,7 +11,7 @@ Schema en `src/db/models/*.prisma`.
 | `Group` | `name`, `baseCurrency`, `inviteCode` (único), `createdById`, `archivedAt` |
 | `Participant` | `groupId`, `name`, `userId?` (Supabase; `null` = sin cuenta), `paymentAlias?` (alias propio del grupo). Único `(groupId, userId)` |
 | `UserProfile` | `userId` (id de Supabase, clave), `paymentAlias?` (alias de la cuenta, para todos los grupos) |
-| `Category` | `groupId`, `name`, `icon` (uno de `categoryIcons`), `color` (uno de `categoryColors`: nombre de color del tema, nunca hex), `defaultKey?` (`FOOD`…`OTHER` en las 8 que trae cada grupo; `null` = creada por alguien), `archivedAt?`. Nombre único entre las activas del grupo (en la API, sin distinguir mayúsculas) |
+| `Category` | `groupId`, `name`, `icon` (uno de `categoryIcons`), `color` (uno de `categoryColors`: 12 nombres de la paleta de categorías, `tomato` … `cocoa`, nunca hex; la migración `colores_de_categorias` pasó los nombres viejos a estos), `defaultKey?` (`FOOD`…`OTHER` en las 8 que trae cada grupo; `null` = creada por alguien), `archivedAt?`. Nombre único entre las activas del grupo (en la API, sin distinguir mayúsculas) |
 | `Expense` | `description`, `categoryId` (del mismo grupo), `date`, `amountCents`, `currency`, `exchangeRate?`, `splitType`, `paidById`, `createdById`, `deletedAt?` |
 | `ExpenseSplit` | `expenseId`, `participantId`, `amountCents` (parte ya resuelta), `percentage?` (solo `PERCENTAGE`). Único `(expenseId, participantId)`, cascade al borrar el gasto |
 | `Settlement` | `fromId`, `toId`, `amountCents`, `currency`, `exchangeRate?`, `date`, `note?`, `createdById`, `deletedAt?` |
