@@ -35,6 +35,14 @@ beforeEach(() => {
 afterEach(() => onlineManager.setOnline(true));
 
 describe('RequireAuth', () => {
+  it('while the session is being restored, shows the splash (not /login)', () => {
+    auth.session = undefined;
+    renderGuarded();
+    expect(screen.getByRole('status', { name: 'Cargando' })).toBeInTheDocument();
+    expect(screen.queryByText(/Login/)).not.toBeInTheDocument();
+    expect(screen.queryByText('Adentro')).not.toBeInTheDocument();
+  });
+
   it('lets a session in', () => {
     auth.session = { user: { id: 'u1' } };
     renderGuarded();

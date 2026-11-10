@@ -36,6 +36,8 @@ export default defineConfig({
       },
       workbox: {
         globPatterns: ['**/*.{js,css,html,svg,png,ico,woff2}'],
+        // iPhone startup images (pwa-assets.config.ts): dozens of sizes, iOS fetches its own once.
+        globIgnores: ['**/apple-splash-*.png'],
         navigateFallback: '/index.html',
         cleanupOutdatedCaches: true,
       },

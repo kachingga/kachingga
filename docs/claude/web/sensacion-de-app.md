@@ -47,5 +47,14 @@ Chicas, rápidas y nunca en el camino (todas en `src/index.css`; con "reducir mo
 - **El service worker guarda solo los archivos de la app** (HTML, JS, CSS, íconos, fuentes: los del build). **Los datos de la API no se cachean ahí**: son de cada usuario, viven en otro dominio y los maneja TanStack Query. Para verlos sin conexión hay otra cosa: la cache de TanStack Query guardada en `localStorage`, por usuario (`datos-y-cache.md` → "Offline"). Las rutas de la app caen en `index.html` (`navigateFallback`), así abre sin red.
 - **Se actualiza solo** (`registerType: 'autoUpdate'`): al deployar, la próxima vez que se abre baja la versión nueva y la activa. `server.ts` sirve `sw.js`, `registerSW.js` y el manifest con `no-cache` para que el navegador vea el cambio.
 - **Íconos:** todos (favicon, PWA, *maskable* de Android, `apple-touch-icon` de iPhone) salen de **`public/logo.svg`** al buildear (`@vite-pwa/assets-generator`, config en `pwa-assets.config.ts`). El logo es una **moneda partida en dos** (dividir gastos) con los colores del tema (verde yerba de fondo, durazno y crema). Para cambiarlo: reemplazar ese archivo y, si cambia el color de fondo, `iconBackground` en `pwa-assets.config.ts` (tiene que ser el mismo color plano del fondo del logo, así el ícono de iPhone y Android no muestra un cuadrado adentro de otro). El manifest usa `theme_color` verde y `background_color` crema (splash de Android). Los íconos quedan verdes aunque la persona elija otra paleta (se generan una vez; adentro de la app el logo sí cambia, `componentes-y-tema.md` → "Paletas").
-- **iPhone:** metas `apple-mobile-web-app-*` en `index.html`. Las splash screens (`apple-touch-startup-image`) esperan al logo (`V1.md`); Android arma la suya con el manifest.
+- **iPhone:** metas `apple-mobile-web-app-*` en `index.html`.
+
+## Splash screen (el logo mientras abre)
+
+Nunca una pantalla en blanco al abrir: el logo sobre el fondo, **del mismo tamaño y en el mismo lugar** en las tres etapas (40% del lado más corto de la pantalla, centrado), así no salta de una a otra:
+1. **Instalada en iPhone:** la imagen de arranque (`apple-touch-startup-image`), una por tamaño de pantalla de iPhone, vertical y horizontal, clara y oscura. Las genera `@vite-pwa/assets-generator` al buildear (`appleSplashScreens` en `pwa-assets.config.ts`) y `vite-plugin-pwa` pone los `<link>` en `index.html`. **El service worker no las guarda** (`globIgnores` en `vite.config.ts`): son decenas y iOS baja la suya una vez al instalar. Son verdes, como los íconos. Android arma la suya con el manifest (`name`, `background_color`, ícono).
+2. **Mientras baja y arranca el JS:** el splash **inline en `index.html`** (HTML + CSS, sin JS) adentro de `#root`, con los colores de la paleta elegida (las variables del tema; si todavía no cargaron, verde). React lo reemplaza al montar.
+3. **Mientras se recupera la sesión:** `<Splash>` (`src/components/splash.tsx`, en `RequireAuth`), el mismo en React.
+
+Test: `e2e/splash.spec.ts` (se ve mientras el JS no llegó y después aparece la app) y `e2e/pwa.spec.ts` (están las imágenes de arranque).
 - **Test:** `e2e/pwa.spec.ts` (manifest válido + service worker activo).

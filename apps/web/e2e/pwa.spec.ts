@@ -17,6 +17,12 @@ test('la app es instalable', async ({ page, request }) => {
   );
   await expect(page.locator('link[rel="apple-touch-icon"]')).toHaveCount(1);
 
+  // iPhone startup images (pwa-assets.config.ts): one per screen size, light and dark, and they exist.
+  const startup = page.locator('link[rel="apple-touch-startup-image"]');
+  expect(await startup.count()).toBeGreaterThanOrEqual(20);
+  const first = await startup.first().getAttribute('href');
+  expect((await request.get(first!)).headers()['content-type']).toBe('image/png');
+
   const swActive = await page.evaluate(async () => !!(await navigator.serviceWorker.ready).active);
   expect(swActive).toBe(true);
 });
