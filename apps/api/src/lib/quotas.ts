@@ -2,13 +2,17 @@ import { TRPCError } from '@trpc/server'
 import { prisma } from '../db'
 
 // Quotas (root CLAUDE.md): generous for a group of friends, they stop a single account from filling
-// the database (Supabase Free: 500 MB, then read-only for everyone). Counted before creating, so two
-// requests at the very same time can go one over: harmless.
+// the database (Supabase Free: 500 MB for prod and staging together, then the app stops working for
+// everyone: INFRA.md → "Plan de Supabase"). Counted before creating, so two requests at the very
+// same time can go one over: harmless.
 export const MAX_GROUPS_CREATED_PER_USER = 50
 export const MAX_PARTICIPANTS_PER_GROUP = 50
 // Archived ones count too (they're never deleted)
 export const MAX_CATEGORIES_PER_GROUP = 50
 export const MAX_SAVED_FILTERS_PER_GROUP = 30
+// Deleted ones count too (soft delete: they still take up space)
+export const MAX_EXPENSES_PER_GROUP = 5000
+export const MAX_SETTLEMENTS_PER_GROUP = 5000
 
 function assertBelow(count: number, max: number, message: string) {
   if (count >= max) throw new TRPCError({ code: 'BAD_REQUEST', message })
@@ -36,4 +40,22 @@ export async function assertRoomForCategory(groupId: string) {
 export async function assertRoomForSavedFilter(groupId: string, userId: string) {
   const count = await prisma.savedFilter.count({ where: { groupId, userId } })
   assertBelow(count, MAX_SAVED_FILTERS_PER_GROUP, `Podés guardar hasta ${MAX_SAVED_FILTERS_PER_GROUP} filtros por grupo.`)
+}
+
+export async function assertRoomForExpense(groupId: string) {
+  const count = await prisma.expense.count({ where: { groupId } })
+  assertBelow(
+    count,
+    MAX_EXPENSES_PER_GROUP,
+    `Un grupo puede tener hasta ${MAX_EXPENSES_PER_GROUP.toLocaleString('es-AR')} gastos, contando los borrados.`,
+  )
+}
+
+export async function assertRoomForSettlement(groupId: string) {
+  const count = await prisma.settlement.count({ where: { groupId } })
+  assertBelow(
+    count,
+    MAX_SETTLEMENTS_PER_GROUP,
+    `Un grupo puede tener hasta ${MAX_SETTLEMENTS_PER_GROUP.toLocaleString('es-AR')} pagos, contando los borrados.`,
+  )
 }

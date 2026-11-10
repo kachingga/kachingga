@@ -2,7 +2,8 @@
 # The repo is public and anyone signed in to GitHub can download artifacts, so the dump is
 # streamed straight into gpg: nothing unencrypted is ever written, even on the runner.
 # The secrets live in the `backup` environment (only `main` can use it), not in the repo secrets.
-# Restore steps: DEPLOY.md → "Backups".
+# It also checks the database size (alert before Supabase Free's limit). Restore steps: DEPLOY.md →
+# "Backups"; the size alert: DEPLOY.md → "Monitoreo".
 name: Backup diario de prod
 
 on:
@@ -25,6 +26,7 @@ jobs:
     environment: backup
     steps:
       - name: Check secrets
+        id: secrets
         env:
           BACKUP_DATABASE_URL: ${{ secrets.BACKUP_DATABASE_URL }}
           BACKUP_PASSPHRASE: ${{ secrets.BACKUP_PASSPHRASE }}
@@ -68,3 +70,25 @@ jobs:
           path: out/*.dump.gpg
           retention-days: 90
           if-no-files-found: error
+
+      # Supabase Free: 500 MB of database for the whole org (prod + staging); past that, the app stops
+      # working. Fails well before (GitHub emails). It goes after the upload and also runs if the dump
+      # failed, so neither one hides the other. What to do when it fires: DEPLOY.md → "Monitoreo".
+      - name: Check database size
+        if: ${{ !cancelled() && steps.secrets.outcome == 'success' }}
+        env:
+          BACKUP_DATABASE_URL: ${{ secrets.BACKUP_DATABASE_URL }}
+          ALERT_MB: 350
+        run: |
+          set -euo pipefail
+          # Same image as the dump; the URL goes in as an env var, never as an argument.
+          bytes=$(docker run --rm -e BACKUP_DATABASE_URL \
+            postgres:17@sha256:ff87138949ad9a46f32ff23bd6852b52ce024a13dffe9b4087be98292cdd3b4f \
+            sh -c 'psql "$BACKUP_DATABASE_URL" -X -tAc "SELECT pg_database_size(current_database())"')
+          [[ "$bytes" =~ ^[0-9]+$ ]] || { echo "::error::No se pudo leer el tamaño de la base."; exit 1; }
+          mb=$((bytes / 1024 / 1024))
+          echo "Tamaño de la base de prod: $mb MB (aviso a partir de $ALERT_MB MB)"
+          if [ "$bytes" -gt $((ALERT_MB * 1024 * 1024)) ]; then
+            echo "::error::La base de prod ocupa $mb MB y pasó el aviso de $ALERT_MB MB (Supabase Free: 500 MB sumando prod y staging; después la app deja de andar). Ver qué crece y decidir: DEPLOY.md → Monitoreo. El backup no depende de este aviso."
+            exit 1
+          fi

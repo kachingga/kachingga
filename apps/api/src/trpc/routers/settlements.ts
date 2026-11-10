@@ -2,6 +2,7 @@ import { TRPCError } from '@trpc/server'
 import { z } from 'zod'
 import { prisma } from '../../db'
 import { assertParticipantsInGroup, requireActiveGroup, requireMembership } from '../../lib/access'
+import { assertRoomForSettlement } from '../../lib/quotas'
 import { resolveExchangeRate } from '../../lib/rates'
 import { id, settlementInput } from '../../schemas'
 import { protectedProcedure, router } from '../init'
@@ -21,6 +22,7 @@ export const settlementsRouter = router({
   // Manual "I paid you back" (the payment happened outside the app).
   create: protectedProcedure.input(settlementInput).mutation(async ({ ctx, input }) => {
     const { group } = await requireActiveGroup(input.groupId, ctx.user.id)
+    await assertRoomForSettlement(input.groupId)
     if (input.fromId === input.toId) throw new TRPCError({ code: 'BAD_REQUEST', message: 'Tiene que ser entre dos personas distintas' })
     await assertParticipantsInGroup(input.groupId, [input.fromId, input.toId])
     const exchangeRate = await resolveExchangeRate({ ...input, baseCurrency: group.baseCurrency })

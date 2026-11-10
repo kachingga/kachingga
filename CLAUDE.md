@@ -112,6 +112,7 @@ Proyecto de **Kachingga**, una organización de amigos (repo: `github.com/kachin
 - **Redondeo:** se trabaja en centavos. Si no divide exacto, los centavos que sobran se reparten de a uno (a los que más "fracción" tenían; en partes iguales, a los primeros). **La suma de las partes siempre es exactamente el total.**
 - Editar un gasto lo reemplaza entero (incluida la división).
 - **Borrar** un gasto no lo elimina: queda oculto y deja de contar en saldos.
+- Un grupo tiene **hasta 5.000 gastos**, contando los borrados (igual ocupan lugar).
 - La **fecha** (de un gasto, de un pago o de un filtro) va del año 2000 al 2100: así no se guarda un año mal tipeado (0202).
 
 ### Multimoneda
@@ -139,6 +140,7 @@ Proyecto de **Kachingga**, una organización de amigos (repo: `github.com/kachin
 - "Ya te pagué": se registra quién le pagó a quién, cuánto, en qué moneda y cuándo (con nota opcional). El pago en sí se hizo **fuera de la app** (efectivo, transferencia…).
 - Tiene que ser entre dos personas distintas del grupo.
 - Se puede borrar (queda oculto y deja de contar).
+- Un grupo tiene **hasta 5.000 pagos**, contando los borrados.
 - **Se le puede pagar a cualquiera del grupo, no solo a quien le debés.** Ej.: le debo $100.000 a Tuke y le transfiero $50.000 a Manu → yo paso a deber $50.000, Manu pasa a deber $50.000 (tiene plata mía) y las transferencias sugeridas se recalculan (Yo → Tuke $50.000, Manu → Tuke $50.000).
 - Un pago **no es un gasto**: no aparece en la lista de gastos ni suma en los totales de gasto; solo mueve saldos.
 - Cualquier miembro puede registrar un pago entre otros dos (ej. "Román ya le pagó a Tuke").
@@ -221,7 +223,7 @@ Web (Railway) ──tRPC + token de Supabase──▶ API (Hono, Railway) ──
 - **Los datos solo por la API.** El front usa Supabase únicamente para el login; RLS bloquea cualquier otro acceso a la base.
 - **Secretos:** nunca en el código, en los `.env.sample`, en issues, PRs ni en el chat. Solo en `.env` / `.env.prod` locales (gitignoreados) y en Railway. Lo que empieza con `VITE_` es **público** (va dentro de la app): nunca un secreto ahí. GitHub escanea los pushes y bloquea si detecta una clave.
 - **Si se filtra un secreto:** avisar al grupo, **rotarlo** (generar uno nuevo en Supabase / Railway) y actualizarlo en todos lados. Borrarlo del historial no alcanza: el repo es público.
-- **Límite de pedidos por IP** en la API (más estricto en códigos de invitación, export, saldos y totales) y **por usuario en las escrituras**; pedidos de hasta 1 MB, topes en todos los inputs y cupos (ver "Reglas de negocio"). Un procedure caro o adivinable lleva su límite; algo que crece con el uso, su cupo. Así nadie llena la base (Supabase Free: 500 MB, después queda en solo lectura para todos) ni traba la API.
+- **Límite de pedidos por IP** en la API (más estricto en códigos de invitación, export, saldos y totales) y **por usuario en las escrituras**; pedidos de hasta 1 MB, topes en todos los inputs y cupos (ver "Reglas de negocio"). Un procedure caro o adivinable lleva su límite; algo que crece con el uso, su cupo. Así nadie llena la base (Supabase Free: 500 MB sumando prod y staging; si se pasa, la app deja de andar para todos) ni traba la API. Si igual crece, avisa el backup diario (`DEPLOY.md` → "Monitoreo").
 - **Validar todo lo que entra** (Zod en la API) y no mostrar errores internos al usuario.
 - **Nunca resetear contraseñas de las bases, desactivar RLS, abrir CORS a cualquier origen, ni saltear hooks o checks** (`--no-verify`, `eslint-disable` de las reglas del proyecto) para "destrabar" algo.
 - **Ante la duda sobre algo de seguridad, frenar y preguntar** (ver `.claude/CLAUDE.md` → cuestionar al humano).

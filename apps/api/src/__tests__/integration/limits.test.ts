@@ -4,14 +4,16 @@ import { describe, expect, test } from 'bun:test'
 import { TRPCError } from '@trpc/server'
 import {
   MAX_CATEGORIES_PER_GROUP,
+  MAX_EXPENSES_PER_GROUP,
   MAX_GROUPS_CREATED_PER_USER,
   MAX_PARTICIPANTS_PER_GROUP,
   MAX_SAVED_FILTERS_PER_GROUP,
+  MAX_SETTLEMENTS_PER_GROUP,
 } from '../../lib/quotas'
 import { USER_WRITE_RULES } from '../../lib/rateLimit'
 import { setupTestApi } from './setup'
 
-const { caller, prisma } = await setupTestApi()
+const { caller, prisma, categoryId } = await setupTestApi()
 
 let n = 0
 async function newGroup() {
@@ -93,6 +95,67 @@ describe('quotas', () => {
     )
     // Personal: someone else in the same group still can
     await beto.savedFilters.create({ groupId: group.id, name: 'Míos', filters: {} })
+  })
+
+  test(`a group has at most ${MAX_EXPENSES_PER_GROUP} expenses, deleted ones included`, async () => {
+    const { ana, group, me, n } = await newGroup()
+    const other = await categoryId(`ana-lim-${n}`, group.id, 'OTHER')
+    await prisma.expense.createMany({
+      data: Array.from({ length: MAX_EXPENSES_PER_GROUP - 1 }, (_, i) => ({
+        groupId: group.id,
+        description: `G${i}`,
+        categoryId: other,
+        date: day,
+        amountCents: 100,
+        currency: 'ARS' as const,
+        splitType: 'EQUAL' as const,
+        paidById: me,
+        createdById: `ana-lim-${n}`,
+        deletedAt: i === 0 ? new Date() : null,
+      })),
+    })
+    const expense = () =>
+      ana.expenses.create({
+        groupId: group.id,
+        description: 'Pizza',
+        date: day,
+        amountCents: 100,
+        currency: 'ARS',
+        paidById: me,
+        split: { type: 'EQUAL', participantIds: [me] },
+      })
+    await expense()
+    await expect(expense()).rejects.toThrow('Un grupo puede tener hasta 5.000 gastos, contando los borrados.')
+    expect(await prisma.expense.count({ where: { groupId: group.id } })).toBe(MAX_EXPENSES_PER_GROUP)
+    // Deleting one doesn't make room: it still takes up space
+    const [last] = (await ana.expenses.list({ groupId: group.id })).items
+    await ana.expenses.delete({ expenseId: last!.id })
+    await expect(expense()).rejects.toThrow('gastos, contando los borrados')
+  })
+
+  test(`a group has at most ${MAX_SETTLEMENTS_PER_GROUP} payments, deleted ones included`, async () => {
+    const { ana, group, me, n } = await newGroup()
+    const juan = await ana.participants.add({ groupId: group.id, name: 'Juan' })
+    await prisma.settlement.createMany({
+      data: Array.from({ length: MAX_SETTLEMENTS_PER_GROUP - 1 }, (_, i) => ({
+        groupId: group.id,
+        fromId: me,
+        toId: juan.id,
+        amountCents: 100,
+        currency: 'ARS' as const,
+        date: day,
+        createdById: `ana-lim-${n}`,
+        deletedAt: i === 0 ? new Date() : null,
+      })),
+    })
+    const settlement = () =>
+      ana.settlements.create({ groupId: group.id, fromId: juan.id, toId: me, amountCents: 100, currency: 'ARS', date: day })
+    const last = await settlement()
+    await expect(settlement()).rejects.toThrow('Un grupo puede tener hasta 5.000 pagos, contando los borrados.')
+    expect(await prisma.settlement.count({ where: { groupId: group.id } })).toBe(MAX_SETTLEMENTS_PER_GROUP)
+    // Deleting one doesn't make room: it still takes up space
+    await ana.settlements.delete({ settlementId: last.id })
+    await expect(settlement()).rejects.toThrow('pagos, contando los borrados')
   })
 })
 

@@ -6,6 +6,7 @@ import { prisma } from '../../db'
 import { assertParticipantsInGroup, requireActiveGroup, requireMembership } from '../../lib/access'
 import { resolveExpenseCategory } from '../../lib/categories'
 import { exportFilename, toCsv, toExportRows } from '../../lib/exportExpenses'
+import { assertRoomForExpense } from '../../lib/quotas'
 import { resolveExchangeRate } from '../../lib/rates'
 import { resolveSplits } from '../../lib/splits'
 import { summarizeExpenses } from '../../lib/summary'
@@ -134,6 +135,7 @@ export const expensesRouter = router({
 
   create: protectedProcedure.input(expenseInput).mutation(async ({ ctx, input }) => {
     const { group } = await requireActiveGroup(input.groupId, ctx.user.id)
+    await assertRoomForExpense(input.groupId)
     const { data, splits } = await prepareExpense(input, group.baseCurrency)
     return prisma.expense.create({
       data: { ...data, groupId: input.groupId, createdById: ctx.user.id, splits: { create: splits } },
