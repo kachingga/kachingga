@@ -18,6 +18,7 @@ import { Categories } from '@/routes/groups/categories';
 import { Participants } from '@/routes/groups/participants';
 import { Filters } from '@/routes/groups/filters';
 import { AfterGoogle } from '@/components/after-google';
+import { withViewTransitions } from '@/lib/screen-transitions';
 
 export const router = createBrowserRouter([
   {
@@ -59,3 +60,6 @@ export const router = createBrowserRouter([
     ],
   },
 ]);
+
+// Screen changes animated with the View Transitions API (src/lib/screen-transitions.ts).
+withViewTransitions(router);

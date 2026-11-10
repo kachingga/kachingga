@@ -1,6 +1,6 @@
 # Sensación de app nativa — web
 
-> **Aplica a:** transiciones entre pantallas (`src/components/animated-layout.tsx`, `src/lib/use-go-back.ts`), navegación al guardar o borrar, gestos, inputs en el celu, arranque y tamaño del bundle, PWA. **Si cambiás cómo funciona algo de esto, actualizá este archivo en el mismo PR.** Reglas cortas: `apps/web/CLAUDE.md`.
+> **Aplica a:** transiciones entre pantallas (`src/components/animated-layout.tsx`, `src/lib/screen-transitions.ts`, `src/lib/use-go-back.ts`), navegación al guardar o borrar, gestos, inputs en el celu, arranque y tamaño del bundle, PWA. **Si cambiás cómo funciona algo de esto, actualizá este archivo en el mismo PR.** Reglas cortas: `apps/web/CLAUDE.md`.
 
 Una web nunca se siente 100% nativa en iPhone: los gestos del sistema (deslizar desde el borde para volver), la física del scroll y del teclado, los haptics (Safari no los permite) y el arranque instantáneo son del sistema operativo. Pero se puede acercar mucho, y es parte del estándar.
 
@@ -9,11 +9,17 @@ Optimistic updates en lo frecuente, precarga de la próxima pantalla, skeletons 
 
 ## Transiciones entre pantallas
 
-- `AnimatedLayout` envuelve todas las rutas con `key={location.key}`: cada navegación **remonta** la pantalla, y eso reproduce su animación CSS (`src/index.css`: `transform`, 280 ms, `ease-out`). Es CSS + ese truco de React, sin librería.
-- **Avanzar** → entra desde la derecha (`page-enter-right`). **Volver** → desde la izquierda (`page-enter-left`). "Volver" = `POP` (atrás del navegador o `navigate(-1)`) o una navegación con `state: { back: true }` (`BackState`).
+Con la **View Transitions API** (#35): el navegador saca una foto de la pantalla vieja y **anima las dos a la vez**, como iOS. Anda en Safari 18+ y Chrome; donde no está, queda la animación CSS de antes (solo entra la nueva).
+
+- **Una pantalla = un path.** `AnimatedLayout` (`src/components/animated-layout.tsx`) envuelve todas las rutas con `key={location.pathname}`: cambiar de path monta la pantalla nueva; cambiar **solo los search params** (los filtros en la URL, que se escriben letra por letra con `replace`) **no** remonta ni anima (antes, con `key={location.key}`, cada letra remontaba Filtros y se perdía el foco).
+- **Cómo se dispara** (`src/lib/screen-transitions.ts`): `withViewTransitions(router)` (en `src/router.tsx`) hace que **toda navegación a otro path** vaya con `viewTransition: true` de React Router, en un solo lugar (no hace falta ponerlo en cada `<Link>` ni `navigate()`). React Router hace el cambio dentro de `document.startViewTransition` y, al volver (`POP`) a una pantalla a la que llegó así, también anima. Se usó esto y **no** el `<ViewTransition>` de React: React actualiza sincrónicamente en `popstate` y ahí no hay transición, así que "volver" no animaba.
+- **Dirección:** **avanzar** → la nueva entra desde la derecha por encima de la vieja, que se corre un poco a la izquierda y se oscurece apenas; **volver** → la vieja se va a la derecha y destapa la anterior. "Volver" = `POP` (atrás del navegador, `navigate(-1)`) o una navegación con `state: { back: true }` (`BackState`). `AnimatedLayout` la pone en `<html data-nav="forward|back|none">` y el CSS (`src/index.css`, `::view-transition-old/new(page)`, 380 ms) la lee. La primera pantalla al abrir la app no anima.
+- **Lo que se mueve:** el contenido de la pantalla (`view-transition-name: page`, ancho de `main`: en compu no pasa por encima de la barra lateral). El header del celu tiene su propio nombre (`app-header`) y queda quieto arriba. Cada foto va con el fondo del tema y al menos del alto de la ventana (si no, se ve la otra a través).
+- **El gesto de volver de Safari** (deslizar desde el borde, en el navegador) ya anima la página antes de que la app se entere: si encima animara la app, se vería doble. El navegador lo avisa en el `popstate` (`hasUAVisualTransition`, Safari 18+ y Chrome) y entonces `data-nav="none"`: sin animación. Instalada a pantalla completa ese gesto no existe y la de la app es la única.
+- **Para apagarlo** (si en el iPhone no convence): `VIEW_TRANSITIONS = false` en `src/lib/screen-transitions.ts` → vuelve en todos lados la animación CSS (`page-enter-right` / `page-enter-left`, solo la pantalla nueva, 280 ms).
 - **Para cerrar una pantalla** (guardar o borrar y volver a donde estaba) usar **`useGoBack()(fallback)`**, no `navigate(ruta)`: si se abrió desde la app hace `navigate(-1)` (anima como volver y no deja la pantalla dos veces en el historial); si se abrió por un link directo (`location.key === 'default'`), va a `fallback` marcando la navegación como "volver".
-- Con **"reducir movimiento"** del sistema (`prefers-reduced-motion`) no hay animación.
-- **Limitación:** solo se anima la pantalla que entra; la vieja desaparece de golpe (por un instante se ve el fondo). Reemplazarlas por la View Transitions API (las dos pantallas a la vez, como iOS) es opcional y se evalúa con la PWA instalada en un iPhone real: #35. En Safari dentro del navegador, el gesto de volver ya tiene su animación y una de la app encima puede verse doble.
+- Con **"reducir movimiento"** del sistema (`prefers-reduced-motion`) no hay animación (ni View Transitions ni la CSS).
+- **Tests:** la dirección y el parche del router, en `src/lib/__tests__/screen-transitions.test.ts`; la animación CSS y los filtros sin remontar, en `src/components/__tests__/animated-layout.test.tsx` (jsdom no tiene View Transitions); que el navegador de verdad las use (WebKit y Chrome) y que "reducir movimiento" las apague, en `e2e/transiciones.spec.ts`. Probarlo en un iPhone real: instalada y en Safari (el gesto de volver).
 - Hojas y modales: animación corta (150–250 ms) que no bloquee (los de shadcn ya la traen).
 
 ## Micro-interacciones

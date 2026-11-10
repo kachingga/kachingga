@@ -61,10 +61,93 @@
 }
 
 /*
+ * Screen transitions with the View Transitions API (src/components/animated-layout.tsx and
+ * src/lib/screen-transitions.ts): the browser takes a picture of the old screen and animates both
+ * at once, like iOS. The old and new screen are `page`; <html data-nav> says which way:
+ * - forward: the new one comes in from the right, over the old one, which moves a bit to the left;
+ * - back: the old one leaves to the right and uncovers the previous one;
+ * - none: no animation (Safari's swipe from the edge already animated it).
+ * Where there are no View Transitions, the fallback is the slide above (`page-enter-*`).
+ */
+::view-transition-group(page),
+::view-transition-old(page),
+::view-transition-new(page) {
+  animation-duration: 380ms;
+  animation-timing-function: cubic-bezier(0.32, 0.72, 0, 1);
+}
+/* The screen slides inside its column (not over the sidebar on wide screens). */
+::view-transition-group(page) {
+  overflow-x: clip;
+}
+/*
+ * Each screen opaque and at least as tall as the window (the picture is transparent where there's
+ * no content, and a short screen has to cover a long one), drawn at its size from the top.
+ */
+::view-transition-old(page),
+::view-transition-new(page) {
+  mix-blend-mode: normal;
+  animation-fill-mode: both;
+  background-color: var(--background);
+  min-block-size: 100vh;
+  object-fit: none;
+  object-position: top;
+}
+/* The phone's header stays still, above the screen that slides (it has its own name). */
+::view-transition-group(app-header) {
+  z-index: 1;
+}
+:root[data-nav='forward']::view-transition-old(page) {
+  animation-name: screen-out-left;
+}
+:root[data-nav='forward']::view-transition-new(page) {
+  animation-name: screen-in-right;
+}
+:root[data-nav='back']::view-transition-old(page) {
+  z-index: 1;
+  animation-name: screen-out-right;
+}
+:root[data-nav='back']::view-transition-new(page) {
+  animation-name: screen-in-left;
+}
+:root[data-nav='none']::view-transition-group(page),
+:root[data-nav='none']::view-transition-old(page),
+:root[data-nav='none']::view-transition-new(page) {
+  animation: none;
+}
+
+@keyframes screen-in-right {
+  from {
+    transform: translateX(100%);
+  }
+}
+@keyframes screen-out-left {
+  to {
+    transform: translateX(-30%);
+    filter: brightness(0.94);
+  }
+}
+@keyframes screen-out-right {
+  to {
+    transform: translateX(100%);
+  }
+}
+@keyframes screen-in-left {
+  from {
+    transform: translateX(-30%);
+    filter: brightness(0.94);
+  }
+}
+
+/*
  * Whoever asked the system for less motion gets no animations: no screen transitions, entrances,
  * bounces nor highlights (and anything else that animates ends instantly, without delays).
  */
 @media (prefers-reduced-motion: reduce) {
+  ::view-transition-group(*),
+  ::view-transition-old(*),
+  ::view-transition-new(*) {
+    animation: none !important;
+  }
   .page-enter-right,
   .page-enter-left,
   .rise,
