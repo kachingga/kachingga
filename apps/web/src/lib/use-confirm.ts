@@ -1,8 +1,9 @@
-import { createContext, useContext } from 'react';
+import { createContext, useContext, type ReactNode } from 'react';
 
 export interface ConfirmOptions {
   title: string;
-  description?: string;
+  /** Text, or JSX when it needs more than a sentence (e.g. a list). */
+  description?: ReactNode;
   /** Text of the confirm button (default "Confirmar"). */
   confirmLabel?: string;
   /** Red confirm button, for things that delete or can't be undone. */

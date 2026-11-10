@@ -35,7 +35,10 @@ export function ConfirmProvider({ children }: { children: ReactNode }) {
           <AlertDialogHeader>
             <AlertDialogTitle>{pending?.title}</AlertDialogTitle>
             {pending?.description && (
-              <AlertDialogDescription>{pending.description}</AlertDialogDescription>
+              // A div (not the default <p>): the description may bring its own paragraphs or a list
+              <AlertDialogDescription asChild>
+                <div>{pending.description}</div>
+              </AlertDialogDescription>
             )}
           </AlertDialogHeader>
           <AlertDialogFooter>
