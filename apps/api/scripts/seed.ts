@@ -8,7 +8,7 @@ import { getSupabase } from '../src/lib/supabase'
 import { createCallerFactory } from '../src/trpc/init'
 import { appRouter } from '../src/trpc/router'
 
-const DEV_REF = 'nraoqdaplvvsakvtlcam' // staging-kachingga (INFRA.md)
+const DEV_REF = 'nraoqdaplvvsakvtlcam' // stg (INFRA.md)
 
 if (![process.env.SUPABASE_URL, process.env.DATABASE_URL].every((url) => url?.includes(DEV_REF))) {
   console.error(`El seed solo corre contra la base de dev (${DEV_REF}). Revisá apps/api/.env.`)

@@ -3,7 +3,7 @@ import { existsSync } from 'node:fs';
 import { createClient, type SupabaseClient } from '@supabase/supabase-js';
 
 // Accounts of the flows with the API (recorridos.spec.ts), through the admin API of the dev Supabase
-// (staging-kachingga): it skips "Confirm email" and the captcha. Same SUPABASE_URL and
+// (stg): it skips "Confirm email" and the captcha. Same SUPABASE_URL and
 // SUPABASE_SECRET_KEY as the API the E2E start: from the environment (e2e.yml) or, locally, from
 // apps/api/.env (the environment wins). Test side only (Node): the secret key never reaches the
 // browser. docs/claude/web/testing.md → "E2E".
