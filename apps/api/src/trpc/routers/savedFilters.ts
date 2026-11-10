@@ -2,11 +2,12 @@ import { TRPCError } from '@trpc/server'
 import { z } from 'zod'
 import { prisma } from '../../db'
 import { requireMembership } from '../../lib/access'
-import { expenseFilters } from '../../schemas'
+import { assertRoomForSavedFilter } from '../../lib/quotas'
+import { expenseFilters, id } from '../../schemas'
 import { protectedProcedure, router } from '../init'
 
 export const savedFiltersRouter = router({
-  list: protectedProcedure.input(z.object({ groupId: z.string() })).query(async ({ ctx, input }) => {
+  list: protectedProcedure.input(z.object({ groupId: id })).query(async ({ ctx, input }) => {
     await requireMembership(input.groupId, ctx.user.id)
     const saved = await prisma.savedFilter.findMany({
       where: { groupId: input.groupId, userId: ctx.user.id },
@@ -17,15 +18,17 @@ export const savedFiltersRouter = router({
   }),
 
   create: protectedProcedure
-    .input(z.object({ groupId: z.string(), name: z.string().trim().min(1).max(40), filters: expenseFilters }))
+    .input(z.object({ groupId: id, name: z.string().trim().min(1).max(40), filters: expenseFilters }))
     .mutation(async ({ ctx, input }) => {
       await requireMembership(input.groupId, ctx.user.id)
+      await assertRoomForSavedFilter(input.groupId, ctx.user.id)
+      // `filters` is what expenseFilters parsed (known fields only, with their caps), never the raw input.
       return prisma.savedFilter.create({
         data: { groupId: input.groupId, userId: ctx.user.id, name: input.name, filters: input.filters },
       })
     }),
 
-  delete: protectedProcedure.input(z.object({ savedFilterId: z.string() })).mutation(async ({ ctx, input }) => {
+  delete: protectedProcedure.input(z.object({ savedFilterId: id })).mutation(async ({ ctx, input }) => {
     const { count } = await prisma.savedFilter.deleteMany({ where: { id: input.savedFilterId, userId: ctx.user.id } })
     if (count === 0) throw new TRPCError({ code: 'NOT_FOUND', message: 'Filtro no encontrado' })
     return { ok: true }

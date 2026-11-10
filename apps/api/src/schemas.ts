@@ -77,8 +77,15 @@ export const currency = z.enum(currencies)
 // Where a suggested exchange rate comes from: blue (only USD, the default for it) or oficial
 export const rateSource = z.enum(['blue', 'oficial'])
 
-const id = z.string().min(1)
+// Ids are cuids (25 characters); the cap only stops absurd inputs.
+export const id = z.string().min(1).max(40)
 const name = z.string().trim().min(1).max(60)
+// Cap for lists of ids in an input (people in a split, categories in a filter): above any real
+// group (a group has at most 50 people, lib/quotas.ts) and far below a request that fills the database.
+const MAX_IDS = 100
+// A day between 2000 and 2100: catches a mistyped year (0202, 20266) and absurd values.
+const DATE_RANGE_MESSAGE = 'La fecha tiene que estar entre el año 2000 y el 2100'
+const day = z.date().min(new Date('2000-01-01T00:00:00Z'), DATE_RANGE_MESSAGE).max(new Date('2100-12-31T23:59:59.999Z'), DATE_RANGE_MESSAGE)
 
 export const categoryIcon = z.enum(categoryIcons)
 export const categoryColor = z.enum(categoryColors)
@@ -90,14 +97,20 @@ export const categorySuggestionInput = z.object({ groupId: id, description: z.st
 const amountCents = z.number().int().positive().max(2_147_483_647)
 
 export const splitInput = z.discriminatedUnion('type', [
-  z.object({ type: z.literal('EQUAL'), participantIds: z.array(id).min(1) }),
+  z.object({ type: z.literal('EQUAL'), participantIds: z.array(id).min(1).max(MAX_IDS) }),
   z.object({
     type: z.literal('AMOUNT'),
-    shares: z.array(z.object({ participantId: id, amountCents: z.number().int().nonnegative() })).min(1),
+    shares: z
+      .array(z.object({ participantId: id, amountCents: z.number().int().nonnegative() }))
+      .min(1)
+      .max(MAX_IDS),
   }),
   z.object({
     type: z.literal('PERCENTAGE'),
-    shares: z.array(z.object({ participantId: id, percentage: z.number().positive().max(100) })).min(1),
+    shares: z
+      .array(z.object({ participantId: id, percentage: z.number().positive().max(100) }))
+      .min(1)
+      .max(MAX_IDS),
   }),
 ])
 
@@ -121,7 +134,7 @@ export const expenseInput = z.object({
   description: z.string().trim().min(1).max(120),
   // One of the group's categories; omitted → the group's "Otros"
   categoryId: id.optional(),
-  date: z.date(),
+  date: day,
   amountCents,
   ...movementCurrency,
   paidById: id,
@@ -134,7 +147,7 @@ export const settlementInput = z.object({
   toId: id,
   amountCents,
   ...movementCurrency,
-  date: z.date(),
+  date: day,
   note: z.string().trim().max(200).nullish(),
 })
 
@@ -145,9 +158,9 @@ export const expenseFilters = z.object({
   splitParticipantId: id.optional(),
   // paid it OR is part of the split ("gastos en los que estoy involucrado")
   involvedParticipantId: id.optional(),
-  categoryIds: z.array(id).optional(),
-  dateFrom: z.date().optional(),
-  dateTo: z.date().optional(),
+  categoryIds: z.array(id).max(MAX_IDS).optional(),
+  dateFrom: day.optional(),
+  dateTo: day.optional(),
   minAmountCents: z.number().int().nonnegative().optional(),
   maxAmountCents: z.number().int().nonnegative().optional(),
   search: z.string().trim().max(100).optional(),

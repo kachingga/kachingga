@@ -1,7 +1,8 @@
 // An expense category of a group. Every group starts with the 8 built-in ones (`defaultKey` set,
 // see `defaultCategories` in src/schemas.ts); members can add more, rename, recolor or archive them.
 // Never deleted: archived ones keep their expenses but can't be picked for new ones.
-// Names are unique among the group's active categories (checked in the API, case-insensitive).
+// Names are unique among the group's active categories, ignoring case: checked in the API and enforced
+// by the partial index "Category_active_name_key" (migration nombre_de_categoria_unico; Prisma can't express it).
 model Category {
   id         String    @id @default(cuid())
   groupId    String

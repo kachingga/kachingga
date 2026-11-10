@@ -4,13 +4,14 @@ import { prisma } from '../../db'
 import { requireActiveGroup, requireMembership } from '../../lib/access'
 import { computeBalances } from '../../lib/balances'
 import { defaultCategoryRows } from '../../lib/categories'
-import { generateInviteCode } from '../../lib/inviteCode'
+import { generateInviteCode, INVITE_CODE_LENGTH } from '../../lib/inviteCode'
 import { resolvePaymentAliases } from '../../lib/paymentAlias'
-import { groupInput, participantName } from '../../schemas'
+import { assertCanCreateGroup, assertRoomForParticipant } from '../../lib/quotas'
+import { groupInput, id, participantName } from '../../schemas'
 import { protectedProcedure, router } from '../init'
 
-const groupId = z.object({ groupId: z.string() })
-const inviteCode = z.string().trim().toUpperCase().min(1)
+const groupId = z.object({ groupId: id })
+const inviteCode = z.string().trim().toUpperCase().length(INVITE_CODE_LENGTH, 'Código inválido')
 
 export const groupsRouter = router({
   // My groups, each with its people (`participants`: id and name, oldest first, for the faces on the
@@ -86,8 +87,9 @@ export const groupsRouter = router({
     }
   }),
 
-  create: protectedProcedure.input(groupInput.extend({ myName: participantName })).mutation(({ ctx, input }) =>
-    prisma.group.create({
+  create: protectedProcedure.input(groupInput.extend({ myName: participantName })).mutation(async ({ ctx, input }) => {
+    await assertCanCreateGroup(ctx.user.id)
+    return prisma.group.create({
       data: {
         name: input.name,
         baseCurrency: input.baseCurrency,
@@ -96,8 +98,8 @@ export const groupsRouter = router({
         participants: { create: { name: input.myName, userId: ctx.user.id } },
         categories: { create: defaultCategoryRows() },
       },
-    }),
-  ),
+    })
+  }),
 
   rename: protectedProcedure.input(groupId.extend({ name: groupInput.shape.name })).mutation(async ({ ctx, input }) => {
     await requireActiveGroup(input.groupId, ctx.user.id)
@@ -135,7 +137,7 @@ export const groupsRouter = router({
 
   // Join by claiming an existing participant without account, or as a new participant.
   join: protectedProcedure
-    .input(z.union([z.object({ inviteCode, participantId: z.string() }), z.object({ inviteCode, name: participantName })]))
+    .input(z.union([z.object({ inviteCode, participantId: id }), z.object({ inviteCode, name: participantName })]))
     .mutation(async ({ ctx, input }) => {
       const group = await prisma.group.findUnique({ where: { inviteCode: input.inviteCode } })
       if (!group || group.archivedAt) throw new TRPCError({ code: 'NOT_FOUND', message: 'Código inválido' })
@@ -154,6 +156,7 @@ export const groupsRouter = router({
         })
         if (count === 0) throw new TRPCError({ code: 'CONFLICT', message: 'Ese participante ya tiene cuenta' })
       } else {
+        await assertRoomForParticipant(group.id)
         await prisma.participant.create({ data: { groupId: group.id, name: input.name, userId: ctx.user.id } })
       }
       return { groupId: group.id }
