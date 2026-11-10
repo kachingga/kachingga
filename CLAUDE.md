@@ -48,7 +48,7 @@ Proyecto de **Kachingga**, una organización de amigos (repo: `github.com/kachin
 | Errores en prod, Sentry, UptimeRobot | `docs/claude/repo/monitoreo.md` + `DEPLOY.md` → "Monitoreo" |
 | Saber si una tarea está terminada | "Cuándo una tarea está terminada" (abajo) + plantilla de PR (`.github/pull_request_template.md`) |
 
-> **Alcance:** v1 = todo lo de `V1.md`; v2 = explicación de saldos y agente con IA (`V2.md`). Si una tarea toca la v2, frená y preguntá antes de implementarlo. Mercado Pago **no es parte de ninguna versión** (`docs/decisiones/mercado-pago.md`).
+> **Alcance:** v1 = todo lo de `V1.md`; v2 = explicación de saldos, agente con IA y recomendar crear categorías (`V2.md`). Si una tarea toca la v2, frená y preguntá antes de implementarlo. Mercado Pago **no es parte de ninguna versión** (`docs/decisiones/mercado-pago.md`).
 
 ---
 
