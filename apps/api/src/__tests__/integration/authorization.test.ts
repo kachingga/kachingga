@@ -74,6 +74,7 @@ const attacks: Record<string, () => Promise<unknown>> = {
   'categories.update': () => outsider.categories.update({ categoryId: category.id, name: 'Hackeada' }),
   'categories.archive': () => outsider.categories.archive({ categoryId: category.id }),
   'categories.unarchive': () => outsider.categories.unarchive({ categoryId: category.id }),
+  'categories.suggest': () => outsider.categories.suggest({ groupId: group.id, description: 'Secreto' }),
 }
 
 // Procedures that don't take a group (or reach it only through the invite code, on purpose).

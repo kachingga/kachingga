@@ -98,7 +98,7 @@ src/
 │                             # category-picker, category-editor
 ├── lib/                      # trpc, supabase (ÚNICO que importa Supabase), auth, format, optimistic,
 │                             # use-prefetch, use-exchange-rate, use-confirm, use-go-back, offline-cache,
-│                             # theme, use-sign-out, categories (ícono y color de cada categoría)
+│                             # theme, use-sign-out, categories (ícono y color de cada categoría), use-debounced-value
 └── test/                     # setup.ts, render.tsx (renderWithApi)
 e2e/                          # Playwright
 ```

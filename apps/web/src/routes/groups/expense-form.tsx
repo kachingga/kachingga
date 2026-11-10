@@ -1,7 +1,8 @@
 import { useState } from 'react';
 import { Link, useLocation, useNavigate, useParams } from 'react-router';
 import { toast } from 'sonner';
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { Sparkles } from 'lucide-react';
 import type { inferRouterOutputs } from '@trpc/server';
 import type { AppRouter } from '@kachingga/api';
 import { currencies, distributeCents } from '@kachingga/api/schemas';
@@ -19,6 +20,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { NativeSelect } from '@/components/ui/native-select';
 import { useTRPC } from '@/lib/trpc';
+import { useDebouncedValue } from '@/lib/use-debounced-value';
 import { useGoBack } from '@/lib/use-go-back';
 import { buildExpense, byDateDesc, tempId, type Expense } from '@/lib/optimistic';
 import {
@@ -39,6 +41,9 @@ type GroupData = inferRouterOutputs<AppRouter>['groups']['get'];
 type ExpenseData = inferRouterOutputs<AppRouter>['expenses']['get'];
 
 // ─── Inner form (renders only when group + optional expense are ready) ────────
+
+/** How long after the last keystroke the category is suggested. */
+const SUGGEST_DELAY_MS = 400;
 
 interface FormProps {
   groupId: string;
@@ -64,14 +69,32 @@ function ExpenseFormBody({ groupId, group, expenseId, expense }: FormProps) {
   // Form state
   const [description, setDescription] = useState(expense?.description ?? '');
   // The group's categories: the active ones can be picked; an archived one only if the expense
-  // already had it. '' = not picked yet → the group's "Otros".
+  // already had it. '' = not picked yet → the one the API suggests for the description, else the
+  // group's "Otros". A category picked by hand is never replaced.
   const categories = useQuery(trpc.categories.list.queryOptions({ groupId }));
   const [pickedCategoryId, setCategoryId] = useState(expense?.categoryId ?? '');
   const categoryOptions = (categories.data ?? []).filter(
     (c) => !c.archived || c.id === expense?.categoryId,
   );
+  const typed = description.trim();
+  const debouncedDescription = useDebouncedValue(typed, SUGGEST_DELAY_MS);
+  const wantsSuggestion = !pickedCategoryId && typed.length >= 2;
+  const suggestion = useQuery({
+    ...trpc.categories.suggest.queryOptions({ groupId, description: debouncedDescription }),
+    enabled: wantsSuggestion && debouncedDescription.length >= 2,
+    // Keeps the last suggestion while the next one loads (no flicker back to "Otros").
+    placeholderData: keepPreviousData,
+    // One entry per description typed: dropped soon so they don't pile up in the offline cache.
+    gcTime: 60_000,
+    retry: false,
+  });
+  const suggestedId = wantsSuggestion ? suggestion.data?.categoryId : undefined;
+  const suggestedCategory = categoryOptions.find((c) => c.id === suggestedId);
   const categoryId =
-    pickedCategoryId || categoryOptions.find((c) => c.defaultKey === 'OTHER')?.id || '';
+    pickedCategoryId ||
+    suggestedCategory?.id ||
+    categoryOptions.find((c) => c.defaultKey === 'OTHER')?.id ||
+    '';
   const selectedCategory = categoryOptions.find((c) => c.id === categoryId);
   const [dateInput, setDateInput] = useState(expense ? toDay(expense.date) : today());
   const [amountInput, setAmountInput] = useState(
@@ -316,8 +339,17 @@ function ExpenseFormBody({ groupId, group, expenseId, expense }: FormProps) {
           {/* Categoría */}
           <div>
             <div className="flex items-baseline justify-between gap-3">
-              <p className="text-sm font-medium text-foreground" id="category-label">
+              <p
+                className="flex items-center gap-2 text-sm font-medium text-foreground"
+                id="category-label"
+              >
                 Categoría
+                {suggestedCategory && (
+                  <span className="inline-flex items-center gap-1 rounded-full bg-accent px-2 py-0.5 text-xs font-medium text-accent-foreground">
+                    <Sparkles className="size-3" aria-hidden />
+                    Sugerida
+                  </span>
+                )}
               </p>
               <Link
                 to={`/grupos/${groupId}/categorias`}

@@ -1,6 +1,7 @@
 import { screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it } from 'vitest';
+import { Route, Routes } from 'react-router';
 
 import { dayToDate, today } from '@/lib/format';
 
@@ -276,5 +277,149 @@ describe('ExpenseForm (optimistic save)', () => {
       await screen.findByText('La suma de los montos no coincide con el total'),
     ).toBeInTheDocument();
     expect(calls).toHaveLength(0);
+  });
+});
+
+describe('ExpenseForm (automatic category)', () => {
+  const category = (id: string, name: string, defaultKey: string | null) => ({
+    id,
+    name,
+    icon: 'shapes',
+    color: 'cocoa',
+    defaultKey,
+    archived: false,
+    expenseCount: 0,
+  });
+  const categories = () => [
+    category('c-food', 'Comida', 'FOOD'),
+    category('c-groceries', 'Súper', 'GROCERIES'),
+    category('c-nafta', 'Nafta', null),
+    category('c-other', 'Otros', 'OTHER'),
+  ];
+  // Fake suggestion: "Coto" → Súper, "Uber" → Nafta (a custom one), anything else → nothing.
+  function fakeSuggest() {
+    const calls: string[] = [];
+    return {
+      calls,
+      handler: (input: unknown) => {
+        const { description } = input as { description: string };
+        calls.push(description);
+        if (/coto/i.test(description)) return { categoryId: 'c-groceries', source: 'keyword' };
+        if (/uber/i.test(description)) return { categoryId: 'c-nafta', source: 'history' };
+        return null;
+      },
+    };
+  }
+
+  it('picks the suggested category while typing (once it stops) and marks it as suggested', async () => {
+    const user = userEvent.setup();
+    const suggest = fakeSuggest();
+    const created: Record<string, unknown>[] = [];
+    renderWithApi(<ExpenseForm />, {
+      'groups.get': () => fixGroup,
+      'categories.list': categories,
+      'categories.suggest': suggest.handler,
+      'expenses.create': (input) => {
+        created.push(input as Record<string, unknown>);
+        return { id: 'e1' };
+      },
+    });
+    const picker = await screen.findByRole('radiogroup', { name: 'Categoría' });
+    expect(screen.queryByText('Sugerida')).not.toBeInTheDocument();
+
+    await user.type(screen.getByLabelText('Monto'), '100');
+    await user.type(screen.getByLabelText('Descripción'), 'Coto');
+    await waitFor(() => expect(within(picker).getByRole('radio', { name: 'Súper' })).toBeChecked());
+    expect(screen.getByText('Sugerida')).toBeInTheDocument();
+    // Debounced: asked once, for the whole word, not on every keystroke.
+    expect(suggest.calls).toEqual(['Coto']);
+
+    await user.click(screen.getByRole('button', { name: 'Agregar gasto' }));
+    await waitFor(() => expect(created).toHaveLength(1));
+    expect(created[0]).toMatchObject({ categoryId: 'c-groceries' });
+  });
+
+  it('follows the description, and goes back to "Otros" when nothing matches', async () => {
+    const user = userEvent.setup();
+    const suggest = fakeSuggest();
+    renderWithApi(<ExpenseForm />, {
+      'groups.get': () => fixGroup,
+      'categories.list': categories,
+      'categories.suggest': suggest.handler,
+    });
+    const picker = await screen.findByRole('radiogroup', { name: 'Categoría' });
+    const description = screen.getByLabelText('Descripción');
+    await user.type(description, 'Uber');
+    await waitFor(() => expect(within(picker).getByRole('radio', { name: 'Nafta' })).toBeChecked());
+    await user.clear(description);
+    await user.type(description, 'Varios');
+    await waitFor(() => expect(suggest.calls).toContain('Varios'));
+    await waitFor(() => expect(within(picker).getByRole('radio', { name: 'Otros' })).toBeChecked());
+    expect(screen.queryByText('Sugerida')).not.toBeInTheDocument();
+  });
+
+  it('never replaces a category picked by hand (before or after the suggestion)', async () => {
+    const user = userEvent.setup();
+    const suggest = fakeSuggest();
+    renderWithApi(<ExpenseForm />, {
+      'groups.get': () => fixGroup,
+      'categories.list': categories,
+      'categories.suggest': suggest.handler,
+    });
+    const picker = await screen.findByRole('radiogroup', { name: 'Categoría' });
+    const description = screen.getByLabelText('Descripción');
+
+    // Suggested, then changed by hand: it stays, whatever is typed next.
+    await user.type(description, 'Coto');
+    await waitFor(() => expect(within(picker).getByRole('radio', { name: 'Súper' })).toBeChecked());
+    await user.click(within(picker).getByRole('radio', { name: 'Comida' }));
+    expect(screen.queryByText('Sugerida')).not.toBeInTheDocument();
+    await user.clear(description);
+    await user.type(description, 'Uber');
+    await new Promise((r) => setTimeout(r, 600));
+    expect(within(picker).getByRole('radio', { name: 'Comida' })).toBeChecked();
+    expect(suggest.calls).toEqual(['Coto']);
+  });
+
+  it('editing an expense keeps its category (no suggestion)', async () => {
+    const user = userEvent.setup();
+    const suggest = fakeSuggest();
+    const expense = {
+      id: 'e1',
+      description: 'Cena',
+      categoryId: 'c-food',
+      category: { id: 'c-food', name: 'Comida', icon: 'shapes', color: 'cocoa' },
+      date: new Date('2026-11-01T12:00:00Z'),
+      amountCents: 1000,
+      currency: 'ARS',
+      exchangeRate: null,
+      splitType: 'EQUAL',
+      paidById: 'p1',
+      createdById: 'u1',
+      deletedAt: null,
+      groupId: 'g1',
+      paidBy: { id: 'p1', name: 'Juan' },
+      splits: [{ expenseId: 'e1', participantId: 'p1', amountCents: 1000, percentage: null }],
+    };
+    renderWithApi(
+      <Routes>
+        <Route path="/grupos/:groupId/gastos/:expenseId/editar" element={<ExpenseForm />} />
+      </Routes>,
+      {
+        'groups.get': () => fixGroup,
+        'expenses.get': () => expense,
+        'categories.list': categories,
+        'categories.suggest': suggest.handler,
+      },
+      '/grupos/g1/gastos/e1/editar',
+    );
+    const picker = await screen.findByRole('radiogroup', { name: 'Categoría' });
+    expect(within(picker).getByRole('radio', { name: 'Comida' })).toBeChecked();
+    const description = screen.getByLabelText('Descripción');
+    await user.clear(description);
+    await user.type(description, 'Coto');
+    await new Promise((r) => setTimeout(r, 600));
+    expect(within(picker).getByRole('radio', { name: 'Comida' })).toBeChecked();
+    expect(suggest.calls).toEqual([]);
   });
 });

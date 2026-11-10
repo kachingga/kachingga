@@ -15,6 +15,8 @@ export const PROCEDURE_RULES: Record<string, Rule> = {
   'groups.join': { limit: 20, windowMs: 10 * MINUTE },
   // Heavy: reads every matching expense of a group
   'expenses.export': { limit: 20, windowMs: MINUTE },
+  // Asked while typing (debounced): reads the group's latest expenses on every call
+  'categories.suggest': { limit: 60, windowMs: MINUTE },
 }
 
 export class RateLimiter {
