@@ -29,7 +29,8 @@ Varias decisiones de producto se tomaron pensando en un grupo de amigos y hay qu
 
 ### Requisitos de las stores (solo app nativa)
 - ~~**Borrar la cuenta desde la app** (Apple lo exige)~~: **ya está** (#104, Mi cuenta → "Borrar mi cuenta"; la regla, en `CLAUDE.md` → "Usuarios y login").
-- Política de privacidad (URL), declaración de datos, términos de uso y URL o mail de soporte.
+- ~~**Política de privacidad (URL)** y **mail de soporte**~~: **ya están** (#100, la landing: `kachingga.com/privacidad` y `hola@kachingga.com`; dónde está, en `INFRA.md` → "Hosting").
+- Declaración de datos y términos de uso.
 - Ícono, capturas, descripción y categoría.
 - **Apple:** revisión de App Store. Publicando como persona, figura **el nombre de Galo** como vendedor; para que diga "Kachingga" hace falta una organización (con número D-U-N-S).
 - **Google Play:** USD 25 (una vez). Las cuentas personales nuevas necesitan una **prueba cerrada con al menos 12 testers durante 14 días** antes de publicar.
