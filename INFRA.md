@@ -7,6 +7,8 @@
 | API | Railway (proyecto `kachingga`, servicio `api`) | railway.com/dashboard | Prod `https://api.kachingga.com` · staging `https://api-staging.kachingga.com` |
 | **Web** | Railway (proyecto `kachingga`, servicio `web`) | railway.com/dashboard | Prod `https://kachingga.com` · staging `https://staging.kachingga.com` |
 | Dominio y DNS | Cloudflare (Registrar + DNS) | dash.cloudflare.com | `kachingga.com`, con renovación automática |
+| Mails del dominio | Cloudflare Email Routing (solo recibe, no manda) | dash.cloudflare.com → Email → Email Routing | `hola@kachingga.com`: contacto público (landing y política de privacidad, #100). `devops@kachingga.com`: dueño de cuentas de servicios (#50). Reenvían a mails personales (no se anotan acá) |
+| Search Console | Google Search Console (cuenta de Galo) | search.google.com/search-console | Propiedad de dominio `kachingga.com`, verificada con un registro TXT en Cloudflare. **No borrar ese TXT:** Google lo usa para verificar la marca del login con Google (#96) |
 | Base de datos **PROD** | Supabase (`kachingga`) | supabase.com/dashboard/project/czrkjokurbmbbvobvmxd | `https://czrkjokurbmbbvobvmxd.supabase.co` (ref `czrkjokurbmbbvobvmxd`) |
 | Base de datos **DEV** | Supabase (`staging-kachingga`) | supabase.com/dashboard/project/nraoqdaplvvsakvtlcam | `https://nraoqdaplvvsakvtlcam.supabase.co` (ref `nraoqdaplvvsakvtlcam`) |
 | Auth | Supabase Auth (email + password y Google) | supabase.com/dashboard → Authentication | Ver "Supabase" (abajo) |
@@ -113,4 +115,4 @@ Sin los `E2E_*`, `e2e.yml` corre igual pero solo los specs que no necesitan la A
 
 ## Accesos
 
-Las cuentas están **a nombre de Galo**: org de GitHub `kachingga`, proyecto `kachingga` de Railway (en su cuenta personal, plan Hobby compartido con otros proyectos suyos), Cloudflare (dominio y DNS), org `kachingga` de Supabase, org `kachingga` de Sentry, UptimeRobot y el proyecto `Kachingga` de Google Cloud (OAuth). Las credenciales y el 2FA, en su gestor de contraseñas; nunca en el repo. Al resto del grupo se lo suma si lo necesita: org de GitHub, org de Supabase, proyecto de Railway (Hobby admite pocos miembros por proyecto: verificar el límite al invitar).
+Las cuentas están **a nombre de Galo**: org de GitHub `kachingga`, proyecto `kachingga` de Railway (en su cuenta personal, plan Hobby compartido con otros proyectos suyos), Cloudflare (dominio y DNS), org `kachingga` de Supabase, org `kachingga` de Sentry, UptimeRobot, Google Search Console y el proyecto `Kachingga` de Google Cloud (OAuth). Las credenciales y el 2FA, en su gestor de contraseñas; nunca en el repo. Al resto del grupo se lo suma si lo necesita: org de GitHub, org de Supabase, proyecto de Railway (Hobby admite pocos miembros por proyecto: verificar el límite al invitar).
