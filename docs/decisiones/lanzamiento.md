@@ -36,7 +36,7 @@ Varias decisiones de producto se tomaron pensando en un grupo de amigos y hay qu
 
 ### Producto y operación con usuarios desconocidos
 - **Revisar decisiones "para amigos"**: todos con los mismos permisos (sin admin), cualquiera edita o borra cualquier gasto, el código de invitación como única barrera (`CLAUDE.md` → "Decisiones de producto tomadas").
-- Servidor de mail propio (SMTP) en Supabase y **prender "Confirm email"** (en la Fase 1 está apagado, #41). Sin confirmar el email, alguien podría registrarse con el mail de otra persona y quedar unido a su cuenta cuando esa persona entre con Google con el mismo mail (Supabase une identidades por email).
+- ~~Servidor de mail propio (SMTP) en Supabase y prender "Confirm email"~~: **ya está** desde la Fase 1 (#98: SMTP de Resend, *Confirm email* y captcha; `INFRA.md` → "Supabase"). Se adelantó porque, sin confirmar el email, alguien podía registrarse con el mail de otra persona y quedar dentro de su cuenta cuando esa persona entrara con Google.
 - Límites contra abuso más finos: por usuario (no solo por IP), store compartido si hay varias instancias de la API, y los límites de registro de Supabase. (Ya hay límite por IP: `docs/claude/api/seguridad.md`.)
 - Reporte de errores en la web y en la API (ej. Sentry).
 - Costos al crecer (Supabase, Railway).
