@@ -65,6 +65,32 @@ describe('signOutOfDevice', () => {
     auth.stop();
   });
 
+  it('offline right after opening the app with the token expired, does not wait for the library', async () => {
+    vi.useFakeTimers();
+    vi.spyOn(navigator, 'onLine', 'get').mockReturnValue(false);
+    saveSession('refresh-4', { expired: true });
+    // The app just opened: a new client finds the expired session and retries refreshing it ~25 s.
+    vi.resetModules();
+    const fresh = await import('@/lib/supabase');
+
+    let done = false;
+    void fresh.signOutOfDevice().then(() => (done = true));
+    await vi.advanceTimersByTimeAsync(0);
+
+    expect(done).toBe(true);
+    expect(localStorage.getItem(SESSION_KEY)).toBeNull();
+
+    // When the library gives up, it finishes signing out and the session doesn't come back.
+    const events: string[] = [];
+    fresh.supabase.auth.onAuthStateChange((event) => {
+      events.push(event);
+    });
+    await vi.advanceTimersByTimeAsync(30_000);
+    expect(events).toContain('SIGNED_OUT');
+    expect(localStorage.getItem(SESSION_KEY)).toBeNull();
+    expect((await fresh.supabase.auth.getSession()).data.session).toBeNull();
+  });
+
   it('when Supabase does not answer and the token expired, deletes what the library keeps', async () => {
     vi.useFakeTimers();
     saveSession('refresh-3', { expired: true });

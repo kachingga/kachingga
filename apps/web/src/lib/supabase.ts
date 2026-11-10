@@ -43,6 +43,9 @@ export async function signOutOfDevice() {
     // Storage blocked: nothing was saved either.
   }
   // With nothing saved, the library signs out without asking Supabase: it deletes the rest of its
-  // keys and fires SIGNED_OUT (useSession, the offline cache).
-  await supabase.auth.signOut({ scope: 'local' });
+  // keys and fires SIGNED_OUT (useSession, the offline cache). But first it waits until it finished
+  // starting, and offline, right after opening the app with the token expired, that's when it gives
+  // up refreshing it (~25 s): then don't wait, the session is no longer on the device.
+  const signedOut = supabase.auth.signOut({ scope: 'local' });
+  if (navigator.onLine) await signedOut;
 }

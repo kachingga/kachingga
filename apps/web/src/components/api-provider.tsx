@@ -3,6 +3,7 @@ import { PersistQueryClientProvider } from '@tanstack/react-query-persist-client
 import { TRPCClientError } from '@trpc/client';
 import { useEffect, useState, type ReactNode } from 'react';
 
+import { Splash } from '@/components/splash';
 import { useSession } from '@/lib/auth';
 import { reportError, setMonitoringUser } from '@/lib/monitoring';
 import {
@@ -11,6 +12,7 @@ import {
   createMutationCache,
   createPersister,
   rememberCachedUser,
+  useOfflineReadOnly,
 } from '@/lib/offline-cache';
 import { createApiClient, TRPCProvider } from '@/lib/trpc';
 
@@ -20,6 +22,7 @@ function isUnauthorized(error: unknown) {
 
 export function ApiProvider({ children }: { children: ReactNode }) {
   const session = useSession();
+  const offlineReadOnly = useOfflineReadOnly();
   const userId = session?.user.id;
 
   useEffect(() => {
@@ -27,8 +30,10 @@ export function ApiProvider({ children }: { children: ReactNode }) {
     setMonitoringUser(userId ?? null);
   }, [userId]);
 
-  // Wait until the session is restored, so the cache that loads is the right user's.
-  if (session === undefined) return null;
+  // Wait until the session is restored, so the cache that loads is the right user's (the logo, like
+  // index.html). Not offline with the last user's cache: with an expired token Supabase retries
+  // refreshing it for ~25 s, and that cache is the one shown anyway (read-only).
+  if (session === undefined && !offlineReadOnly) return <Splash />;
 
   // Without a session it's still the last user's cache: offline with an expired token the session
   // can't be refreshed, and RequireAuth lets that user read what was saved (sign out deletes it).
