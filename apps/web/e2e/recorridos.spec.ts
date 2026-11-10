@@ -3,7 +3,7 @@ import { type Browser, expect, type Page, test } from '@playwright/test';
 import { type Account, confirmationTokenHash, createConfirmedAccount } from './accounts.ts';
 import { expectAccessible } from './axe.ts';
 
-// Critical flows against the real API and the dev Supabase and database (staging-kachingga). Only with
+// Critical flows against the real API and the dev Supabase and database (stg). Only with
 // E2E_API=1 (it starts the API too: playwright.config.ts). Every run makes new accounts with unique
 // emails and leaves its data in dev, named "E2E …" (the group gets archived at the end).
 // With "Confirm email" and the captcha (Turnstile test keys) on or off: docs/claude/web/testing.md.
