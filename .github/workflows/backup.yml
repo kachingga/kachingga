@@ -107,9 +107,11 @@ jobs:
             echo "::notice::Sin E2E_DATABASE_URL: no se midió la base de staging."
             exit 0
           fi
+          # It's the URL Prisma uses (transaction pooler, `?pgbouncer=true`): psql rejects Prisma's
+          # parameters, so it gets the URL without its query.
           bytes=$(docker run --rm -e STG_DATABASE_URL \
             postgres:17@sha256:ff87138949ad9a46f32ff23bd6852b52ce024a13dffe9b4087be98292cdd3b4f \
-            sh -c 'psql "$STG_DATABASE_URL" -X -tAc "SELECT pg_database_size(current_database())"')
+            sh -c 'psql "${STG_DATABASE_URL%%\?*}" -X -tAc "SELECT pg_database_size(current_database())"')
           [[ "$bytes" =~ ^[0-9]+$ ]] || { echo "::error::No se pudo leer el tamaño de la base de staging."; exit 1; }
           mb=$((bytes / 1024 / 1024))
           echo "Tamaño de la base de staging: $mb MB (aviso a partir de $ALERT_MB MB)"
