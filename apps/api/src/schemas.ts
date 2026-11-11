@@ -81,7 +81,8 @@ export const rateSource = z.enum(['blue', 'oficial'])
 export const id = z.string().min(1).max(40)
 const name = z.string().trim().min(1).max(60)
 // Cap for lists of ids in an input (people in a split, categories in a filter): above any real
-// group (a group has at most 50 people, lib/quotas.ts) and far below a request that fills the database.
+// group (at most 25 people, lib/quotas.ts; up to 50 in groups from before that cap) and far below
+// a request that fills the database.
 const MAX_IDS = 100
 // A day between 2000 and 2100: catches a mistyped year (0202, 20266) and absurd values.
 const DATE_RANGE_MESSAGE = 'La fecha tiene que estar entre el año 2000 y el 2100'

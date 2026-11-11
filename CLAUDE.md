@@ -90,7 +90,7 @@ Proyecto de **Kachingga**, una organización de amigos (repo: `github.com/kachin
 - El participante de alguien que **borró su cuenta** queda sin cuenta y se puede reclamar con el código como cualquier otro (si la persona vuelve, se registra de nuevo y se reclama a sí misma).
 - Se puede renombrar a cualquiera.
 - **Quitar un participante** solo se puede si no tiene cuenta y nunca aparece en un gasto o pago (para no romper saldos).
-- Un grupo tiene **hasta 50 personas** (con o sin cuenta). Lleno, no se puede agregar a nadie ni entrar como participante nuevo; reclamar uno que ya existe, sí.
+- Un grupo tiene **hasta 25 personas** (con o sin cuenta; por eso un gasto se divide entre 25 como mucho). Lleno, no se puede agregar a nadie ni entrar como participante nuevo; reclamar uno que ya existe, sí. Un grupo que ya tenía más (antes el tope era 50) sigue andando igual, con todos, pero no suma a nadie más.
 
 ### Gastos
 - Un gasto tiene: descripción, categoría, fecha, monto, moneda, quién pagó y entre quiénes se divide.

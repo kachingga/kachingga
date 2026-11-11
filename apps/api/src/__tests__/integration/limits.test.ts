@@ -55,6 +55,29 @@ describe('quotas', () => {
     expect(await prisma.participant.count({ where: { groupId: group.id } })).toBe(MAX_PARTICIPANTS_PER_GROUP)
   })
 
+  test('a group already over the people cap keeps working; it just takes nobody else', async () => {
+    const { ana, group, me } = await newGroup()
+    await prisma.participant.createMany({
+      data: Array.from({ length: MAX_PARTICIPANTS_PER_GROUP + 4 }, (_, i) => ({ groupId: group.id, name: `P${i}` })),
+    })
+    const everyone = (await ana.groups.get({ groupId: group.id })).participants.map((p) => p.id)
+    expect(everyone.length).toBeGreaterThan(MAX_PARTICIPANTS_PER_GROUP)
+    const expense = await ana.expenses.create({
+      groupId: group.id,
+      description: 'Asado',
+      date: day,
+      amountCents: 100 * everyone.length,
+      currency: 'ARS',
+      paidById: me,
+      split: { type: 'EQUAL', participantIds: everyone },
+    })
+    expect(expense.splits).toHaveLength(everyone.length)
+    await ana.participants.rename({ participantId: everyone.at(-1)!, name: 'Renombrado' })
+    await expect(ana.participants.add({ groupId: group.id, name: 'Uno más' })).rejects.toThrow(
+      `Un grupo puede tener hasta ${MAX_PARTICIPANTS_PER_GROUP} personas.`,
+    )
+  })
+
   test(`each user creates at most ${MAX_GROUPS_CREATED_PER_USER} groups (archived ones count)`, async () => {
     const user = `creator-lim-${++n}`
     await prisma.group.createMany({

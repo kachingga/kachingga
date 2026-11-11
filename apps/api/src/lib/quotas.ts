@@ -5,9 +5,10 @@ import { prisma } from '../db'
 // the database (Supabase Free: 500 MB for prod and staging together, then the app stops working for
 // everyone: INFRA.md → "Plan de Supabase"). Counted before creating, so requests at the very same
 // time can go a few over (one per concurrent request, bounded by the per-user limits in
-// lib/rateLimit.ts): harmless.
+// lib/rateLimit.ts): harmless. Lowering a quota doesn't touch what's already over it; it only stops
+// creating more.
 export const MAX_GROUPS_CREATED_PER_USER = 50
-export const MAX_PARTICIPANTS_PER_GROUP = 50
+export const MAX_PARTICIPANTS_PER_GROUP = 25
 // Archived ones count too (they're never deleted)
 export const MAX_CATEGORIES_PER_GROUP = 50
 export const MAX_SAVED_FILTERS_PER_GROUP = 30
