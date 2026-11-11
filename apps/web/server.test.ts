@@ -13,12 +13,20 @@ beforeAll(async () => {
   await writeFile(join(root, 'index.html'), '<!doctype html>');
   await writeFile(join(root, 'assets', 'app-abc.js'), 'console.log(1)');
   await writeFile(join(root, 'favicon.svg'), '<svg/>');
+  await mkdir(join(root, '.well-known'));
+  await writeFile(join(root, '.well-known', 'security.txt'), 'Contact: mailto:hola@kachingga.com');
 });
 
 describe('resolveFile', () => {
   it('serves files that exist in the build', async () => {
     expect(await resolveFile('/assets/app-abc.js', root)).toBe(join(root, 'assets', 'app-abc.js'));
     expect(await resolveFile('/favicon.svg?v=2', root)).toBe(join(root, 'favicon.svg'));
+  });
+
+  it('serves security.txt from .well-known (where vulnerability reporters look)', async () => {
+    expect(await resolveFile('/.well-known/security.txt', root)).toBe(
+      join(root, '.well-known', 'security.txt'),
+    );
   });
 
   it('serves index.html for app routes', async () => {
