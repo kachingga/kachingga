@@ -18,9 +18,9 @@
 | Login con Google (OAuth) | Google Cloud (proyecto `Kachingga` de Galo) | console.cloud.google.com → Google Auth Platform | Cliente OAuth *Web application* "Kachingga web", app publicada (*In production*). Detalle en "Supabase" |
 | CI | GitHub Actions | github.com/kachingga/kachingga/actions | `ci.yml` (checks obligatorios), `e2e.yml` (Playwright en la web, a demanda) y `backup.yml` (backup diario cifrado de prod y alerta de tamaño de la base, ver `DEPLOY.md` → "Backups") |
 | Errores (monitoreo) | Sentry (plan gratis, org `kachingga` de Galo) | sentry.io/organizations/kachingga | Proyectos `kachingga-web` (React) y `kachingga-api` (Bun); cada uno con `environment` `staging` / `production`. Cómo está hecho: `docs/claude/repo/monitoreo.md` |
-| Caídas (uptime) | UptimeRobot (plan gratis, cuenta de Galo) | uptimerobot.com | HTTP(s) a `kachingga.com` (landing), `app.kachingga.com` y `staging.kachingga.com`; Keyword (`"ok":true`) a `api.kachingga.com/health/db` y `api-staging.kachingga.com/health/db` (ver `DEPLOY.md` → "Monitoreo") |
+| Caídas (uptime) | UptimeRobot (plan gratis, cuenta de Galo) | uptimerobot.com | HTTP(s) a `app.kachingga.com` y `staging.kachingga.com`; Keyword (`app.kachingga.com`) a `kachingga.com` (la landing: avisa si se cae o si "Entrar" deja de llevar a la app); Keyword (`"ok":true`) a `api.kachingga.com/health/db` y `api-staging.kachingga.com/health/db` (ver `DEPLOY.md` → "Monitoreo") |
 | Cotizaciones (dólar blue y oficial, oficial de EUR, BRL, UYU y CLP) | DolarApi (público, sin clave) | dolarapi.com | `https://dolarapi.com/v1/dolares/{blue,oficial}` y `/v1/cotizaciones/{eur,brl,uyu,clp}` |
-| Repo | GitHub | github.com/kachingga/kachingga | — |
+| Repos | GitHub (org `kachingga`) | github.com/kachingga | `kachingga` (este: la app), `landing` (la landing, la maneja Lovable) y `.github` (el perfil de la org, `profile/README.md`, y el `SECURITY.md` que GitHub muestra en todos los repos). Los tres públicos y open source (la licencia, en el `LICENSE` de cada uno) |
 
 Actualizar este archivo con los valores reales después de cada setup.
 
@@ -134,7 +134,11 @@ Sin los `E2E_*`, `e2e.yml` corre igual pero solo los specs que no necesitan la A
 - El repo es **público**: cualquier secreto que llegue a un commit hay que rotarlo, aunque se borre después.
 - **Branches protegidas:** `main` (todo por PR con el CI en verde: "Typecheck, tests y lint", "Migraciones al día con el schema" y "Formato de commits y título del PR"; solo squash) y `production` (exige "Typecheck, tests y lint" y "Migraciones al día con el schema" en el commit que se sube, sin "strict"; vale para admins; sin force-push ni borrado; avanza con `bun run promote`: si el CI de ese commit de `main` todavía corre, el push se rechaza hasta que termine). "Formato de commits…" no se exige ahí porque solo corre en los PRs.
 - **La org exige 2FA** a todos sus miembros.
-- **`kachingga/landing` (la landing) también es público, pero sin PRs ni CI:** Lovable sube sus cambios directo a `main`. Quien entre a la cuenta de Lovable o tenga escritura en ese repo cambia lo que ve cualquiera que abre `kachingga.com`, incluido adónde lleva "Entrar". Por eso, la cuenta de Lovable con 2FA y pocos con acceso.
+- **PRs e issues, solo de colaboradores** (Settings → General → Features → *Pull requests* y *Issues* → *Collaborators only*, en los tres repos): alguien de afuera no puede abrirlos. Se configura desde la web (no hay API).
+- **Workflows de PRs desde forks:** necesitan aprobación para cualquier colaborador externo (Settings → Actions → General → *Require approval for all external contributors*). Ningún workflow usa `pull_request_target`, y los secrets no llegan a los PRs de forks.
+- **Avisos privados de vulnerabilidades** (*Private vulnerability reporting*) prendidos en `kachingga` y `landing`: cualquiera puede avisar desde Security → Report a vulnerability sin que quede a la vista. Cómo se maneja una: `CLAUDE.md` → "Seguridad".
+- **Wiki apagada** en los repos: los docs viven en el repo.
+- **`kachingga/landing` (la landing) también es público, pero sin PRs ni CI:** Lovable sube sus cambios directo a `main`. Quien entre a la cuenta de Lovable o tenga escritura en ese repo cambia lo que ve cualquiera que abre `kachingga.com`, incluido adónde lleva "Entrar". Por eso, la cuenta de Lovable con 2FA y pocos con acceso. Tiene el mismo escaneo de secretos, protección de push y alertas de Dependabot que este repo. Sus reglas (`sw.js`, limpieza del `localStorage`, nombre, sin terceros) están en su `AGENTS.md`, que leen Lovable y Claude.
 - **Commits con el mail noreply de GitHub** (`…@users.noreply.github.com`; Settings → Emails → *Keep my email addresses private* y *Block command line pushes that expose my email*): el repo es público y el autor de cada commit queda a la vista.
 
 ## Accesos

@@ -4,6 +4,8 @@ App (web, mobile-first) para dividir gastos en grupo: viajes, departamentos comp
 
 Proyecto de [Kachingga](https://github.com/kachingga), una organización de amigos, para uso propio del grupo.
 
+**[kachingga.com](https://kachingga.com)** · [Entrar a la app](https://app.kachingga.com) · [Privacidad](https://kachingga.com/privacidad) · [hola@kachingga.com](mailto:hola@kachingga.com) · [Licencia](LICENSE) · Vulnerabilidades: [`SECURITY.md`](https://github.com/kachingga/.github/blob/main/SECURITY.md)
+
 ## Features
 
 ### Grupos y gastos
@@ -39,7 +41,7 @@ El agente explica cómo se llegó a cada saldo, desglosando los gastos que lo co
 | Backend | TypeScript con Hono y Bun, hosteado en Railway |
 | API | tRPC (tipado de punta a punta entre app y backend) |
 | Base de datos | PostgreSQL en Supabase con Prisma |
-| Auth | Supabase Auth (email + password) |
+| Auth | Supabase Auth (email + password y Google) |
 | Agente | API de LLM con tool calling sobre los datos del grupo |
 
 ## Onboarding (para cada miembro)

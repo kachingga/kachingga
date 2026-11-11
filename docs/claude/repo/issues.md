@@ -14,6 +14,7 @@
 | **Ítem chico de UI de la V1** (un detalle de una pantalla) | Checklist de `V1.md` → "Trabajo de la UI (web)" → "Por hacer". Si es grande o independiente: issue propio, linkeado desde ahí (ej. #18) |
 | Alcance de una versión (qué entra) | `V1.md` / `V2.md`, no un issue |
 | Conocimiento investigado (costos, requisitos, alternativas) | `docs/decisiones/`, no un issue |
+| **Una vulnerabilidad sin arreglar** | **No es un issue** (el repo es público): un *security advisory* privado del repo (Security → Advisories). Ver `CLAUDE.md` → "Seguridad" |
 
 **Reglas:**
 - **Claude no crea, edita ni cierra issues, labels o milestones por su cuenta**: el repo es público y lo ve todo el grupo. Propone en el chat qué crearía y dónde (título, label, milestone), y lo crea cuando el humano dice que sí. Lo mismo para proponerle algo a otro: issue `question`, nunca un cambio sin hablarlo.
