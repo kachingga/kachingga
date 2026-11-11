@@ -11,6 +11,7 @@ import { ForgotPassword } from '@/routes/forgot-password';
 import { NewPassword } from '@/routes/new-password';
 import { ChangeEmail } from '@/routes/change-email';
 import { Account } from '@/routes/account';
+import { DeleteAccount } from '@/routes/delete-account';
 import { GroupList } from '@/routes/groups/list';
 import { CreateGroup } from '@/routes/groups/create';
 import { JoinGroup } from '@/routes/groups/join';
@@ -49,6 +50,7 @@ export const router = createBrowserRouter([
             children: [
               { path: '/', element: <AfterGoogle /> },
               { path: '/cuenta', element: <Account /> },
+              { path: '/cuenta/borrar', element: <DeleteAccount /> },
               { path: '/grupos', element: <GroupList /> },
               { path: '/grupos/crear', element: <CreateGroup /> },
               { path: '/grupos/unirme', element: <JoinGroup /> },

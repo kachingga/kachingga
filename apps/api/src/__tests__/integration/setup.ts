@@ -33,12 +33,16 @@ export async function setupTestApi() {
   // A tRPC caller authenticated as a fake Supabase user. With `ip`, it's rate limited like a real
   // HTTP request (per-user write limit).
   const caller = (userId: string, ip?: string) => createCaller({ user: { id: userId, email: `${userId}@test.dev` } as User, ip })
+  // Same, with a session started by typing the password (or with Google) at `signedInAt` (Unix
+  // seconds; default: just now), as the token's `amr` says. `profile.deleteAccount` asks for it.
+  const signedInCaller = (userId: string, signedInAt = Math.floor(Date.now() / 1000)) =>
+    createCaller({ user: { id: userId, email: `${userId}@test.dev` } as User, signedInAt })
 
   // Id of one of the group's built-in categories (FOOD, OTHER…), as a member sees it.
   const categoryId = async (userId: string, groupId: string, key: string) =>
     (await caller(userId).categories.list({ groupId })).find((c) => c.defaultKey === key)!.id
 
-  return { caller, prisma, anonymous: createCaller({ user: null }), categoryId }
+  return { caller, signedInCaller, prisma, anonymous: createCaller({ user: null }), categoryId }
 }
 
 // Blue rate used whenever a test triggers the automatic conversion (fetch is stubbed, no network).

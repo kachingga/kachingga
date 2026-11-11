@@ -74,7 +74,7 @@ src/
 ├── index.ts              # Hono: GET /health, GET /health/db (monitoreo) + tRPC en /trpc/* (antes: límite por IP, solo procedures reales y 1 MB)
 ├── schemas.ts            # Zod + helpers puros compartidos con la web (@kachingga/api/schemas)
 ├── trpc/                 # init.ts (superjson, errorFormatter, errores Prisma, límites por usuario y de tamaño de la base, procedures base), context.ts
-│                         # (token de Supabase → ctx.user), router.ts (AppRouter), routers/ (uno por dominio)
+│                         # (token de Supabase → ctx.user y ctx.signedInAt), router.ts (AppRouter), routers/ (uno por dominio)
 ├── db/                   # schema.prisma (generator + datasource), models/*.prisma (uno por dominio), migrations/,
 │                         # index.ts (`prisma`: PrismaClient con @prisma/adapter-pg), generated/ (gitignoreado)
 ├── lib/                  # access, splits, balances, summary, rates, exportExpenses, paymentAlias, rateLimit, quotas…

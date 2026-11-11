@@ -68,6 +68,7 @@ Proyecto de **Kachingga**, una organización de amigos (repo: `github.com/kachin
 - Un usuario puede estar en muchos grupos.
 - **Cambiar el email** (desde Mi cuenta): cada uno el suyo. Se confirma **desde el email actual y desde el nuevo** (un link en cada uno); recién con los dos cambia. Quien entra con Google puede cambiarlo y sigue entrando con Google.
 - **Borrar mi cuenta** (desde Mi cuenta): cualquiera puede borrar la suya, y solo la suya. **No lo saca de sus grupos:** su participante queda **sin cuenta** (como "Juan", que no usa la app), con su nombre, sus gastos, sus pagos y sus saldos tal cual; nada de los grupos se borra. **Sus deudas quedan en el grupo, a su nombre** (cualquiera puede registrar después un pago suyo). Antes de confirmar se le muestran sus saldos pendientes en cada grupo: avisa, no bloquea.
+  - **Antes de borrarla tiene que volver a identificarse:** con su contraseña o, si entra con Google, volviendo a entrar con Google (sin mails ni magic link). Una sesión abierta no alcanza (un celu prestado, un token robado): **la API lo comprueba** y solo borra si la sesión se inició así hace 5 minutos o menos.
   - Se borra lo que sin cuenta no sirve: su **alias** (el de la cuenta y los de cada grupo) y sus **filtros guardados**.
   - La cuenta de Supabase se borra con **borrado lógico** (soft delete): no se puede volver a entrar con ella. No se puede deshacer.
   - Si era el único con cuenta en un grupo, el grupo queda sin nadie que lo vea. Se acepta (no se borra nada).

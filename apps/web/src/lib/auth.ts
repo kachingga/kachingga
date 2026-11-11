@@ -28,6 +28,18 @@ export const signInWithGoogle = () =>
     provider: 'google',
     options: { redirectTo: `${window.location.origin}/` },
   });
+/**
+ * Google again, to confirm it's you (before deleting the account): always shows Google's account
+ * chooser instead of coming straight back. Returns to `/` like `signInWithGoogle`, with a new session.
+ */
+export const reauthenticateWithGoogle = () =>
+  supabase.auth.signInWithOAuth({
+    provider: 'google',
+    options: {
+      redirectTo: `${window.location.origin}/`,
+      queryParams: { prompt: 'select_account' },
+    },
+  });
 // Even without connection: see `signOutOfDevice`.
 export const signOut = () => signOutOfDevice();
 

@@ -6,7 +6,7 @@ import { setupTestApi } from './setup'
 const deleteUser = mock(async (_userId: string, _softDelete?: boolean) => ({ data: { user: null }, error: null as Error | null }))
 mock.module('../../lib/supabase', () => ({ getSupabase: () => ({ auth: { admin: { deleteUser } } }) }))
 
-const { caller, anonymous, prisma } = await setupTestApi()
+const { caller, signedInCaller, anonymous, prisma } = await setupTestApi()
 beforeEach(() => deleteUser.mockClear())
 
 const day = (d: string) => new Date(`2026-11-${d}T12:00:00Z`)
@@ -18,8 +18,9 @@ async function scenario() {
   n += 1
   const anaId = `ana-${n}`
   const betoId = `beto-${n}`
-  const ana = caller(anaId)
-  const beto = caller(betoId)
+  // Both just signed in again (password or Google), as the web does right before deleting
+  const ana = signedInCaller(anaId)
+  const beto = signedInCaller(betoId)
 
   const viaje = await ana.groups.create({ name: 'Viaje', baseCurrency: 'ARS', myName: 'Ana' })
   await beto.groups.join({ inviteCode: viaje.inviteCode, name: 'Beto' })
@@ -83,6 +84,35 @@ describe('profile.deleteAccount', () => {
   test('requires login (and never reaches Supabase)', async () => {
     await expect(anonymous.profile.deleteAccount()).rejects.toThrow('UNAUTHORIZED')
     expect(deleteUser).not.toHaveBeenCalled()
+  })
+
+  describe('only right after signing in again (password or Google)', () => {
+    const minutesAgo = (minutes: number) => Math.floor(Date.now() / 1000) - minutes * 60
+
+    test.each([
+      ['a session that was never signed in with the password or Google (e.g. a mail link)', undefined],
+      ['a session signed in 6 minutes ago', minutesAgo(6)],
+      ['a session signed in yesterday (the token refreshed since)', minutesAgo(24 * 60)],
+    ])('%s → rejected, and nothing changes', async (_case, signedInAt) => {
+      const { anaId, viaje, anaV, groupView } = await scenario()
+      const before = await groupView(viaje.id)
+      const stale = signedInAt === undefined ? caller(anaId) : signedInCaller(anaId, signedInAt)
+
+      const error = await stale.profile.deleteAccount().catch((e: unknown) => e)
+      expect(error).toMatchObject({ code: 'FORBIDDEN', message: 'Para borrar tu cuenta, primero confirmá que sos vos.' })
+
+      expect(deleteUser).not.toHaveBeenCalled()
+      expect(await prisma.participant.findUnique({ where: { id: anaV } })).toMatchObject({ userId: anaId, paymentAlias: 'ana.viajes' })
+      expect(await prisma.userProfile.findUnique({ where: { userId: anaId } })).toMatchObject({ paymentAlias: 'ana.mp' })
+      expect(await prisma.savedFilter.count({ where: { userId: anaId } })).toBe(2)
+      expect(await groupView(viaje.id)).toEqual(before)
+    })
+
+    test('signed in 4 minutes ago → deleted', async () => {
+      const { anaId } = await scenario()
+      expect(await signedInCaller(anaId, minutesAgo(4)).profile.deleteAccount()).toEqual({ ok: true })
+      expect(deleteUser).toHaveBeenCalledWith(anaId, true)
+    })
   })
 
   test('unlinks me from every group: I stay as a participant without account, with my expenses and balances', async () => {

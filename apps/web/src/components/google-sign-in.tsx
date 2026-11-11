@@ -45,7 +45,7 @@ export function GoogleSignIn({ returnTo = HOME }: { returnTo?: string }) {
 }
 
 // Google's brand colors: the only fixed colors in the app (their sign-in guidelines require them).
-function GoogleIcon() {
+export function GoogleIcon() {
   return (
     <svg aria-hidden width="18" height="18" viewBox="0 0 24 24">
       <path
