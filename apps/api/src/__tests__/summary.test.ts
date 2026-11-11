@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'bun:test'
-import { summarizeExpenses } from '../lib/summary'
+import { summarizeExpenses, summaryFromTotals } from '../lib/summary'
 
 const food = { id: 'c-food', name: 'Comida' }
 const transport = { id: 'c-transport', name: 'Transporte' }
@@ -33,6 +33,21 @@ describe('summarizeExpenses', () => {
       ],
     })
     expect(result[1]).toMatchObject({ currency: 'USD', count: 1, totalCents: 3000, myShareCents: 0, myPaidCents: 0 })
+  })
+
+  test('categories with the same total go by name (the order the database returns them in does not matter)', () => {
+    const total = (categoryId: string, name: string) => ({
+      currency: 'ARS' as const,
+      categoryId,
+      name,
+      count: 1,
+      totalCents: 500,
+      myShareCents: 0,
+      myPaidCents: 0,
+    })
+    const [ars] = summaryFromTotals('ARS', [total('c2', 'Nafta'), total('c1', 'Comida'), total('c3', 'Alojamiento')])
+    expect(ars!.byCategory.map((c) => c.name)).toEqual(['Alojamiento', 'Comida', 'Nafta'])
+    expect(ars).toMatchObject({ count: 3, totalCents: 1500 })
   })
 
   test('no expenses → empty', () => {

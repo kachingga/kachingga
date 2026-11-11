@@ -42,8 +42,8 @@ export const USER_PROCEDURE_RULES: Record<string, Rule> = {
   'categories.suggest': { limit: 60, windowMs: MINUTE },
 }
 
-// Heavy reads: each one loads every matching expense of a group with all its shares (a full group:
-// 5.000 expenses among 25 people). Only a few run at the same time, per user and in total, so they
+// Heavy reads: each one goes through every matching expense of a group with all its shares (a full
+// group: 5.000 expenses among 25 people), in the database (summary, balances) or in the API (export). Only a few run at the same time, per user and in total, so they
 // can't take the API (a single process) and its database connections from everyone else. One more
 // gets TOO_MANY_REQUESTS right away, without waiting in a queue: the web retries queries on its own.
 export const HEAVY_READS: ReadonlySet<string> = new Set(['expenses.export', 'expenses.summary', 'balances.get'])

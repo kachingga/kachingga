@@ -1,11 +1,14 @@
-// `groups.list` adds up my balances in SQL (myBalancesByGroup in routers/groups.ts). It has to give
-// exactly what computeBalances (lib/balances.ts) gives on the same data: same currency for each
-// movement, each share and payment converted and rounded on its own (Math.round), base first.
+// The API adds up balances and totals in SQL (lib/aggregates.ts): `groups.list`, `balances.get` and
+// `expenses.summary`. They have to give exactly what the JS versions give on the same data
+// (computeBalances in lib/balances.ts, summarizeExpenses in lib/summary.ts): same currency for each
+// movement, each share and payment converted and rounded on its own (Math.round), same order.
 // Random groups (fixed seed) with every kind of movement, plus the rounding edge cases.
 import { describe, expect, test } from 'bun:test'
 import type { Currency } from '../../db/generated/prisma/enums'
 import { computeBalances } from '../../lib/balances'
-import { currencies } from '../../schemas'
+import { summarizeExpenses } from '../../lib/summary'
+import { buildExpenseWhere } from '../../trpc/routers/expenses'
+import { currencies, type ExpenseFilters } from '../../schemas'
 import { setupTestApi } from './setup'
 
 const { caller, prisma } = await setupTestApi()
@@ -24,7 +27,9 @@ const int = (max: number) => Math.floor(random() * max)
 // Rates that make shares land on .5, just below it (0.49999999999999994 is where FLOOR(x + 0.5)
 // and Math.round disagree), tiny and huge.
 const RATES = [1555.5, 1545, 0.5, 2.5, 1.5, 1 / 3, 0.000643, 1234.5678, 0.1, 1_000_000, 0.49999999999999994, 0.7]
-const USERS = ['ana', 'beto', 'carla', 'dani'].map((name) => `${name}-balances`)
+const USERS = ['ana', 'beto', 'carla', 'dani'].map((name) => `${name}-aggregates`)
+const WORDS = ['cena', 'nafta', 'súper', 'Cena', 'peaje', 'regalo']
+const N_GROUPS = 12
 
 // A movement's currency and rate as the API stores them: base → no rate; other → converted or kept.
 function money(base: Currency) {
@@ -53,7 +58,9 @@ async function randomGroup(n: number) {
           ...Array.from({ length: 1 + int(4) }, (_, i) => ({ name: `Sin cuenta ${i}` })),
         ],
       },
-      categories: { create: { name: 'Otros', icon: 'shapes', color: 'cocoa' } },
+      categories: {
+        create: ['Otros', 'Comida', 'Nafta'].map((name) => ({ name, icon: 'shapes', color: 'cocoa' })),
+      },
     },
     include: { participants: true, categories: true },
   })
@@ -67,9 +74,9 @@ async function randomGroup(n: number) {
     await prisma.expense.create({
       data: {
         groupId: group.id,
-        description: `Gasto ${i}`,
-        categoryId: group.categories[0]!.id,
-        date: new Date('2026-11-01T12:00:00Z'),
+        description: `${pick(WORDS)} ${i}`,
+        categoryId: pick(group.categories).id,
+        date: new Date(Date.UTC(2026, int(3), 1 + int(28), 12)),
         amountCents,
         ...money(base),
         splitType: 'AMOUNT',
@@ -98,11 +105,11 @@ async function randomGroup(n: number) {
   }
 }
 
-// What groups.list returned before: computeBalances over every expense and payment of the group.
-async function expected(userId: string, groupId: string) {
-  const group = await prisma.group.findUniqueOrThrow({ where: { id: groupId }, include: { participants: true } })
-  const me = group.participants.find((p) => p.userId === userId)!
-  const [expenses, settlements] = await Promise.all([
+// The JS version over every expense and payment of the group (what the API did before).
+async function jsBalances(groupId: string) {
+  const group = await prisma.group.findUniqueOrThrow({ where: { id: groupId } })
+  const [participants, expenses, settlements] = await Promise.all([
+    prisma.participant.findMany({ where: { groupId }, select: { id: true } }),
     prisma.expense.findMany({
       where: { groupId, deletedAt: null },
       select: { currency: true, exchangeRate: true, paidById: true, splits: { select: { participantId: true, amountCents: true } } },
@@ -112,37 +119,106 @@ async function expected(userId: string, groupId: string) {
       select: { currency: true, exchangeRate: true, fromId: true, toId: true, amountCents: true },
     }),
   ])
-  const myBalances = computeBalances(group.baseCurrency, [me.id], expenses, settlements).map((b) => ({
+  return computeBalances(
+    group.baseCurrency,
+    participants.map((p) => p.id),
+    expenses,
+    settlements,
+  )
+}
+
+async function jsMyBalances(userId: string, groupId: string) {
+  const me = await prisma.participant.findFirstOrThrow({ where: { groupId, userId } })
+  const myBalances = (await jsBalances(groupId)).map((b) => ({
     currency: b.currency,
     amountCents: b.balances.find((p) => p.participantId === me.id)!.amountCents,
   }))
+  const group = await prisma.group.findUniqueOrThrow({ where: { id: groupId } })
   return {
     myBalanceCents: myBalances.find((b) => b.currency === group.baseCurrency)!.amountCents,
     myBalances: myBalances.filter((b) => b.amountCents !== 0),
   }
 }
 
-describe('groups.list: my balances from SQL = computeBalances', () => {
+async function jsSummary(userId: string, groupId: string, filters: ExpenseFilters) {
+  const group = await prisma.group.findUniqueOrThrow({ where: { id: groupId } })
+  const me = await prisma.participant.findFirstOrThrow({ where: { groupId, userId } })
+  const expenses = await prisma.expense.findMany({
+    where: buildExpenseWhere(groupId, filters),
+    select: {
+      currency: true,
+      exchangeRate: true,
+      category: { select: { id: true, name: true } },
+      paidById: true,
+      splits: { select: { participantId: true, amountCents: true } },
+    },
+  })
+  return summarizeExpenses(group.baseCurrency, me.id, expenses)
+}
+
+// Every group each user is in, after building them all.
+const memberships = (async () => {
+  for (let n = 0; n < N_GROUPS; n++) await randomGroup(n)
+  const groups = await prisma.participant.findMany({ where: { userId: { in: USERS } }, select: { userId: true, groupId: true } })
+  return groups.map((g) => ({ userId: g.userId!, groupId: g.groupId }))
+})()
+
+describe('sums in SQL = the JS versions', () => {
   test('the edge rate really is where FLOOR(x + 0.5) and Math.round disagree', () => {
     const x = 1 * 0.49999999999999994
     expect(Math.round(x)).toBe(0)
     expect(Math.floor(x + 0.5)).toBe(1)
   })
 
-  test('same balances for everyone, in every group', async () => {
-    for (let n = 0; n < 12; n++) await randomGroup(n)
+  test('groups.list: my balances, for everyone in every group', async () => {
+    await memberships
     let compared = 0
     for (const userId of USERS) {
       for (const group of await caller(userId).groups.list({ includeArchived: true })) {
-        expect({ myBalanceCents: group.myBalanceCents, myBalances: group.myBalances }).toEqual(await expected(userId, group.id))
+        expect({ myBalanceCents: group.myBalanceCents, myBalances: group.myBalances }).toEqual(await jsMyBalances(userId, group.id))
         compared += group.myBalances.length
       }
     }
     expect(compared).toBeGreaterThan(20) // the data really has balances in several currencies
   }, 60_000)
 
+  test('balances.get: every balance and every transfer, in the same order', async () => {
+    let currenciesCompared = 0
+    for (const { userId, groupId } of await memberships) {
+      const fromSql = await caller(userId).balances.get({ groupId })
+      expect(fromSql).toEqual(await jsBalances(groupId))
+      currenciesCompared += fromSql.length
+    }
+    expect(currenciesCompared).toBeGreaterThan(N_GROUPS * 3)
+  }, 60_000)
+
+  test('expenses.summary: the totals for any filters', async () => {
+    let compared = 0
+    for (const { userId, groupId } of await memberships) {
+      const group = await prisma.group.findUniqueOrThrow({ where: { id: groupId }, include: { participants: true, categories: true } })
+      const someone = pick(group.participants).id
+      const filters: ExpenseFilters[] = [
+        {},
+        { paidById: someone },
+        { splitParticipantId: someone },
+        { involvedParticipantId: someone },
+        { categoryIds: [group.categories[1]!.id, group.categories[2]!.id] },
+        { dateFrom: new Date('2026-02-01T00:00:00Z'), dateTo: new Date('2026-03-15T23:59:59.999Z') },
+        { minAmountCents: 100, maxAmountCents: 1_000_000 },
+        { search: 'cena' },
+        { search: 'nada que coincida' },
+      ]
+      for (const f of filters) {
+        const fromSql = await caller(userId).expenses.summary({ groupId, filters: f })
+        expect(fromSql).toEqual(await jsSummary(userId, groupId, f))
+        compared += fromSql.length
+      }
+    }
+    expect(compared).toBeGreaterThan(N_GROUPS * 9)
+  }, 120_000)
+
   test('a share of 1 cent at the edge rate counts as 0, like Math.round', async () => {
-    const ana = caller('edge-balances')
+    const ana = caller('edge-aggregates')
     const group = await ana.groups.create({ name: 'Borde', baseCurrency: 'ARS', myName: 'Ana' })
     const juan = await ana.participants.add({ groupId: group.id, name: 'Juan' })
     const me = (await ana.groups.get({ groupId: group.id })).myParticipantId
@@ -156,6 +232,8 @@ describe('groups.list: my balances from SQL = computeBalances', () => {
     })
     const [listed] = await ana.groups.list()
     expect(listed).toMatchObject({ myBalanceCents: 0, myBalances: [] })
-    expect(await expected('edge-balances', group.id)).toEqual({ myBalanceCents: 0, myBalances: [] })
+    expect(await ana.balances.get({ groupId: group.id })).toEqual(await jsBalances(group.id))
+    expect((await ana.balances.get({ groupId: group.id }))[0]!.balances.every((b) => b.amountCents === 0)).toBe(true)
+    expect(await ana.expenses.summary({ groupId: group.id })).toMatchObject([{ currency: 'ARS', count: 1, totalCents: 0 }])
   })
 })
