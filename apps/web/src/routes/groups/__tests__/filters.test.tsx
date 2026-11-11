@@ -12,7 +12,6 @@ const fixGroup = {
   baseCurrency: 'ARS',
   inviteCode: 'ABC12345',
   archivedAt: null,
-  createdById: 'u1',
   myParticipantId: 'p1',
   participants: [
     {
@@ -45,7 +44,6 @@ const expense = {
   exchangeRate: null,
   splitType: 'EQUAL',
   paidById: 'p1',
-  createdById: 'u1',
   deletedAt: null,
   groupId: 'g1',
   paidBy: { id: 'p1', name: 'Juan' },

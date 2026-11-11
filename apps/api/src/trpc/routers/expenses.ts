@@ -15,11 +15,26 @@ import { protectedProcedure, router } from '../init'
 
 const PAGE_SIZE = 50
 
-const expenseInclude = {
+// What `list`, `get`, `create` and `update` return for each expense (the web seeds the detail from
+// the list, so they're the same). Never `createdById`: another member's account id.
+const expenseSelect = {
+  id: true,
+  groupId: true,
+  description: true,
+  categoryId: true,
+  date: true,
+  amountCents: true,
+  currency: true,
+  exchangeRate: true,
+  splitType: true,
+  paidById: true,
+  createdAt: true,
+  updatedAt: true,
+  deletedAt: true,
   category: { select: { id: true, name: true, icon: true, color: true } },
   paidBy: { select: { id: true, name: true } },
   splits: { include: { participant: { select: { id: true, name: true } } } },
-} satisfies Prisma.ExpenseInclude
+} satisfies Prisma.ExpenseSelect
 
 export function buildExpenseWhere(groupId: string, filters: ExpenseFilters): Prisma.ExpenseWhereInput {
   return {
@@ -74,7 +89,7 @@ export const expensesRouter = router({
       await requireMembership(input.groupId, ctx.user.id)
       const items = await prisma.expense.findMany({
         where: buildExpenseWhere(input.groupId, input.filters),
-        include: expenseInclude,
+        select: expenseSelect,
         orderBy: [{ date: 'desc' }, { createdAt: 'desc' }, { id: 'desc' }],
         take: PAGE_SIZE + 1,
         ...(input.cursor && { cursor: { id: input.cursor }, skip: 1 }),
@@ -92,7 +107,7 @@ export const expensesRouter = router({
       const me = await requireMembership(input.groupId, ctx.user.id)
       const expenses = await prisma.expense.findMany({
         where: buildExpenseWhere(input.groupId, input.filters),
-        include: expenseInclude,
+        select: expenseSelect,
         orderBy: [{ date: 'asc' }, { createdAt: 'asc' }, { id: 'asc' }],
       })
       const rows = toExportRows(me.group.baseCurrency, me.id, expenses)
@@ -130,7 +145,7 @@ export const expensesRouter = router({
 
   get: protectedProcedure.input(z.object({ expenseId: id })).query(async ({ ctx, input }) => {
     await findExpense(input.expenseId, ctx.user.id)
-    return prisma.expense.findUniqueOrThrow({ where: { id: input.expenseId }, include: expenseInclude })
+    return prisma.expense.findUniqueOrThrow({ where: { id: input.expenseId }, select: expenseSelect })
   }),
 
   create: protectedProcedure.input(expenseInput).mutation(async ({ ctx, input }) => {
@@ -139,7 +154,7 @@ export const expensesRouter = router({
     const { data, splits } = await prepareExpense(input, group.baseCurrency)
     return prisma.expense.create({
       data: { ...data, groupId: input.groupId, createdById: ctx.user.id, splits: { create: splits } },
-      include: expenseInclude,
+      select: expenseSelect,
     })
   }),
 
@@ -150,7 +165,7 @@ export const expensesRouter = router({
     return prisma.expense.update({
       where: { id: expense.id },
       data: { ...data, splits: { deleteMany: {}, create: splits } },
-      include: expenseInclude,
+      select: expenseSelect,
     })
   }),
 
