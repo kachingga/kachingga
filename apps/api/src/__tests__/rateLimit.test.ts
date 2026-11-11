@@ -5,6 +5,7 @@ import {
   CREATING_PROCEDURES,
   GLOBAL_RULE,
   HEAVY_READS,
+  HEAVY_READS_FULL_REPORT_EVERY_MS,
   MAX_KEYS,
   PROCEDURE_RULES,
   PRUNE_INTERVAL_MS,
@@ -162,6 +163,25 @@ describe('ConcurrencyLimiter', () => {
     ana1()
     expect(limiter.acquire('carla')).not.toBeNull() // the one she gave back
     expect(limiter.acquire('dani')).toBeNull()
+  })
+
+  test('every slot taken → reported to Sentry, at most once every HEAVY_READS_FULL_REPORT_EVERY_MS', () => {
+    const c = clock()
+    const reports: Error[] = []
+    const limiter = new ConcurrencyLimiter(1, 2, { report: (e) => reports.push(e), now: c.now })
+    limiter.acquire('ana')
+    expect(limiter.acquire('ana')).toBeNull() // only her slots: normal use, not reported
+    expect(reports).toHaveLength(0)
+    limiter.acquire('beto')
+    expect(limiter.acquire('carla')).toBeNull()
+    expect(limiter.acquire('dani')).toBeNull()
+    expect(reports.map((e) => e.message)).toEqual(['All 2 heavy read slots are taken: rejecting heavy reads (HEAVY_READS_TOTAL)'])
+    c.advance(HEAVY_READS_FULL_REPORT_EVERY_MS - 1)
+    limiter.acquire('carla')
+    expect(reports).toHaveLength(1)
+    c.advance(1)
+    limiter.acquire('carla')
+    expect(reports).toHaveLength(2)
   })
 
   test('giving a slot back twice frees it only once', () => {

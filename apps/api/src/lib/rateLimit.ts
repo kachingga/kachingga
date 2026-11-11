@@ -8,6 +8,8 @@
 //   (protectedProcedure in trpc/init.ts).
 // Besides, how many heavy reads run at the same time (HEAVY_READS, ConcurrencyLimiter).
 
+import { reportError } from './monitoring'
+
 export type Rule = { limit: number; windowMs: number }
 
 const MINUTE = 60_000
@@ -49,6 +51,10 @@ export const USER_PROCEDURE_RULES: Record<string, Rule> = {
 export const HEAVY_READS: ReadonlySet<string> = new Set(['expenses.export', 'expenses.summary', 'balances.get'])
 export const HEAVY_READS_PER_USER = 2
 export const HEAVY_READS_TOTAL = 4
+// When every slot is taken (the total, not one user's), someone is turned away for a reason that
+// isn't theirs: if that happens in normal use, HEAVY_READS_TOTAL is too low. Reported to Sentry at
+// most this often, not once per rejected request.
+export const HEAVY_READS_FULL_REPORT_EVERY_MS = 10 * MINUTE
 
 // Writes per user (any mutation): far above what a person does by hand, and they bound how fast
 // one account can fill the database.
@@ -166,16 +172,29 @@ export class ConcurrencyLimiter {
   private total = 0
   private perUser: number
   private max: number
+  private report: (error: Error) => unknown
+  private now: () => number
+  private lastFullReport: number | undefined
 
-  constructor(perUser = HEAVY_READS_PER_USER, max = HEAVY_READS_TOTAL) {
+  constructor(
+    perUser = HEAVY_READS_PER_USER,
+    max = HEAVY_READS_TOTAL,
+    { report = reportError, now = Date.now }: { report?: (error: Error) => unknown; now?: () => number } = {},
+  ) {
     this.perUser = perUser
     this.max = max
+    this.report = report
+    this.now = now
   }
 
   /** Takes a slot for `userId`: a function that gives it back once done, or null if there's none free. */
   acquire(userId: string): (() => void) | null {
+    if (this.total >= this.max) {
+      this.reportFull()
+      return null
+    }
     const mine = this.running.get(userId) ?? 0
-    if (mine >= this.perUser || this.total >= this.max) return null
+    if (mine >= this.perUser) return null
     this.running.set(userId, mine + 1)
     this.total += 1
     let released = false
@@ -187,6 +206,13 @@ export class ConcurrencyLimiter {
       if (left === 0) this.running.delete(userId)
       else this.running.set(userId, left)
     }
+  }
+
+  private reportFull() {
+    const now = this.now()
+    if (this.lastFullReport !== undefined && now - this.lastFullReport < HEAVY_READS_FULL_REPORT_EVERY_MS) return
+    this.lastFullReport = now
+    this.report(new Error(`All ${this.max} heavy read slots are taken: rejecting heavy reads (HEAVY_READS_TOTAL)`))
   }
 }
 
