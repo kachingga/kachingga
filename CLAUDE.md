@@ -1,6 +1,6 @@
 # Kachingga — App para dividir gastos en grupo
 
-Proyecto de **Kachingga**, una organización de amigos (repo: `github.com/kachingga/kachingga`). **Hoy es para uso propio del grupo**: cada uno la usa en su celu y siempre en la última versión. El front es una **web app mobile-first** (`apps/web`: se usa en el celu y también en la compu; en `app.kachingga.com`, y `kachingga.com` es la landing pública, #100). No hay app nativa: se sacó del repo (decisión en `docs/decisiones/costos-y-alternativas.md`). **A futuro se podría publicar** (ver `docs/decisiones/lanzamiento.md` → "Fase 2"): no tomar decisiones que lo hagan imposible, pero tampoco construir cosas para usuarios públicos antes de tiempo.
+Proyecto de **Kachingga**, una organización de amigos (repo: `github.com/kachingga/kachingga`). **Nació para el grupo y hoy está abierta a cualquiera** como web app (decidido el 10/11/2026, #44): cualquiera puede crear su cuenta, y todos usan siempre la última versión. El front es una **web app mobile-first** (`apps/web`: se usa en el celu y también en la compu; en `app.kachingga.com`, y `kachingga.com` es la landing pública, #100). No hay app nativa: se sacó del repo (decisión en `docs/decisiones/costos-y-alternativas.md`). **Las stores (app nativa) no están en los planes** (`docs/decisiones/lanzamiento.md` → "Fase 2"). Lo que falta para la web abierta está en los issues del milestone "Fase 2 — Pública".
 
 ---
 
@@ -174,7 +174,7 @@ Proyecto de **Kachingga**, una organización de amigos (repo: `github.com/kachin
 - Exporta solo gastos: los pagos manuales no son gastos y no se incluyen.
 - Cualquier miembro puede exportar los gastos de su grupo.
 ### Decisiones de producto tomadas
-- Grupo de amigos, uso propio → sin roles ni permisos finos dentro de un grupo. *(A revisar antes de publicarla: `docs/decisiones/lanzamiento.md` → "Fase 2".)*
+- **Sin roles ni permisos finos dentro de un grupo** (cualquier miembro carga, edita o borra cualquier gasto, como en Splitwise). Se revisó al abrirla a cualquiera (#44) y queda así: a un grupo solo entran las personas que se pasan el código entre ellas.
 - **Front: web app mobile-first** (web y API en Railway, con dominio propio: la app en `app.kachingga.com` y la landing en `kachingga.com`), instalable en el celu desde el navegador ("Agregar a inicio"). Sin cuenta de Apple ni stores. **Solo web:** la app nativa (Expo) se sacó del repo el 8/11/2026; si algún día se quiere en las stores, se arranca de cero (`docs/decisiones/costos-y-alternativas.md`).
 - Saldar deudas es siempre manual (el pago se hace fuera de la app). **No hay integración con Mercado Pago**: pagar de una persona a otra desde la app sin comisiones no es posible (ver `docs/decisiones/mercado-pago.md`). El agente con IA es v2.
 - Dólar de referencia: **blue promedio** por defecto; se puede elegir el oficial o cargar uno a mano en cada gasto o pago. Las demás monedas, con su oficial sugerido.
@@ -347,7 +347,7 @@ Reglas para Claude:
 
 ## Issues
 
-**Todo lo pendiente vive en GitHub Issues** (no hay archivo de pendientes): tareas, bugs, propuestas y decisiones a tomar, con milestones "Fase 1 — Privada" y "Fase 2 — Pública (futuro)". Para ver qué falta: `gh issue list`.
+**Todo lo pendiente vive en GitHub Issues** (no hay archivo de pendientes): tareas, bugs, propuestas y decisiones a tomar, con milestones "Fase 1 — Privada" (terminada) y "Fase 2 — Pública" (en curso). Para ver qué falta: `gh issue list`.
 - **Claude no crea, edita ni cierra issues, labels o milestones por su cuenta** (el repo es público y lo ve todo el grupo): propone en el chat qué crearía y dónde, y lo crea cuando el humano dice que sí.
 - **Proponerle una mejora a otro del grupo** = issue con label `question` (problema, opciones, recomendación); nunca cambiar lo suyo sin hablarlo.
 - Un PR que resuelve un issue lo dice en la descripción (`Closes #N`).
