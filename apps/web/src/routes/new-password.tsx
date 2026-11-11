@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router';
 import { toast } from 'sonner';
 
 import { AuthLayout } from '@/components/auth-layout';
+import { EmailLinkChoice } from '@/components/email-link-choice';
 import { Field } from '@/components/kit';
 import { PasswordInput } from '@/components/password-input';
 import { Button } from '@/components/ui/button';
@@ -19,7 +20,7 @@ import { HOME } from '@/lib/return-to';
 export function NewPassword() {
   const navigate = useNavigate();
   const session = useSession();
-  const emailLink = useEmailLink(verifyPasswordReset);
+  const emailLink = useEmailLink(verifyPasswordReset, session);
   const [password, setPassword] = useState('');
   const [confirm, setConfirm] = useState('');
   const [error, setError] = useState<string | null>(null);
@@ -40,8 +41,19 @@ export function NewPassword() {
     void navigate(HOME, { replace: true });
   }
 
-  const checking = emailLink === 'verifying' || (emailLink === 'none' && session === undefined);
-  const invalid = emailLink === 'invalid' || (emailLink === 'none' && session === null);
+  if (emailLink.status === 'ask')
+    return (
+      <EmailLinkChoice
+        email={session?.user.email}
+        onContinue={emailLink.proceed}
+        onStay={emailLink.stay}
+      />
+    );
+
+  const checking =
+    emailLink.status === 'verifying' || (emailLink.status === 'none' && session === undefined);
+  const invalid =
+    emailLink.status === 'invalid' || (emailLink.status === 'none' && session === null);
 
   if (checking)
     return (

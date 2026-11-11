@@ -1,4 +1,5 @@
 import { screen } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import { Route, Routes } from 'react-router';
@@ -38,6 +39,7 @@ function renderAt(url: string) {
     <Routes>
       <Route path="/cambiar-email" element={<ChangeEmail />} />
       <Route path="/cuenta" element={<p>Mi cuenta</p>} />
+      <Route path="/grupos" element={<p>Mis grupos</p>} />
     </Routes>,
     {},
     url,
@@ -65,14 +67,40 @@ describe('ChangeEmail', () => {
     expect(screen.getByRole('link', { name: 'Entrar' })).toHaveAttribute('href', '/login');
   });
 
-  it('first of the two links, logged in: goes back to Mi cuenta', async () => {
+  it('first of the two links, logged in: asks first, then goes back to Mi cuenta', async () => {
     auth.session = { user: { email: 'juan@example.com' } };
     vi.mocked(verifyEmailChange).mockResolvedValueOnce(firstConfirmation as never);
+    const user = userEvent.setup();
     renderAt('/cambiar-email#token_hash=first-logged-in');
 
+    // Logged in, the link is used only if the person says so.
+    expect(screen.getByRole('heading', { name: '¿Seguís con este link?' })).toBeInTheDocument();
+    expect(screen.getByText('juan@example.com')).toBeInTheDocument();
+    expect(verifyEmailChange).not.toHaveBeenCalled();
+
+    await user.click(screen.getByRole('button', { name: 'Seguir con el link' }));
+    expect(verifyEmailChange).toHaveBeenCalledWith('first-logged-in');
     expect(await screen.findByRole('heading', { name: 'Falta un paso' })).toBeInTheDocument();
     expect(screen.getByRole('link', { name: 'Ir a Mi cuenta' })).toHaveAttribute('href', '/cuenta');
     expect(screen.queryByRole('link', { name: 'Entrar' })).not.toBeInTheDocument();
+  });
+
+  it('logged in, "Quedarme en mi cuenta" goes to my groups without using the link', async () => {
+    auth.session = { user: { email: 'juan@example.com' } };
+    const user = userEvent.setup();
+    renderAt('/cambiar-email#token_hash=logged-in-stay');
+
+    await user.click(screen.getByRole('button', { name: 'Quedarme en mi cuenta' }));
+    expect(await screen.findByText('Mis grupos')).toBeInTheDocument();
+    expect(verifyEmailChange).not.toHaveBeenCalled();
+  });
+
+  it('does not use the link while the session is being restored', () => {
+    auth.session = undefined;
+    renderAt('/cambiar-email#token_hash=restoring');
+
+    expect(screen.getByRole('status')).toHaveTextContent('Revisando el link…');
+    expect(verifyEmailChange).not.toHaveBeenCalled();
   });
 
   it('second link: the email changed (and Supabase logged in)', async () => {
@@ -87,6 +115,8 @@ describe('ChangeEmail', () => {
       'Tu email ahora es nuevo@example.com.',
     );
     expect(screen.getByRole('link', { name: 'Ir a Mi cuenta' })).toHaveAttribute('href', '/cuenta');
+    // Which account this browser is in now.
+    expect(await screen.findByText('Entraste como nuevo@example.com')).toBeInTheDocument();
   });
 
   it('with an expired or used link, says so and how to go on (logged out: log in)', async () => {
