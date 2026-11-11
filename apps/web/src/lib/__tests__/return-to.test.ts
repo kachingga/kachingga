@@ -56,6 +56,13 @@ describe('Google round trip', () => {
     expect(readReturnToFromGoogle()).toBe('/grupos');
   });
 
+  it('going to Google for the home forgets a destination left from a trip that did not come back', () => {
+    rememberReturnToForGoogle('/cuenta/borrar?con=google');
+    rememberReturnToForGoogle('/grupos');
+    expect(sessionStorage.getItem('kachingga-volver')).toBeNull();
+    expect(readReturnToFromGoogle()).toBe('/grupos');
+  });
+
   it('a tampered value falls back to the home', () => {
     sessionStorage.setItem('kachingga-volver', '//evil.com');
     expect(readReturnToFromGoogle()).toBe('/grupos');

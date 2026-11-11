@@ -1,6 +1,7 @@
 import { TRPCError } from '@trpc/server'
 import { z } from 'zod'
 import { prisma } from '../../db'
+import { signedInRecently } from '../../lib/session'
 import { getSupabase } from '../../lib/supabase'
 import { paymentAlias } from '../../schemas'
 import { protectedProcedure, router } from '../init'
@@ -26,7 +27,12 @@ export const profileRouter = router({
   // theirs goes (account alias, group aliases, saved filters). `createdById` fields stay as history.
   // DB first, then Supabase: a deleted account is never still linked to a group, and the DB part
   // is idempotent, so retrying after a Supabase failure just finishes the job.
+  // Only right after signing in again (password or Google, `lib/session.ts`): a session left open
+  // (a borrowed phone, a stolen token) isn't enough. The web signs in again just before calling this.
   deleteAccount: protectedProcedure.mutation(async ({ ctx }) => {
+    if (!signedInRecently(ctx.signedInAt)) {
+      throw new TRPCError({ code: 'FORBIDDEN', message: 'Para borrar tu cuenta, primero confirmá que sos vos.' })
+    }
     const userId = ctx.user.id
     await prisma.$transaction([
       prisma.participant.updateMany({ where: { userId }, data: { userId: null, paymentAlias: null } }),

@@ -1,9 +1,6 @@
-import { Fragment, useEffect, useState } from 'react';
-import { useNavigate } from 'react-router';
-import type { AppRouter } from '@kachingga/api';
+import { useEffect, useState } from 'react';
+import { Link, useNavigate } from 'react-router';
 import { onlineManager, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import type { inferRouterOutputs } from '@trpc/server';
-import { toast } from 'sonner';
 import { z } from 'zod';
 
 import { cn } from 'cn';
@@ -16,14 +13,9 @@ import { Card, Field, Page, PageHeader, SectionTitle } from '@/components/kit';
 import { MailSent } from '@/components/mail-sent';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { formatCents } from '@/lib/format';
-import { OFFLINE_MESSAGE } from '@/lib/offline-cache';
 import { useTRPC } from '@/lib/trpc';
-import { useConfirm } from '@/lib/use-confirm';
 import { useSignOut } from '@/lib/use-sign-out';
 import { PALETTES, setPalette, usePalette } from '@/lib/theme';
-
-type MyGroups = inferRouterOutputs<AppRouter>['groups']['list'];
 
 /**
  * The app's colors, saved on this device. Each option previews its palette (`data-palette` on the
@@ -62,105 +54,6 @@ function PalettePicker() {
         })}
       </div>
     </Card>
-  );
-}
-
-/**
- * What deleting the account means: I stay in my groups without account, with my name, and what I
- * leave pending in each one (balances computed by the API) stays there. Informs, doesn't block.
- */
-function DeleteAccountDescription({ groups }: { groups: MyGroups }) {
-  const names = [...new Set(groups.map((g) => g.myName))];
-  const pending = groups.flatMap((g) =>
-    g.myBalances.map((b) => ({ ...b, group: g.name, groupId: g.id })),
-  );
-  return (
-    <div className="space-y-2">
-      <p>
-        {names.length > 0 && (
-          <>
-            En tus grupos vas a seguir apareciendo como{' '}
-            {names.map((name, i) => (
-              <Fragment key={name}>
-                {i > 0 && (i === names.length - 1 ? ' o ' : ', ')}
-                <strong className="font-semibold text-foreground">{name}</strong>
-              </Fragment>
-            ))}
-            {names.length > 1 && ' (según el grupo)'}, sin cuenta; tus gastos y saldos quedan.{' '}
-          </>
-        )}
-        Se borran tu alias y tus filtros guardados. No se puede deshacer.
-      </p>
-      {pending.length > 0 && (
-        <ul className="space-y-1">
-          {pending.map((b) => (
-            <li key={`${b.groupId}-${b.currency}`}>
-              En <strong className="font-semibold text-foreground">{b.group}</strong>{' '}
-              {b.amountCents < 0
-                ? `debés ${formatCents(-b.amountCents, b.currency)}: la deuda queda en el grupo.`
-                : `te deben ${formatCents(b.amountCents, b.currency)}.`}
-            </li>
-          ))}
-        </ul>
-      )}
-    </div>
-  );
-}
-
-/** "Borrar mi cuenta": confirm with what stays pending, delete, then sign out like "Cerrar sesión". */
-function DeleteAccountButton() {
-  const trpc = useTRPC();
-  const queryClient = useQueryClient();
-  const confirm = useConfirm();
-  const signOut = useSignOut();
-  const [checking, setChecking] = useState(false);
-
-  const deleteAccount = useMutation(
-    trpc.profile.deleteAccount.mutationOptions({
-      onSuccess: async () => {
-        await signOut();
-        toast.success('Tu cuenta se borró');
-      },
-      onError: (err) => {
-        toast.error(err.message);
-        // It may be unlinked from its groups already (retrying finishes the job): show what's true.
-        void queryClient.invalidateQueries();
-      },
-    }),
-  );
-
-  async function handleClick() {
-    // Offline the query would wait for the network: say it now, like any other change.
-    if (!onlineManager.isOnline()) return void toast.error(OFFLINE_MESSAGE);
-    setChecking(true);
-    // Fresh balances, archived groups included (debts there stay too).
-    const groups = await queryClient
-      .fetchQuery(trpc.groups.list.queryOptions({ includeArchived: true }))
-      .catch((err: Error) => {
-        toast.error(`No se pudieron revisar tus saldos: ${err.message}`);
-        return null;
-      })
-      .finally(() => setChecking(false));
-    if (!groups) return;
-
-    const ok = await confirm({
-      title: '¿Borrar tu cuenta?',
-      description: <DeleteAccountDescription groups={groups} />,
-      confirmLabel: 'Borrar mi cuenta',
-      destructive: true,
-    });
-    if (ok) deleteAccount.mutate();
-  }
-
-  return (
-    <Button
-      variant="destructive"
-      className="w-full"
-      onClick={handleClick}
-      loading={checking || deleteAccount.isPending}
-    >
-      {deleteAccount.isPending ? 'Borrando…' : 'Borrar mi cuenta'}
-    </Button>
   );
 }
 
@@ -365,7 +258,10 @@ export function Account() {
           Cerrar sesión
         </Button>
 
-        <DeleteAccountButton />
+        {/* Asks to confirm it's you first: src/routes/delete-account.tsx */}
+        <Button variant="destructive" className="w-full" asChild>
+          <Link to="/cuenta/borrar">Borrar mi cuenta</Link>
+        </Button>
       </div>
     </Page>
   );

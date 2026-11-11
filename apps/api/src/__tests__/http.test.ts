@@ -185,6 +185,21 @@ describe('auth', () => {
     expect(((await res.json()) as ErrorBody).error.json.data.code).toBe('UNAUTHORIZED')
   })
 
+  test('when the session was signed in with the password or Google (`amr`) is read only from a token Supabase validated', async () => {
+    const { createContext } = await import('../trpc/context')
+    const part = (value: object) => Buffer.from(JSON.stringify(value)).toString('base64url')
+    const jwt = `${part({ alg: 'ES256' })}.${part({ sub: 'user-http', amr: [{ method: 'password', timestamp: 1794300000 }] })}.firma`
+    const withToken = () => new Request('http://test/trpc/health.me', { headers: { Authorization: `Bearer ${jwt}` } })
+
+    getUser.mockImplementationOnce(async () => ({ data: { user: { id: 'user-http' } }, error: null }))
+    expect(await createContext(withToken())).toMatchObject({ user: { id: 'user-http' }, signedInAt: 1794300000 })
+
+    // Rejected by Supabase (the default fake rejects it): nothing is read from it
+    const rejected = await createContext(withToken())
+    expect(rejected.user).toBeNull()
+    expect(rejected.signedInAt).toBeUndefined()
+  })
+
   test('Supabase Auth down → 503 SERVICE_UNAVAILABLE, not UNAUTHORIZED (the session may be fine)', async () => {
     const res = await me('down')
     expect(res.status).toBe(503)

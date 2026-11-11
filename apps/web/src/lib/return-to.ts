@@ -40,7 +40,10 @@ export function useReturnTo() {
 // Google leaves the app and comes back to `/`: the destination waits in sessionStorage (same tab).
 export function rememberReturnToForGoogle(returnTo: string) {
   try {
-    if (returnTo !== HOME) sessionStorage.setItem(GOOGLE_KEY, returnTo);
+    // To the home: forget one left from a trip to Google that didn't come back (e.g. the one to
+    // confirm before deleting the account), so it isn't used on the next login.
+    if (returnTo === HOME) sessionStorage.removeItem(GOOGLE_KEY);
+    else sessionStorage.setItem(GOOGLE_KEY, returnTo);
   } catch {
     // Storage blocked: back to the home, as before.
   }
