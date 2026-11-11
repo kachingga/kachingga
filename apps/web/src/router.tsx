@@ -3,6 +3,7 @@ import { createBrowserRouter, Outlet } from 'react-router';
 import { AnimatedLayout } from '@/components/animated-layout';
 import { AppShell } from '@/components/app-shell';
 import { RequireAuth } from '@/components/require-auth';
+import { NotFound } from '@/components/not-found';
 import { RouteError } from '@/components/route-error';
 import { Login } from '@/routes/login';
 import { Register } from '@/routes/register';
@@ -63,6 +64,8 @@ export const router = createBrowserRouter([
           },
         ],
       },
+      // Any other URL (an old or mistyped link): "Esta página no existe", not a crash to report.
+      { path: '*', element: <NotFound /> },
     ],
   },
 ]);

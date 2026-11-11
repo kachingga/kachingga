@@ -6,7 +6,7 @@
 
 - **Solo errores inesperados** (bugs, la base caída), nunca los de negocio, que son parte del uso normal:
   - **API:** el `onError` de tRPC reporta solo `INTERNAL_SERVER_ERROR` (con la causa original y el procedure como tag). `NOT_FOUND`, `BAD_REQUEST`, `UNAUTHORIZED`, `FORBIDDEN`, `CONFLICT`, `TOO_MANY_REQUESTS`… nunca. Lo que escape de Hono fuera de tRPC lo agarra `app.onError` (responde 500 sin detalles).
-  - **Web:** solo los bugs del front: una pantalla que explota al renderizar (`RouteError`, el `errorElement` de la ruta raíz: reporta y muestra "Algo salió mal" con **Reintentar**) y excepciones en queries / mutations que **no** sean errores de la API (`TRPCClientError`: esos los reporta la API si son inesperados) ni "Necesitás conexión para guardar" (modo offline).
+  - **Web:** solo los bugs del front: una pantalla que explota al renderizar (`RouteError`, el `errorElement` de la ruta raíz: reporta y muestra "Algo salió mal" con **Reintentar**) y excepciones en queries / mutations que **no** sean errores de la API (`TRPCClientError`: esos los reporta la API si son inesperados) ni "Necesitás conexión para guardar" (modo offline). Una URL que no es de la app (un link viejo o mal escrito) **no es un error**: la ruta `*` muestra `NotFound` ("Esta página no existe") y no reporta nada.
 - Sin tracing ni Session Replay: solo errores.
 
 ## Privacidad (no mandar datos del grupo)
