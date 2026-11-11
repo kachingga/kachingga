@@ -1,11 +1,11 @@
 # Monitoreo de errores (Sentry)
 
-> **Aplica a:** `apps/api/src/lib/monitoring.ts`, `apps/api/src/lib/dbSize.ts`, `apps/web/src/lib/monitoring.ts`, `apps/web/src/components/route-error.tsx`, el `onError` de tRPC y `app.onError` en `apps/api/src/index.ts`, los `onError` del `QueryCache` / `MutationCache` en `apps/web/src/components/api-provider.tsx`, y la subida de source maps en `apps/web/vite.config.ts`. **Si cambiás cómo funciona algo de esto, actualizá este archivo en el mismo PR.** Servicios y variables: `INFRA.md`; caídas (UptimeRobot): `DEPLOY.md` → "Monitoreo".
+> **Aplica a:** `apps/api/src/lib/monitoring.ts`, `apps/api/src/lib/dbSize.ts`, el aviso de `ConcurrencyLimiter` en `apps/api/src/lib/rateLimit.ts`, `apps/web/src/lib/monitoring.ts`, `apps/web/src/components/route-error.tsx`, el `onError` de tRPC y `app.onError` en `apps/api/src/index.ts`, los `onError` del `QueryCache` / `MutationCache` en `apps/web/src/components/api-provider.tsx`, y la subida de source maps en `apps/web/vite.config.ts`. **Si cambiás cómo funciona algo de esto, actualizá este archivo en el mismo PR.** Servicios y variables: `INFRA.md`; caídas (UptimeRobot): `DEPLOY.md` → "Monitoreo".
 
 ## Qué se reporta
 
 - **Solo errores inesperados** (bugs, la base caída), nunca los de negocio, que son parte del uso normal:
-  - **API:** el `onError` de tRPC reporta solo `INTERNAL_SERVER_ERROR` (con la causa original y el procedure como tag). `NOT_FOUND`, `BAD_REQUEST`, `UNAUTHORIZED`, `FORBIDDEN`, `CONFLICT`, `TOO_MANY_REQUESTS`… nunca. Lo que escape de Hono fuera de tRPC lo agarra `app.onError` (responde 500 sin detalles). Además, una alerta operativa: la base pasó `MAX_DB_MB` (`apps/api/src/lib/dbSize.ts`), una vez por cada lectura del tamaño (cada 10 min como mucho), no una por pedido rechazado.
+  - **API:** el `onError` de tRPC reporta solo `INTERNAL_SERVER_ERROR` (con la causa original y el procedure como tag). `NOT_FOUND`, `BAD_REQUEST`, `UNAUTHORIZED`, `FORBIDDEN`, `CONFLICT`, `TOO_MANY_REQUESTS`… nunca. Lo que escape de Hono fuera de tRPC lo agarra `app.onError` (responde 500 sin detalles). Además, dos alertas operativas, que no son por pedido rechazado: la base pasó `MAX_DB_MB` (`apps/api/src/lib/dbSize.ts`), una vez por cada lectura del tamaño (cada 10 min como mucho); y se llenaron **todos** los lugares de lecturas pesadas (`HEAVY_READS_TOTAL` en `apps/api/src/lib/rateLimit.ts`: "All N heavy read slots are taken…"), una vez cada 10 min como mucho. Que una persona llene sus propios lugares no se avisa: es uso normal.
   - **Web:** solo los bugs del front: una pantalla que explota al renderizar (`RouteError`, el `errorElement` de la ruta raíz: reporta y muestra "Algo salió mal" con **Reintentar**) y excepciones en queries / mutations que **no** sean errores de la API (`TRPCClientError`: esos los reporta la API si son inesperados) ni "Necesitás conexión para guardar" (modo offline). Una URL que no es de la app (un link viejo o mal escrito) **no es un error**: la ruta `*` muestra `NotFound` ("Esta página no existe") y no reporta nada.
 - Sin tracing ni Session Replay: solo errores.
 
@@ -32,4 +32,4 @@
 
 ## Tests
 
-`apps/api/src/__tests__/monitoring.test.ts` y `apps/web/src/lib/__tests__/monitoring.test.ts` (sin DSN no se inicializa; los errores de negocio no se reportan y los internos sí; limpieza de datos), `apps/api/src/__tests__/dbSize.test.ts` (la alerta de `MAX_DB_MB`, una vez por lectura) y `apps/web/src/components/__tests__/route-error.test.tsx`.
+`apps/api/src/__tests__/monitoring.test.ts` y `apps/web/src/lib/__tests__/monitoring.test.ts` (sin DSN no se inicializa; los errores de negocio no se reportan y los internos sí; limpieza de datos), `apps/api/src/__tests__/dbSize.test.ts` (la alerta de `MAX_DB_MB`, una vez por lectura), `apps/api/src/__tests__/rateLimit.test.ts` (la de lecturas pesadas, una vez cada 10 min) y `apps/web/src/components/__tests__/route-error.test.tsx`.
