@@ -272,6 +272,40 @@ describe('Login', () => {
     expect(screen.getByRole('button', { name: 'Continuar con Google' })).toBeEnabled();
   });
 
+  it('says that new accounts cannot be created when Google came back with sign-ups closed', () => {
+    renderWithApi(<Login />, {}, '/login?google=signup_disabled');
+    expect(screen.getByRole('alert')).toHaveTextContent(
+      'Por ahora no se pueden crear cuentas nuevas.',
+    );
+  });
+
+  it('when Google came back with another error, says that Google failed (never the raw code)', () => {
+    renderWithApi(<Login />, {}, '/login?google=access_denied');
+    expect(screen.getByRole('alert')).toHaveTextContent(
+      'No se pudo entrar con Google. Probá de nuevo o usá tu email.',
+    );
+    expect(screen.queryByText(/access_denied/)).not.toBeInTheDocument();
+  });
+
+  it('says that continuing accepts the terms and the privacy policy, with links to the landing', () => {
+    renderWithApi(<Login />);
+    expect(
+      screen.getByText(/incluido que tus datos se guarden en Estados Unidos\./),
+    ).toHaveTextContent(
+      'Al continuar aceptás los Términos y la Política de privacidad, incluido que tus datos se guarden en Estados Unidos.',
+    );
+    expect(screen.getByRole('link', { name: 'Términos' })).toHaveAttribute(
+      'href',
+      'https://kachingga.com/terminos',
+    );
+    expect(screen.getByRole('link', { name: 'Política de privacidad' })).toHaveAttribute(
+      'href',
+      'https://kachingga.com/privacidad',
+    );
+    for (const name of ['Términos', 'Política de privacidad'])
+      expect(screen.getByRole('link', { name })).toHaveAttribute('rel', 'noopener noreferrer');
+  });
+
   it('after logging in, comes back to the invite link it was opening', async () => {
     const back = `/login?volver=${encodeURIComponent(invite)}`;
     const user = userEvent.setup();

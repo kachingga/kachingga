@@ -51,3 +51,36 @@ export function AuthLayout({
     </div>
   );
 }
+
+const legalLink = 'font-semibold text-primary-ink hover:underline';
+
+/**
+ * Under the main button of login and register: continuing (with Google or the email) accepts the
+ * terms and the privacy policy, both on the landing (CLAUDE.md → "Usuarios y login"). The transfer
+ * to the US is named here because the law asks for that consent to be express and highlighted.
+ */
+export function TermsNotice() {
+  return (
+    <p className="mt-4 text-center text-xs text-muted-foreground">
+      Al continuar aceptás los{' '}
+      <a
+        href="https://kachingga.com/terminos"
+        target="_blank"
+        rel="noopener noreferrer"
+        className={legalLink}
+      >
+        Términos
+      </a>{' '}
+      y la{' '}
+      <a
+        href="https://kachingga.com/privacidad"
+        target="_blank"
+        rel="noopener noreferrer"
+        className={legalLink}
+      >
+        Política de privacidad
+      </a>
+      , incluido que tus datos se guarden en Estados Unidos.
+    </p>
+  );
+}

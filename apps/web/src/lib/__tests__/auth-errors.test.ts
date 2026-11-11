@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { authErrorMessage } from '@/lib/auth-errors';
+import { authErrorMessage, googleErrorMessage } from '@/lib/auth-errors';
 
 const error = (fields: { code?: string; status?: number; name?: string; message?: string }) =>
   ({ name: 'AuthApiError', message: 'raw', ...fields }) as never;
@@ -24,6 +24,12 @@ describe('authErrorMessage', () => {
     );
   });
 
+  it('sign-ups closed in Supabase', () => {
+    expect(authErrorMessage(error({ code: 'signup_disabled', status: 422 }))).toBe(
+      'Por ahora no se pueden crear cuentas nuevas.',
+    );
+  });
+
   it('a 429 without a known code is a rate limit', () => {
     expect(authErrorMessage(error({ status: 429 }))).toBe(
       'Demasiados intentos seguidos. Esperá unos minutos y probá de nuevo.',
@@ -39,6 +45,20 @@ describe('authErrorMessage', () => {
   it('anything else: a generic message, never the raw one', () => {
     expect(authErrorMessage(error({ code: 'unexpected_failure', status: 500 }))).toBe(
       'Algo salió mal. Probá de nuevo en un rato.',
+    );
+  });
+});
+
+describe('googleErrorMessage', () => {
+  it('sign-ups closed', () => {
+    expect(googleErrorMessage('signup_disabled')).toBe(
+      'Por ahora no se pueden crear cuentas nuevas.',
+    );
+  });
+
+  it('anything else: Google failed', () => {
+    expect(googleErrorMessage('access_denied')).toBe(
+      'No se pudo entrar con Google. Probá de nuevo o usá tu email.',
     );
   });
 });

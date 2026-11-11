@@ -1,8 +1,8 @@
 import { useState } from 'react';
-import { Link, Navigate, useNavigate } from 'react-router';
+import { Link, Navigate, useNavigate, useSearchParams } from 'react-router';
 import { ArrowRight } from 'lucide-react';
 
-import { AuthLayout } from '@/components/auth-layout';
+import { AuthLayout, TermsNotice } from '@/components/auth-layout';
 import { EmailLinkChoice } from '@/components/email-link-choice';
 import { GoogleSignIn } from '@/components/google-sign-in';
 import { Field } from '@/components/kit';
@@ -11,7 +11,7 @@ import { PasswordInput } from '@/components/password-input';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { confirmEmail, signIn, useSession } from '@/lib/auth';
-import { authErrorMessage } from '@/lib/auth-errors';
+import { authErrorMessage, googleErrorMessage } from '@/lib/auth-errors';
 import { useEmailLink } from '@/lib/email-link';
 import { useReturnTo, withReturnTo } from '@/lib/return-to';
 import { useCaptcha } from '@/lib/use-captcha';
@@ -19,6 +19,8 @@ import { useCaptcha } from '@/lib/use-captcha';
 export function Login() {
   const navigate = useNavigate();
   const returnTo = useReturnTo();
+  const [searchParams] = useSearchParams();
+  const googleError = searchParams.get('google');
   const session = useSession();
   // The link of the confirmation mail comes here (src/lib/auth.ts → signUp).
   const emailLink = useEmailLink(confirmEmail, session);
@@ -88,6 +90,12 @@ export function Login() {
           email y contraseña.
         </p>
       )}
+      {/* Google came back with an error (RequireAuth sends it here), e.g. sign-ups closed. */}
+      {googleError && (
+        <p role="alert" className="mb-4 text-sm text-destructive">
+          {googleErrorMessage(googleError)}
+        </p>
+      )}
 
       <GoogleSignIn returnTo={returnTo} />
 
@@ -136,6 +144,8 @@ export function Login() {
           {!loading && <ArrowRight aria-hidden />}
         </Button>
       </form>
+
+      <TermsNotice />
 
       <p className="mt-6 text-center text-sm text-muted-foreground">
         ¿Primera vez por acá?{' '}
