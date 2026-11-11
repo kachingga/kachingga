@@ -29,6 +29,7 @@ expect(await screen.findByText('Todavía no hay gastos')).toBeInTheDocument();
 - Datos falsos con la forma real (`docs/claude/api/contrato.md` o `inferRouterOutputs<AppRouter>`).
 - **Login y sesión:** se mockea `@/lib/auth` entero (`vi.mock`, ej. `login.test.tsx`). **Captcha:** `vi.mock('@marsidev/react-turnstile', () => import('@/test/fake-turnstile'))` + `vi.stubEnv('VITE_TURNSTILE_SITE_KEY', …)` en el test: "Resolver captcha" da el token `captcha-token` (sin la variable no hay widget).
 - Optimistic updates: ver `datos-y-cache.md` (qué testear).
+- **Toasts:** Sonner los guarda fuera de React y siguen ahí unos segundos, así que el toast de un test anterior puede aparecer en el siguiente. Si dos tests muestran el mismo texto, buscarlo con `findAllByText` (ej. "Tu cuenta se borró" en `delete-account.test.tsx`).
 
 ## Setup (`src/test/setup.ts`)
 
