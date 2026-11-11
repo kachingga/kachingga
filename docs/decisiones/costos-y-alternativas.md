@@ -11,7 +11,8 @@ Decisión: con qué front seguir y cuánto cuesta cada camino, frente a volver a
 - **Web app mobile-first (PWA):** se usa desde el navegador en el celu y en la compu; en el iPhone se "instala" agregándola a la pantalla de inicio. **Sin cuenta de Apple ni stores.** ~**USD 5/mes** (web y API en Railway + Supabase Free).
 - **App nativa:** ~**USD 13/mes** (Railway + cuenta de Apple), más mantenimiento (builds de TestFlight que vencen, SDKs de Expo).
 - **Tricount:** gratis, sin publicidad y sin límites, y ya funciona. Lo que no tiene es lo nuestro: dólar blue automático, deudas en USD, alias para cobrar, filtros con totales.
-- **Hoy Supabase está en Pro (~USD 35/mes):** con cualquier opción hay que bajarlo a Free.
+- ~~**Hoy Supabase está en Pro (~USD 35/mes):** con cualquier opción hay que bajarlo a Free.~~ **Ya está en Free** (nov 2026, `INFRA.md` → "Plan de Supabase").
+- **Landing (`kachingga.com`) en Lovable Pro:** ~**USD 25/mes**, aparte de la app (abajo, "Landing en Lovable").
 - **Pagar desde la app sin comisiones no es posible:** ver `mercado-pago.md`.
 
 ---
@@ -65,6 +66,19 @@ Decisión: con qué front seguir y cuánto cuesta cada camino, frente a volver a
 
 ---
 
+### Landing en Lovable (decidido el 10/11/2026)
+
+- **La landing (`kachingga.com`) se hace y se publica en Lovable** (plan Pro): arma la página rápido y Galo elige el diseño viéndolo. Es estática: sin backend, sin Lovable Cloud y sin datos de nadie. Dónde está y cómo: `INFRA.md` → "Hosting" (fila "Landing").
+- **La app no se pasa a Lovable:**
+  - Lovable conecta el front directo a la base (Supabase o Lovable Cloud), y acá los datos van siempre por la API.
+  - No maneja la API, las migraciones, los tests ni el monorepo.
+  - Sube sus cambios directo a la rama principal, sin PR ni CI, y acá `main` está protegido.
+  - Para la app se usó solo para elegir el diseño (`V1.md`).
+- **El código es nuestro** (repo `kachingga/landing`, TanStack Start). Si se deja Pro, se pierden el dominio propio en Lovable y poder ocultar el badge. Para seguir sin Lovable:
+  1. Publicarla en la cuenta de Cloudflare: la plantilla ya buildea para Cloudflare Workers, que en el plan gratis alcanza para una landing. No se probó.
+  2. Apuntar `kachingga.com` ahí y borrar el registro A y el TXT `_lovable` de Lovable.
+  3. Mantener `/sw.js` y el script que limpia el `localStorage`.
+
 ## Costos
 
 Precios en USD; a todo lo que se paga con tarjeta argentina en dólares se le suman impuestos (abajo).
@@ -73,12 +87,13 @@ Precios en USD; a todo lo que se paga con tarjeta argentina en dólares se le su
 |----------|----------|------|-------|--------------|
 | **Railway** | Web + API (staging y prod) | Hobby | **USD 5/mes** (incluye USD 5 de uso) — estimado por Galo: **~ARS 10.000/mes** con impuestos | ✅ En todas las opciones (el plan Free da USD 1/mes de uso: no alcanza para tenerla prendida todo el mes) |
 | **Supabase** | Base de datos + login | Free (hasta 2 proyectos: prod + dev) | **USD 0** — pero **se pausa tras 1 semana sin uso** (la app deja de andar hasta reactivarlo) | ✅ Free alcanza |
-| **Supabase hoy** | — | **Pro** (org `kachingga`) | **USD 25/mes + USD 10/mes** por el segundo proyecto = **USD 35/mes** | ❌ Pasarla a Free |
+| ~~**Supabase hoy**~~ | — | ~~**Pro** (org `kachingga`)~~ | ~~**USD 35/mes**~~ | ✅ Ya pasó a Free (nov 2026) |
 | **Apple Developer** | App nativa en iPhone (TestFlight) | Individual | **USD 99/año** (~USD 8,25/mes) | Solo app nativa (Expo Go sirve solo para desarrollar) |
 | **Google Play** | Publicar en Android | — | **USD 25** (una vez) | Solo para publicar (entre nosotros alcanza el APK) |
 | **Expo / EAS** | Builds y updates OTA | Free | **USD 0**: 15 builds Android + 15 iOS, 1.000 usuarios/mes de updates | Solo app nativa |
 | **Dominio** `kachingga.com` | URL fija de la web (la PWA instalada queda atada al dominio) | Cloudflare Registrar | **~USD 10–11/año** (precio de costo) | ✅ Antes de invitar al grupo |
 | **GitHub** | Repo y CI | Free | **USD 0** (repo público: Actions sin costo) | ✅ |
+| **Lovable** | Landing (`kachingga.com`) | Pro | **~USD 25/mes** (precio de lista, nov 2026; `lovable.dev/pricing`) | Mientras la landing esté ahí (abajo, "Landing en Lovable") |
 | **Agente de IA (V2)** | Preguntas en lenguaje natural | API de Claude | **~USD 1/mes** con Haiku 5.5 (~300 preguntas/mes); ~USD 22/mes con Sonnet 5.5 | Cuando exista la V2 |
 
 ### Totales (sin impuestos)
@@ -88,7 +103,8 @@ Precios en USD; a todo lo que se paga con tarjeta argentina en dólares se le su
 | **Web app** (Railway + Supabase Free + dominio ~USD 1/mes) | **~6** | ~1,20 |
 | Web app con todo en Vercel | 0 | 0 |
 | App nativa entre nosotros (Railway + Apple + Supabase Free) | ~13,25 | ~2,65 |
-| **Como está hoy** (Supabase Pro + lo anterior) | +35 | — |
+| ~~**Como estaba**~~ (Supabase Pro + lo anterior) | ~~+35~~ | — |
+| **Landing en Lovable Pro** (aparte de cualquier opción) | +25 | +5 |
 | App publicada en las stores (estimado: Supabase Pro para que no se pause, Google Play, mail, dominio) | ~40+ | — |
 
 ### Impuestos al pagar con tarjeta en dólares (Argentina, 2026)

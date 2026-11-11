@@ -40,7 +40,8 @@ Proyecto de **Kachingga**, una organización de amigos (repo: `github.com/kachin
 | Deploy, builds, variables de entorno | `DEPLOY.md` + `INFRA.md` |
 | Qué falta para que todos la usen / publicarla / infra pendiente | Issues del milestone **"Fase 1 — Privada"** (`gh issue list --milestone "Fase 1 — Privada"`) + `docs/decisiones/lanzamiento.md` |
 | Proponer una mejora, anotar algo pendiente o dejar una decisión para otro | "Issues" (abajo) + `docs/claude/repo/issues.md` (qué label y milestone lleva cada cosa) |
-| Costos, front nativo vs. web, Tricount | `docs/decisiones/costos-y-alternativas.md` |
+| Costos, front nativo vs. web, Tricount, Lovable | `docs/decisiones/costos-y-alternativas.md` |
+| La landing (`kachingga.com`) o la política de privacidad | `INFRA.md` → "Hosting" (fila "Landing"). El código está en el repo `kachingga/landing` (lo maneja Lovable), no en este |
 | Mercado Pago | `docs/decisiones/mercado-pago.md` (no es parte de ninguna versión) |
 | Conflictos de git, rebases, PRs | `docs/claude/repo/git-prs-y-conflictos.md` + "Conflictos" del `CLAUDE.md` de cada app |
 | Hooks, `package.json`, `bunfig.toml`, Prettier, versiones de TS / React | `docs/claude/repo/tooling.md` |
