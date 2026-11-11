@@ -11,7 +11,6 @@ const fixGroup = {
   baseCurrency: 'ARS',
   inviteCode: 'ABC12345',
   archivedAt: null,
-  createdById: 'u1',
   myParticipantId: 'p1',
   participants: [
     {

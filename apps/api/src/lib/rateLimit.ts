@@ -64,19 +64,40 @@ export const CREATION_LIMIT_MESSAGE = 'Llegaste al máximo de cosas nuevas por h
 // Rules are looked up by a path that comes from the request: only their own keys (not `constructor`…).
 const ruleFor = (rules: Record<string, Rule>, path: string) => (Object.hasOwn(rules, path) ? rules[path] : undefined)
 
+// Expired keys are swept at most this often (a sweep walks the whole map, so never on every request).
+export const PRUNE_INTERVAL_MS = 10_000
+// Most keys a limiter keeps (~250 bytes each: ~13 MB). When it's full, expired keys go first; if it's
+// still full of live ones, the oldest tenth goes in one pass (one by one, every new key would walk the
+// deleted entries again). An evicted key starts counting again: getting someone's key evicted takes
+// tens of thousands of new IPs (or accounts) within its window, and each of those has its own limits
+// anyway. Refusing new keys instead would block everyone else.
+export const MAX_KEYS = 50_000
+
 export class RateLimiter {
+  // In insertion order: a key whose window restarts is moved to the end, so the first ones are the oldest.
   private hits = new Map<string, { count: number; resetAt: number }>()
   private now: () => number
+  private maxKeys: number
+  private lastPrune: number
 
-  constructor(now: () => number = Date.now) {
+  constructor(now: () => number = Date.now, maxKeys = MAX_KEYS) {
     this.now = now
+    this.maxKeys = maxKeys
+    this.lastPrune = now()
+  }
+
+  /** How many keys it's holding (for tests). */
+  get size() {
+    return this.hits.size
   }
 
   private hit(key: string, rule: Rule) {
     const now = this.now()
-    if (this.hits.size > 50_000) this.prune(now)
+    if (now - this.lastPrune >= PRUNE_INTERVAL_MS) this.prune(now)
     const entry = this.hits.get(key)
     if (!entry || entry.resetAt <= now) {
+      this.hits.delete(key)
+      if (this.hits.size >= this.maxKeys) this.makeRoom(now)
       this.hits.set(key, { count: 1, resetAt: now + rule.windowMs })
       return true
     }
@@ -85,7 +106,18 @@ export class RateLimiter {
   }
 
   private prune(now: number) {
+    this.lastPrune = now
     for (const [key, entry] of this.hits) if (entry.resetAt <= now) this.hits.delete(key)
+  }
+
+  // Leaves a tenth of the room free, so this runs at most once every maxKeys / 10 new keys.
+  private makeRoom(now: number) {
+    this.prune(now)
+    let excess = this.hits.size - (this.maxKeys - Math.ceil(this.maxKeys / 10))
+    for (const key of this.hits.keys()) {
+      if (excess-- <= 0) break
+      this.hits.delete(key)
+    }
   }
 
   /** Counts one call to `path` from `ip`; false if it goes over the global or the procedure limit. */

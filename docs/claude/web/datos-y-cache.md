@@ -46,7 +46,7 @@ onSettled: () => { /* invalidar la lista y lo que calcula la API (saldos, totale
 - `usePrefetch()` (`src/lib/use-prefetch.ts`) hace `prefetchQuery` / `prefetchInfiniteQuery` de lo que va a pedir la próxima pantalla; `prefetchOn(load)` lo engancha a `onPointerDown` (el dedo toca: ~100–150 ms antes del `click`), `onMouseEnter` y `onFocus`. Hoy: tarjeta de grupo, "Pagos", "Filtros" y "Marcar como pagado".
 - **Los inputs tienen que ser idénticos a los de la pantalla** (si no, es otra key y la precarga no sirve). Pantalla nueva o input cambiado → actualizar `usePrefetch` y su test (`src/routes/groups/__tests__/list.test.tsx` verifica los inputs exactos).
 - La precarga usa `staleTime: 10_000` para no repetir pedidos al pasar el mouse varias veces; la pantalla igual revalida al montar.
-- **Sembrar en vez de pedir:** si ya tenemos los datos de la próxima pantalla, copiarlos con `setQueryData`. Ej.: `expenses.list` y `expenses.get` devuelven lo mismo por gasto (mismo `include` en la API), así que al tocar un gasto su detalle sale de la lista sin pedido. Si la API cambia uno de los dos, revisar esto.
+- **Sembrar en vez de pedir:** si ya tenemos los datos de la próxima pantalla, copiarlos con `setQueryData`. Ej.: `expenses.list` y `expenses.get` devuelven lo mismo por gasto (mismo `select` en la API, `expenseSelect`), así que al tocar un gasto su detalle sale de la lista sin pedido. Si la API cambia uno de los dos, revisar esto.
 
 ## Offline (solo lectura)
 

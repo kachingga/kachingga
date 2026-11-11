@@ -12,7 +12,6 @@ const fixGroup = {
   baseCurrency: 'ARS',
   inviteCode: 'ABC12345',
   archivedAt: null,
-  createdById: 'u1',
   myParticipantId: 'p1',
   participants: [
     {
@@ -75,7 +74,6 @@ describe('Settlements', () => {
           note: null,
           deletedAt: null,
           groupId: 'g1',
-          createdById: 'u1',
           from: { id: 'p2', name: 'Tuke' },
           to: { id: 'p1', name: 'Juan' },
         },
@@ -153,7 +151,6 @@ describe('Settlements', () => {
     note: null,
     deletedAt: null,
     groupId: 'g1',
-    createdById: 'u1',
     from: { id: 'p2', name: 'Tuke' },
     to: { id: 'p1', name: 'Juan' },
   };

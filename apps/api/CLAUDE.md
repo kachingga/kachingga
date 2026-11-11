@@ -28,9 +28,9 @@ API en Hono + tRPC sobre Bun, con Prisma contra PostgreSQL en Supabase. Paquete 
 1. `protectedProcedure` (público solo con una razón explícita).
 2. Si toca un grupo: `requireMembership` / `requireActiveGroup` **antes** de leer o escribir nada. Si recibe un id de gasto, pago o participante, buscarlo y chequear su `groupId` (nunca confiar en un `groupId` del input para un recurso que ya existe).
 3. Ids de participantes en el input → `assertParticipantsInGroup`.
-4. Datos de una persona → filtrar por `ctx.user.id`.
+4. Datos de una persona → filtrar por `ctx.user.id`. Lo que se devuelve, con `select` explícito: **nunca `userId` ni `createdById`** (ids de cuenta de otros miembros).
 5. Input validado con Zod, **con tope en todo**: largo de los textos, montos, ids con `id` de `schemas.ts` (nunca `z.string()` suelto) y `.max()` en todo array. Sin tope, un solo pedido puede llenar la base.
-6. **Agregarlo a `src/__tests__/integration/authorization.test.ts`**: en `attacks` si toca un grupo, o en `notGroupScoped` con el motivo. Si es una mutation, además en `archivedWrites` (se rechaza en un grupo archivado) o en `writableWhenArchived` con el motivo. Si no, ese test falla.
+6. **Agregarlo a `src/__tests__/integration/authorization.test.ts`**: en `attacks` si toca un grupo, o en `notGroupScoped` con el motivo. Si es una mutation, además en `archivedWrites` (se rechaza en un grupo archivado) o en `writableWhenArchived` con el motivo. Y en `calls` de `accountIds.test.ts` (que su respuesta no traiga ids de cuenta de otros). Si no, esos tests fallan.
 7. Si es caro o se presta a fuerza bruta, sumarle un límite en `PROCEDURE_RULES` (`lib/rateLimit.ts`). Si crea filas: sumarlo a `CREATING_PROCEDURES` (tope diario por usuario y guardia de tamaño de la base) y pensar si necesita un cupo (`lib/quotas.ts`, y la regla en el `CLAUDE.md` raíz).
 8. Tests de integración: sin login, no miembro, grupo archivado si escribe, caso feliz y cada regla de negocio (`docs/claude/api/tests.md`).
 

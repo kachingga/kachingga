@@ -1,5 +1,6 @@
 import { TRPCError } from '@trpc/server'
 import { z } from 'zod'
+import type { Prisma } from '../../db/generated/prisma/client'
 import { prisma } from '../../db'
 import { assertParticipantsInGroup, requireActiveGroup, requireMembership } from '../../lib/access'
 import { assertRoomForSettlement } from '../../lib/quotas'
@@ -7,14 +8,29 @@ import { resolveExchangeRate } from '../../lib/rates'
 import { id, settlementInput } from '../../schemas'
 import { protectedProcedure, router } from '../init'
 
-const people = { from: { select: { id: true, name: true } }, to: { select: { id: true, name: true } } }
+// What `list` and `create` return for each payment. Never `createdById`: another member's account id.
+const settlementSelect = {
+  id: true,
+  groupId: true,
+  fromId: true,
+  toId: true,
+  amountCents: true,
+  currency: true,
+  exchangeRate: true,
+  date: true,
+  note: true,
+  createdAt: true,
+  deletedAt: true,
+  from: { select: { id: true, name: true } },
+  to: { select: { id: true, name: true } },
+} satisfies Prisma.SettlementSelect
 
 export const settlementsRouter = router({
   list: protectedProcedure.input(z.object({ groupId: id })).query(async ({ ctx, input }) => {
     await requireMembership(input.groupId, ctx.user.id)
     return prisma.settlement.findMany({
       where: { groupId: input.groupId, deletedAt: null },
-      include: people,
+      select: settlementSelect,
       orderBy: [{ date: 'desc' }, { createdAt: 'desc' }],
     })
   }),
@@ -38,7 +54,7 @@ export const settlementsRouter = router({
         note: input.note ?? null,
         createdById: ctx.user.id,
       },
-      include: people,
+      select: settlementSelect,
     })
   }),
 

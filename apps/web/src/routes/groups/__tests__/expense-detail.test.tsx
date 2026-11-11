@@ -16,7 +16,6 @@ const fixExpense = {
   exchangeRate: null,
   splitType: 'EQUAL',
   paidById: 'p1',
-  createdById: 'u1',
   deletedAt: null,
   groupId: 'g1',
   paidBy: { id: 'p1', name: 'Juan' },

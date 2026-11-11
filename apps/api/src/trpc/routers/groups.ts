@@ -1,5 +1,6 @@
 import { TRPCError } from '@trpc/server'
 import { z } from 'zod'
+import type { Prisma } from '../../db/generated/prisma/client'
 import { prisma } from '../../db'
 import { requireActiveGroup, requireMembership } from '../../lib/access'
 import { computeBalances } from '../../lib/balances'
@@ -11,6 +12,17 @@ import { groupInput, id, participantName } from '../../schemas'
 import { protectedProcedure, router } from '../init'
 
 const groupId = z.object({ groupId: id })
+
+// What a member gets of a group: never `createdById` (another member's account id).
+const groupSelect = {
+  id: true,
+  name: true,
+  baseCurrency: true,
+  inviteCode: true,
+  createdAt: true,
+  archivedAt: true,
+} satisfies Prisma.GroupSelect
+
 const inviteCode = z.string().trim().toUpperCase().length(INVITE_CODE_LENGTH, 'Código inválido')
 
 export const groupsRouter = router({
@@ -24,7 +36,8 @@ export const groupsRouter = router({
         participants: { some: { userId: ctx.user.id } },
         ...(input?.includeArchived ? {} : { archivedAt: null }),
       },
-      include: {
+      select: {
+        ...groupSelect,
         _count: { select: { participants: true } },
         participants: { select: { id: true, name: true, userId: true }, orderBy: { createdAt: 'asc' } },
       },
@@ -73,8 +86,15 @@ export const groupsRouter = router({
       orderBy: { createdAt: 'asc' },
     })
     const aliases = await resolvePaymentAliases(participants)
+    const group = me.group
     return {
-      ...me.group,
+      // The fields of groupSelect
+      id: group.id,
+      name: group.name,
+      baseCurrency: group.baseCurrency,
+      inviteCode: group.inviteCode,
+      createdAt: group.createdAt,
+      archivedAt: group.archivedAt,
       myParticipantId: me.id,
       participants: participants.map((p) => ({
         id: p.id,
@@ -98,12 +118,13 @@ export const groupsRouter = router({
         participants: { create: { name: input.myName, userId: ctx.user.id } },
         categories: { create: defaultCategoryRows() },
       },
+      select: groupSelect,
     })
   }),
 
   rename: protectedProcedure.input(groupId.extend({ name: groupInput.shape.name })).mutation(async ({ ctx, input }) => {
     await requireActiveGroup(input.groupId, ctx.user.id)
-    return prisma.group.update({ where: { id: input.groupId }, data: { name: input.name } })
+    return prisma.group.update({ where: { id: input.groupId }, data: { name: input.name }, select: groupSelect })
   }),
 
   setArchived: protectedProcedure.input(groupId.extend({ archived: z.boolean() })).mutation(async ({ ctx, input }) => {
@@ -111,12 +132,13 @@ export const groupsRouter = router({
     return prisma.group.update({
       where: { id: input.groupId },
       data: { archivedAt: input.archived ? new Date() : null },
+      select: groupSelect,
     })
   }),
 
   regenerateInviteCode: protectedProcedure.input(groupId).mutation(async ({ ctx, input }) => {
     await requireActiveGroup(input.groupId, ctx.user.id)
-    return prisma.group.update({ where: { id: input.groupId }, data: { inviteCode: generateInviteCode() } })
+    return prisma.group.update({ where: { id: input.groupId }, data: { inviteCode: generateInviteCode() }, select: groupSelect })
   }),
 
   // What the user sees after typing an invite code, before joining.

@@ -195,6 +195,7 @@ describe('caps on inputs', () => {
     const { ana } = await newGroup()
     expect(await codeOf(ana.groups.get({ groupId: 'x'.repeat(41) }))).toBe('BAD_REQUEST')
     expect(await codeOf(ana.expenses.get({ expenseId: 'x'.repeat(41) }))).toBe('BAD_REQUEST')
+    expect(await codeOf(ana.participants.setPaymentAlias({ participantId: 'x'.repeat(41), paymentAlias: null }))).toBe('BAD_REQUEST')
   })
 
   test('at most 100 people in a split and 100 categories in a filter', async () => {

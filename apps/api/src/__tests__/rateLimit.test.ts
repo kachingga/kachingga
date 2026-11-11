@@ -3,7 +3,9 @@ import {
   clientIp,
   CREATING_PROCEDURES,
   GLOBAL_RULE,
+  MAX_KEYS,
   PROCEDURE_RULES,
+  PRUNE_INTERVAL_MS,
   RateLimiter,
   USER_CREATION_RULE,
   USER_PROCEDURE_RULES,
@@ -81,6 +83,42 @@ describe('RateLimiter', () => {
     expect(limiter.allowCreation('ana')).toBe(false)
     c.advance(1)
     expect(limiter.allowCreation('ana')).toBe(true)
+  })
+
+  test('expired keys are swept, but at most every PRUNE_INTERVAL_MS (a sweep walks the whole map)', () => {
+    const c = clock()
+    const limiter = new RateLimiter(c.now)
+    limiter.allow('1.1.1.1', 'groups.get')
+    c.advance(GLOBAL_RULE.windowMs)
+    limiter.allow('2.2.2.2', 'groups.get') // sweeps: 1.1.1.1 expired
+    expect(limiter.size).toBe(1)
+    c.advance(GLOBAL_RULE.windowMs - PRUNE_INTERVAL_MS / 2)
+    limiter.allow('3.3.3.3', 'groups.get') // sweeps, nothing expired yet
+    c.advance(PRUNE_INTERVAL_MS / 2)
+    limiter.allow('4.4.4.4', 'groups.get') // 2.2.2.2 just expired, but the last sweep was too recent
+    expect(limiter.size).toBe(3)
+    c.advance(PRUNE_INTERVAL_MS / 2)
+    limiter.allow('5.5.5.5', 'groups.get') // sweeps again
+    expect(limiter.size).toBe(3)
+  })
+
+  test('holds at most maxKeys: full of live keys, the oldest ones go and start counting again', () => {
+    const limiter = new RateLimiter(clock().now, 10)
+    for (let i = 0; i < GLOBAL_RULE.limit; i++) limiter.allow('0.0.0.0', 'groups.get')
+    expect(limiter.allow('0.0.0.0', 'groups.get')).toBe(false)
+    for (let i = 1; i <= 100; i++) {
+      limiter.allow(`10.0.0.${i}`, 'groups.get')
+      expect(limiter.size).toBeLessThanOrEqual(10)
+    }
+    expect(limiter.allow('0.0.0.0', 'groups.get')).toBe(true)
+  })
+
+  test('stays fast with the map full (before, every call walked it)', () => {
+    const limiter = new RateLimiter(clock().now)
+    const start = performance.now()
+    for (let i = 0; i < 4 * MAX_KEYS; i++) limiter.allow(`ip-${i}`, 'groups.get')
+    expect(limiter.size).toBeLessThanOrEqual(MAX_KEYS)
+    expect(performance.now() - start).toBeLessThan(2000) // ~100 ms; walking the map on every call took minutes
   })
 
   test('a path that names an inherited property (constructor…) is not a rule: it only counts toward the global limit', () => {
