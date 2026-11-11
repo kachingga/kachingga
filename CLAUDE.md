@@ -47,6 +47,7 @@ Proyecto de **Kachingga**, una organización de amigos (repo: `github.com/kachin
 | Hooks, `package.json`, `bunfig.toml`, Prettier, versiones de TS / React | `docs/claude/repo/tooling.md` |
 | Cualquier cosa que toque permisos, login, secretos o datos de otros | "Seguridad" (abajo) + checklist de `apps/api/CLAUDE.md` + `docs/claude/api/seguridad.md` (+ `docs/claude/web/servidor-y-headers.md` para los headers y la CSP de la web) |
 | Errores en prod, Sentry, UptimeRobot | `docs/claude/repo/monitoreo.md` + `DEPLOY.md` → "Monitoreo" |
+| Un incidente de seguridad (alguien pudo ver o tocar datos de usuarios) | `docs/claude/repo/incidentes.md` |
 | Saber si una tarea está terminada | "Cuándo una tarea está terminada" (abajo) + plantilla de PR (`.github/pull_request_template.md`) |
 
 > **Alcance:** v1 = todo lo de `V1.md`; v2 = explicación de saldos, agente con IA y recomendar crear categorías (`V2.md`). Si una tarea toca la v2, frená y preguntá antes de implementarlo. Mercado Pago **no es parte de ninguna versión** (`docs/decisiones/mercado-pago.md`).
@@ -227,6 +228,7 @@ Web (Railway) ──tRPC + token de Supabase──▶ API (Hono, Railway) ──
 - **Los datos solo por la API.** El front usa Supabase únicamente para el login; RLS bloquea cualquier otro acceso a la base.
 - **Secretos:** nunca en el código, en los `.env.sample`, en issues, PRs ni en el chat. Solo en `.env` / `.env.prod` locales (gitignoreados) y en Railway. Lo que empieza con `VITE_` es **público** (va dentro de la app): nunca un secreto ahí. GitHub escanea los pushes y bloquea si detecta una clave.
 - **Si se filtra un secreto:** avisar al grupo, **rotarlo** (generar uno nuevo en Supabase / Railway) y actualizarlo en todos lados. Borrarlo del historial no alcanza: el repo es público.
+- **Si alguien pudo ver o tocar datos de usuarios** (un incidente): seguir `docs/claude/repo/incidentes.md`. Hay que contener primero, después evaluar qué datos y de quiénes, arreglar, avisar a los afectados y a la AAIP, y dejar el informe en un advisory privado.
 - **Límite de pedidos por IP** en la API (más estricto en códigos de invitación, export, saldos y totales) y **por usuario en las escrituras, los códigos de invitación y las lecturas caras**, con un **máximo diario de cosas nuevas por usuario** y **pocas lecturas pesadas a la vez** (export, saldos y totales); pedidos de hasta 1 MB, topes en todos los inputs y cupos (ver "Reglas de negocio"). Un procedure caro o adivinable lleva su límite; algo que crece con el uso, su cupo. Así nadie llena la base (Supabase Free: 500 MB sumando prod y staging; si se pasa, la app deja de andar para todos) ni traba la API. Si igual crece, avisa el backup diario (`DEPLOY.md` → "Monitoreo") y, pasado `MAX_DB_MB`, la API deja de crear cosas (editar y borrar siguen andando).
 - **Validar todo lo que entra** (Zod en la API) y no mostrar errores internos al usuario.
 - **Nunca resetear contraseñas de las bases, desactivar RLS, abrir CORS a cualquier origen, ni saltear hooks o checks** (`--no-verify`, `eslint-disable` de las reglas del proyecto) para "destrabar" algo.

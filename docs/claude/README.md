@@ -14,7 +14,7 @@ Los `CLAUDE.md` (raíz, `.claude/` y de cada app) se cargan **en cada sesión de
 
 | Carpeta | De qué |
 |---------|--------|
-| `repo/` | Lo de todo el repo: git, PRs y conflictos; issues, labels y milestones; tooling del monorepo |
+| `repo/` | Lo de todo el repo: git, PRs y conflictos; issues, labels y milestones; tooling del monorepo; incidentes de seguridad |
 | `web/` | Cómo está hecha la web (`apps/web`) |
 | `api/` | Cómo está hecha la API (`apps/api`) |
 
