@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Link, useNavigate } from 'react-router';
 import { ArrowRight } from 'lucide-react';
 
-import { AuthLayout } from '@/components/auth-layout';
+import { AuthLayout, TermsNotice } from '@/components/auth-layout';
 import { GoogleSignIn } from '@/components/google-sign-in';
 import { Field } from '@/components/kit';
 import { ConfirmEmailSent } from '@/components/mail-sent';
@@ -117,6 +117,8 @@ export function Register() {
           {!loading && <ArrowRight aria-hidden />}
         </Button>
       </form>
+
+      <TermsNotice />
 
       <p className="mt-6 text-center text-sm text-muted-foreground">
         ¿Ya tenés cuenta?{' '}

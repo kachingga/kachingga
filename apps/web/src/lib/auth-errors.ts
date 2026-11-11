@@ -14,7 +14,16 @@ const MESSAGES: Record<string, string> = {
   over_email_send_rate_limit:
     'Mandamos muchos mails seguidos. Esperá unos minutos y probá de nuevo.',
   over_request_rate_limit: 'Demasiados intentos seguidos. Esperá unos minutos y probá de nuevo.',
+  // "Allow new users to sign up" off in Supabase (INFRA.md → "Supabase").
+  signup_disabled: 'Por ahora no se pueden crear cuentas nuevas.',
 };
+
+export const GOOGLE_FAILED = 'No se pudo entrar con Google. Probá de nuevo o usá tu email.';
+
+/** Google came back to the app with an error (Supabase's `error_code`, or `error`). */
+export function googleErrorMessage(code: string): string {
+  return code === 'signup_disabled' ? MESSAGES.signup_disabled : GOOGLE_FAILED;
+}
 
 export function authErrorMessage(error: AuthError): string {
   if (error.code && MESSAGES[error.code]) return MESSAGES[error.code];

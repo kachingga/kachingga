@@ -2,6 +2,7 @@ import { useState } from 'react';
 
 import { Button } from '@/components/ui/button';
 import { signInWithGoogle } from '@/lib/auth';
+import { GOOGLE_FAILED } from '@/lib/auth-errors';
 import { HOME, rememberReturnToForGoogle } from '@/lib/return-to';
 
 /** "Continuar con Google" + an "o con tu email" divider, above the email form of login and register. */
@@ -18,7 +19,7 @@ export function GoogleSignIn({ returnTo = HOME }: { returnTo?: string }) {
     // On success the browser is already leaving for Google: keep the button disabled.
     if (authError) {
       setLoading(false);
-      setError('No se pudo entrar con Google. Probá de nuevo o usá tu email.');
+      setError(GOOGLE_FAILED);
     }
   }
 

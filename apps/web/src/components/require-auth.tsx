@@ -20,8 +20,20 @@ export function RequireAuth() {
 
   if (session === undefined && !offlineReadOnly) return <Splash />;
 
-  // Remembers where it was going (e.g. an invite link) to come back after logging in.
-  if (!session && !offlineReadOnly)
+  if (!session && !offlineReadOnly) {
+    // Google came back to `/` with an error instead of the session (e.g. sign-ups closed in
+    // Supabase): the login says why. Where it was going stays saved for Google (return-to.ts).
+    const googleError = location.pathname === '/' && oauthErrorCode(location.search);
+    if (googleError)
+      return <Navigate to={`/login?google=${encodeURIComponent(googleError)}`} replace />;
+    // Remembers where it was going (e.g. an invite link) to come back after logging in.
     return <Navigate to={withReturnTo('/login', location.pathname + location.search)} replace />;
+  }
   return <Outlet />;
+}
+
+/** Supabase sends an OAuth error back in the query: `error_code` (e.g. `signup_disabled`) and `error`. */
+function oauthErrorCode(search: string) {
+  const params = new URLSearchParams(search);
+  return params.get('error_code') ?? params.get('error');
 }

@@ -119,6 +119,47 @@ describe('Register', () => {
     ).toBeInTheDocument();
   });
 
+  it('with sign-ups closed in Supabase, says that new accounts cannot be created', async () => {
+    const { signUp } = await import('@/lib/auth');
+    vi.mocked(signUp).mockResolvedValueOnce({
+      data: { user: null, session: null },
+      error: {
+        message: 'Signups not allowed for this instance',
+        code: 'signup_disabled',
+        name: 'AuthApiError',
+        status: 422,
+      } as never,
+    });
+    const user = userEvent.setup();
+    renderWithApi(<Register />);
+
+    await fillIn(user);
+    await user.click(screen.getByRole('button', { name: 'Crear cuenta' }));
+
+    expect(
+      await screen.findByText('Por ahora no se pueden crear cuentas nuevas.'),
+    ).toBeInTheDocument();
+  });
+
+  it('says that continuing accepts the terms and the privacy policy, with links to the landing', () => {
+    renderWithApi(<Register />);
+    expect(
+      screen.getByText(/incluido que tus datos se guarden en Estados Unidos\./),
+    ).toHaveTextContent(
+      'Al continuar aceptás los Términos y la Política de privacidad, incluido que tus datos se guarden en Estados Unidos.',
+    );
+    expect(screen.getByRole('link', { name: 'Términos' })).toHaveAttribute(
+      'href',
+      'https://kachingga.com/terminos',
+    );
+    expect(screen.getByRole('link', { name: 'Política de privacidad' })).toHaveAttribute(
+      'href',
+      'https://kachingga.com/privacidad',
+    );
+    for (const name of ['Términos', 'Política de privacidad'])
+      expect(screen.getByRole('link', { name })).toHaveAttribute('rel', 'noopener noreferrer');
+  });
+
   it('with captcha: waits for it and sends its token', async () => {
     vi.stubEnv('VITE_TURNSTILE_SITE_KEY', 'test-site-key');
     const { signUp } = await import('@/lib/auth');
