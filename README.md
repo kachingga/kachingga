@@ -4,7 +4,7 @@ App (web, mobile-first) para dividir gastos en grupo: viajes, departamentos comp
 
 Proyecto de [Kachingga](https://github.com/kachingga), una organización de amigos, para uso propio del grupo.
 
-**[kachingga.com](https://kachingga.com)** · [Entrar a la app](https://app.kachingga.com) · [Privacidad](https://kachingga.com/privacidad) · [hola@kachingga.com](mailto:hola@kachingga.com) · Licencia [GPL-3.0](LICENSE) · Vulnerabilidades: [`SECURITY.md`](https://github.com/kachingga/.github/blob/main/SECURITY.md)
+**[kachingga.com](https://kachingga.com)** · [Entrar a la app](https://app.kachingga.com) · [Privacidad](https://kachingga.com/privacidad) · [hola@kachingga.com](mailto:hola@kachingga.com) · [Licencia](LICENSE) · Vulnerabilidades: [`SECURITY.md`](https://github.com/kachingga/.github/blob/main/SECURITY.md)
 
 ## Features
 

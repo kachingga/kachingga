@@ -20,7 +20,7 @@
 | Errores (monitoreo) | Sentry (plan gratis, org `kachingga` de Galo) | sentry.io/organizations/kachingga | Proyectos `kachingga-web` (React) y `kachingga-api` (Bun); cada uno con `environment` `staging` / `production`. Cómo está hecho: `docs/claude/repo/monitoreo.md` |
 | Caídas (uptime) | UptimeRobot (plan gratis, cuenta de Galo) | uptimerobot.com | HTTP(s) a `app.kachingga.com` y `staging.kachingga.com`; Keyword (`app.kachingga.com`) a `kachingga.com` (la landing: avisa si se cae o si "Entrar" deja de llevar a la app); Keyword (`"ok":true`) a `api.kachingga.com/health/db` y `api-staging.kachingga.com/health/db` (ver `DEPLOY.md` → "Monitoreo") |
 | Cotizaciones (dólar blue y oficial, oficial de EUR, BRL, UYU y CLP) | DolarApi (público, sin clave) | dolarapi.com | `https://dolarapi.com/v1/dolares/{blue,oficial}` y `/v1/cotizaciones/{eur,brl,uyu,clp}` |
-| Repos | GitHub (org `kachingga`) | github.com/kachingga | `kachingga` (este: la app), `landing` (la landing, la maneja Lovable) y `.github` (el perfil de la org, `profile/README.md`, y el `SECURITY.md` que GitHub muestra en todos los repos). Los tres públicos, con licencia GPL-3.0 (`kachingga` y `landing`) |
+| Repos | GitHub (org `kachingga`) | github.com/kachingga | `kachingga` (este: la app), `landing` (la landing, la maneja Lovable) y `.github` (el perfil de la org, `profile/README.md`, y el `SECURITY.md` que GitHub muestra en todos los repos). Los tres públicos y open source (la licencia, en el `LICENSE` de cada uno) |
 
 Actualizar este archivo con los valores reales después de cada setup.
 
