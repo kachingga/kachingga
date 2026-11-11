@@ -1,8 +1,10 @@
 import { describe, expect, test } from 'bun:test'
 import {
   clientIp,
+  ConcurrencyLimiter,
   CREATING_PROCEDURES,
   GLOBAL_RULE,
+  HEAVY_READS,
   MAX_KEYS,
   PROCEDURE_RULES,
   PRUNE_INTERVAL_MS,
@@ -138,6 +140,38 @@ describe('RateLimiter', () => {
       expect(Object.hasOwn(procedures, path)).toBe(true)
     }
     for (const path of CREATING_PROCEDURES) expect(procedures[path]?._def.type).toBe('mutation')
+    for (const path of HEAVY_READS) expect(procedures[path]?._def.type).toBe('query')
+  })
+
+  test('every heavy read has its limit per IP and per user', () => {
+    for (const path of HEAVY_READS) {
+      expect(PROCEDURE_RULES[path]).toBeDefined()
+      expect(USER_PROCEDURE_RULES[path]).toEqual(PROCEDURE_RULES[path]!)
+    }
+  })
+})
+
+describe('ConcurrencyLimiter', () => {
+  test('at most perUser at a time for each user, and max in total', () => {
+    const limiter = new ConcurrencyLimiter(2, 3)
+    const ana1 = limiter.acquire('ana')!
+    expect(limiter.acquire('ana')).not.toBeNull()
+    expect(limiter.acquire('ana')).toBeNull() // her 2 are taken
+    expect(limiter.acquire('beto')).not.toBeNull()
+    expect(limiter.acquire('carla')).toBeNull() // the 3 are taken
+    ana1()
+    expect(limiter.acquire('carla')).not.toBeNull() // the one she gave back
+    expect(limiter.acquire('dani')).toBeNull()
+  })
+
+  test('giving a slot back twice frees it only once', () => {
+    const limiter = new ConcurrencyLimiter(1, 2)
+    const release = limiter.acquire('ana')!
+    expect(limiter.acquire('beto')).not.toBeNull()
+    release()
+    release()
+    expect(limiter.acquire('ana')).not.toBeNull()
+    expect(limiter.acquire('carla')).toBeNull() // still 2 running: ana's new one and beto's
   })
 })
 

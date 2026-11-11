@@ -14,6 +14,9 @@ import {
 import {
   CREATING_PROCEDURES,
   CREATION_LIMIT_MESSAGE,
+  HEAVY_READS_MESSAGE,
+  HEAVY_READS_PER_USER,
+  HEAVY_READS_TOTAL,
   RATE_LIMIT_MESSAGE,
   USER_CREATION_RULE,
   USER_PROCEDURE_RULES,
@@ -358,6 +361,45 @@ describe('per-user limits', () => {
       expect(await codeOf((i % 2 ? fromHome : fromWork).groups.join(wrong))).toBe('NOT_FOUND')
     }
     await expect(fromHome.groups.join({ ...code, name: 'Eve' })).rejects.toThrow(RATE_LIMIT_MESSAGE)
+  })
+
+  test('heavy reads have their own limit per user too, whatever the network', async () => {
+    const { group } = await newGroup()
+    const user = `ana-lim-${n}`
+    const input = { groupId: group.id, format: 'csv' as const }
+    for (let i = 0; i < USER_PROCEDURE_RULES['expenses.export']!.limit; i++) {
+      await caller(user, `203.0.113.${90 + (i % 2)}`).expenses.export(input)
+    }
+    await expect(caller(user, '203.0.113.92').expenses.export(input)).rejects.toThrow(RATE_LIMIT_MESSAGE)
+    // Each heavy read counts on its own
+    await caller(user, '203.0.113.92').balances.get({ groupId: group.id })
+  })
+
+  test(`only ${HEAVY_READS_PER_USER} heavy reads at a time per user and ${HEAVY_READS_TOTAL} in total; the slots come back`, async () => {
+    const { group } = await newGroup()
+    const groupId = group.id
+    const ip = '203.0.113.95'
+    const users = Array.from({ length: HEAVY_READS_TOTAL + 1 }, (_, i) => `heavy-lim-${n}-${i}`)
+    for (const user of users) await caller(user).groups.join({ inviteCode: group.inviteCode, name: user })
+
+    const mine = await Promise.all(
+      Array.from({ length: HEAVY_READS_PER_USER + 1 }, (_, i) =>
+        codeOf(i % 2 ? caller(users[0]!, ip).balances.get({ groupId }) : caller(users[0]!, ip).expenses.summary({ groupId })),
+      ),
+    )
+    expect(mine.sort()).toEqual([...Array<string>(HEAVY_READS_PER_USER).fill('ok'), 'TOO_MANY_REQUESTS'].sort())
+
+    const everyone = await Promise.all(users.map((user) => codeOf(caller(user, ip).balances.get({ groupId }))))
+    expect(everyone.filter((code) => code === 'ok')).toHaveLength(HEAVY_READS_TOTAL)
+    expect(everyone.filter((code) => code === 'TOO_MANY_REQUESTS')).toHaveLength(1)
+
+    // All finished: the slots are free again, also after an error (NOT_FOUND here)
+    const outsider = caller(`outsider-heavy-lim-${n}`, ip)
+    for (let i = 0; i <= HEAVY_READS_PER_USER; i++) expect(await codeOf(outsider.balances.get({ groupId }))).toBe('NOT_FOUND')
+    await Promise.all(users.slice(0, HEAVY_READS_TOTAL).map((user) => caller(user, ip).balances.get({ groupId })))
+    // The message the app shows
+    const [, , rejected] = await Promise.allSettled(Array.from({ length: 3 }, () => caller(users[0]!, ip).balances.get({ groupId })))
+    expect(rejected).toMatchObject({ status: 'rejected', reason: { message: HEAVY_READS_MESSAGE } })
   })
 
   test(`each user creates at most ${USER_CREATION_RULE.limit} things per day, between every creating mutation`, async () => {

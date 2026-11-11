@@ -84,16 +84,38 @@ function csvCell(value: string | number | null) {
 }
 
 // Standard CSV (comma, dot decimals, UTF-8 with BOM so Excel shows accents). `partes` goes as "Ana: 10.00 | Beto: 5.00".
-export function toCsv(rows: ExportRow[]) {
-  const lines = rows.map((r) =>
-    CSV_COLUMNS.map((c) => {
-      if (c === 'partes') return csvCell(r.partes.map((p) => `${p.participante}: ${p.monto.toFixed(2)}`).join(' | '))
-      if (c === 'tipo_de_cambio') return r.tipo_de_cambio === null ? '' : String(r.tipo_de_cambio)
-      return csvCell(r[c])
-    }).join(','),
-  )
-  return '﻿' + [CSV_COLUMNS.join(','), ...lines].join('\r\n') + '\r\n'
+// The file is CSV_HEADER + csvRows of each batch of rows (the export builds it batch by batch).
+export const CSV_HEADER = '﻿' + CSV_COLUMNS.join(',') + '\r\n'
+
+/** The CSV lines of some rows, each one ending in CRLF. */
+export function csvRows(rows: ExportRow[]) {
+  return rows
+    .map(
+      (r) =>
+        CSV_COLUMNS.map((c) => {
+          if (c === 'partes') return csvCell(r.partes.map((p) => `${p.participante}: ${p.monto.toFixed(2)}`).join(' | '))
+          if (c === 'tipo_de_cambio') return r.tipo_de_cambio === null ? '' : String(r.tipo_de_cambio)
+          return csvCell(r[c])
+        }).join(',') + '\r\n',
+    )
+    .join('')
 }
+
+export const toCsv = (rows: ExportRow[]) => CSV_HEADER + csvRows(rows)
+
+export type ExportInfo = { grupo: string; moneda_base: Currency; exportado: string; filtros: unknown }
+
+/**
+ * The JSON file: what was exported (indented) and `gastos`, one expense per line (`jsonRow` of each
+ * row, so the export can build them batch by batch). Indenting every expense doubled the file.
+ */
+export function toJson(info: ExportInfo, gastos: string[]) {
+  const head = JSON.stringify(info, null, 2).slice(0, -2) // without the closing "\n}"
+  const list = gastos.length ? `\n    ${gastos.join(',\n    ')}\n  ` : ''
+  return `${head},\n  "gastos": [${list}]\n}\n`
+}
+
+export const jsonRow = (row: ExportRow) => JSON.stringify(row)
 
 export function exportFilename(groupName: string, extension: 'csv' | 'json', now = new Date()) {
   const slug = groupName

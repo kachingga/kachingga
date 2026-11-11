@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'bun:test'
-import { exportFilename, toCsv, toExportRows, type ExpenseForExport } from '../lib/exportExpenses'
+import { exportFilename, jsonRow, toCsv, toExportRows, toJson, type ExpenseForExport } from '../lib/exportExpenses'
 
 const ana = { id: 'a', name: 'Ana' }
 const beto = { id: 'b', name: 'Beto' }
@@ -99,6 +99,24 @@ describe('toCsv', () => {
     expect(toCsv([])).toBe(
       '﻿fecha,descripcion,categoria,moneda,monto,tipo_de_cambio,moneda_saldo,monto_en_moneda_saldo,pago,division,partes,mi_parte,mi_parte_en_moneda_saldo\r\n',
     )
+  })
+})
+
+describe('toJson', () => {
+  const info = { grupo: 'Viaje', moneda_base: 'ARS' as const, exportado: '2026-11-03T10:00:00.000Z', filtros: { search: 'asado' } }
+
+  test('what was exported, indented, and one expense per line', () => {
+    const rows = toExportRows('ARS', 'a', [base, { ...base, description: 'Pizza\n"y birra"' }])
+    const json = toJson(info, rows.map(jsonRow))
+    expect(JSON.parse(json)).toEqual({ ...info, gastos: JSON.parse(JSON.stringify(rows)) })
+    const lines = json.split('\n')
+    expect(lines.slice(0, 3)).toEqual(['{', '  "grupo": "Viaje",', '  "moneda_base": "ARS",'])
+    expect(lines.filter((l) => l.startsWith('    {"fecha":'))).toHaveLength(2)
+    expect(json.endsWith('  ]\n}\n')).toBe(true)
+  })
+
+  test('no expenses: an empty list', () => {
+    expect(JSON.parse(toJson(info, []))).toEqual({ ...info, gastos: [] })
   })
 })
 

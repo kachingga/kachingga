@@ -6,6 +6,7 @@
 //   (index.ts), so a rejected request never reaches Supabase to validate its token.
 // - Per user (USER_PROCEDURE_RULES, USER_WRITE_RULES, USER_CREATION_RULE): checked after login
 //   (protectedProcedure in trpc/init.ts).
+// Besides, how many heavy reads run at the same time (HEAVY_READS, ConcurrencyLimiter).
 
 export type Rule = { limit: number; windowMs: number }
 
@@ -35,7 +36,19 @@ export const PROCEDURE_RULES: Record<string, Rule> = {
 export const USER_PROCEDURE_RULES: Record<string, Rule> = {
   'groups.preview': { limit: 20, windowMs: 10 * MINUTE },
   'groups.join': { limit: 20, windowMs: 10 * MINUTE },
+  'expenses.export': { limit: 20, windowMs: MINUTE },
+  'expenses.summary': { limit: 60, windowMs: MINUTE },
+  'balances.get': { limit: 60, windowMs: MINUTE },
+  'categories.suggest': { limit: 60, windowMs: MINUTE },
 }
+
+// Heavy reads: each one loads every matching expense of a group with all its shares (a full group:
+// 5.000 expenses among 25 people). Only a few run at the same time, per user and in total, so they
+// can't take the API (a single process) and its database connections from everyone else. One more
+// gets TOO_MANY_REQUESTS right away, without waiting in a queue: the web retries queries on its own.
+export const HEAVY_READS: ReadonlySet<string> = new Set(['expenses.export', 'expenses.summary', 'balances.get'])
+export const HEAVY_READS_PER_USER = 2
+export const HEAVY_READS_TOTAL = 4
 
 // Writes per user (any mutation): far above what a person does by hand, and they bound how fast
 // one account can fill the database.
@@ -60,6 +73,7 @@ export const USER_CREATION_RULE: Rule = { limit: 200, windowMs: DAY }
 
 export const RATE_LIMIT_MESSAGE = 'Demasiados pedidos seguidos. Esperá un momento y probá de nuevo.'
 export const CREATION_LIMIT_MESSAGE = 'Llegaste al máximo de cosas nuevas por hoy. Probá de nuevo mañana.'
+export const HEAVY_READS_MESSAGE = 'Hay muchas consultas pesadas en curso. Probá de nuevo en un momento.'
 
 // Rules are looked up by a path that comes from the request: only their own keys (not `constructor`…).
 const ruleFor = (rules: Record<string, Rule>, path: string) => (Object.hasOwn(rules, path) ? rules[path] : undefined)
@@ -143,6 +157,36 @@ export class RateLimiter {
   /** Counts one creation (CREATING_PROCEDURES) by `userId`; false if it goes over USER_CREATION_RULE. */
   allowCreation(userId: string) {
     return this.hit(`user:${userId}:creations`, USER_CREATION_RULE)
+  }
+}
+
+/** How many heavy reads (HEAVY_READS) are running, per user and in total. */
+export class ConcurrencyLimiter {
+  private running = new Map<string, number>()
+  private total = 0
+  private perUser: number
+  private max: number
+
+  constructor(perUser = HEAVY_READS_PER_USER, max = HEAVY_READS_TOTAL) {
+    this.perUser = perUser
+    this.max = max
+  }
+
+  /** Takes a slot for `userId`: a function that gives it back once done, or null if there's none free. */
+  acquire(userId: string): (() => void) | null {
+    const mine = this.running.get(userId) ?? 0
+    if (mine >= this.perUser || this.total >= this.max) return null
+    this.running.set(userId, mine + 1)
+    this.total += 1
+    let released = false
+    return () => {
+      if (released) return
+      released = true
+      this.total -= 1
+      const left = this.running.get(userId)! - 1
+      if (left === 0) this.running.delete(userId)
+      else this.running.set(userId, left)
+    }
   }
 }
 
