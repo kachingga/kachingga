@@ -16,7 +16,7 @@ API en Hono + tRPC sobre Bun, con Prisma contra PostgreSQL en Supabase. Paquete 
 
 ## Reglas que valen siempre
 
-- **Toda regla de negocio se aplica acá**, no en la web. Saldos, divisiones, redondeo y monedas: en `lib/` (dónde vive cada una: `docs/claude/api/contrato.md`). Los saldos tienen una copia en SQL (`myBalancesByGroup` en `routers/groups.ts`, para `groups.list`): si cambiás cómo se calcula un saldo, cambiá las dos (`groupsListBalances.test.ts` las compara).
+- **Toda regla de negocio se aplica acá**, no en la web. Saldos, divisiones, redondeo y monedas: en `lib/` (dónde vive cada una: `docs/claude/api/contrato.md`). Saldos y totales tienen además su versión en SQL (`lib/aggregates.ts`: es la que usan `groups.list`, `balances.get` y `expenses.summary`; la de JS queda como referencia): si cambiás cómo se calcula un saldo o un total, cambiá las dos (`aggregates.test.ts` las compara).
 - **Plata en centavos enteros** (`Int`), nunca `Float`. La suma de las partes es exactamente el total (`distributeCents`).
 - **La fecha de un gasto o pago es un día del calendario**: 12:00 UTC, se lee en UTC.
 - **Toda query de gastos / pagos filtra `deletedAt: null`** (borrados lógicos).
@@ -77,7 +77,7 @@ src/
 │                         # (token de Supabase → ctx.user y ctx.signedInAt), router.ts (AppRouter), routers/ (uno por dominio)
 ├── db/                   # schema.prisma (generator + datasource), models/*.prisma (uno por dominio), migrations/,
 │                         # index.ts (`prisma`: PrismaClient con @prisma/adapter-pg), generated/ (gitignoreado)
-├── lib/                  # access, splits, balances, summary, rates, exportExpenses, paymentAlias, rateLimit, quotas…
+├── lib/                  # access, splits, balances, summary, aggregates (sumas en SQL), rates, exportExpenses, paymentAlias, rateLimit, quotas…
 └── __tests__/            # bun:test (unit, HTTP, integración con PGlite)
 scripts/                  # new-migration.ts (db:migrate:new), seed.ts (db:seed)
 ```

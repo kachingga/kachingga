@@ -60,21 +60,20 @@ export function minimizeTransfers(balances: { participantId: string; amountCents
   return transfers
 }
 
+// Each participant's total in a balance currency: what computeBalances adds up here in JS, and what
+// lib/aggregates.ts adds up in the database (balances.get).
+export type BalanceTotal = { currency: Currency; participantId: string; amountCents: number }
+
+// The rules in JS: which balance each movement counts in, converted and rounded share by share.
+// The API adds them up in SQL (lib/aggregates.ts) and the tests compare both on the same data.
 export function computeBalances(
   baseCurrency: Currency,
   participantIds: string[],
   expenses: ExpenseForBalance[],
   settlements: SettlementForBalance[],
 ): CurrencyBalance[] {
-  const byCurrency = new Map<Currency, Map<string, number>>()
-  const add = (currency: Currency, participantId: string, cents: number) => {
-    let ledger = byCurrency.get(currency)
-    if (!ledger) {
-      ledger = new Map(participantIds.map((id) => [id, 0]))
-      byCurrency.set(currency, ledger)
-    }
-    ledger.set(participantId, (ledger.get(participantId) ?? 0) + cents)
-  }
+  const totals: BalanceTotal[] = []
+  const add = (currency: Currency, participantId: string, amountCents: number) => totals.push({ currency, participantId, amountCents })
 
   for (const expense of expenses) {
     const { currency, rate } = balanceCurrency(expense, baseCurrency)
@@ -93,6 +92,22 @@ export function computeBalances(
     const cents = Math.round(settlement.amountCents * rate)
     add(currency, settlement.fromId, cents)
     add(currency, settlement.toId, -cents)
+  }
+
+  return currencyBalances(baseCurrency, participantIds, totals)
+}
+
+// One entry per currency with movements (base first, always there): every participant's balance, in
+// the order of `participantIds`, and the suggested transfers.
+export function currencyBalances(baseCurrency: Currency, participantIds: string[], totals: BalanceTotal[]): CurrencyBalance[] {
+  const byCurrency = new Map<Currency, Map<string, number>>()
+  for (const { currency, participantId, amountCents } of totals) {
+    let ledger = byCurrency.get(currency)
+    if (!ledger) {
+      ledger = new Map(participantIds.map((id) => [id, 0]))
+      byCurrency.set(currency, ledger)
+    }
+    ledger.set(participantId, (ledger.get(participantId) ?? 0) + amountCents)
   }
 
   if (!byCurrency.has(baseCurrency)) byCurrency.set(baseCurrency, new Map(participantIds.map((id) => [id, 0])))

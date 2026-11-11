@@ -1,9 +1,10 @@
 import { TRPCError } from '@trpc/server'
 import { z } from 'zod'
-import { Prisma } from '../../db/generated/prisma/client'
+import type { Prisma } from '../../db/generated/prisma/client'
 import type { Currency } from '../../db/generated/prisma/enums'
 import { prisma } from '../../db'
 import { requireActiveGroup, requireMembership } from '../../lib/access'
+import { myBalancesByGroup } from '../../lib/aggregates'
 import { defaultCategoryRows } from '../../lib/categories'
 import { generateInviteCode, INVITE_CODE_LENGTH } from '../../lib/inviteCode'
 import { resolvePaymentAliases } from '../../lib/paymentAlias'
@@ -25,64 +26,12 @@ const groupSelect = {
 
 const inviteCode = z.string().trim().toUpperCase().length(INVITE_CODE_LENGTH, 'Código inválido')
 
-// My balance in each group and currency, added up in the database (without loading every share):
-// what computeBalances (lib/balances.ts) gives for my participant, with the same rules. Each movement
-// counts in the balance balanceCurrency says (converted → base, kept → its own currency); each share
-// and payment is converted and rounded on its own, half up like Math.round; what I paid is the sum of
-// the converted shares. Not FLOOR(x + 0.5): adding 0.5 rounds 0.49999999999999994 up, while
-// x - FLOOR(x) is exact for x ≥ 0. groupsListBalances.test.ts compares both on the same data.
-async function myBalancesByGroup(userId: string, groupIds: string[]) {
-  const byGroup = new Map<string, Map<Currency, number>>()
-  if (groupIds.length === 0) return byGroup
-  const rows = await prisma.$queryRaw<{ groupId: string; currency: Currency; amountCents: bigint }[]>`
-    WITH me AS (
-      SELECT p."id" AS pid, p."groupId" AS gid, g."baseCurrency" AS base
-      FROM "Participant" p JOIN "Group" g ON g."id" = p."groupId"
-      WHERE p."userId" = ${userId} AND p."groupId" IN (${Prisma.join(groupIds)})
-    ),
-    expense AS (
-      SELECT e."id", me.gid, me.pid, e."paidById",
-        CASE WHEN e."currency" <> me.base AND e."exchangeRate" IS NOT NULL THEN me.base ELSE e."currency" END AS currency,
-        CASE WHEN e."currency" <> me.base AND e."exchangeRate" IS NOT NULL THEN e."exchangeRate" ELSE 1 END AS rate
-      FROM "Expense" e JOIN me ON e."groupId" = me.gid
-      WHERE e."deletedAt" IS NULL
-    ),
-    movement AS (
-      -- + every share of the expenses I paid
-      SELECT x.gid, x.currency, s."amountCents" * x.rate AS amount, 1 AS sign
-      FROM expense x JOIN "ExpenseSplit" s ON s."expenseId" = x."id"
-      WHERE x."paidById" = x.pid
-      UNION ALL
-      -- − my shares
-      SELECT x.gid, x.currency, s."amountCents" * x.rate, -1
-      FROM expense x JOIN "ExpenseSplit" s ON s."expenseId" = x."id" AND s."participantId" = x.pid
-      UNION ALL
-      -- + the payments I made, − the ones I got
-      SELECT me.gid,
-        CASE WHEN t."currency" <> me.base AND t."exchangeRate" IS NOT NULL THEN me.base ELSE t."currency" END,
-        t."amountCents" * CASE WHEN t."currency" <> me.base AND t."exchangeRate" IS NOT NULL THEN t."exchangeRate" ELSE 1 END,
-        CASE WHEN t."fromId" = me.pid THEN 1 ELSE -1 END
-      FROM "Settlement" t JOIN me ON t."groupId" = me.gid
-      WHERE t."deletedAt" IS NULL AND me.pid IN (t."fromId", t."toId")
-    )
-    SELECT gid AS "groupId", currency::text AS currency,
-      SUM(sign * (CASE WHEN amount - FLOOR(amount) >= 0.5::float8 THEN CEIL(amount) ELSE FLOOR(amount) END)::bigint)::bigint AS "amountCents"
-    FROM movement
-    GROUP BY gid, currency`
-  for (const row of rows) {
-    const balances = byGroup.get(row.groupId) ?? new Map<Currency, number>()
-    balances.set(row.currency, Number(row.amountCents))
-    byGroup.set(row.groupId, balances)
-  }
-  return byGroup
-}
-
 export const groupsRouter = router({
   // My groups, each with its people (`participants`: id and name, oldest first, for the faces on the
   // list), my name in it (`myName`) and my balance in its base currency (`myBalanceCents`: positive =
   // they owe me). `myBalances`: every currency where my balance isn't zero, base first (what I'd
   // leave pending if I deleted my account). Two queries in total, whatever the number of groups and
-  // their expenses: the balances are added up in the database (myBalancesByGroup).
+  // their expenses: the balances are added up in the database (myBalancesByGroup, lib/aggregates.ts).
   list: protectedProcedure.input(z.object({ includeArchived: z.boolean().default(false) }).optional()).query(async ({ ctx, input }) => {
     const groups = await prisma.group.findMany({
       where: {

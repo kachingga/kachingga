@@ -4,12 +4,13 @@ import type { Prisma } from '../../db/generated/prisma/client'
 import type { Currency } from '../../db/generated/prisma/enums'
 import { prisma } from '../../db'
 import { assertParticipantsInGroup, requireActiveGroup, requireMembership } from '../../lib/access'
+import { expenseCategoryTotals } from '../../lib/aggregates'
 import { resolveExpenseCategory } from '../../lib/categories'
 import { CSV_HEADER, csvRows, exportFilename, jsonRow, toExportRows, toJson } from '../../lib/exportExpenses'
 import { assertRoomForExpense } from '../../lib/quotas'
 import { resolveExchangeRate } from '../../lib/rates'
 import { resolveSplits } from '../../lib/splits'
-import { summarizeExpenses } from '../../lib/summary'
+import { summaryFromTotals } from '../../lib/summary'
 import { expenseFilters, expenseInput, exportFormat, id, type ExpenseFilters } from '../../schemas'
 import { protectedProcedure, router } from '../init'
 
@@ -135,17 +136,13 @@ export const expensesRouter = router({
 
   summary: protectedProcedure.input(z.object({ groupId: id, filters: expenseFilters.default({}) })).query(async ({ ctx, input }) => {
     const me = await requireMembership(input.groupId, ctx.user.id)
-    const expenses = await prisma.expense.findMany({
-      where: buildExpenseWhere(input.groupId, input.filters),
-      select: {
-        currency: true,
-        exchangeRate: true,
-        category: { select: { id: true, name: true } },
-        paidById: true,
-        splits: { select: { participantId: true, amountCents: true } },
-      },
-    })
-    return summarizeExpenses(me.group.baseCurrency, me.id, expenses)
+    // Prisma picks the expenses (the same filters as `list`); the database adds them up (lib/aggregates.ts).
+    const matching = await prisma.expense.findMany({ where: buildExpenseWhere(input.groupId, input.filters), select: { id: true } })
+    const totals = await expenseCategoryTotals(
+      me.id,
+      matching.map((e) => e.id),
+    )
+    return summaryFromTotals(me.group.baseCurrency, totals)
   }),
 
   get: protectedProcedure.input(z.object({ expenseId: id })).query(async ({ ctx, input }) => {
