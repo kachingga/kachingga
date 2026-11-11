@@ -2,7 +2,8 @@
 # The repo is public and anyone signed in to GitHub can download artifacts, so the dump is
 # streamed straight into gpg: nothing unencrypted is ever written, even on the runner.
 # The secrets live in the `backup` environment (only `main` can use it), not in the repo secrets.
-# It also checks the database size (alert before Supabase Free's limit). Restore steps: DEPLOY.md →
+# It also checks the size of the prod and staging databases (alert before Supabase Free's limit, shared
+# by both). Restore steps: DEPLOY.md →
 # "Backups"; the size alert: DEPLOY.md → "Monitoreo".
 name: Backup diario de prod
 
@@ -90,5 +91,29 @@ jobs:
           echo "Tamaño de la base de prod: $mb MB (aviso a partir de $ALERT_MB MB)"
           if [ "$bytes" -gt $((ALERT_MB * 1024 * 1024)) ]; then
             echo "::error::La base de prod ocupa $mb MB y pasó el aviso de $ALERT_MB MB (Supabase Free: 500 MB sumando prod y staging; después la app deja de andar). Ver qué crece y decidir: DEPLOY.md → Monitoreo. El backup no depende de este aviso."
+            exit 1
+          fi
+
+      # Staging (the dev database, `stg`) counts for the same 500 MB and its sign-up is open: measure it
+      # too. Uses the E2E repo secret (the dev DATABASE_URL); without it, it only says so.
+      - name: Check staging database size
+        if: ${{ !cancelled() }}
+        env:
+          STG_DATABASE_URL: ${{ secrets.E2E_DATABASE_URL }}
+          ALERT_MB: 70
+        run: |
+          set -euo pipefail
+          if [ -z "$STG_DATABASE_URL" ]; then
+            echo "::notice::Sin E2E_DATABASE_URL: no se midió la base de staging."
+            exit 0
+          fi
+          bytes=$(docker run --rm -e STG_DATABASE_URL \
+            postgres:17@sha256:ff87138949ad9a46f32ff23bd6852b52ce024a13dffe9b4087be98292cdd3b4f \
+            sh -c 'psql "$STG_DATABASE_URL" -X -tAc "SELECT pg_database_size(current_database())"')
+          [[ "$bytes" =~ ^[0-9]+$ ]] || { echo "::error::No se pudo leer el tamaño de la base de staging."; exit 1; }
+          mb=$((bytes / 1024 / 1024))
+          echo "Tamaño de la base de staging: $mb MB (aviso a partir de $ALERT_MB MB)"
+          if [ "$bytes" -gt $((ALERT_MB * 1024 * 1024)) ]; then
+            echo "::error::La base de staging ocupa $mb MB y pasó el aviso de $ALERT_MB MB (cuenta para los 500 MB de la org, junto con prod). Ver qué crece y decidir: DEPLOY.md → Monitoreo."
             exit 1
           fi
