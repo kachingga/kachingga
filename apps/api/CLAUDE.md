@@ -16,7 +16,7 @@ API en Hono + tRPC sobre Bun, con Prisma contra PostgreSQL en Supabase. Paquete 
 
 ## Reglas que valen siempre
 
-- **Toda regla de negocio se aplica acá**, no en la web. Saldos, divisiones, redondeo y monedas: en `lib/` (dónde vive cada una: `docs/claude/api/contrato.md`).
+- **Toda regla de negocio se aplica acá**, no en la web. Saldos, divisiones, redondeo y monedas: en `lib/` (dónde vive cada una: `docs/claude/api/contrato.md`). Los saldos tienen una copia en SQL (`myBalancesByGroup` en `routers/groups.ts`, para `groups.list`): si cambiás cómo se calcula un saldo, cambiá las dos (`groupsListBalances.test.ts` las compara).
 - **Plata en centavos enteros** (`Int`), nunca `Float`. La suma de las partes es exactamente el total (`distributeCents`).
 - **La fecha de un gasto o pago es un día del calendario**: 12:00 UTC, se lee en UTC.
 - **Toda query de gastos / pagos filtra `deletedAt: null`** (borrados lógicos).
@@ -31,7 +31,7 @@ API en Hono + tRPC sobre Bun, con Prisma contra PostgreSQL en Supabase. Paquete 
 4. Datos de una persona → filtrar por `ctx.user.id`. Lo que se devuelve, con `select` explícito: **nunca `userId` ni `createdById`** (ids de cuenta de otros miembros).
 5. Input validado con Zod, **con tope en todo**: largo de los textos, montos, ids con `id` de `schemas.ts` (nunca `z.string()` suelto) y `.max()` en todo array. Sin tope, un solo pedido puede llenar la base.
 6. **Agregarlo a `src/__tests__/integration/authorization.test.ts`**: en `attacks` si toca un grupo, o en `notGroupScoped` con el motivo. Si es una mutation, además en `archivedWrites` (se rechaza en un grupo archivado) o en `writableWhenArchived` con el motivo. Y en `calls` de `accountIds.test.ts` (que su respuesta no traiga ids de cuenta de otros). Si no, esos tests fallan.
-7. Si es caro o se presta a fuerza bruta, sumarle un límite en `PROCEDURE_RULES` (`lib/rateLimit.ts`). Si crea filas: sumarlo a `CREATING_PROCEDURES` (tope diario por usuario y guardia de tamaño de la base) y pensar si necesita un cupo (`lib/quotas.ts`, y la regla en el `CLAUDE.md` raíz).
+7. Si es caro o se presta a fuerza bruta, sumarle un límite en `PROCEDURE_RULES` y en `USER_PROCEDURE_RULES` (`lib/rateLimit.ts`); si además carga todos los gastos de un grupo, a `HEAVY_READS` (pocos a la vez). Si crea filas: sumarlo a `CREATING_PROCEDURES` (tope diario por usuario y guardia de tamaño de la base) y pensar si necesita un cupo (`lib/quotas.ts`, y la regla en el `CLAUDE.md` raíz).
 8. Tests de integración: sin login, no miembro, grupo archivado si escribe, caso feliz y cada regla de negocio (`docs/claude/api/tests.md`).
 
 ## Comandos

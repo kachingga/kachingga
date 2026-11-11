@@ -2,7 +2,15 @@ import { initTRPC, TRPCError } from '@trpc/server'
 import superjson from 'superjson'
 import { ZodError } from 'zod'
 import { assertDatabaseHasRoom } from '../lib/dbSize'
-import { CREATING_PROCEDURES, CREATION_LIMIT_MESSAGE, RATE_LIMIT_MESSAGE, RateLimiter } from '../lib/rateLimit'
+import {
+  ConcurrencyLimiter,
+  CREATING_PROCEDURES,
+  CREATION_LIMIT_MESSAGE,
+  HEAVY_READS,
+  HEAVY_READS_MESSAGE,
+  RATE_LIMIT_MESSAGE,
+  RateLimiter,
+} from '../lib/rateLimit'
 import type { Context } from './context'
 
 const INTERNAL_MESSAGE = 'Error interno. Intentá de nuevo.'
@@ -36,6 +44,7 @@ const prismaErrors = t.middleware(async ({ next }) => {
 
 // Per-IP limits run before tRPC (index.ts); here only the per-user ones, which need the login.
 const limiter = new RateLimiter()
+const heavyReads = new ConcurrencyLimiter()
 
 export const router = t.router
 export const createCallerFactory = t.createCallerFactory
@@ -59,5 +68,13 @@ export const protectedProcedure = publicProcedure.use(async ({ ctx, type, path, 
     if (creates && !limiter.allowCreation(ctx.user.id)) throw tooManyRequests(CREATION_LIMIT_MESSAGE)
   }
   if (creates) await assertDatabaseHasRoom()
-  return next({ ctx: { user: ctx.user } })
+  // A slot for the heavy reads (same as above: only real HTTP requests), given back when it finishes
+  // (also with an error).
+  const release = ctx.ip && HEAVY_READS.has(path) ? heavyReads.acquire(ctx.user.id) : undefined
+  if (release === null) throw tooManyRequests(HEAVY_READS_MESSAGE)
+  try {
+    return await next({ ctx: { user: ctx.user } })
+  } finally {
+    release?.()
+  }
 })

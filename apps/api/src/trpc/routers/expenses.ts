@@ -5,7 +5,7 @@ import type { Currency } from '../../db/generated/prisma/enums'
 import { prisma } from '../../db'
 import { assertParticipantsInGroup, requireActiveGroup, requireMembership } from '../../lib/access'
 import { resolveExpenseCategory } from '../../lib/categories'
-import { exportFilename, toCsv, toExportRows } from '../../lib/exportExpenses'
+import { CSV_HEADER, csvRows, exportFilename, jsonRow, toExportRows, toJson } from '../../lib/exportExpenses'
 import { assertRoomForExpense } from '../../lib/quotas'
 import { resolveExchangeRate } from '../../lib/rates'
 import { resolveSplits } from '../../lib/splits'
@@ -14,6 +14,9 @@ import { expenseFilters, expenseInput, exportFormat, id, type ExpenseFilters } f
 import { protectedProcedure, router } from '../init'
 
 const PAGE_SIZE = 50
+// The export reads this many expenses at a time: a full group (5.000 expenses split among 25 people)
+// loaded at once was ~44 MB of objects; this way it holds one batch (~4.5 MB) and the file it builds.
+const EXPORT_BATCH = 500
 
 // What `list`, `get`, `create` and `update` return for each expense (the web seeds the detail from
 // the list, so they're the same). Never `createdById`: another member's account id.
@@ -105,27 +108,29 @@ export const expensesRouter = router({
     .input(z.object({ groupId: id, filters: expenseFilters.default({}), format: exportFormat }))
     .query(async ({ ctx, input }) => {
       const me = await requireMembership(input.groupId, ctx.user.id)
-      const expenses = await prisma.expense.findMany({
-        where: buildExpenseWhere(input.groupId, input.filters),
-        select: expenseSelect,
-        orderBy: [{ date: 'asc' }, { createdAt: 'asc' }, { id: 'asc' }],
-      })
-      const rows = toExportRows(me.group.baseCurrency, me.id, expenses)
+      const where = buildExpenseWhere(input.groupId, input.filters)
+      // CSV: the lines of each batch. JSON: one string per expense.
+      const parts: string[] = []
+      let cursor: string | undefined
+      do {
+        const batch = await prisma.expense.findMany({
+          where,
+          select: expenseSelect,
+          orderBy: [{ date: 'asc' }, { createdAt: 'asc' }, { id: 'asc' }],
+          take: EXPORT_BATCH,
+          ...(cursor && { cursor: { id: cursor }, skip: 1 }),
+        })
+        const rows = toExportRows(me.group.baseCurrency, me.id, batch)
+        if (input.format === 'csv') parts.push(csvRows(rows))
+        else parts.push(...rows.map(jsonRow))
+        cursor = batch.length === EXPORT_BATCH ? batch.at(-1)!.id : undefined
+      } while (cursor)
+
       if (input.format === 'csv') {
-        return { filename: exportFilename(me.group.name, 'csv'), mimeType: 'text/csv;charset=utf-8', content: toCsv(rows) }
+        return { filename: exportFilename(me.group.name, 'csv'), mimeType: 'text/csv;charset=utf-8', content: CSV_HEADER + parts.join('') }
       }
-      const content = JSON.stringify(
-        {
-          grupo: me.group.name,
-          moneda_base: me.group.baseCurrency,
-          exportado: new Date().toISOString(),
-          filtros: input.filters,
-          gastos: rows,
-        },
-        null,
-        2,
-      )
-      return { filename: exportFilename(me.group.name, 'json'), mimeType: 'application/json', content }
+      const info = { grupo: me.group.name, moneda_base: me.group.baseCurrency, exportado: new Date().toISOString(), filtros: input.filters }
+      return { filename: exportFilename(me.group.name, 'json'), mimeType: 'application/json', content: toJson(info, parts) }
     }),
 
   summary: protectedProcedure.input(z.object({ groupId: id, filters: expenseFilters.default({}) })).query(async ({ ctx, input }) => {

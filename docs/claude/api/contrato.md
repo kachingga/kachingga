@@ -35,7 +35,7 @@ Todos con `protectedProcedure` salvo `health.ping`. Inputs en `src/schemas.ts`, 
 |-----------|------|----------|
 | `health.ping` | query | Público. Chequeo de vida |
 | `health.me` | query | Usuario logueado (id, email) |
-| `groups.list` | query | Mis grupos (`includeArchived?`), con `_count.participants`, `participants` (id y nombre de cada uno, del más viejo al más nuevo: las caritas de la lista), `myName` (mi nombre en el grupo), `myBalanceCents` (mi saldo en la moneda base: positivo = me deben; lo mantenido en otras monedas no cuenta) y `myBalances` (`[{ currency, amountCents }]`: mis saldos distintos de cero en cada moneda, base primero; lo usa la confirmación de "Borrar mi cuenta"). 3 queries en total, no una por grupo |
+| `groups.list` | query | Mis grupos (`includeArchived?`), con `_count.participants`, `participants` (id y nombre de cada uno, del más viejo al más nuevo: las caritas de la lista), `myName` (mi nombre en el grupo), `myBalanceCents` (mi saldo en la moneda base: positivo = me deben; lo mantenido en otras monedas no cuenta) y `myBalances` (`[{ currency, amountCents }]`: mis saldos distintos de cero en cada moneda, base primero; lo usa la confirmación de "Borrar mi cuenta"). 2 queries en total, no una por grupo: los saldos se suman en SQL (`myBalancesByGroup`), sin traer cada parte |
 | `groups.get` | query | Grupo + participantes (`isMe`, `hasAccount`, `paymentAlias`, `paymentAliasSource`: `'group'` / `'account'` / `null`; sin cuenta, siempre `null`) + `myParticipantId` |
 | `groups.create` | mutation | Crea grupo + mi participante (`myName`) + sus 8 categorías por defecto |
 | `groups.rename` | mutation | Cambia el nombre |
@@ -52,7 +52,7 @@ Todos con `protectedProcedure` salvo `health.ping`. Inputs en `src/schemas.ts`, 
 | `categories.suggest` | query | `{ groupId, description }` → `{ categoryId, source: 'history' \| 'keyword' }` o `null`: categoría sugerida para un gasto nuevo (historial del grupo, si no palabras clave → la por defecto con ese `defaultKey`). Solo activas del grupo. Lectura: anda en grupos archivados. Límite propio de 60/min por IP |
 | `categories.archive` / `unarchive` | mutation | `{ categoryId }`. Archivada: los gastos la conservan, no se puede elegir para gastos nuevos. No se puede archivar la última activa; desarchivar choca si ya hay una activa con ese nombre |
 | `expenses.list` | query | `{ groupId, filters, cursor }` → `{ items, nextCursor }` (páginas de 50, más nuevo primero). Cada item tiene la misma forma que `expenses.get` |
-| `expenses.export` | query | `{ groupId, filters, format: 'csv' \| 'json' }` → `{ filename, mimeType, content }`: **todos** los gastos que coinciden (sin paginar), del más viejo al más nuevo, con mi parte |
+| `expenses.export` | query | `{ groupId, filters, format: 'csv' \| 'json' }` → `{ filename, mimeType, content }`: **todos** los gastos que coinciden (sin paginar), del más viejo al más nuevo, con mi parte. Se arma leyendo de a 500 gastos (`EXPORT_BATCH`). El JSON: lo exportado (grupo, moneda, fecha, filtros) con sangría y un gasto por línea |
 | `expenses.summary` | query | `{ groupId, filters }` (mismos filtros que `list`) → `[{ currency, count, totalCents, myShareCents, myPaidCents, byCategory: [{ categoryId, name, totalCents }] }]`, base primero |
 | `expenses.get` / `create` / `update` / `delete` | query / mutation | Cada gasto trae `category` (`{ id, name, icon, color }`). `categoryId` del input tiene que ser del grupo y activa (al editar se puede dejar la que ya tenía aunque esté archivada); sin `categoryId` → "Otros" del grupo. `update` reemplaza el gasto y sus partes; `delete` es lógico |
 | `settlements.list` / `create` / `delete` | query / mutation | Pagos manuales (más nuevo primero) |
@@ -69,9 +69,9 @@ Todos con `protectedProcedure` salvo `health.ping`. Inputs en `src/schemas.ts`, 
 | Acceso a grupos, grupos archivados | `lib/access.ts` (`requireMembership` lectura, `requireActiveGroup` escritura) |
 | División y redondeo | `lib/splits.ts` (`resolveSplits`: EQUAL / AMOUNT / PERCENTAGE → centavos exactos); el reparto de centavos (`distributeCents`) vive en `schemas.ts` para que la web muestre lo mismo |
 | Multimoneda (qué saldo, qué tipo de cambio) | `lib/balances.ts` (`balanceCurrency`) + `lib/rates.ts` (`getQuote` de DolarApi, `resolveExchangeRate`) |
-| Saldos y transferencias mínimas | `lib/balances.ts` (`computeBalances` + `minimizeTransfers`, puros) |
+| Saldos y transferencias mínimas | `lib/balances.ts` (`computeBalances` + `minimizeTransfers`, puros). **Copia en SQL:** `myBalancesByGroup` en `routers/groups.ts` (mi saldo en `groups.list`, sumado en la base); si cambia una regla de saldos, cambian los dos (`groupsListBalances.test.ts` los compara) |
 | Filtros | `buildExpenseWhere` en `routers/expenses.ts` |
-| Exportar (formato de cada fila, CSV) | `lib/exportExpenses.ts` (`toExportRows`, `toCsv`; mismas reglas de moneda y redondeo que los saldos) |
+| Exportar (formato de cada fila, CSV, JSON) | `lib/exportExpenses.ts` (`toExportRows`, `csvRows`, `toJson`; mismas reglas de moneda y redondeo que los saldos) |
 | Totales por filtro | `lib/summary.ts` (`summarizeExpenses`, puro; mismas reglas de moneda y redondeo que los saldos) |
 | Unirse / reclamar participante | `routers/groups.ts` (`preview`, `join`) |
 | Categoría automática (historial, palabras clave) | `lib/categorySuggestion.ts` (`suggestFromHistory`, `suggestDefaultKey`, puros; la lista de palabras clave está ahí) + `categories.suggest` en `routers/categories.ts` (últimos 500 gastos activos con categoría activa) |
