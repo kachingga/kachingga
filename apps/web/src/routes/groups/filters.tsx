@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Link, useNavigate, useParams, useSearchParams } from 'react-router';
 import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { X } from 'lucide-react';
@@ -22,6 +22,10 @@ import {
   type UrlFilters,
 } from '@/lib/url-filters';
 
+// What's typed in "Descripción" goes to the URL (and so to the queries) this long after the last key:
+// one summary and one list per search, not one per key (#159).
+const SEARCH_DELAY_MS = 300;
+
 function triggerDownload(filename: string, mimeType: string, content: string) {
   const blob = new Blob([content], { type: mimeType });
   const url = URL.createObjectURL(blob);
@@ -43,9 +47,35 @@ export function Filters() {
   const [searchParams, setSearchParams] = useSearchParams();
   const urlFilters = readUrlFilters(searchParams);
   const filters = toApiFilters(urlFilters);
-  const setFilters = (next: UrlFilters) =>
+  const writeFilters = (next: UrlFilters) =>
     setSearchParams(writeUrlFilters(next), { replace: true });
-  const update = (changes: Partial<UrlFilters>) => setFilters({ ...urlFilters, ...changes });
+
+  // What the "Descripción" input shows while the person types in it (null = the URL's). It stays
+  // after going to the URL: the URL is read trimmed, and a space between words would vanish.
+  const [typedSearch, setTypedSearch] = useState<string | null>(null);
+  const searchTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
+  useEffect(() => () => clearTimeout(searchTimer.current), []);
+  function typeSearch(text: string) {
+    setTypedSearch(text);
+    clearTimeout(searchTimer.current);
+    // `urlFilters` can't get old meanwhile: any other change cancels this timer (setFilters).
+    searchTimer.current = setTimeout(
+      () => writeFilters({ ...urlFilters, search: text || undefined }),
+      SEARCH_DELAY_MS,
+    );
+  }
+  const setFilters = (next: UrlFilters) => {
+    clearTimeout(searchTimer.current);
+    setTypedSearch(null);
+    writeFilters(next);
+  };
+  // Any other filter goes right away, with what was typed in the search (even if it hadn't gone yet).
+  const update = (changes: Partial<UrlFilters>) =>
+    setFilters({
+      ...urlFilters,
+      ...(typedSearch !== null && { search: typedSearch || undefined }),
+      ...changes,
+    });
 
   const group = useQuery(trpc.groups.get.queryOptions({ groupId: groupId! }));
   const savedFilters = useQuery(trpc.savedFilters.list.queryOptions({ groupId: groupId! }));
@@ -283,8 +313,8 @@ export function Filters() {
           <Field label="Descripción" htmlFor="f-search" small>
             <Input
               id="f-search"
-              value={urlFilters.search ?? ''}
-              onChange={(e) => update({ search: e.target.value || undefined })}
+              value={typedSearch ?? urlFilters.search ?? ''}
+              onChange={(e) => typeSearch(e.target.value)}
               placeholder="Buscar…"
             />
           </Field>

@@ -173,6 +173,49 @@ describe('Filters', () => {
     );
   });
 
+  it('searches once you stop typing: one list and one summary per search, not one per key', async () => {
+    const user = userEvent.setup();
+    const calls: unknown[] = [];
+    const summaries: unknown[] = [];
+    renderWithApi(<Filters />, {
+      ...api(calls),
+      'expenses.summary': (input: unknown) => {
+        summaries.push((input as { filters: unknown }).filters);
+        return [];
+      },
+    });
+    await screen.findByText('Cena');
+    await user.type(screen.getByLabelText('Descripción'), 'cena con');
+    expect(screen.getByLabelText('Descripción')).toHaveValue('cena con'); // spaces too
+    await waitFor(() => expect(calls.at(-1)).toEqual({ search: 'cena con' }));
+    expect(calls).toEqual([{}, { search: 'cena con' }]);
+    expect(summaries).toEqual([{}, { search: 'cena con' }]);
+  });
+
+  it('another filter goes right away, with what was typed in the search', async () => {
+    const user = userEvent.setup();
+    const calls: unknown[] = [];
+    renderWithApi(<Filters />, api(calls));
+    await screen.findByText('Cena');
+    await user.type(screen.getByLabelText('Descripción'), 'cena');
+    await user.selectOptions(screen.getByLabelText('Le corresponde a'), 'p2');
+    await waitFor(() => expect(calls.at(-1)).toEqual({ splitParticipantId: 'p2', search: 'cena' }));
+    await new Promise((resolve) => setTimeout(resolve, 400)); // the search doesn't go again later
+    expect(calls).toEqual([{}, { splitParticipantId: 'p2', search: 'cena' }]);
+  });
+
+  it('clearing the filters drops a search that had not gone yet', async () => {
+    const user = userEvent.setup();
+    const calls: unknown[] = [];
+    renderWithApi(<Filters />, api(calls));
+    await screen.findByText('Cena');
+    await user.type(screen.getByLabelText('Descripción'), 'cena');
+    await user.click(screen.getByRole('button', { name: 'Limpiar filtros' }));
+    expect(screen.getByLabelText('Descripción')).toHaveValue('');
+    await new Promise((resolve) => setTimeout(resolve, 400));
+    expect(calls).toEqual([{}]);
+  });
+
   it('picks a month as a range from the 1st to the last day', async () => {
     const calls: unknown[] = [];
     renderWithApi(<Filters />, api(calls));
