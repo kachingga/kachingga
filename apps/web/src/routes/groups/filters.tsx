@@ -22,9 +22,18 @@ import {
   type UrlFilters,
 } from '@/lib/url-filters';
 
-// What's typed in "Descripción" goes to the URL (and so to the queries) this long after the last key:
-// one summary and one list per search, not one per key (#159).
-const SEARCH_DELAY_MS = 300;
+// What's typed in "Descripción" and the amounts goes to the URL (and so to the queries) this long
+// after the last key: one summary and one list per search or amount, not one per key (#159).
+const TYPING_DELAY_MS = 300;
+
+type TypedFilter = 'search' | 'minAmount' | 'maxAmount';
+type Typed = Partial<Record<TypedFilter, string>>;
+
+// What was typed, as filters ('' = no filter).
+const asFilters = (typed: Typed) =>
+  Object.fromEntries(
+    Object.entries(typed).map(([field, value]) => [field, value || undefined]),
+  ) as Partial<UrlFilters>;
 
 function triggerDownload(filename: string, mimeType: string, content: string) {
   const blob = new Blob([content], { type: mimeType });
@@ -50,32 +59,30 @@ export function Filters() {
   const writeFilters = (next: UrlFilters) =>
     setSearchParams(writeUrlFilters(next), { replace: true });
 
-  // What the "Descripción" input shows while the person types in it (null = the URL's). It stays
-  // after going to the URL: the URL is read trimmed, and a space between words would vanish.
-  const [typedSearch, setTypedSearch] = useState<string | null>(null);
-  const searchTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
-  useEffect(() => () => clearTimeout(searchTimer.current), []);
-  function typeSearch(text: string) {
-    setTypedSearch(text);
-    clearTimeout(searchTimer.current);
+  // What the typed fields show while the person types in them (a field that's not here: the URL's).
+  // It stays after going to the URL: the URL is read trimmed, and a space between words would vanish.
+  const [typed, setTyped] = useState<Typed>({});
+  const typingTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
+  useEffect(() => () => clearTimeout(typingTimer.current), []);
+  const shown = (field: TypedFilter) => typed[field] ?? urlFilters[field] ?? '';
+  function typeInto(field: TypedFilter, text: string) {
+    const next = { ...typed, [field]: text };
+    setTyped(next);
+    clearTimeout(typingTimer.current);
     // `urlFilters` can't get old meanwhile: any other change cancels this timer (setFilters).
-    searchTimer.current = setTimeout(
-      () => writeFilters({ ...urlFilters, search: text || undefined }),
-      SEARCH_DELAY_MS,
+    typingTimer.current = setTimeout(
+      () => writeFilters({ ...urlFilters, ...asFilters(next) }),
+      TYPING_DELAY_MS,
     );
   }
   const setFilters = (next: UrlFilters) => {
-    clearTimeout(searchTimer.current);
-    setTypedSearch(null);
+    clearTimeout(typingTimer.current);
+    setTyped({});
     writeFilters(next);
   };
-  // Any other filter goes right away, with what was typed in the search (even if it hadn't gone yet).
+  // Any other filter goes right away, with what was typed (even if it hadn't gone yet).
   const update = (changes: Partial<UrlFilters>) =>
-    setFilters({
-      ...urlFilters,
-      ...(typedSearch !== null && { search: typedSearch || undefined }),
-      ...changes,
-    });
+    setFilters({ ...urlFilters, ...asFilters(typed), ...changes });
 
   const group = useQuery(trpc.groups.get.queryOptions({ groupId: groupId! }));
   const savedFilters = useQuery(trpc.savedFilters.list.queryOptions({ groupId: groupId! }));
@@ -298,14 +305,14 @@ export function Filters() {
               <NumberInput
                 aria-label="Monto mínimo"
                 placeholder="Mínimo"
-                value={urlFilters.minAmount ?? ''}
-                onValueChange={(v) => update({ minAmount: v || undefined })}
+                value={shown('minAmount')}
+                onValueChange={(v) => typeInto('minAmount', v)}
               />
               <NumberInput
                 aria-label="Monto máximo"
                 placeholder="Máximo"
-                value={urlFilters.maxAmount ?? ''}
-                onValueChange={(v) => update({ maxAmount: v || undefined })}
+                value={shown('maxAmount')}
+                onValueChange={(v) => typeInto('maxAmount', v)}
               />
             </div>
           </div>
@@ -313,8 +320,8 @@ export function Filters() {
           <Field label="Descripción" htmlFor="f-search" small>
             <Input
               id="f-search"
-              value={typedSearch ?? urlFilters.search ?? ''}
-              onChange={(e) => typeSearch(e.target.value)}
+              value={shown('search')}
+              onChange={(e) => typeInto('search', e.target.value)}
               placeholder="Buscar…"
             />
           </Field>

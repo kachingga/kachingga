@@ -216,6 +216,32 @@ describe('Filters', () => {
     expect(calls).toEqual([{}]);
   });
 
+  it('amounts also go once you stop typing', async () => {
+    const user = userEvent.setup();
+    const calls: unknown[] = [];
+    renderWithApi(<Filters />, api(calls));
+    await screen.findByText('Cena');
+    await user.type(screen.getByLabelText('Monto mínimo'), '1500');
+    await user.type(screen.getByLabelText('Monto máximo'), '90000');
+    await waitFor(() =>
+      expect(calls.at(-1)).toEqual({ minAmountCents: 150000, maxAmountCents: 9000000 }),
+    );
+    expect(calls).toEqual([{}, { minAmountCents: 150000, maxAmountCents: 9000000 }]);
+  });
+
+  it('clearing the filters after an amount leaves nothing pending behind', async () => {
+    const user = userEvent.setup();
+    const calls: unknown[] = [];
+    renderWithApi(<Filters />, api(calls), '/grupos/g1/filtros?min=1500');
+    await screen.findByText('Cena');
+    await user.click(screen.getByRole('button', { name: 'Limpiar filtros' }));
+    await waitFor(() => expect(calls.at(-1)).toEqual({}));
+    const after = calls.length;
+    await new Promise((resolve) => setTimeout(resolve, 400));
+    expect(calls).toHaveLength(after);
+    expect(screen.getByLabelText('Monto mínimo')).toHaveValue('');
+  });
+
   it('picks a month as a range from the 1st to the last day', async () => {
     const calls: unknown[] = [];
     renderWithApi(<Filters />, api(calls));
