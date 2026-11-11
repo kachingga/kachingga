@@ -1,7 +1,8 @@
 import { initTRPC, TRPCError } from '@trpc/server'
 import superjson from 'superjson'
 import { ZodError } from 'zod'
-import { RATE_LIMIT_MESSAGE, RateLimiter } from '../lib/rateLimit'
+import { assertDatabaseHasRoom } from '../lib/dbSize'
+import { CREATING_PROCEDURES, CREATION_LIMIT_MESSAGE, RATE_LIMIT_MESSAGE, RateLimiter } from '../lib/rateLimit'
 import type { Context } from './context'
 
 const INTERNAL_MESSAGE = 'Error interno. Intentá de nuevo.'
@@ -40,7 +41,9 @@ export const router = t.router
 export const createCallerFactory = t.createCallerFactory
 export const publicProcedure = t.procedure.use(prismaErrors)
 
-export const protectedProcedure = publicProcedure.use(({ ctx, type, next }) => {
+const tooManyRequests = (message: string) => new TRPCError({ code: 'TOO_MANY_REQUESTS', message })
+
+export const protectedProcedure = publicProcedure.use(async ({ ctx, type, path, next }) => {
   if (!ctx.user) {
     // Supabase Auth didn't answer: the session may be fine, so it's not UNAUTHORIZED.
     if (ctx.authUnavailable) {
@@ -48,9 +51,13 @@ export const protectedProcedure = publicProcedure.use(({ ctx, type, next }) => {
     }
     throw new TRPCError({ code: 'UNAUTHORIZED' })
   }
-  // Only real HTTP requests (ctx.ip set) are limited; callers built in tests aren't.
-  if (type === 'mutation' && ctx.ip && !limiter.allowWrite(ctx.user.id)) {
-    throw new TRPCError({ code: 'TOO_MANY_REQUESTS', message: RATE_LIMIT_MESSAGE })
+  const creates = CREATING_PROCEDURES.has(path)
+  // Only real HTTP requests (ctx.ip set) are limited; callers built in tests (and the seed) aren't.
+  if (ctx.ip) {
+    if (type === 'mutation' && !limiter.allowWrite(ctx.user.id)) throw tooManyRequests(RATE_LIMIT_MESSAGE)
+    if (!limiter.allowCall(ctx.user.id, path)) throw tooManyRequests(RATE_LIMIT_MESSAGE)
+    if (creates && !limiter.allowCreation(ctx.user.id)) throw tooManyRequests(CREATION_LIMIT_MESSAGE)
   }
+  if (creates) await assertDatabaseHasRoom()
   return next({ ctx: { user: ctx.user } })
 })

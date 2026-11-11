@@ -106,6 +106,57 @@ describe('http', () => {
     expect((await call('/trpc/groups.preview', { headers: ip })).status).toBe(429)
   })
 
+  test('a trailing slash counts like the plain path, also at the end of a batch', async () => {
+    const ip = { 'x-forwarded-for': '198.51.100.34' }
+    // tRPC runs them as groups.preview (401 without login, not 404)...
+    for (let i = 0; i < 10; i++) expect((await call('/trpc/groups.preview/', { headers: ip })).status).toBe(401)
+    for (let i = 0; i < 10; i++) {
+      const res = await call('/trpc/health.ping,groups.preview/?batch=1', { headers: ip })
+      const body = (await res.json()) as unknown[]
+      expect(body).toHaveLength(2)
+      expect(res.status).not.toBe(429)
+    }
+    // ...so they count as groups.preview
+    expect((await call('/trpc/groups.preview', { headers: ip })).status).toBe(429)
+    expect((await call('/trpc/groups.preview/', { headers: ip })).status).toBe(429)
+    expect((await call('/trpc/health.ping,groups.preview/?batch=1', { headers: ip })).status).toBe(429)
+  })
+
+  test('fail closed: a path that is not a procedure is answered as NOT_FOUND before tRPC (Supabase is never called)', async () => {
+    const headers = { Authorization: 'Bearer valid', 'x-forwarded-for': '198.51.100.35' }
+    getUser.mockClear()
+    const paths = [
+      '/trpc/nope.nada',
+      '/trpc/constructor',
+      '/trpc/__proto__',
+      '/trpc/groups.preview%2F',
+      '/trpc//groups.preview',
+      '/trpc/groups.preview,groups.join', // not batched: one path with a comma
+      '/trpc/%E0%A4%A',
+      '/trpc',
+    ]
+    for (const path of paths) {
+      const res = await call(path, { headers })
+      expect(res.status).toBe(404)
+      expect(((await res.json()) as ErrorBody).error.json.data.code).toBe('NOT_FOUND')
+    }
+    // Batched: the whole request, one error per call
+    const res = await call('/trpc/health.ping,nope.nada?batch=1', { headers })
+    expect(res.status).toBe(404)
+    expect(((await res.json()) as ErrorBody[]).map((e) => e.error.json.data)).toEqual([
+      { code: 'NOT_FOUND', httpStatus: 404, path: 'health.ping' },
+      { code: 'NOT_FOUND', httpStatus: 404, path: 'nope.nada' },
+    ])
+    expect(getUser).not.toHaveBeenCalled()
+  })
+
+  test('unknown paths still count toward the per-IP limit', async () => {
+    const ip = { 'x-forwarded-for': '198.51.100.36' }
+    for (let i = 0; i < GLOBAL_RULE.limit; i++) expect((await call('/trpc/nope.nada', { headers: ip })).status).toBe(404)
+    expect((await call('/trpc/nope.nada', { headers: ip })).status).toBe(429)
+    expect((await call('/trpc/health.ping', { headers: ip })).status).toBe(429)
+  })
+
   test('a body over 1 MB → 413 PAYLOAD_TOO_LARGE before tRPC reads it', async () => {
     const post = (body: BodyInit, headers: Record<string, string> = {}) =>
       call('/trpc/groups.create', {

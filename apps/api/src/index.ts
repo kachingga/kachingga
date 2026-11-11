@@ -47,9 +47,13 @@ app.get('/health/db', async (c) => {
 const ipLimiter = new RateLimiter()
 app.use('/trpc/*', async (c, next) => {
   const ip = clientIp(c.req.raw, socketAddress(c))
+  const paths = trpcPaths(c)
   // Count every call (not short-circuit), like tRPC would run them all.
-  const allowed = trpcPaths(c).map((path) => ipLimiter.allow(ip, path))
+  const allowed = paths.map((path) => ipLimiter.allow(ip, path))
   if (allowed.includes(false)) return trpcError(c, 'TOO_MANY_REQUESTS', RATE_LIMIT_MESSAGE)
+  // Fail closed: only real procedures reach tRPC, so every call that runs was counted under its own
+  // name. Anything else gets tRPC's answer to an unknown procedure, from here.
+  if (!paths.every((path) => Object.hasOwn(appRouter._def.procedures, path))) return trpcError(c, 'NOT_FOUND', 'No encontrado')
   await next()
 })
 
@@ -75,19 +79,27 @@ app.onError((err, c) => {
   return c.json({ error: 'Error interno' }, 500)
 })
 
-// Procedures a tRPC request calls, decoded like tRPC does: `/trpc/a,b?batch=1` → ['a', 'b'].
+// Procedures a tRPC request calls, read exactly like tRPC's fetch adapter does: one slash trimmed
+// from each end (of the pathname, then of what follows `/trpc`), decoded, and split only when
+// batched. `/trpc/a,b/?batch=1` → ['a', 'b']; `/trpc/groups%2Epreview/` → ['groups.preview'].
+const trimSlashes = (path: string) => path.replace(/^\//, '').replace(/\/$/, '')
 function trpcPaths(c: HonoContext) {
-  const path = new URL(c.req.url).pathname.replace(/^\/trpc\/?/, '')
+  const url = new URL(c.req.url)
+  const path = trimSlashes(trimSlashes(url.pathname).slice('trpc'.length))
+  let decoded: string
   try {
-    return decodeURIComponent(path).split(',')
+    decoded = decodeURIComponent(path)
   } catch {
-    return [path] // tRPC rejects it anyway
+    return [path] // not a procedure: rejected as NOT_FOUND
   }
+  return isBatch(c) ? decoded.split(',') : [decoded]
 }
+const isBatch = (c: HonoContext) => new URL(c.req.url).searchParams.get('batch') === '1'
 
 // An error answered outside tRPC, in the same shape tRPC uses (superjson, one entry per call when
 // batched), so the app reads it like any other API error and shows `message`.
 const ERRORS = {
+  NOT_FOUND: { rpcCode: -32004, httpStatus: 404 },
   TOO_MANY_REQUESTS: { rpcCode: -32029, httpStatus: 429 },
   PAYLOAD_TOO_LARGE: { rpcCode: -32013, httpStatus: 413 },
 } as const
@@ -95,7 +107,7 @@ function trpcError(c: HonoContext, code: keyof typeof ERRORS, message: string) {
   const { rpcCode, httpStatus } = ERRORS[code]
   const error = (path: string) => ({ error: { json: { message, code: rpcCode, data: { code, httpStatus, path } } } })
   const paths = trpcPaths(c)
-  return c.json(c.req.query('batch') === '1' ? paths.map(error) : error(paths[0]!), httpStatus)
+  return c.json(isBatch(c) ? paths.map(error) : error(paths[0]!), httpStatus)
 }
 
 // Socket address when running under Bun.serve; undefined when called without a server (tests).

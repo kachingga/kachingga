@@ -1,5 +1,15 @@
 import { describe, expect, test } from 'bun:test'
-import { clientIp, GLOBAL_RULE, PROCEDURE_RULES, RateLimiter, USER_WRITE_RULES } from '../lib/rateLimit'
+import {
+  clientIp,
+  CREATING_PROCEDURES,
+  GLOBAL_RULE,
+  PROCEDURE_RULES,
+  RateLimiter,
+  USER_CREATION_RULE,
+  USER_PROCEDURE_RULES,
+  USER_WRITE_RULES,
+} from '../lib/rateLimit'
+import { appRouter } from '../trpc/router'
 
 function clock() {
   let now = 0
@@ -49,6 +59,47 @@ describe('RateLimiter', () => {
     expect(limiter.allowWrite('carla')).toBe(false)
     c.advance(perHour!.windowMs)
     expect(limiter.allowWrite('carla')).toBe(true)
+  })
+
+  test('invite codes per user too, each procedure on its own', () => {
+    const limiter = new RateLimiter(clock().now)
+    const { limit } = USER_PROCEDURE_RULES['groups.preview']!
+    for (let i = 0; i < limit; i++) expect(limiter.allowCall('ana', 'groups.preview')).toBe(true)
+    expect(limiter.allowCall('ana', 'groups.preview')).toBe(false)
+    expect(limiter.allowCall('ana', 'groups.join')).toBe(true)
+    expect(limiter.allowCall('beto', 'groups.preview')).toBe(true)
+    for (let i = 0; i < 100; i++) expect(limiter.allowCall('ana', 'groups.list')).toBe(true) // no per-user rule
+  })
+
+  test('creations per user and day, between all the creating procedures', () => {
+    const c = clock()
+    const limiter = new RateLimiter(c.now)
+    for (let i = 0; i < USER_CREATION_RULE.limit; i++) expect(limiter.allowCreation('ana')).toBe(true)
+    expect(limiter.allowCreation('ana')).toBe(false)
+    expect(limiter.allowCreation('beto')).toBe(true)
+    c.advance(USER_CREATION_RULE.windowMs - 1)
+    expect(limiter.allowCreation('ana')).toBe(false)
+    c.advance(1)
+    expect(limiter.allowCreation('ana')).toBe(true)
+  })
+
+  test('a path that names an inherited property (constructor…) is not a rule: it only counts toward the global limit', () => {
+    const limiter = new RateLimiter(clock().now)
+    for (const path of ['constructor', '__proto__', 'toString', 'hasOwnProperty']) {
+      for (let i = 0; i < 10; i++) {
+        expect(limiter.allow('1.1.1.1', path)).toBe(true)
+        expect(limiter.allowCall('ana', path)).toBe(true)
+      }
+    }
+  })
+
+  test('every rule and every creating procedure names a real procedure (a typo would leave it unlimited)', () => {
+    // Typed like the nested router, but at runtime it's flat: { 'groups.preview': procedure, … }
+    const procedures = appRouter._def.procedures as unknown as Record<string, { _def: { type: string } }>
+    for (const path of [...Object.keys(PROCEDURE_RULES), ...Object.keys(USER_PROCEDURE_RULES)]) {
+      expect(Object.hasOwn(procedures, path)).toBe(true)
+    }
+    for (const path of CREATING_PROCEDURES) expect(procedures[path]?._def.type).toBe('mutation')
   })
 })
 

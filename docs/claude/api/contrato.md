@@ -29,7 +29,7 @@ Schema en `src/db/models/*.prisma`.
 
 ## Procedures tRPC
 
-Todos con `protectedProcedure` salvo `health.ping`. Inputs en `src/schemas.ts`, con topes (ids ≤ 40, listas ≤ 100: `docs/claude/api/seguridad.md` → "Límites contra abuso"). Los que crean algo con cupo (`groups.create`, `participants.add`, `groups.join` como nuevo, `categories.create`, `savedFilters.create`, `expenses.create`, `settlements.create`) responden `BAD_REQUEST` con el mensaje al llegar al cupo (`lib/quotas.ts`).
+Todos con `protectedProcedure` salvo `health.ping`. Inputs en `src/schemas.ts`, con topes (ids ≤ 40, listas ≤ 100: `docs/claude/api/seguridad.md` → "Límites contra abuso"). Los que crean algo con cupo (`groups.create`, `participants.add`, `groups.join` como nuevo, `categories.create`, `savedFilters.create`, `expenses.create`, `settlements.create`) responden `BAD_REQUEST` con el mensaje al llegar al cupo (`lib/quotas.ts`). Esos mismos (`CREATING_PROCEDURES`, con `groups.join` siempre) tienen un tope diario por usuario (`TOO_MANY_REQUESTS`) y, con `MAX_DB_MB`, se rechazan mientras la base esté llena (`SERVICE_UNAVAILABLE`): `docs/claude/api/seguridad.md` → "Límites contra abuso".
 
 | Procedure | Tipo | Qué hace |
 |-----------|------|----------|

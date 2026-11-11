@@ -31,7 +31,7 @@ API en Hono + tRPC sobre Bun, con Prisma contra PostgreSQL en Supabase. Paquete 
 4. Datos de una persona → filtrar por `ctx.user.id`.
 5. Input validado con Zod, **con tope en todo**: largo de los textos, montos, ids con `id` de `schemas.ts` (nunca `z.string()` suelto) y `.max()` en todo array. Sin tope, un solo pedido puede llenar la base.
 6. **Agregarlo a `src/__tests__/integration/authorization.test.ts`**: en `attacks` si toca un grupo, o en `notGroupScoped` con el motivo. Si es una mutation, además en `archivedWrites` (se rechaza en un grupo archivado) o en `writableWhenArchived` con el motivo. Si no, ese test falla.
-7. Si es caro o se presta a fuerza bruta, sumarle un límite en `PROCEDURE_RULES` (`lib/rateLimit.ts`). Si crea filas que crecen con el uso, ¿necesita un cupo? (`lib/quotas.ts`, y la regla en el `CLAUDE.md` raíz).
+7. Si es caro o se presta a fuerza bruta, sumarle un límite en `PROCEDURE_RULES` (`lib/rateLimit.ts`). Si crea filas: sumarlo a `CREATING_PROCEDURES` (tope diario por usuario y guardia de tamaño de la base) y pensar si necesita un cupo (`lib/quotas.ts`, y la regla en el `CLAUDE.md` raíz).
 8. Tests de integración: sin login, no miembro, grupo archivado si escribe, caso feliz y cada regla de negocio (`docs/claude/api/tests.md`).
 
 ## Comandos
@@ -65,15 +65,15 @@ bun run db:seed                  # datos de prueba en DEV
 
 - **`.env` → DEV** (`stg`, ref `nraoqdaplvvsakvtlcam`): lo usan `bun run dev`, los scripts de DB y Prisma Studio.
 - **`.env.prod` → PROD** (`prod`, ref `czrkjokurbmbbvobvmxd`): solo para `db:migrate:prod` y como referencia de las variables de Railway. `.env.prod` no lo carga nadie salvo `prisma.config.ts` cuando `PRISMA_ENV_FILE=.env.prod`.
-- Ambos gitignoreados; cada línea del `.env.sample` dice de dónde sale el valor. Bun carga `.env` solo. Variables: `DATABASE_URL` (transaction pooler, 6543), `DIRECT_URL` (session pooler, 5432, migraciones), `SUPABASE_URL`, `SUPABASE_SECRET_KEY`, `PORT`, `CORS_ORIGINS`, `SENTRY_DSN` / `SENTRY_ENVIRONMENT` (vacías = Sentry apagado), `SEED_USER_PASSWORD` (solo dev).
+- Ambos gitignoreados; cada línea del `.env.sample` dice de dónde sale el valor. Bun carga `.env` solo. Variables: `DATABASE_URL` (transaction pooler, 6543), `DIRECT_URL` (session pooler, 5432, migraciones), `SUPABASE_URL`, `SUPABASE_SECRET_KEY`, `PORT`, `CORS_ORIGINS`, `SENTRY_DSN` / `SENTRY_ENVIRONMENT` (vacías = Sentry apagado), `MAX_DB_MB` (vacía = sin guardia de tamaño de la base), `SEED_USER_PASSWORD` (solo dev).
 
 ## Arquitectura
 
 ```
 src/
-├── index.ts              # Hono: GET /health, GET /health/db (monitoreo) + tRPC en /trpc/* (antes: límite por IP y de 1 MB)
+├── index.ts              # Hono: GET /health, GET /health/db (monitoreo) + tRPC en /trpc/* (antes: límite por IP, solo procedures reales y 1 MB)
 ├── schemas.ts            # Zod + helpers puros compartidos con la web (@kachingga/api/schemas)
-├── trpc/                 # init.ts (superjson, errorFormatter, errores Prisma, límite de escrituras, procedures base), context.ts
+├── trpc/                 # init.ts (superjson, errorFormatter, errores Prisma, límites por usuario y de tamaño de la base, procedures base), context.ts
 │                         # (token de Supabase → ctx.user), router.ts (AppRouter), routers/ (uno por dominio)
 ├── db/                   # schema.prisma (generator + datasource), models/*.prisma (uno por dominio), migrations/,
 │                         # index.ts (`prisma`: PrismaClient con @prisma/adapter-pg), generated/ (gitignoreado)

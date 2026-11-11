@@ -1,7 +1,8 @@
-// Limits against abuse (#107): quotas, caps on inputs, races and the per-user write limit.
-// The per-IP limits and the request size are HTTP concerns: http.test.ts.
-import { describe, expect, test } from 'bun:test'
+// Limits against abuse (#107): quotas, caps on inputs, races, the per-user limits and the database
+// size guard. The per-IP limits and the request size are HTTP concerns: http.test.ts.
+import { describe, expect, setSystemTime, test } from 'bun:test'
 import { TRPCError } from '@trpc/server'
+import { DB_FULL_MESSAGE } from '../../lib/dbSize'
 import {
   MAX_CATEGORIES_PER_GROUP,
   MAX_EXPENSES_PER_GROUP,
@@ -10,7 +11,14 @@ import {
   MAX_SAVED_FILTERS_PER_GROUP,
   MAX_SETTLEMENTS_PER_GROUP,
 } from '../../lib/quotas'
-import { USER_WRITE_RULES } from '../../lib/rateLimit'
+import {
+  CREATING_PROCEDURES,
+  CREATION_LIMIT_MESSAGE,
+  RATE_LIMIT_MESSAGE,
+  USER_CREATION_RULE,
+  USER_PROCEDURE_RULES,
+  USER_WRITE_RULES,
+} from '../../lib/rateLimit'
 import { setupTestApi } from './setup'
 
 const { caller, prisma, categoryId } = await setupTestApi()
@@ -45,6 +53,29 @@ describe('quotas', () => {
     // Claiming someone who's already there doesn't add anyone
     await caller(`claim-lim-${n}`).groups.join({ inviteCode: group.inviteCode, participantId: last.id })
     expect(await prisma.participant.count({ where: { groupId: group.id } })).toBe(MAX_PARTICIPANTS_PER_GROUP)
+  })
+
+  test('a group already over the people cap keeps working; it just takes nobody else', async () => {
+    const { ana, group, me } = await newGroup()
+    await prisma.participant.createMany({
+      data: Array.from({ length: MAX_PARTICIPANTS_PER_GROUP + 4 }, (_, i) => ({ groupId: group.id, name: `P${i}` })),
+    })
+    const everyone = (await ana.groups.get({ groupId: group.id })).participants.map((p) => p.id)
+    expect(everyone.length).toBeGreaterThan(MAX_PARTICIPANTS_PER_GROUP)
+    const expense = await ana.expenses.create({
+      groupId: group.id,
+      description: 'Asado',
+      date: day,
+      amountCents: 100 * everyone.length,
+      currency: 'ARS',
+      paidById: me,
+      split: { type: 'EQUAL', participantIds: everyone },
+    })
+    expect(expense.splits).toHaveLength(everyone.length)
+    await ana.participants.rename({ participantId: everyone.at(-1)!, name: 'Renombrado' })
+    await expect(ana.participants.add({ groupId: group.id, name: 'Uno más' })).rejects.toThrow(
+      `Un grupo puede tener hasta ${MAX_PARTICIPANTS_PER_GROUP} personas.`,
+    )
   })
 
   test(`each user creates at most ${MAX_GROUPS_CREATED_PER_USER} groups (archived ones count)`, async () => {
@@ -297,7 +328,7 @@ describe('races', () => {
   })
 })
 
-describe('per-user write limit', () => {
+describe('per-user limits', () => {
   test('too many writes in a row from one user → TOO_MANY_REQUESTS; reads and other users are not affected', async () => {
     const { group } = await newGroup()
     const ip = '203.0.113.50'
@@ -307,5 +338,118 @@ describe('per-user write limit', () => {
     await expect(flooder.profile.update({ paymentAlias: null })).rejects.toThrow('Demasiados pedidos')
     expect(await flooder.profile.get()).toEqual({ paymentAlias: null })
     await caller(`other-lim-${n}`, ip).groups.join({ inviteCode: group.inviteCode, name: 'Otra' })
+  })
+
+  test('invite codes have their own limit per user, whatever the network', async () => {
+    const { group } = await newGroup()
+    const user = `guess-lim-${n}`
+    const fromHome = caller(user, '203.0.113.60')
+    const fromWork = caller(user, '203.0.113.61')
+    const code = { inviteCode: group.inviteCode }
+    for (let i = 0; i < USER_PROCEDURE_RULES['groups.preview']!.limit; i++) await (i % 2 ? fromHome : fromWork).groups.preview(code)
+    await expect(fromWork.groups.preview(code)).rejects.toThrow(RATE_LIMIT_MESSAGE)
+    // Someone else on the same network isn't affected
+    await caller(`other-guess-lim-${n}`, '203.0.113.60').groups.preview(code)
+
+    // Joining counts on its own (here with a code that can't exist: 0 is never in one)
+    const wrong = { inviteCode: '00000000', name: 'Eve' }
+    for (let i = 0; i < USER_PROCEDURE_RULES['groups.join']!.limit; i++) {
+      expect(await codeOf((i % 2 ? fromHome : fromWork).groups.join(wrong))).toBe('NOT_FOUND')
+    }
+    await expect(fromHome.groups.join({ ...code, name: 'Eve' })).rejects.toThrow(RATE_LIMIT_MESSAGE)
+  })
+
+  test(`each user creates at most ${USER_CREATION_RULE.limit} things per day, between every creating mutation`, async () => {
+    const other = await newGroup()
+    const ip = '203.0.113.70'
+    const busy = caller(`busy-lim-${n}`, ip)
+    // Fake clock: a couple of minutes every 25 writes, so the per-minute write limit doesn't kick in first.
+    const start = Date.now()
+    let minutes = 0
+    const tick = () => setSystemTime(new Date(start + (minutes += 2) * 60_000))
+    setSystemTime(new Date(start))
+    try {
+      const own = await busy.groups.create({ name: 'Mío', baseCurrency: 'ARS', myName: 'Yo' })
+      const me = (await busy.groups.get({ groupId: own.id })).myParticipantId
+      const juan = await busy.participants.add({ groupId: own.id, name: 'Juan' })
+      const pay = () =>
+        busy.settlements.create({ groupId: own.id, fromId: juan.id, toId: me, amountCents: 100, currency: 'ARS', date: day })
+      for (let created = 2; created < USER_CREATION_RULE.limit; created++) {
+        if (created % 25 === 0) tick()
+        await pay()
+      }
+      tick()
+      const attempts: Record<string, () => Promise<unknown>> = {
+        'groups.create': () => busy.groups.create({ name: 'Otro', baseCurrency: 'ARS', myName: 'Yo' }),
+        'groups.join': () => busy.groups.join({ inviteCode: other.group.inviteCode, name: 'Yo' }),
+        'participants.add': () => busy.participants.add({ groupId: own.id, name: 'Beto' }),
+        'categories.create': () => busy.categories.create({ groupId: own.id, name: 'Nafta', icon: 'fuel', color: 'teal' }),
+        'expenses.create': () =>
+          busy.expenses.create({
+            groupId: own.id,
+            description: 'Pizza',
+            date: day,
+            amountCents: 100,
+            currency: 'ARS',
+            paidById: me,
+            split: { type: 'EQUAL', participantIds: [me] },
+          }),
+        'settlements.create': pay,
+        'savedFilters.create': () => busy.savedFilters.create({ groupId: own.id, name: 'Míos', filters: {} }),
+      }
+      expect(Object.keys(attempts).sort()).toEqual([...CREATING_PROCEDURES].sort())
+      for (const attempt of Object.values(attempts)) await expect(attempt()).rejects.toThrow(CREATION_LIMIT_MESSAGE)
+
+      // Reads, updates and deletes still work, and other users can still create
+      const [last] = await busy.settlements.list({ groupId: own.id })
+      await busy.settlements.delete({ settlementId: last!.id })
+      await busy.groups.rename({ groupId: own.id, name: 'Renombrado' })
+      await caller(`calm-lim-${n}`, ip).groups.create({ name: 'Tranqui', baseCurrency: 'ARS', myName: 'Yo' })
+      // The next day it starts over
+      setSystemTime(new Date(start + USER_CREATION_RULE.windowMs + 60 * 60_000))
+      await pay()
+    } finally {
+      setSystemTime()
+    }
+  })
+})
+
+describe('database size guard (MAX_DB_MB)', () => {
+  test('over MAX_DB_MB, creating anything is rejected; reads, updates and deletes keep working', async () => {
+    const { ana, group, me } = await newGroup()
+    const juan = await ana.participants.add({ groupId: group.id, name: 'Juan' })
+    const payment = await ana.settlements.create({
+      groupId: group.id,
+      fromId: juan.id,
+      toId: me,
+      amountCents: 100,
+      currency: 'ARS',
+      date: day,
+    })
+    process.env.MAX_DB_MB = '1' // an empty test database already takes a few MB
+    try {
+      const expense = ana.expenses.create({
+        groupId: group.id,
+        description: 'Pizza',
+        date: day,
+        amountCents: 100,
+        currency: 'ARS',
+        paidById: me,
+        split: { type: 'EQUAL', participantIds: [me] },
+      })
+      await expect(expense).rejects.toThrow(DB_FULL_MESSAGE)
+      expect(await codeOf(ana.groups.create({ name: 'Otro', baseCurrency: 'ARS', myName: 'Ana' }))).toBe('SERVICE_UNAVAILABLE')
+      expect(await codeOf(caller(`new-db-${n}`).groups.join({ inviteCode: group.inviteCode, name: 'Beto' }))).toBe('SERVICE_UNAVAILABLE')
+
+      await ana.groups.rename({ groupId: group.id, name: 'Sigue andando' })
+      await ana.settlements.delete({ settlementId: payment.id })
+      expect((await ana.groups.get({ groupId: group.id })).name).toBe('Sigue andando')
+
+      // Under the limit (the size read a moment ago is reused), creating works again
+      process.env.MAX_DB_MB = '100000'
+      await ana.participants.add({ groupId: group.id, name: 'Beto' })
+    } finally {
+      delete process.env.MAX_DB_MB
+    }
   })
 })

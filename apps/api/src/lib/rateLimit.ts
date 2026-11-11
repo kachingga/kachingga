@@ -4,12 +4,14 @@
 // Two kinds of limits:
 // - Per IP (GLOBAL_RULE + PROCEDURE_RULES): checked in a Hono middleware before the tRPC handler
 //   (index.ts), so a rejected request never reaches Supabase to validate its token.
-// - Per user (USER_WRITE_RULES): every mutation, checked after login (protectedProcedure in trpc/init.ts).
+// - Per user (USER_PROCEDURE_RULES, USER_WRITE_RULES, USER_CREATION_RULE): checked after login
+//   (protectedProcedure in trpc/init.ts).
 
 export type Rule = { limit: number; windowMs: number }
 
 const MINUTE = 60_000
 const HOUR = 60 * MINUTE
+const DAY = 24 * HOUR
 
 // Every tRPC call from one IP counts here (a batched request counts once per procedure).
 export const GLOBAL_RULE: Rule = { limit: 300, windowMs: MINUTE }
@@ -29,6 +31,12 @@ export const PROCEDURE_RULES: Record<string, Rule> = {
   'profile.deleteAccount': { limit: 5, windowMs: 10 * MINUTE },
 }
 
+// The same per user, on top of the per-IP ones: an account doesn't get more by switching networks.
+export const USER_PROCEDURE_RULES: Record<string, Rule> = {
+  'groups.preview': { limit: 20, windowMs: 10 * MINUTE },
+  'groups.join': { limit: 20, windowMs: 10 * MINUTE },
+}
+
 // Writes per user (any mutation): far above what a person does by hand, and they bound how fast
 // one account can fill the database.
 export const USER_WRITE_RULES: Rule[] = [
@@ -36,7 +44,25 @@ export const USER_WRITE_RULES: Rule[] = [
   { limit: 300, windowMs: HOUR },
 ]
 
+// Mutations that create rows (every join counts, also claiming someone). Between all of them, one
+// user creates at most USER_CREATION_RULE per day; the database size guard (lib/dbSize.ts) also
+// applies to them. A new mutation that creates rows goes here.
+export const CREATING_PROCEDURES: ReadonlySet<string> = new Set([
+  'groups.create',
+  'groups.join',
+  'participants.add',
+  'categories.create',
+  'expenses.create',
+  'settlements.create',
+  'savedFilters.create',
+])
+export const USER_CREATION_RULE: Rule = { limit: 200, windowMs: DAY }
+
 export const RATE_LIMIT_MESSAGE = 'Demasiados pedidos seguidos. Esperá un momento y probá de nuevo.'
+export const CREATION_LIMIT_MESSAGE = 'Llegaste al máximo de cosas nuevas por hoy. Probá de nuevo mañana.'
+
+// Rules are looked up by a path that comes from the request: only their own keys (not `constructor`…).
+const ruleFor = (rules: Record<string, Rule>, path: string) => (Object.hasOwn(rules, path) ? rules[path] : undefined)
 
 export class RateLimiter {
   private hits = new Map<string, { count: number; resetAt: number }>()
@@ -65,15 +91,26 @@ export class RateLimiter {
   /** Counts one call to `path` from `ip`; false if it goes over the global or the procedure limit. */
   allow(ip: string, path: string) {
     const globalOk = this.hit(ip, GLOBAL_RULE)
-    const rule = PROCEDURE_RULES[path]
+    const rule = ruleFor(PROCEDURE_RULES, path)
     const procedureOk = rule ? this.hit(`${ip}:${path}`, rule) : true
     return globalOk && procedureOk
+  }
+
+  /** Counts one call to `path` by `userId`; false if it goes over its USER_PROCEDURE_RULES limit. */
+  allowCall(userId: string, path: string) {
+    const rule = ruleFor(USER_PROCEDURE_RULES, path)
+    return rule ? this.hit(`user:${userId}:${path}`, rule) : true
   }
 
   /** Counts one write by `userId`; false if it goes over any of USER_WRITE_RULES. */
   allowWrite(userId: string) {
     const results = USER_WRITE_RULES.map((rule) => this.hit(`user:${userId}:${rule.windowMs}`, rule))
     return results.every(Boolean)
+  }
+
+  /** Counts one creation (CREATING_PROCEDURES) by `userId`; false if it goes over USER_CREATION_RULE. */
+  allowCreation(userId: string) {
+    return this.hit(`user:${userId}:creations`, USER_CREATION_RULE)
   }
 }
 

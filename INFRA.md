@@ -61,6 +61,7 @@ Mismas variables en los dos entornos, con los valores de su base (staging = `app
 | `SEED_USER_PASSWORD` | **Solo `apps/api/.env` (dev).** Contraseña de los usuarios de prueba de `bun run db:seed`. No va en Railway ni en `.env.prod` |
 | `SENTRY_DSN` | DSN del proyecto `kachingga-api` de Sentry (Settings → Client Keys). Sin él no se reporta nada (local, tests, CI) |
 | `SENTRY_ENVIRONMENT` | `production` o `staging` |
+| `MAX_DB_MB` | Tamaño de la base (MB, `pg_database_size`) a partir del cual la API deja de crear cosas (editar y borrar siguen andando) y lo avisa a Sentry: `docs/claude/api/seguridad.md` → "Límites contra abuso". **Prod: `400`. Staging: `80`.** Suman 480 de los 500 MB de la org ("Plan de Supabase"); el aviso del backup (350 MB de prod) salta antes. Vacía = sin guardia (local, tests, CI) |
 | _(v2)_ `LLM_API_KEY` | API key del proveedor del agente |
 
 ### Railway — servicio `web` (`apps/web`)
