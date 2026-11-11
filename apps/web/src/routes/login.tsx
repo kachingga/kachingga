@@ -3,6 +3,7 @@ import { Link, Navigate, useNavigate } from 'react-router';
 import { ArrowRight } from 'lucide-react';
 
 import { AuthLayout } from '@/components/auth-layout';
+import { EmailLinkChoice } from '@/components/email-link-choice';
 import { GoogleSignIn } from '@/components/google-sign-in';
 import { Field } from '@/components/kit';
 import { ConfirmEmailSent } from '@/components/mail-sent';
@@ -18,9 +19,9 @@ import { useCaptcha } from '@/lib/use-captcha';
 export function Login() {
   const navigate = useNavigate();
   const returnTo = useReturnTo();
-  // The link of the confirmation mail comes here (src/lib/auth.ts → signUp).
-  const emailLink = useEmailLink(confirmEmail);
   const session = useSession();
+  // The link of the confirmation mail comes here (src/lib/auth.ts → signUp).
+  const emailLink = useEmailLink(confirmEmail, session);
   const captcha = useCaptcha();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -40,9 +41,20 @@ export function Login() {
     else setError(authErrorMessage(authError));
   }
 
+  if (emailLink.status === 'ask')
+    return (
+      <EmailLinkChoice
+        email={session?.user.email}
+        onContinue={emailLink.proceed}
+        onStay={emailLink.stay}
+      />
+    );
+
   // Email confirmed, or already logged in (confirming logs in and remounts the whole app, so this
-  // screen can come back without the token): on to where it was going.
-  if (emailLink === 'verified' || session) return <Navigate to={returnTo} replace />;
+  // screen can come back without the token, or with it while its answer arrives): on to where it
+  // was going.
+  if (emailLink.status === 'verified' || (session && emailLink.status !== 'verifying'))
+    return <Navigate to={returnTo} replace />;
 
   if (unconfirmed)
     return (
@@ -65,12 +77,12 @@ export function Login() {
 
   return (
     <AuthLayout title="Qué bueno verte" subtitle="Entrá a tu cuenta.">
-      {emailLink === 'verifying' && (
+      {emailLink.status === 'verifying' && (
         <p role="status" className="mb-4 text-sm text-muted-foreground">
           Confirmando tu email…
         </p>
       )}
-      {emailLink === 'invalid' && (
+      {emailLink.status === 'invalid' && (
         <p role="alert" className="mb-4 text-sm text-destructive">
           El link para confirmar tu email venció o ya se usó. Si ya lo confirmaste, entrá con tu
           email y contraseña.

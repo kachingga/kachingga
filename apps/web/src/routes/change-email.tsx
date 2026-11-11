@@ -1,6 +1,7 @@
 import { Link, Navigate } from 'react-router';
 
 import { AuthLayout } from '@/components/auth-layout';
+import { EmailLinkChoice } from '@/components/email-link-choice';
 import { MailSent } from '@/components/mail-sent';
 import { Button } from '@/components/ui/button';
 import { useSession, verifyEmailChange } from '@/lib/auth';
@@ -15,10 +16,14 @@ import { useEmailLinkResult } from '@/lib/email-link';
  */
 export function ChangeEmail() {
   const session = useSession();
-  const { status, result } = useEmailLinkResult(verifyEmailChange);
+  const { status, result, proceed, stay } = useEmailLinkResult(verifyEmailChange, session);
 
   // Nothing to confirm here (e.g. reloaded after confirming): the email is in Mi cuenta.
   if (status === 'none') return <Navigate to="/cuenta" replace />;
+
+  // Logged in: the person says first whether to use the link (one more tap).
+  if (status === 'ask')
+    return <EmailLinkChoice email={session?.user.email} onContinue={proceed} onStay={stay} />;
 
   if (status === 'verifying')
     return (

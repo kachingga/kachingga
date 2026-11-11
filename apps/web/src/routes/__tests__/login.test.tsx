@@ -4,6 +4,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import { Route, Routes } from 'react-router';
 
+import { confirmEmail, useSession } from '@/lib/auth';
 import { renderWithApi } from '@/test/render';
 import { Login } from '@/routes/login';
 
@@ -19,9 +20,28 @@ vi.mock('@/lib/auth', () => ({
 }));
 vi.mock('@marsidev/react-turnstile', () => import('@/test/fake-turnstile'));
 
-afterEach(() => vi.unstubAllEnvs());
+afterEach(() => {
+  vi.unstubAllEnvs();
+  vi.mocked(useSession).mockReturnValue(null);
+});
 
 const invite = '/grupos/unirme?codigo=ABCDEFGH';
+const yo = { user: { email: 'yo@example.com' } } as never;
+// What Supabase answers when the link confirms the email and logs in (auth-js `verifyOtp`).
+const loggedInBy = (email: string) =>
+  ({ data: { user: { email }, session: { user: { email } } }, error: null }) as never;
+
+function renderLinkAt(url: string) {
+  return renderWithApi(
+    <Routes>
+      <Route path="/login" element={<Login />} />
+      <Route path="/grupos" element={<p>Mis grupos</p>} />
+      <Route path="/grupos/unirme" element={<p>Unirme al grupo</p>} />
+    </Routes>,
+    {},
+    url,
+  );
+}
 
 function authError(code: string, status = 400) {
   return { message: code, code, name: 'AuthApiError', status } as never;
@@ -143,19 +163,55 @@ describe('Login', () => {
   });
 
   it("confirms the email with the mail's link and goes on to the invite", async () => {
-    const { confirmEmail } = await import('@/lib/auth');
-    renderWithApi(
-      <Routes>
-        <Route path="/login" element={<Login />} />
-        <Route path="/grupos/unirme" element={<p>Unirme al grupo</p>} />
-      </Routes>,
-      {},
-      `/login?volver=${encodeURIComponent(invite)}#token_hash=pkce_abc`,
-    );
+    vi.mocked(confirmEmail).mockResolvedValueOnce(loggedInBy('nueva@example.com'));
+    renderLinkAt(`/login?volver=${encodeURIComponent(invite)}#token_hash=pkce_abc`);
 
     expect(screen.getByRole('status')).toHaveTextContent('Confirmando tu email…');
     expect(await screen.findByText('Unirme al grupo')).toBeInTheDocument();
     expect(confirmEmail).toHaveBeenCalledWith('pkce_abc');
+    // Which account it entered.
+    expect(await screen.findByText('Entraste como nueva@example.com')).toBeInTheDocument();
+  });
+
+  it('with a session already open, asks before using the link', () => {
+    vi.mocked(useSession).mockReturnValue(yo);
+    renderLinkAt(`/login?volver=${encodeURIComponent(invite)}#token_hash=open-ask`);
+
+    expect(screen.getByRole('heading', { name: '¿Seguís con este link?' })).toBeInTheDocument();
+    expect(screen.getByText('yo@example.com')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Quedarme en mi cuenta' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Seguir con el link' })).toBeInTheDocument();
+    expect(confirmEmail).not.toHaveBeenCalledWith('open-ask');
+  });
+
+  it('"Quedarme en mi cuenta" goes to my groups without using the link', async () => {
+    vi.mocked(useSession).mockReturnValue(yo);
+    const user = userEvent.setup();
+    renderLinkAt(`/login?volver=${encodeURIComponent(invite)}#token_hash=open-stay`);
+
+    await user.click(screen.getByRole('button', { name: 'Quedarme en mi cuenta' }));
+    expect(await screen.findByText('Mis grupos')).toBeInTheDocument();
+    expect(confirmEmail).not.toHaveBeenCalledWith('open-stay');
+  });
+
+  it('"Seguir con el link" confirms, goes on and says which account it entered', async () => {
+    vi.mocked(useSession).mockReturnValue(yo);
+    vi.mocked(confirmEmail).mockResolvedValueOnce(loggedInBy('otra@example.com'));
+    const user = userEvent.setup();
+    renderLinkAt(`/login?volver=${encodeURIComponent(invite)}#token_hash=open-proceed`);
+
+    await user.click(screen.getByRole('button', { name: 'Seguir con el link' }));
+    expect(await screen.findByText('Unirme al grupo')).toBeInTheDocument();
+    expect(confirmEmail).toHaveBeenCalledWith('open-proceed');
+    expect(await screen.findByText('Entraste como otra@example.com')).toBeInTheDocument();
+  });
+
+  it('does not use the link while the session is being restored', () => {
+    vi.mocked(useSession).mockReturnValue(undefined);
+    renderLinkAt('/login#token_hash=restoring');
+
+    expect(screen.getByRole('status')).toHaveTextContent('Confirmando tu email…');
+    expect(confirmEmail).not.toHaveBeenCalledWith('restoring');
   });
 
   it('goes on when already logged in (confirming the email remounts the whole app)', async () => {

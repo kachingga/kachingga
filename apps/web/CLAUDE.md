@@ -100,6 +100,7 @@ src/
 │                             # auth-layout, skeletons, error-state, number-input, exchange-rate-fields,
 │                             # confirm-provider, animated-layout, api-provider, require-auth, offline-banner,
 │                             # category-picker, category-editor, mail-sent ("Revisá tu mail" / "Reenviar mail"),
+│                             # email-link-choice (link de un mail con la sesión abierta: seguir o quedarse),
 │                             # password-input (contraseña con botón para verla, al lado: no adentro, por 1Password)
 ├── lib/                      # trpc, supabase (ÚNICO que importa Supabase), auth, auth-errors (en español),
 │                             # email-link (links de los mails), use-captcha (Turnstile), format, optimistic,

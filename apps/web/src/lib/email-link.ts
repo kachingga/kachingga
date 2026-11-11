@@ -1,9 +1,16 @@
-import type { AuthError } from '@supabase/supabase-js';
+import type { AuthError, Session } from '@supabase/supabase-js';
 import { useEffect, useState } from 'react';
 import { useLocation, useNavigate, type Location } from 'react-router';
+import { toast } from 'sonner';
 
-type EmailLinkStatus = 'none' | 'verifying' | 'verified' | 'invalid';
-type Verification = { error: AuthError | null };
+import { HOME } from '@/lib/return-to';
+
+type EmailLinkStatus = 'none' | 'ask' | 'verifying' | 'verified' | 'invalid';
+// `data.session`: the session the link started, if it started one (auth-js `verifyOtp`).
+type Verification = {
+  error: AuthError | null;
+  data?: { session?: { user?: { email?: string } } | null };
+};
 
 // Shared by every mount of a screen. Logging in remounts the whole app (ApiProvider keys its cache by
 // user), so the screen can mount again, with the token still in the URL or already out of it: it must
@@ -30,21 +37,39 @@ function linkToken(location: Location): { token: string | null; inUrl: boolean }
  * exchanges it (it works in any browser, unlike a PKCE code) and the token leaves the URL, so
  * reloading doesn't try it again. 'none' when the URL has no token. `result`: what `verify` answered
  * (null until then, or if it threw).
+ *
+ * `session`: the one already open in this browser (`useSession()`). With one, the link isn't used on
+ * its own: 'ask' until the person picks, `proceed` to use it or `stay` to keep the open session (it
+ * drops the token and goes to the home). While the session is still being restored (`undefined`) it
+ * waits. If the link starts a session, a toast says whose.
  */
 export function useEmailLinkResult<R extends Verification>(
   verify: (tokenHash: string) => Promise<R>,
-): { status: EmailLinkStatus; result: R | null } {
+  session: Session | null | undefined,
+): { status: EmailLinkStatus; result: R | null; proceed: () => void; stay: () => void } {
   const location = useLocation();
   const navigate = useNavigate();
   const { token, inUrl } = linkToken(location);
   const [answer, setAnswer] = useState<{ token: string; result: R | null }>();
+  // The token the person chose to use with a session open.
+  const [chosen, setChosen] = useState<string>();
+
+  // Already being exchanged (e.g. the screen mounted again after the link logged in), chosen, or
+  // nobody logged in: it can be used.
+  const usable =
+    token !== null && (verifications.has(token) || chosen === token || session === null);
 
   useEffect(() => {
-    if (!token) return;
+    if (!token || !usable) return;
     let verification = verifications.get(token);
     if (!verification) {
       verification = verify(token).then(
-        (result) => result,
+        (result) => {
+          // Once per token (not per mount): which account the link logged in to.
+          const email = result.error ? undefined : result.data?.session?.user?.email;
+          if (email) toast.success(`Entraste como ${email}`);
+          return result;
+        },
         () => null,
       );
       verifications.set(token, verification);
@@ -63,17 +88,24 @@ export function useEmailLinkResult<R extends Verification>(
     return () => {
       active = false;
     };
-  }, [token, inUrl, verify, navigate, location.pathname, location.search]);
+  }, [token, usable, inUrl, verify, navigate, location.pathname, location.search]);
 
-  if (!token) return { status: 'none', result: null };
-  if (answer?.token !== token) return { status: 'verifying', result: null };
+  const proceed = () => setChosen(token ?? undefined);
+  // Replacing the entry takes the token out of the URL and the history.
+  const stay = () => void navigate(HOME, { replace: true });
+
+  if (!token) return { status: 'none', result: null, proceed, stay };
+  if (!usable && session) return { status: 'ask', result: null, proceed, stay };
+  if (answer?.token !== token) return { status: 'verifying', result: null, proceed, stay };
   const { result } = answer;
-  return { status: result && !result.error ? 'verified' : 'invalid', result };
+  return { status: result && !result.error ? 'verified' : 'invalid', result, proceed, stay };
 }
 
 /** `useEmailLinkResult`, when only whether the link worked matters. */
 export function useEmailLink(
   verify: (tokenHash: string) => Promise<Verification>,
-): EmailLinkStatus {
-  return useEmailLinkResult(verify).status;
+  session: Session | null | undefined,
+): { status: EmailLinkStatus; proceed: () => void; stay: () => void } {
+  const { status, proceed, stay } = useEmailLinkResult(verify, session);
+  return { status, proceed, stay };
 }

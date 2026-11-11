@@ -1,6 +1,6 @@
 import { screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { describe, expect, it, vi } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import { Route, Routes } from 'react-router';
 
@@ -14,6 +14,12 @@ vi.mock('@/lib/auth', () => ({
   verifyPasswordReset: vi.fn().mockResolvedValue({ data: {}, error: null }),
   updatePassword: vi.fn().mockResolvedValue({ data: {}, error: null }),
 }));
+
+afterEach(() => {
+  auth.session = null;
+});
+
+const yo = { user: { email: 'yo@example.com' } };
 
 function renderAt(url: string) {
   return renderWithApi(
@@ -81,6 +87,54 @@ describe('NewPassword', () => {
     renderAt('/nueva-contrasena');
     expect(screen.getByLabelText('Contraseña nueva')).toBeInTheDocument();
     auth.session = null;
+  });
+
+  it('with a session already open, asks before using the link', () => {
+    auth.session = yo;
+    renderAt('/nueva-contrasena#token_hash=open-ask');
+
+    expect(screen.getByRole('heading', { name: '¿Seguís con este link?' })).toBeInTheDocument();
+    expect(screen.getByText('yo@example.com')).toBeInTheDocument();
+    expect(screen.queryByLabelText('Contraseña nueva')).not.toBeInTheDocument();
+  });
+
+  it('"Quedarme en mi cuenta" goes to my groups without using the link', async () => {
+    const { verifyPasswordReset } = await import('@/lib/auth');
+    auth.session = yo;
+    const user = userEvent.setup();
+    renderAt('/nueva-contrasena#token_hash=open-stay');
+
+    await user.click(screen.getByRole('button', { name: 'Quedarme en mi cuenta' }));
+    expect(await screen.findByText('Mis grupos')).toBeInTheDocument();
+    expect(verifyPasswordReset).not.toHaveBeenCalledWith('open-stay');
+  });
+
+  it('"Seguir con el link" uses it, says which account it entered and shows the form', async () => {
+    const { verifyPasswordReset } = await import('@/lib/auth');
+    vi.mocked(verifyPasswordReset).mockResolvedValueOnce({
+      data: {
+        user: { email: 'otra@example.com' },
+        session: { user: { email: 'otra@example.com' } },
+      },
+      error: null,
+    } as never);
+    auth.session = yo;
+    const user = userEvent.setup();
+    renderAt('/nueva-contrasena#token_hash=open-proceed');
+
+    await user.click(screen.getByRole('button', { name: 'Seguir con el link' }));
+    expect(await screen.findByLabelText('Contraseña nueva')).toBeInTheDocument();
+    expect(verifyPasswordReset).toHaveBeenCalledWith('open-proceed');
+    expect(await screen.findByText('Entraste como otra@example.com')).toBeInTheDocument();
+  });
+
+  it('does not use the link while the session is being restored', async () => {
+    const { verifyPasswordReset } = await import('@/lib/auth');
+    auth.session = undefined;
+    renderAt('/nueva-contrasena#token_hash=restoring');
+
+    expect(screen.getByRole('status')).toHaveTextContent('Revisando el link…');
+    expect(verifyPasswordReset).not.toHaveBeenCalledWith('restoring');
   });
 
   it('shows why the password was not saved', async () => {
