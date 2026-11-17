@@ -686,6 +686,20 @@
 @utility tabular {
   font-variant-numeric: tabular-nums;
 }
+/* Touch area of at least 44 × 44 px (docs/claude/web/ui-ux.md) around a smaller control, without changing
+   how it looks: an invisible ::after centered on it (#173). The control has to be positioned
+   (`relative`), and the ones next to it far enough that the area doesn't cover them. */
+@utility tap-area {
+  &::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: max(100%, 2.75rem);
+    height: max(100%, 2.75rem);
+    translate: -50% -50%;
+  }
+}
 /* Tap feedback: shrinks while pressed and bounces back a little when released. */
 @utility press {
   transition:

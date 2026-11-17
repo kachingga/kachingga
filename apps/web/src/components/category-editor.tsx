@@ -113,7 +113,7 @@ export function CategoryEditor({
         <p id="icon-label" className="mb-1.5 text-xs font-medium text-muted-foreground">
           Ícono
         </p>
-        <div role="radiogroup" aria-labelledby="icon-label" className="flex flex-wrap gap-1.5">
+        <div role="radiogroup" aria-labelledby="icon-label" className="flex flex-wrap gap-2">
           {categoryIcons.map((key) => {
             const Icon = CATEGORY_ICONS[key];
             const checked = key === icon;
@@ -126,7 +126,7 @@ export function CategoryEditor({
                 aria-label={ICON_LABELS[key]}
                 onClick={() => setIcon(key)}
                 className={cn(
-                  'press grid size-9 place-items-center rounded-lg border transition-colors',
+                  'press tap-area relative grid size-9 place-items-center rounded-lg border transition-colors',
                   checked
                     ? 'border-primary bg-accent text-accent-foreground ring-2 ring-primary/30'
                     : 'border-border bg-card text-muted-foreground hover:bg-muted',
@@ -156,7 +156,7 @@ export function CategoryEditor({
                 title={COLOR_LABELS[key]}
                 onClick={() => setColor(key)}
                 className={cn(
-                  'press grid size-9 place-items-center rounded-full border-2',
+                  'press tap-area relative grid size-9 place-items-center rounded-full border-2',
                   CATEGORY_COLORS[key],
                   checked ? 'border-foreground' : 'border-transparent',
                 )}

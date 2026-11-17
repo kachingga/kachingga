@@ -358,7 +358,7 @@ function ExpenseFormBody({ groupId, group, expenseId, expense }: FormProps) {
 
           {/* Categoría */}
           <div>
-            <div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1">
+            <div className="flex flex-wrap items-center justify-between gap-x-3">
               <p
                 className="flex items-center gap-2 text-sm font-medium text-foreground"
                 id="category-label"
@@ -373,7 +373,7 @@ function ExpenseFormBody({ groupId, group, expenseId, expense }: FormProps) {
               </p>
               <Link
                 to={`/grupos/${groupId}/categorias`}
-                className="text-xs whitespace-nowrap text-muted-foreground underline-offset-2 hover:text-foreground hover:underline"
+                className="inline-flex min-h-11 items-center text-xs whitespace-nowrap text-muted-foreground underline-offset-2 hover:text-foreground hover:underline"
               >
                 Editar categorías
               </Link>
@@ -458,9 +458,9 @@ function ExpenseFormBody({ groupId, group, expenseId, expense }: FormProps) {
             </div>
 
             {splitType === 'EQUAL' && (
-              <div className="mt-3 space-y-2">
+              <div className="mt-1">
                 {participants.map((p) => (
-                  <label key={p.id} className="flex items-center gap-3">
+                  <label key={p.id} className="flex min-h-11 items-center gap-3">
                     <input
                       type="checkbox"
                       className="size-4 accent-primary"
