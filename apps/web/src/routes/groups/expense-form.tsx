@@ -101,6 +101,9 @@ function ExpenseFormBody({ groupId, group, expenseId, expense }: FormProps) {
   const [amountInput, setAmountInput] = useState(
     expense ? centsToNumeric(expense.amountCents) : '',
   );
+  // "Por monto" with the amount left empty: it's the sum of the parts, and follows them until the
+  // amount is typed by hand (#168). Editing starts with the expense's amount, typed.
+  const [amountFollowsParts, setAmountFollowsParts] = useState(!expense);
   const [currency, setCurrency] = useState<Currency>(initCurrency);
   const [paidById, setPaidById] = useState(expense?.paidById ?? group.myParticipantId);
   const rate = useExchangeRate(
@@ -134,6 +137,22 @@ function ExpenseFormBody({ groupId, group, expenseId, expense }: FormProps) {
     return Object.fromEntries(allIds.map((id) => [id, '']));
   });
   const [formError, setFormError] = useState<string | null>(null);
+
+  const sumCents = (shares: Record<string, string>) =>
+    Object.values(shares).reduce((s, v) => s + toCents(v), 0);
+  function setAmount(value: string) {
+    setAmountInput(value);
+    setAmountFollowsParts(value === '');
+  }
+  function setPartsAmount(cents: number) {
+    setAmountInput(cents > 0 ? centsToNumeric(cents) : '');
+    setAmountFollowsParts(true);
+  }
+  function setAmountShare(participantId: string, value: string) {
+    const next = { ...amountShares, [participantId]: value };
+    setAmountShares(next);
+    if (amountFollowsParts) setPartsAmount(sumCents(next));
+  }
 
   // Mutations: optimistic. The form closes right away showing the expense as saved; if the API
   // rejects it, it's taken back and a toast offers to reopen the form with what was entered.
@@ -293,7 +312,7 @@ function ExpenseFormBody({ groupId, group, expenseId, expense }: FormProps) {
   const isSaving = create.isPending || update.isPending;
 
   // Amount sums for live feedback
-  const amountSumCents = Object.values(amountShares).reduce((s, v) => s + toCents(v), 0);
+  const amountSumCents = sumCents(amountShares);
   const percentSum = Object.values(percentShares).reduce((s, v) => s + (toNumber(v) ?? 0), 0);
   const totalCents = toCents(amountInput);
   // Same split as the API (leftover cents to the first ones, in the group's order).
@@ -320,7 +339,7 @@ function ExpenseFormBody({ groupId, group, expenseId, expense }: FormProps) {
             <CalculatorInput
               id="amount"
               value={amountInput}
-              onValueChange={setAmountInput}
+              onValueChange={setAmount}
               required
               placeholder="0"
               className="h-14 font-display text-3xl font-bold tabular"
@@ -427,7 +446,10 @@ function ExpenseFormBody({ groupId, group, expenseId, expense }: FormProps) {
                 <Chip
                   key={t}
                   active={splitType === t}
-                  onClick={() => setSplitType(t)}
+                  onClick={() => {
+                    setSplitType(t);
+                    if (t === 'AMOUNT' && amountFollowsParts) setPartsAmount(amountSumCents);
+                  }}
                   className="flex-1"
                 >
                   {t === 'EQUAL' ? 'Igual' : t === 'AMOUNT' ? 'Por monto' : 'Por %'}
@@ -476,20 +498,19 @@ function ExpenseFormBody({ groupId, group, expenseId, expense }: FormProps) {
                     <CalculatorInput
                       aria-label={`Monto de ${p.name}`}
                       value={amountShares[p.id] ?? ''}
-                      onValueChange={(v) => setAmountShares({ ...amountShares, [p.id]: v })}
+                      onValueChange={(v) => setAmountShare(p.id, v)}
                       placeholder="0"
                       className="w-28 text-right"
                     />
                   </div>
                 ))}
-                <p
-                  className={`text-xs ${amountSumCents === totalCents ? 'text-positive' : 'text-muted-foreground'}`}
-                >
-                  Suma: {formatCents(amountSumCents, currency)} /{' '}
-                  {formatCents(totalCents, currency)}
-                  {amountSumCents !== totalCents &&
-                    ` (faltan ${formatCents(totalCents - amountSumCents, currency)})`}
-                </p>
+                <AmountSplitSum
+                  sumCents={amountSumCents}
+                  totalCents={totalCents}
+                  currency={currency}
+                  followsParts={amountFollowsParts}
+                  onUseSum={() => setPartsAmount(amountSumCents)}
+                />
               </div>
             )}
 
@@ -532,6 +553,49 @@ function ExpenseFormBody({ groupId, group, expenseId, expense }: FormProps) {
         </form>
       </Card>
     </Page>
+  );
+}
+
+/**
+ * Below the parts of a split by amount: their sum against the amount. If the amount follows the
+ * parts, says so; if it was typed and doesn't match, offers to use the sum (#168).
+ */
+function AmountSplitSum({
+  sumCents,
+  totalCents,
+  currency,
+  followsParts,
+  onUseSum,
+}: {
+  sumCents: number;
+  totalCents: number;
+  currency: Currency;
+  followsParts: boolean;
+  onUseSum: () => void;
+}) {
+  if (followsParts) {
+    return (
+      <p className={`text-xs ${sumCents > 0 ? 'text-positive' : 'text-muted-foreground'}`}>
+        {sumCents > 0
+          ? `El monto es la suma de las partes: ${formatCents(sumCents, currency)}`
+          : 'El monto se completa con la suma de las partes'}
+      </p>
+    );
+  }
+  const difference = totalCents - sumCents;
+  return (
+    <div className="space-y-2">
+      <p className={`text-xs ${difference === 0 ? 'text-positive' : 'text-muted-foreground'}`}>
+        Suma: {formatCents(sumCents, currency)} / {formatCents(totalCents, currency)}
+        {difference > 0 && ` (faltan ${formatCents(difference, currency)})`}
+        {difference < 0 && ` (sobran ${formatCents(-difference, currency)})`}
+      </p>
+      {difference !== 0 && sumCents > 0 && (
+        <Button type="button" variant="outline" className="w-full" onClick={onUseSum}>
+          Usar la suma como monto
+        </Button>
+      )}
+    </div>
   );
 }
 
