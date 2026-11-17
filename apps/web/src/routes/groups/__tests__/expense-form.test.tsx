@@ -310,6 +310,102 @@ describe('ExpenseForm (optimistic save)', () => {
   });
 });
 
+describe('ExpenseForm (amount from the parts, #168)', () => {
+  it('fills an empty amount with the sum of the parts, following them', async () => {
+    const user = userEvent.setup();
+    const calls: unknown[] = [];
+    renderWithApi(<ExpenseForm />, {
+      'groups.get': () => fixGroup,
+      'expenses.create': (input) => calls.push(input),
+    });
+    await user.type(await screen.findByLabelText('Descripción'), 'Cena');
+    await user.click(screen.getByRole('button', { name: 'Por monto' }));
+    expect(screen.getByText('El monto se completa con la suma de las partes')).toBeInTheDocument();
+
+    await user.type(screen.getByLabelText('Monto de Tuke'), '100.000');
+    expect(screen.getByLabelText('Monto')).toHaveValue('100.000');
+    await user.type(screen.getByLabelText('Monto de Juan'), '33.000');
+    expect(screen.getByLabelText('Monto')).toHaveValue('133.000');
+    expect(
+      screen.getByText(/El monto es la suma de las partes: \$\s133\.000,00/),
+    ).toBeInTheDocument();
+
+    await user.click(screen.getByRole('button', { name: 'Agregar gasto' }));
+    await waitFor(() => expect(calls).toHaveLength(1));
+    expect(calls[0]).toMatchObject({
+      amountCents: 13300000,
+      split: {
+        type: 'AMOUNT',
+        shares: [
+          { participantId: 'p1', amountCents: 3300000 },
+          { participantId: 'p2', amountCents: 10000000 },
+        ],
+      },
+    });
+  });
+
+  it('keeps an amount typed by hand, and offers to use the sum when it differs', async () => {
+    const user = userEvent.setup();
+    const calls: unknown[] = [];
+    renderWithApi(<ExpenseForm />, {
+      'groups.get': () => fixGroup,
+      'expenses.create': (input) => calls.push(input),
+    });
+    await user.type(await screen.findByLabelText('Monto'), '100.000');
+    await user.type(screen.getByLabelText('Descripción'), 'Cena');
+    await user.click(screen.getByRole('button', { name: 'Por monto' }));
+    await user.type(screen.getByLabelText('Monto de Tuke'), '100.000');
+    await user.type(screen.getByLabelText('Monto de Juan'), '33.000');
+    expect(screen.getByLabelText('Monto')).toHaveValue('100.000');
+    expect(screen.getByText(/sobran \$\s33\.000,00/)).toBeInTheDocument();
+
+    await user.click(screen.getByRole('button', { name: 'Usar la suma como monto' }));
+    expect(screen.getByLabelText('Monto')).toHaveValue('133.000');
+    expect(
+      screen.queryByRole('button', { name: 'Usar la suma como monto' }),
+    ).not.toBeInTheDocument();
+
+    await user.click(screen.getByRole('button', { name: 'Agregar gasto' }));
+    await waitFor(() => expect(calls).toHaveLength(1));
+    expect(calls[0]).toMatchObject({ amountCents: 13300000 });
+  });
+
+  it("doesn't change the amount of an expense being edited", async () => {
+    const user = userEvent.setup();
+    const expense = {
+      id: 'e1',
+      description: 'Cena',
+      categoryId: null,
+      category: null,
+      date: new Date('2026-11-01T12:00:00Z'),
+      amountCents: 13300000,
+      currency: 'ARS',
+      exchangeRate: null,
+      splitType: 'AMOUNT',
+      paidById: 'p1',
+      deletedAt: null,
+      groupId: 'g1',
+      paidBy: { id: 'p1', name: 'Juan' },
+      splits: [
+        { expenseId: 'e1', participantId: 'p1', amountCents: 3300000, percentage: null },
+        { expenseId: 'e1', participantId: 'p2', amountCents: 10000000, percentage: null },
+      ],
+    };
+    renderWithApi(
+      <Routes>
+        <Route path="/grupos/:groupId/gastos/:expenseId/editar" element={<ExpenseForm />} />
+      </Routes>,
+      { 'groups.get': () => fixGroup, 'expenses.get': () => expense },
+      '/grupos/g1/gastos/e1/editar',
+    );
+    const juan = await screen.findByLabelText('Monto de Juan');
+    await user.clear(juan);
+    await user.type(juan, '23.000');
+    expect(screen.getByLabelText('Monto')).toHaveValue('133.000');
+    expect(screen.getByText(/faltan \$\s10\.000,00/)).toBeInTheDocument();
+  });
+});
+
 describe('ExpenseForm (automatic category)', () => {
   const category = (id: string, name: string, defaultKey: string | null) => ({
     id,
