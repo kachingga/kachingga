@@ -13,6 +13,9 @@ La app la usamos nosotros todos los días, sobre todo en el celu: tiene que ser 
   - Nombres y descripciones largos en hasta dos líneas (`line-clamp-2 break-words`) en vez de cortarlos en una.
   - El captcha flexible mide al menos 300 px: abajo de 360 px va el compacto (`src/lib/use-captcha.tsx`).
 - Áreas táctiles de al menos 44×44 px; `inputMode="decimal"` para montos; zonas seguras del iPhone.
+  - **Sin cambiar cómo se ve el control:** la utilidad `tap-area` (`src/index.css`) le agrega una zona invisible de 44 × 44 px centrada (un `::after`); el control tiene que ser `relative`. `Button` y `Chip` ya la tienen; un control chico propio (un link suelto, un ícono) lleva `tap-area relative` (#173).
+  - **Que no le saque toques al de al lado:** de dos controles vecinos, el que va después en el HTML queda arriba, así que su zona no puede llegar al otro: lo que sobresale (`(44 − alto) / 2`: 4 px en un `Button size="sm"`, 10 px en uno `xs`) tiene que ser menor que el espacio entre los dos. Si no hay lugar (un link pegado a un campo, uno arriba de otro), mejor que el control mida 44 px de verdad (`min-h-11`), como las filas de "Igual", "¿Olvidaste tu contraseña?", "Editar categorías" y el menú del grupo.
+  - Los links dentro de una oración (Términos, Política de privacidad) quedan como están (WCAG los exceptúa).
 - Que se pueda usar con una mano: acciones principales abajo y al alcance del pulgar.
 
 ## Los 4 estados de toda pantalla con datos

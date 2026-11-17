@@ -187,7 +187,7 @@ export function PageHeader({
         ('to' in back ? (
           <Link
             to={back.to}
-            className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground"
+            className="tap-area relative inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground"
           >
             <ArrowLeft className="size-4" />
             {back.label}
@@ -196,7 +196,7 @@ export function PageHeader({
           <button
             type="button"
             onClick={back.onClick}
-            className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground"
+            className="tap-area relative inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground"
           >
             <ArrowLeft className="size-4" />
             {back.label}
@@ -261,7 +261,7 @@ export function Chip({
       type="button"
       aria-pressed={active}
       className={cn(
-        'press rounded-full border px-3.5 py-2 text-sm font-medium whitespace-nowrap transition-colors',
+        'press tap-area relative rounded-full border px-3.5 py-2 text-sm font-medium whitespace-nowrap transition-colors',
         active
           ? 'border-primary bg-primary text-primary-foreground'
           : 'border-border bg-card text-foreground hover:bg-muted',

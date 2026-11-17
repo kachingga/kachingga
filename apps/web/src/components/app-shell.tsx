@@ -50,7 +50,7 @@ export function Wordmark({ className }: { className?: string }) {
 /** The wordmark, linking to "Mis grupos". */
 export function Logo({ className }: { className?: string }) {
   return (
-    <Link to="/grupos" className="inline-flex">
+    <Link to="/grupos" className="tap-area relative inline-flex">
       <Wordmark className={className} />
     </Link>
   );
@@ -128,11 +128,11 @@ export function AppShell() {
         {/* Its own view-transition-name: stays still, above the screen that slides (index.css). */}
         <header className="sticky top-0 z-20 flex items-center justify-between border-b bg-background/95 px-5 max-xs:px-4 pt-[calc(env(safe-area-inset-top)+0.75rem)] pb-3 backdrop-blur [view-transition-name:app-header] lg:hidden">
           <Logo className="text-xl" />
-          <div className="flex items-center gap-1">
+          <div className="flex items-center gap-2">
             <Link
               to="/cuenta"
               aria-label="Mi cuenta"
-              className="grid size-9 place-items-center rounded-full text-muted-foreground hover:bg-muted"
+              className="tap-area relative grid size-9 place-items-center rounded-full text-muted-foreground hover:bg-muted"
             >
               <UserRound className="size-[18px]" />
             </Link>

@@ -209,7 +209,7 @@ function BalanceSection({ group, balances }: { group: GroupData; balances: Balan
                       </p>
 
                       {isMyTransfer && (
-                        <div className="mt-2 flex flex-wrap gap-1.5">
+                        <div className="mt-2 flex flex-wrap gap-2">
                           {toParticipant?.paymentAlias && (
                             <>
                               <p className="w-full text-xs text-muted-foreground">
@@ -355,7 +355,7 @@ export function GroupDetail() {
       <div className="rise relative z-30">
         <Link
           to="/grupos"
-          className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground"
+          className="tap-area relative inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground"
         >
           <ArrowLeft className="size-4" />
           Mis grupos
@@ -444,13 +444,13 @@ export function GroupDetail() {
               <div className="absolute top-full left-0 z-30 mt-2 w-64 sm:right-0 sm:left-auto rounded-lg border bg-popover p-2 text-popover-foreground shadow-lift">
                 <Link
                   to={`/grupos/${groupId}/participantes`}
-                  className="block rounded-xl px-3 py-2 text-sm hover:bg-muted"
+                  className="flex min-h-11 items-center rounded-xl px-3 py-2 text-sm hover:bg-muted"
                 >
                   Participantes
                 </Link>
                 <Link
                   to={`/grupos/${groupId}/categorias`}
-                  className="block rounded-xl px-3 py-2 text-sm hover:bg-muted"
+                  className="flex min-h-11 items-center rounded-xl px-3 py-2 text-sm hover:bg-muted"
                 >
                   Categorías
                 </Link>
@@ -475,7 +475,7 @@ export function GroupDetail() {
                       setShowMenu(false);
                     }}
                     variant="ghost"
-                    className="h-auto w-full justify-start rounded-xl px-3 py-2 font-normal"
+                    className="h-auto min-h-11 w-full justify-start rounded-xl px-3 py-2 font-normal"
                   >
                     Renombrar grupo
                   </Button>
@@ -492,7 +492,7 @@ export function GroupDetail() {
                       if (ok) setArchived.mutate({ groupId: groupId!, archived: true });
                     }}
                     variant="ghost"
-                    className="h-auto w-full justify-start rounded-xl px-3 py-2 font-normal text-muted-foreground"
+                    className="h-auto min-h-11 w-full justify-start rounded-xl px-3 py-2 font-normal text-muted-foreground"
                   >
                     Archivar grupo
                   </Button>
@@ -503,7 +503,7 @@ export function GroupDetail() {
                       setShowMenu(false);
                     }}
                     variant="ghost"
-                    className="h-auto w-full justify-start rounded-xl px-3 py-2 font-normal"
+                    className="h-auto min-h-11 w-full justify-start rounded-xl px-3 py-2 font-normal"
                   >
                     Desarchivar grupo
                   </Button>

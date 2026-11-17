@@ -123,7 +123,7 @@ export function Login() {
           />
           <Link
             to="/recuperar-contrasena"
-            className="ml-auto block w-fit py-1 text-sm font-semibold text-primary-ink hover:underline"
+            className="ml-auto flex min-h-11 w-fit items-center text-sm font-semibold text-primary-ink hover:underline"
           >
             ¿Olvidaste tu contraseña?
           </Link>

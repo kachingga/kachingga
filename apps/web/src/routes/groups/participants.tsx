@@ -244,7 +244,7 @@ export function Participants() {
                   </div>
 
                   {!isArchived && (
-                    <div className="ml-2 flex gap-2 max-xs:flex-col max-xs:items-end">
+                    <div className="ml-2 flex gap-2 max-xs:flex-col max-xs:items-end max-xs:gap-5">
                       <Button
                         variant="ghost"
                         size="xs"

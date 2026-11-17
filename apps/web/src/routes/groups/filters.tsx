@@ -196,7 +196,7 @@ export function Filters() {
           {savedFilters.data.map((sf) => (
             <div
               key={sf.id}
-              className="flex items-center gap-1 rounded-full border border-primary/30 bg-accent py-1 pr-1 pl-3 text-accent-foreground"
+              className="flex items-center gap-3 rounded-full border border-primary/30 bg-accent py-1 pr-1 pl-3 text-accent-foreground"
             >
               <Button
                 variant="link"
@@ -331,7 +331,7 @@ export function Filters() {
               Categorías
             </Label>
             <div
-              className="mt-1.5 flex flex-wrap gap-1"
+              className="mt-1.5 flex flex-wrap gap-2.5"
               role="group"
               aria-labelledby="f-categories"
             >
