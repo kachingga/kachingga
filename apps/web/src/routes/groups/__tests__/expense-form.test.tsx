@@ -277,6 +277,37 @@ describe('ExpenseForm (optimistic save)', () => {
     ).toBeInTheDocument();
     expect(calls).toHaveLength(0);
   });
+
+  it("takes calculations in the amount and in each one's part (#167)", async () => {
+    const user = userEvent.setup();
+    const calls: unknown[] = [];
+    renderWithApi(<ExpenseForm />, {
+      'groups.get': () => fixGroup,
+      'expenses.create': (input) => calls.push(input),
+    });
+    // The ticket: burger + drink + fries, and Tuke's part with the fries split in 4.
+    await user.type(await screen.findByLabelText('Monto'), '8.000+2.000+2.400');
+    await user.type(screen.getByLabelText('Descripción'), 'Cena');
+    await user.click(screen.getByRole('button', { name: 'Por monto' }));
+    await user.type(screen.getByLabelText('Monto de Juan'), '8000+2400/4*3');
+    await user.type(screen.getByLabelText('Monto de Tuke'), '2000+2400/4');
+    expect(screen.getByLabelText('Monto')).toHaveValue('12.400');
+    expect(screen.getByLabelText('Monto de Juan')).toHaveValue('9.800');
+    expect(screen.getByText(/Suma: \$\s12\.400,00/)).toBeInTheDocument();
+
+    await user.click(screen.getByRole('button', { name: 'Agregar gasto' }));
+    await waitFor(() => expect(calls).toHaveLength(1));
+    expect(calls[0]).toMatchObject({
+      amountCents: 1240000,
+      split: {
+        type: 'AMOUNT',
+        shares: [
+          { participantId: 'p1', amountCents: 980000 },
+          { participantId: 'p2', amountCents: 260000 },
+        ],
+      },
+    });
+  });
 });
 
 describe('ExpenseForm (automatic category)', () => {
