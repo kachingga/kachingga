@@ -197,7 +197,7 @@ function SettlementsBody({ groupId, group }: { groupId: string; group: GroupData
               <form onSubmit={handleSubmit} className="space-y-4">
                 <h2 className="font-semibold">Registrar pago</h2>
 
-                <div className="grid grid-cols-2 gap-3 [&>*]:min-w-0">
+                <div className="grid grid-cols-1 gap-3 min-[360px]:grid-cols-2 [&>*]:min-w-0">
                   <Field label="Quién pagó" htmlFor="from">
                     <NativeSelect
                       id="from"
@@ -233,7 +233,7 @@ function SettlementsBody({ groupId, group }: { groupId: string; group: GroupData
                   </Field>
                 </div>
 
-                <div className="grid grid-cols-2 gap-3 [&>*]:min-w-0">
+                <div className="grid grid-cols-1 gap-3 min-[360px]:grid-cols-2 [&>*]:min-w-0">
                   <Field label="Monto" htmlFor="amount">
                     <NumberInput
                       id="amount"

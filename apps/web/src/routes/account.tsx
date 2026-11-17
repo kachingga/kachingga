@@ -30,7 +30,7 @@ function PalettePicker() {
       <div
         role="radiogroup"
         aria-label="Colores de la app"
-        className="mt-4 grid grid-cols-2 gap-2 sm:grid-cols-3"
+        className="mt-4 grid grid-cols-1 gap-2 min-[360px]:grid-cols-2 sm:grid-cols-3"
       >
         {PALETTES.map((p) => {
           const checked = p.id === palette;
@@ -43,7 +43,7 @@ function PalettePicker() {
               data-palette={p.id}
               onClick={() => setPalette(p.id)}
               className={cn(
-                'press flex min-h-14 items-center gap-3 rounded-lg border bg-card px-3 py-2 text-left text-sm font-semibold',
+                'press flex min-h-14 items-center gap-3 rounded-lg border bg-card px-3 py-2 text-left text-sm font-semibold max-xs:gap-2',
                 checked ? 'border-primary ring-2 ring-primary' : 'border-border hover:bg-muted',
               )}
             >

@@ -173,9 +173,13 @@ export function Participants() {
                   <div className="min-w-0 flex-1">
                     <p className="font-medium">
                       {p.name}
-                      {p.isMe && <span className="ml-2 text-xs text-muted-foreground">yo</span>}
+                      {p.isMe && (
+                        <span className="ml-2 inline-block text-xs text-muted-foreground">yo</span>
+                      )}
                       {!p.hasAccount && (
-                        <span className="ml-2 text-xs text-muted-foreground">sin cuenta</span>
+                        <span className="ml-2 inline-block text-xs whitespace-nowrap text-muted-foreground">
+                          sin cuenta
+                        </span>
                       )}
                     </p>
 
@@ -213,7 +217,7 @@ export function Participants() {
                         </Button>
                       </form>
                     ) : (
-                      <p className="mt-1 text-xs text-muted-foreground">
+                      <p className="mt-1 text-xs break-words text-muted-foreground">
                         {p.paymentAlias ? (
                           <>
                             Alias: {p.paymentAlias}
@@ -240,7 +244,7 @@ export function Participants() {
                   </div>
 
                   {!isArchived && (
-                    <div className="ml-2 flex gap-2">
+                    <div className="ml-2 flex gap-2 max-xs:flex-col max-xs:items-end">
                       <Button
                         variant="ghost"
                         size="xs"

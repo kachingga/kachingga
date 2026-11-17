@@ -166,6 +166,12 @@
   }
 }
 
+/* `max-xs:` = phones narrower than the one the design is made for (~390 px), like the iPhone SE (375,
+   or 320 with "Zoom de pantalla"): a little less padding so nothing breaks (#169). */
+@theme {
+  --breakpoint-xs: 24.375rem;
+}
+
 @theme inline {
   --font-sans: 'Manrope Variable', ui-sans-serif, system-ui, sans-serif;
   --font-heading: 'Bricolage Grotesque Variable', 'Manrope Variable', sans-serif;

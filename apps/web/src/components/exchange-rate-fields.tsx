@@ -22,8 +22,8 @@ export function ExchangeRateFields({
     source === 'manual' ? rate.manualRate : rateQuery.data ? toNumeric(rateQuery.data.mid) : '';
 
   return (
-    <Card className="space-y-3">
-      <div className="flex gap-2">
+    <Card className="space-y-3 max-xs:p-3">
+      <div className="flex flex-wrap gap-2">
         <Chip active={!keepCurrency} className="flex-1" onClick={() => rate.setKeepCurrency(false)}>
           Convertir a {base}
         </Chip>
@@ -35,7 +35,7 @@ export function ExchangeRateFields({
       {!keepCurrency && (
         <>
           {autoSuggest && (
-            <div className="flex gap-2">
+            <div className="flex flex-wrap gap-2">
               {isUsdQuote && (
                 <Chip
                   active={source === 'blue'}

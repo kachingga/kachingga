@@ -333,7 +333,7 @@ function ExpenseFormBody({ groupId, group, expenseId, expense }: FormProps) {
         back={{ onClick: () => navigate(-1), label: 'Volver' }}
       />
 
-      <Card className="rise">
+      <Card className="rise max-xs:p-4">
         <form onSubmit={handleSubmit} className="space-y-5">
           <Field label="Monto" htmlFor="amount">
             <CalculatorInput
@@ -358,7 +358,7 @@ function ExpenseFormBody({ groupId, group, expenseId, expense }: FormProps) {
 
           {/* Categoría */}
           <div>
-            <div className="flex items-baseline justify-between gap-3">
+            <div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1">
               <p
                 className="flex items-center gap-2 text-sm font-medium text-foreground"
                 id="category-label"
@@ -373,7 +373,7 @@ function ExpenseFormBody({ groupId, group, expenseId, expense }: FormProps) {
               </p>
               <Link
                 to={`/grupos/${groupId}/categorias`}
-                className="text-xs text-muted-foreground underline-offset-2 hover:text-foreground hover:underline"
+                className="text-xs whitespace-nowrap text-muted-foreground underline-offset-2 hover:text-foreground hover:underline"
               >
                 Editar categorías
               </Link>
@@ -392,7 +392,7 @@ function ExpenseFormBody({ groupId, group, expenseId, expense }: FormProps) {
           </div>
 
           {/* Fecha y quién pagó, juntos (como el diseño) */}
-          <div className="grid grid-cols-2 gap-3 [&>*]:min-w-0">
+          <div className="grid grid-cols-1 gap-3 min-[360px]:grid-cols-2 [&>*]:min-w-0">
             <Field label="Fecha" htmlFor="date">
               <Input
                 id="date"
@@ -441,7 +441,7 @@ function ExpenseFormBody({ groupId, group, expenseId, expense }: FormProps) {
           {/* División */}
           <div>
             <Label id="split-label">Dividir</Label>
-            <div className="mt-1.5 flex gap-2" role="group" aria-labelledby="split-label">
+            <div className="mt-1.5 flex flex-wrap gap-2" role="group" aria-labelledby="split-label">
               {(['EQUAL', 'AMOUNT', 'PERCENTAGE'] as const).map((t) => (
                 <Chip
                   key={t}

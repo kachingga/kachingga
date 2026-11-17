@@ -506,11 +506,11 @@ export function Filters() {
                         (cached) => cached ?? e,
                       )
                     }
-                    className="flex items-center gap-3 p-4 transition-colors hover:bg-muted/60 focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-ring"
+                    className="flex items-center gap-3 p-4 transition-colors max-xs:p-3 hover:bg-muted/60 focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-ring"
                   >
                     <CategoryIcon icon={e.category.icon} color={e.category.color} />
                     <div className="min-w-0 flex-1">
-                      <p className="truncate font-medium">{e.description}</p>
+                      <p className="line-clamp-2 font-medium break-words">{e.description}</p>
                       <p className="text-sm text-muted-foreground">
                         {e.paidBy.name} · {formatDate(e.date)}
                       </p>
