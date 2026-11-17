@@ -206,7 +206,7 @@ export function PageHeader({
         className={cn('flex flex-wrap items-end justify-between gap-3', back ? 'mt-3' : undefined)}
       >
         <div className="min-w-0">
-          <h1 className="truncate text-2xl font-bold lg:text-3xl">{title}</h1>
+          <h1 className="line-clamp-2 text-2xl font-bold break-words lg:text-3xl">{title}</h1>
           {subtitle && <p className="mt-0.5 text-sm text-muted-foreground">{subtitle}</p>}
         </div>
         {actions && <div className="flex flex-wrap gap-2">{actions}</div>}
@@ -261,7 +261,7 @@ export function Chip({
       type="button"
       aria-pressed={active}
       className={cn(
-        'press rounded-full border px-3.5 py-2 text-sm font-medium transition-colors',
+        'press rounded-full border px-3.5 py-2 text-sm font-medium whitespace-nowrap transition-colors',
         active
           ? 'border-primary bg-primary text-primary-foreground'
           : 'border-border bg-card text-foreground hover:bg-muted',

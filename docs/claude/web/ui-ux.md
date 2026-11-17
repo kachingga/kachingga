@@ -6,6 +6,12 @@ La app la usamos nosotros todos los días, sobre todo en el celu: tiene que ser 
 
 ## Mobile-first
 - Diseñar primero para un celu (~390 px de ancho), después ampliar para la compu (`sm:`, `md:`…). Que nada dependa de hover.
+- **Piso: 320 px de ancho** (iPhone SE con "Zoom de pantalla" o de 1ª generación; es también el mínimo que pide WCAG para que el contenido se reacomode). Hasta ahí no hay scroll horizontal ni nada que se corte, se pise o se parta mal (#169). En el iPhone SE (375 × 667) además se ve el formulario de login sin bajar.
+  - **`max-xs:`** (`src/index.css`: abajo de 390 px) para ajustar en celus chicos sin cambiar el diseño en los demás: el marco tiene un poco menos de padding a los costados (`px-4`, y `p-4` en la tarjeta del formulario de gasto, la más cargada), y el login esconde el título grande y la descripción (el logo ya está en el header; el `h1` queda para lectores de pantalla).
+  - Textos de botones y `Chip` en **una sola línea** (`whitespace-nowrap`); si una fila de chips no entra, que baje a otra línea (`flex-wrap`), no que se parta el texto. Un botón `fixed` centrado con `left-1/2` también lleva `whitespace-nowrap` (si no, solo tiene la mitad de la pantalla para el texto).
+  - Dos campos lado a lado (`grid-cols-2`) van uno arriba del otro abajo de 360 px (`grid-cols-1 min-[360px]:grid-cols-2`).
+  - Nombres y descripciones largos en hasta dos líneas (`line-clamp-2 break-words`) en vez de cortarlos en una.
+  - El captcha flexible mide al menos 300 px: abajo de 360 px va el compacto (`src/lib/use-captcha.tsx`).
 - Áreas táctiles de al menos 44×44 px; `inputMode="decimal"` para montos; zonas seguras del iPhone.
 - Que se pueda usar con una mano: acciones principales abajo y al alcance del pulgar.
 

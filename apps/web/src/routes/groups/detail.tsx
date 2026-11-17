@@ -393,7 +393,9 @@ export function GroupDetail() {
             <div className="flex min-w-0 items-center gap-3">
               <Avatar id={g.id} name={g.name} className="size-14 rounded-lg text-2xl ring-0" />
               <div className="min-w-0">
-                <h1 className="truncate text-2xl font-bold lg:text-3xl">{g.name}</h1>
+                <h1 className="line-clamp-2 text-2xl font-bold break-words lg:text-3xl">
+                  {g.name}
+                </h1>
                 <div className="mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-1">
                   <AvatarStack people={g.participants} />
                   <p className="text-xs text-muted-foreground">
@@ -576,7 +578,9 @@ export function GroupDetail() {
                     <>
                       <CategoryIcon icon={expense.category.icon} color={expense.category.color} />
                       <div className="min-w-0 flex-1">
-                        <p className="truncate font-medium">{expense.description}</p>
+                        <p className="line-clamp-2 font-medium break-words">
+                          {expense.description}
+                        </p>
                         <p className="truncate text-sm text-muted-foreground">
                           {saving
                             ? 'Guardando…'
@@ -587,7 +591,7 @@ export function GroupDetail() {
                         <Money
                           cents={expense.amountCents}
                           currency={expense.currency}
-                          className="text-lg"
+                          className="text-lg max-xs:text-base"
                         />
                         {myShare ? (
                           <p className="text-xs text-muted-foreground tabular">
@@ -606,7 +610,10 @@ export function GroupDetail() {
                       className={cn('border-b last:border-0', saving && 'pop-in')}
                     >
                       {saving ? (
-                        <div aria-busy="true" className="flex items-center gap-3 p-4 opacity-60">
+                        <div
+                          aria-busy="true"
+                          className="flex items-center gap-3 p-4 opacity-60 max-xs:p-3"
+                        >
                           {content}
                         </div>
                       ) : (
@@ -619,7 +626,7 @@ export function GroupDetail() {
                               (cached) => cached ?? expense,
                             )
                           }
-                          className="flex items-center gap-3 p-4 transition-colors hover:bg-muted/60 focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-ring"
+                          className="flex items-center gap-3 p-4 transition-colors max-xs:p-3 hover:bg-muted/60 focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-ring"
                         >
                           {content}
                         </Link>
@@ -643,7 +650,7 @@ export function GroupDetail() {
       {!g.archivedAt && (
         <Link
           to={`/grupos/${groupId}/gastos/nuevo`}
-          className="press fixed bottom-safe left-1/2 z-30 flex h-14 -translate-x-1/2 items-center gap-2 rounded-full bg-primary px-7 font-bold text-primary-foreground shadow-lift lg:hidden"
+          className="press fixed bottom-safe left-1/2 z-30 flex h-14 -translate-x-1/2 items-center gap-2 rounded-full bg-primary px-7 font-bold whitespace-nowrap text-primary-foreground shadow-lift lg:hidden"
         >
           <Plus className="size-5" />
           Agregar gasto

@@ -33,10 +33,11 @@ export function AuthLayout({
             <Heart aria-hidden className="size-3.5" />
             Cuentas claras. Amistades intactas.
           </p>
-          <h1 className="mt-4 text-4xl font-extrabold sm:text-5xl">
+          {/* On small phones only the tagline shows, so the form fits on the screen (#169). */}
+          <h1 className="mt-4 text-4xl font-extrabold max-xs:sr-only sm:text-5xl">
             Kachingga<span className="text-highlight">.</span>
           </h1>
-          <p className="mx-auto mt-4 max-w-sm leading-relaxed text-muted-foreground lg:mx-0">
+          <p className="mx-auto mt-4 max-w-sm leading-relaxed text-muted-foreground max-xs:hidden lg:mx-0">
             Compartí gastos. Organizá tus cuentas. Tené claro quién pagó y cuánto le toca a cada
             uno.
           </p>
