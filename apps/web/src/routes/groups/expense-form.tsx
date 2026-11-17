@@ -7,6 +7,7 @@ import type { inferRouterOutputs } from '@trpc/server';
 import type { AppRouter } from '@kachingga/api';
 import { currencies, distributeCents } from '@kachingga/api/schemas';
 
+import { CalculatorInput } from '@/components/calculator-input';
 import { ExchangeRateFields } from '@/components/exchange-rate-fields';
 import { NumberInput } from '@/components/number-input';
 import { useExchangeRate } from '@/lib/use-exchange-rate';
@@ -316,7 +317,7 @@ function ExpenseFormBody({ groupId, group, expenseId, expense }: FormProps) {
       <Card className="rise">
         <form onSubmit={handleSubmit} className="space-y-5">
           <Field label="Monto" htmlFor="amount">
-            <NumberInput
+            <CalculatorInput
               id="amount"
               value={amountInput}
               onValueChange={setAmountInput}
@@ -467,12 +468,12 @@ function ExpenseFormBody({ groupId, group, expenseId, expense }: FormProps) {
             {splitType === 'AMOUNT' && (
               <div className="mt-3 space-y-2">
                 {participants.map((p) => (
-                  <div key={p.id} className="flex items-center gap-3">
+                  <div key={p.id} className="flex flex-wrap items-center gap-x-3">
                     <span className="flex-1 text-sm">
                       {p.name}
                       {p.isMe ? ' (yo)' : ''}
                     </span>
-                    <NumberInput
+                    <CalculatorInput
                       aria-label={`Monto de ${p.name}`}
                       value={amountShares[p.id] ?? ''}
                       onValueChange={(v) => setAmountShares({ ...amountShares, [p.id]: v })}

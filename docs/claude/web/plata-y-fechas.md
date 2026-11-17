@@ -1,6 +1,6 @@
 # Montos, números y fechas — web
 
-> **Aplica a:** `src/lib/format.ts`, `src/components/number-input.tsx`, todo campo o texto con plata, porcentajes, tipos de cambio o fechas. **Si cambiás cómo funciona algo de esto, actualizá este archivo en el mismo PR.** Reglas cortas: `apps/web/CLAUDE.md`.
+> **Aplica a:** `src/lib/format.ts`, `src/lib/calculator.ts`, `src/components/number-input.tsx`, `src/components/calculator-input.tsx`, todo campo o texto con plata, porcentajes, tipos de cambio o fechas. **Si cambiás cómo funciona algo de esto, actualizá este archivo en el mismo PR.** Reglas cortas: `apps/web/CLAUDE.md`.
 
 ## Idioma del navegador para mostrar, valores normalizados por detrás
 
@@ -15,6 +15,13 @@
 - **Solo el separador decimal del idioma escribe decimales.** En es-AR, un "." tipeado por costumbre ("1.500") se ignora: es 1500. (Si el punto también fuera decimal, "1.500" daría 1,5.)
 - `decimals` limita los decimales (2 para plata, 6 para tipos de cambio).
 - Helpers: `toCents("1500.5")` → 150050, `centsToNumeric(150050)` → "1500.5", `toNumeric(n)` para precargar un número.
+
+## Montos con cuentas: `<CalculatorInput>`
+
+- El **Monto** de un gasto y la parte de cada uno en **"Por monto"** son un `<CalculatorInput>` (`src/components/calculator-input.tsx`, #167): igual que `<NumberInput>` (mismo `value` normalizado y `onValueChange`), pero acepta una cuenta con + − × ÷ ("12.000 + 3.500 + 8.000 ÷ 4"; × y ÷ antes que + y −, sin paréntesis). La lógica es pura y está en `src/lib/calculator.ts` (`evaluateExpression`, `formatExpression`).
+- Mientras se escribe, el valor es el resultado (redondeado a `decimals`), así la suma de las partes se ve en vivo; una cuenta a medio escribir ("5 +") o imposible (÷ 0, negativa) deja el último resultado. Al salir del campo se ve el resultado.
+- Los números siguen la misma regla del idioma (en es-AR el "." es de miles). Lo escrito se reformatea con miles y operadores con espacios, y el cursor se vuelve a poner después de los mismos dígitos y operadores (`caretAfterFormat`).
+- **El teclado numérico del celu no tiene + − × ÷:** con el campo enfocado aparece abajo una fila con los cuatro botones y el resultado. Los botones hacen `preventDefault` en `mousedown` para que no se vaya el foco (ni se cierre el teclado). El envoltorio es `display: contents`: el padre ubica el campo y la fila (en una fila `flex flex-wrap`, la de botones baja a su propia línea).
 
 ## Mostrar plata
 
