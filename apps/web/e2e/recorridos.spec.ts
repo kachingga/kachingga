@@ -107,11 +107,20 @@ test('grupo: gasto, saldos, unirse con código y saldar', async ({ browser }) =>
     await galo.getByLabel('Descripción').fill('E2E cena');
     await galo.getByRole('button', { name: 'Agregar gasto' }).click();
     await expect(galo.getByText('E2E cena')).toBeVisible();
+    // On the phone the group opens on "Gastos", with my balance in one line.
+    await expect(galo.getByRole('link', { name: /Ver saldos/ })).toContainText(
+      /Te deben\s*\$\s?500/,
+    );
+    // The main screen with data, accessible (axe): each tab, "Gastos" and "Saldos".
+    await expectAccessible(galo);
+    await galo
+      .getByRole('navigation', { name: 'Secciones del grupo' })
+      .getByRole('link', { name: 'Saldos' })
+      .click();
     await expect(galo.getByRole('region', { name: 'Tu situación' })).toContainText(
       /Te deben\s*\$\s?500/,
     );
     await expect(galo.getByText(/Naiara → Galo/)).toContainText('500');
-    // The main screen with data, accessible (axe): "Tu situación", balances, transfers, expenses.
     await expectAccessible(galo);
   });
 
@@ -124,6 +133,9 @@ test('grupo: gasto, saldos, unirse con código y saldar', async ({ browser }) =>
     await naiara.getByLabel('Soy Naiara').check();
     await naiara.getByRole('button', { name: 'Unirme', exact: true }).click();
     await expect(naiara.getByText(groupName)).toBeVisible();
+    const myBalance = naiara.getByRole('link', { name: /Ver saldos/ });
+    await expect(myBalance).toContainText(/Debés\s*\$\s?500/);
+    await myBalance.click();
     await expect(naiara.getByRole('region', { name: 'Tu situación' })).toContainText(
       /Debés\s*\$\s?500/,
     );
@@ -132,11 +144,14 @@ test('grupo: gasto, saldos, unirse con código y saldar', async ({ browser }) =>
   await test.step('marcar como pagado y quedar al día', async () => {
     await naiara.getByRole('button', { name: 'Marcar como pagado' }).click();
     await naiara.getByRole('button', { name: 'Registrar' }).click();
+    // Back on the same tab, "Saldos".
     await naiara.getByRole('button', { name: 'Volver' }).click();
-    await expect(naiara.getByText('Estás al día')).toBeVisible();
+    await expect(naiara.getByRole('region', { name: 'Tu situación' })).toContainText(
+      'Estás al día',
+    );
 
     await galo.reload();
-    await expect(galo.getByText('Estás al día')).toBeVisible();
+    await expect(galo.getByRole('region', { name: 'Tu situación' })).toContainText('Estás al día');
   });
 
   await test.step('archivar el grupo de prueba', async () => {
