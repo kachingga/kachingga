@@ -89,12 +89,14 @@ export function RowsSkeleton({ rows = 3 }: { rows?: number }) {
 }
 
 /** The whole group screen, while the group itself loads. */
-export function GroupSkeleton() {
+export function GroupSkeleton({ balances = false }: { balances?: boolean }) {
+  // On phones, the tabs and only the open one (`balances`: "Saldos"; if not, "Gastos").
   return (
     <Loading className="mx-auto w-full max-w-6xl space-y-6">
       <HeaderSkeleton subtitle />
+      <Skeleton className="h-13 w-full rounded-full lg:hidden" />
       <div className="grid grid-cols-[minmax(0,1fr)] gap-6 lg:grid-cols-[minmax(0,380px)_minmax(0,1fr)] lg:items-start">
-        <div className="space-y-6">
+        <div className={`space-y-6 ${balances ? '' : 'max-lg:hidden'}`}>
           <Skeleton className="h-48 w-full rounded-lg" />
           <div className={`${card} space-y-3 p-5`}>
             <Skeleton className="h-5 w-20" />
@@ -102,8 +104,9 @@ export function GroupSkeleton() {
             <Skeleton className="h-4 w-full" />
           </div>
         </div>
-        <div className="space-y-3">
-          <Skeleton className="h-5 w-20" />
+        <div className={`space-y-3 ${balances ? 'max-lg:hidden' : ''}`}>
+          <Skeleton className="h-11 w-full rounded-lg lg:hidden" />
+          <Skeleton className="h-5 w-20 max-lg:hidden" />
           <ExpenseRows rows={4} />
         </div>
       </div>

@@ -72,7 +72,78 @@ describe('GroupDetail', () => {
       'balances.get': () => fixBalances,
       'expenses.list': () => fixExpenses,
     });
-    expect(await screen.findByText(/Te deben/)).toBeInTheDocument();
+    expect(await screen.findByRole('region', { name: 'Tu situación' })).toHaveTextContent(
+      /Te deben/,
+    );
+  });
+
+  it('on phones, opens on "Gastos", with my balance in one line that goes to "Saldos"', async () => {
+    const user = userEvent.setup();
+    renderWithApi(<GroupDetail />, {
+      'groups.get': () => fixGroup,
+      'balances.get': () => fixBalances,
+      'expenses.list': () => fixExpenses,
+    });
+    const line = await screen.findByRole('link', { name: /Te deben.*Ver saldos/ });
+    expect(line).toHaveTextContent(/Te deben\s*\$\s?5\.000,00/);
+    expect(line).toHaveAttribute('href', '/?vista=saldos');
+
+    const tabs = screen.getByRole('navigation', { name: 'Secciones del grupo' });
+    expect(within(tabs).getByRole('link', { name: 'Gastos' })).toHaveAttribute(
+      'aria-current',
+      'page',
+    );
+    await user.click(within(tabs).getByRole('link', { name: 'Saldos' }));
+    expect(within(tabs).getByRole('link', { name: 'Saldos' })).toHaveAttribute(
+      'aria-current',
+      'page',
+    );
+    expect(within(tabs).getByRole('link', { name: 'Gastos' })).toHaveAttribute('href', '/');
+  });
+
+  it('opens on "Saldos" when the URL says so (e.g. back from registering a payment)', async () => {
+    renderWithApi(
+      <GroupDetail />,
+      {
+        'groups.get': () => fixGroup,
+        'balances.get': () => fixBalances,
+        'expenses.list': () => fixExpenses,
+      },
+      '/?vista=saldos',
+    );
+    const tabs = await screen.findByRole('navigation', { name: 'Secciones del grupo' });
+    expect(within(tabs).getByRole('link', { name: 'Saldos' })).toHaveAttribute(
+      'aria-current',
+      'page',
+    );
+  });
+
+  it('my balance line has every currency I owe or am owed in, or says I am square', async () => {
+    renderWithApi(<GroupDetail />, {
+      'groups.get': () => fixGroup,
+      'balances.get': () => [
+        {
+          currency: 'ARS',
+          balances: [
+            { participantId: 'p1', amountCents: 0 },
+            { participantId: 'p2', amountCents: 0 },
+          ],
+          transfers: [],
+        },
+        {
+          currency: 'USD',
+          balances: [
+            { participantId: 'p1', amountCents: -2000 },
+            { participantId: 'p2', amountCents: 2000 },
+          ],
+          transfers: [{ fromId: 'p1', toId: 'p2', amountCents: 2000 }],
+        },
+      ],
+      'expenses.list': () => fixExpenses,
+    });
+    const line = await screen.findByRole('link', { name: /Ver saldos/ });
+    expect(line).toHaveTextContent(/Debés\s*US\$\s?20,00/);
+    expect(line).not.toHaveTextContent('Estás al día');
   });
 
   it('my situation when they owe me: the amount and what it means', async () => {
@@ -326,7 +397,9 @@ describe('GroupDetail', () => {
       },
     });
     expect(await screen.findByText('Grupo archivado.')).toBeInTheDocument();
-    expect(await screen.findByText(/Te deben/)).toBeInTheDocument();
+    expect(await screen.findByRole('region', { name: 'Tu situación' })).toHaveTextContent(
+      /Te deben/,
+    );
     expect(screen.queryByRole('link', { name: 'Agregar gasto' })).not.toBeInTheDocument();
     expect(screen.queryByText('Agregá el primer gasto del grupo.')).not.toBeInTheDocument();
     expect(screen.queryByRole('link', { name: 'Registrar pago' })).not.toBeInTheDocument();

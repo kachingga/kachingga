@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { Link, useNavigate, useParams } from 'react-router';
+import { Link, useNavigate, useParams, useSearchParams } from 'react-router';
 import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import type { inferRouterOutputs } from '@trpc/server';
 import type { AppRouter } from '@kachingga/api';
@@ -33,6 +33,7 @@ import { LoadMore } from '@/components/load-more';
 import { BalancesSkeleton, ExpenseListSkeleton, GroupSkeleton } from '@/components/skeletons';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Skeleton } from '@/components/ui/skeleton';
 import { copyText, shareInviteCode } from '@/lib/share';
 import { useTRPC } from '@/lib/trpc';
 import { prefetchOn, usePrefetch } from '@/lib/use-prefetch';
@@ -46,6 +47,74 @@ type BalancesData = inferRouterOutputs<AppRouter>['balances']['get'];
 
 function participantName(group: GroupData, id: string) {
   return group.participants.find((p) => p.id === id)?.name ?? id;
+}
+
+// On phones the group is two tabs: "Gastos" (opens on it) and "Saldos" (`?vista=saldos`). In the
+// URL so coming back from an expense or a payment lands on the same tab; only the search changes,
+// so it's the same screen (no animation) and switching replaces the entry (no history to go back
+// through). On wide screens both are side by side, without tabs.
+const expensesTab = { search: '' };
+const balancesTab = { search: '?vista=saldos' };
+
+function GroupTabs({ showBalances }: { showBalances: boolean }) {
+  const tabs = [
+    { label: 'Gastos', to: expensesTab, active: !showBalances },
+    { label: 'Saldos', to: balancesTab, active: showBalances },
+  ];
+  return (
+    <nav
+      aria-label="Secciones del grupo"
+      className="grid grid-cols-2 gap-1 rounded-full bg-muted p-1 lg:hidden"
+    >
+      {tabs.map((tab) => (
+        <Link
+          key={tab.label}
+          to={tab.to}
+          replace
+          aria-current={tab.active ? 'page' : undefined}
+          className={cn(
+            'flex min-h-11 items-center justify-center rounded-full text-sm font-semibold transition-colors',
+            tab.active
+              ? 'bg-card text-foreground shadow-sticker'
+              : 'text-muted-foreground hover:text-foreground',
+          )}
+        >
+          {tab.label}
+        </Link>
+      ))}
+    </nav>
+  );
+}
+
+/** On phones, above the expenses: my balance in one line (each currency I'm not square in), to "Saldos". */
+function MyBalanceLine({ group, balances }: { group: GroupData; balances: BalancesData }) {
+  const pending = balances.flatMap(({ currency, balances: bals }) => {
+    const cents = bals.find((b) => b.participantId === group.myParticipantId)?.amountCents ?? 0;
+    return cents === 0 ? [] : [{ currency, cents }];
+  });
+  return (
+    <Link
+      to={balancesTab}
+      replace
+      className="flex min-h-11 items-center justify-between gap-3 rounded-lg border px-4 py-2 text-sm font-semibold transition-colors hover:bg-muted/60"
+    >
+      <span className="flex min-w-0 flex-wrap gap-x-3 tabular">
+        {pending.length === 0 ? (
+          <span>Estás al día</span>
+        ) : (
+          pending.map(({ currency, cents }) => (
+            <span key={currency} className={cents > 0 ? 'text-positive' : 'text-negative'}>
+              {formatMyBalance(cents, currency)}
+            </span>
+          ))
+        )}
+      </span>
+      <span className="inline-flex shrink-0 items-center gap-1 text-muted-foreground">
+        Ver saldos
+        <ArrowRight aria-hidden className="size-4" />
+      </span>
+    </Link>
+  );
 }
 
 /** How "Tu situación" looks: green when they owe me, peach when I owe, lime when all square. */
@@ -272,6 +341,8 @@ export function GroupDetail() {
   const queryClient = useQueryClient();
   const confirm = useConfirm();
   const prefetch = usePrefetch();
+  const [searchParams] = useSearchParams();
+  const showBalances = searchParams.get('vista') === 'saldos';
 
   const [showMenu, setShowMenu] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
@@ -323,7 +394,7 @@ export function GroupDetail() {
   );
 
   if (group.isPending) {
-    return <GroupSkeleton />;
+    return <GroupSkeleton balances={showBalances} />;
   }
   if (group.isError) {
     return (
@@ -516,9 +587,11 @@ export function GroupDetail() {
 
       {g.archivedAt && <ArchivedNotice groupId={g.id} />}
 
+      <GroupTabs showBalances={showBalances} />
+
       <div className="grid grid-cols-[minmax(0,1fr)] gap-6 lg:grid-cols-[minmax(0,380px)_minmax(0,1fr)] lg:items-start">
-        {/* Saldos: column on the side on wide screens */}
-        <div className="space-y-6 lg:sticky lg:top-10">
+        {/* Saldos: the "Saldos" tab on phones, a column on the side on wide screens */}
+        <div className={cn('space-y-6 lg:sticky lg:top-10', !showBalances && 'max-lg:hidden')}>
           {balances.isPending && <BalancesSkeleton />}
           {balances.isError && (
             <ErrorState message={balances.error.message} onRetry={() => balances.refetch()} />
@@ -534,10 +607,14 @@ export function GroupDetail() {
           )}
         </div>
 
-        {/* Lista de gastos */}
-        <div>
+        {/* Lista de gastos: the "Gastos" tab on phones (its title is the tab, only for screen readers) */}
+        <div className={cn(showBalances && 'max-lg:hidden')}>
+          <div className="lg:hidden">
+            {balances.isPending && <Skeleton className="h-11 w-full rounded-lg" />}
+            {balances.isSuccess && <MyBalanceLine group={g} balances={balances.data} />}
+          </div>
           <div className="flex items-center justify-between">
-            <SectionTitle>Gastos</SectionTitle>
+            <SectionTitle className="max-lg:sr-only">Gastos</SectionTitle>
             {!g.archivedAt && (
               <Button asChild className="hidden lg:inline-flex">
                 <Link to={`/grupos/${groupId}/gastos/nuevo`}>
