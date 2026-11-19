@@ -14,9 +14,11 @@
     <script src="/theme.js"></script>
     <!--
       Splash while the JS downloads and starts: the logo on the app's background (with the
-      palette's colors once index.css loaded; the fallbacks are green). React replaces it when it
-      mounts. Same size and place as the iPhone startup images (pwa-assets.config.ts), so going from
-      one to the other doesn't jump. <Splash> (src/components/splash.tsx) is the same in React.
+      palette's colors once index.css loaded; the fallbacks are green), breathing softly while it
+      loads (still with "reduce motion": index.css). React replaces it when it mounts with <Splash>
+      (src/components/splash.tsx), which uses these same classes. On phones, same size and place as
+      the iPhone startup images (pwa-assets.config.ts), so going from one to the other doesn't jump;
+      on a computer 40% of the screen was huge, so there it's 96 px.
     -->
     <style>
       .splash {
@@ -32,6 +34,20 @@
       .splash svg {
         width: 40vmin;
         height: 40vmin;
+        animation: splash-breathe 1.6s ease-in-out infinite;
+        animation-delay: var(--splash-delay, 0s);
+      }
+      @media (min-width: 640px) and (min-height: 640px) {
+        .splash svg {
+          width: 96px;
+          height: 96px;
+        }
+      }
+      @keyframes splash-breathe {
+        50% {
+          transform: scale(0.92);
+          opacity: 0.75;
+        }
       }
     </style>
   </head>

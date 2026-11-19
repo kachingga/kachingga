@@ -1,17 +1,23 @@
+import { useState, type CSSProperties } from 'react';
+
 import { LogoMark } from '@/components/app-shell';
 
 /**
  * The logo alone on the background, while something has to load before the first screen (the
- * session). Same as the splash in index.html and the iPhone startup images: no jump between them.
+ * session). Same classes as the splash in index.html (size and animation are there), which it
+ * replaces when React mounts: the animation is set to the time since the page opened
+ * (`--splash-delay`), so the logo keeps breathing instead of starting over.
  */
 export function Splash() {
+  const [elapsed] = useState(() => performance.now());
   return (
     <div
       role="status"
       aria-label="Cargando"
-      className="fixed inset-0 grid place-items-center bg-background"
+      className="splash"
+      style={{ '--splash-delay': `${-elapsed}ms` } as CSSProperties}
     >
-      <LogoMark className="size-[40vmin]" />
+      <LogoMark />
     </div>
   );
 }
