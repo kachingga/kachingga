@@ -32,6 +32,9 @@ export const PROCEDURE_RULES: Record<string, Rule> = {
   'categories.suggest': { limit: 60, windowMs: MINUTE },
   // Calls Supabase's admin API; a person needs it once (maybe a retry)
   'profile.deleteAccount': { limit: 5, windowMs: 10 * MINUTE },
+  // Uploads to the photo storage (up to 300 KB each)
+  'photos.setMine': { limit: 20, windowMs: HOUR },
+  'photos.setGroup': { limit: 20, windowMs: HOUR },
 }
 
 // The same per user, on top of the per-IP ones: an account doesn't get more by switching networks.
@@ -42,6 +45,8 @@ export const USER_PROCEDURE_RULES: Record<string, Rule> = {
   'expenses.summary': { limit: 60, windowMs: MINUTE },
   'balances.get': { limit: 60, windowMs: MINUTE },
   'categories.suggest': { limit: 60, windowMs: MINUTE },
+  'photos.setMine': { limit: 20, windowMs: HOUR },
+  'photos.setGroup': { limit: 20, windowMs: HOUR },
 }
 
 // Heavy reads: each one goes through every matching expense of a group with all its shares (a full

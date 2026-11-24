@@ -1,5 +1,5 @@
 import { categoryColors } from '@kachingga/api/schemas';
-import { render, screen } from '@testing-library/react';
+import { fireEvent, render, screen } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
 import { Users } from 'lucide-react';
 
@@ -57,5 +57,17 @@ describe('kit', () => {
     expect(container).not.toHaveTextContent('V');
     rerender(<Avatar id="g1" name="Viaje" emoji={null} />);
     expect(container).toHaveTextContent('V');
+  });
+
+  it("Avatar: with a photo it shows it, and the initial if it can't load", () => {
+    const { container } = render(
+      <Avatar id="p1" name="Román" photoUrl="https://fotos.test/a.jpg" />,
+    );
+    const img = container.querySelector('img')!;
+    expect(img).toHaveAttribute('src', 'https://fotos.test/a.jpg');
+    expect(container).not.toHaveTextContent('R');
+    fireEvent.error(img);
+    expect(container.querySelector('img')).toBeNull();
+    expect(container).toHaveTextContent('R');
   });
 });

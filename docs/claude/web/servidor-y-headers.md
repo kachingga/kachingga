@@ -24,7 +24,7 @@ Sirve el build de Vite (`apps/web/dist`) en Railway: los archivos que existen, `
 default-src 'self'
 script-src 'self' https://challenges.cloudflare.com
 style-src 'self' 'unsafe-inline'
-img-src 'self' data:
+img-src 'self' data: <fotos>
 font-src 'self' data:
 connect-src 'self' <API> <Supabase> <Sentry>
 frame-src https://challenges.cloudflare.com
@@ -37,6 +37,7 @@ frame-ancestors 'none'; base-uri 'none'; form-action 'self'; object-src 'none'
   - El script que pone el tema y la paleta antes del primer pintado es un archivo, **`public/theme.js`**, cargado sin `defer` en el `<head>` de `index.html` (corre antes de pintar, como cuando era inline). Misma lógica y claves que `src/lib/theme.ts` (lo verifican `theme.test.ts` y `palettes.test.ts`). El service worker lo guarda como al resto.
   - **Zod sin `new Function`** (`src/lib/zod-config.ts`, el primer import de `main.tsx`): Zod prueba `new Function` al definir cada schema (al importar `@kachingga/api/schemas`) para compilar los parsers; con la CSP eso era una violación en cada carga. La web casi no valida (lo hace la API), así que va sin compilar (`jitless`).
 - **Estilos con `'unsafe-inline'`:** el splash de `index.html` (`<style>` y `style=""` en el SVG) y lo que inyectan los toasts (Sonner) y los diálogos (Radix). Un estilo inyectado no ejecuta código; los scripts siguen cerrados.
+- **`<fotos>` en `img-src`:** el origen del bucket de R2 de las fotos (`PHOTOS_ORIGIN`, ej. `https://<account>.r2.cloudflarestorage.com`): las fotos de perfil y de grupo se ven con links firmados a ese bucket. Solo imágenes: ni scripts ni conexiones. Sin la variable no se suma.
 - **`data:`** en imágenes y fuentes: Vite mete como `data:` las fuentes más chicas (subconjuntos de Manrope y Bricolage).
 - Lo que no gobierna la CSP y la app usa: ir a Google (navegación de toda la página) y descargar el export (`<a download>` con un `blob:`).
 

@@ -79,6 +79,8 @@ const attacks: Record<string, () => Promise<unknown>> = {
   'categories.unarchive': () => outsider.categories.unarchive({ categoryId: category.id }),
   'categories.suggest': () => outsider.categories.suggest({ groupId: group.id, description: 'Secreto' }),
   'notifications.setGroupMuted': () => outsider.notifications.setGroupMuted({ groupId: group.id, muted: true }),
+  'photos.setGroup': () => outsider.photos.setGroup({ groupId: group.id, photo: 'AAAA' }),
+  'photos.removeGroup': () => outsider.photos.removeGroup({ groupId: group.id }),
 }
 
 // Procedures that don't take a group (or reach it only through the invite code, on purpose).
@@ -100,6 +102,9 @@ const notGroupScoped: Record<string, string> = {
   'notifications.deviceStatus': "only the caller's devices (push.test.ts)",
   'notifications.subscribeDevice': "the caller's own device (push.test.ts)",
   'notifications.unsubscribeDevice': "only the caller's devices (push.test.ts)",
+  'photos.config': 'whether photos are on',
+  'photos.setMine': "only the caller's photo (photos.test.ts)",
+  'photos.removeMine': "only the caller's photo",
 }
 
 describe('authorization: non-members', () => {
@@ -189,6 +194,8 @@ const archivedWrites: Record<string, () => Promise<unknown>> = {
   'categories.update': () => keeper.categories.update({ categoryId: activeCategory!.id, name: 'Otra' }),
   'categories.archive': () => keeper.categories.archive({ categoryId: activeCategory!.id }),
   'categories.unarchive': () => keeper.categories.unarchive({ categoryId: archivedCategory!.id }),
+  'photos.setGroup': () => keeper.photos.setGroup({ groupId: shelved.id, photo: 'AAAA' }),
+  'photos.removeGroup': () => keeper.photos.removeGroup({ groupId: shelved.id }),
 }
 
 // Mutations that work on an archived group, on purpose.
@@ -203,6 +210,8 @@ const writableWhenArchived: Record<string, string> = {
   'notifications.subscribeDevice': "the caller's device, not group data",
   'notifications.unsubscribeDevice': "the caller's device, not group data",
   'notifications.setGroupMuted': 'personal setting, not group data (push.test.ts)',
+  'photos.setMine': "the caller's own photo, not group data",
+  'photos.removeMine': "the caller's own photo, not group data",
 }
 
 describe('archived group: read-only', () => {

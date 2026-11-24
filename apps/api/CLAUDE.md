@@ -65,7 +65,7 @@ bun run db:seed                  # datos de prueba en DEV
 
 - **`.env` → DEV** (`stg`, ref `nraoqdaplvvsakvtlcam`): lo usan `bun run dev`, los scripts de DB y Prisma Studio.
 - **`.env.prod` → PROD** (`prod`, ref `czrkjokurbmbbvobvmxd`): solo para `db:migrate:prod` y como referencia de las variables de Railway. `.env.prod` no lo carga nadie salvo `prisma.config.ts` cuando `PRISMA_ENV_FILE=.env.prod`.
-- Ambos gitignoreados; cada línea del `.env.sample` dice de dónde sale el valor. Bun carga `.env` solo. Variables: `DATABASE_URL` (transaction pooler, 6543), `DIRECT_URL` (session pooler, 5432, migraciones), `SUPABASE_URL`, `SUPABASE_SECRET_KEY`, `PORT`, `CORS_ORIGINS`, `SENTRY_DSN` / `SENTRY_ENVIRONMENT` (vacías = Sentry apagado), `MAX_DB_MB` (vacía = sin guardia de tamaño de la base), `VAPID_PUBLIC_KEY` / `VAPID_PRIVATE_KEY` (vacías = sin notificaciones en el dispositivo; nunca se usan en los tests), `SEED_USER_PASSWORD` (solo dev).
+- Ambos gitignoreados; cada línea del `.env.sample` dice de dónde sale el valor. Bun carga `.env` solo. Variables: `DATABASE_URL` (transaction pooler, 6543), `DIRECT_URL` (session pooler, 5432, migraciones), `SUPABASE_URL`, `SUPABASE_SECRET_KEY`, `PORT`, `CORS_ORIGINS`, `SENTRY_DSN` / `SENTRY_ENVIRONMENT` (vacías = Sentry apagado), `MAX_DB_MB` (vacía = sin guardia de tamaño de la base), `VAPID_PUBLIC_KEY` / `VAPID_PRIVATE_KEY` (vacías = sin notificaciones en el dispositivo; nunca se usan en los tests), `R2_ACCOUNT_ID` / `R2_ACCESS_KEY_ID` / `R2_SECRET_ACCESS_KEY` / `R2_BUCKET` (vacías = sin fotos; nunca en los tests), `SEED_USER_PASSWORD` (solo dev).
 
 ## Arquitectura
 
@@ -78,7 +78,8 @@ src/
 ├── db/                   # schema.prisma (generator + datasource), models/*.prisma (uno por dominio), migrations/,
 │                         # index.ts (`prisma`: PrismaClient con @prisma/adapter-pg), generated/ (gitignoreado)
 ├── lib/                  # access, splits, balances, summary, aggregates (sumas en SQL), rates, exportExpenses, paymentAlias, rateLimit, quotas,
-│                         # notifications (a quién le llega cada notificación), push (notificaciones en el dispositivo)…
+│                         # notifications (a quién le llega cada notificación), push (notificaciones en el dispositivo),
+│                         # photos (fotos: limpiarlas, guardarlas en R2, los links que vencen)…
 └── __tests__/            # bun:test (unit, HTTP, integración con PGlite)
 scripts/                  # new-migration.ts (db:migrate:new), seed.ts (db:seed)
 ```

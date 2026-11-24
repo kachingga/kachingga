@@ -134,9 +134,9 @@ describe('groups', () => {
     const { ana, beto, group, pAna, pBeto, pJuan } = await groupWithMembers()
     const [anaGroup] = await ana.groups.list()
     expect(anaGroup!.participants).toEqual([
-      { id: pAna, name: 'Ana' },
-      { id: pBeto, name: 'Beto' },
-      { id: pJuan, name: 'Juan' },
+      { id: pAna, name: 'Ana', photoUrl: null },
+      { id: pBeto, name: 'Beto', photoUrl: null },
+      { id: pJuan, name: 'Juan', photoUrl: null },
     ])
     // Beto sees the same people: inside a group everything is public to its members.
     const betoGroup = (await beto.groups.list()).find((g) => g.id === group.id)!

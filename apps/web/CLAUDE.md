@@ -106,13 +106,15 @@ src/
 │                             # mail-sent ("Revisá tu mail" / "Reenviar mail"),
 │                             # email-link-choice (link de un mail con la sesión abierta: seguir o quedarse),
 │                             # password-input (contraseña con botón para verla, al lado: no adentro, por 1Password),
-│                             # push-device-card (activar / desactivar las notificaciones en este dispositivo)
+│                             # push-device-card (activar / desactivar las notificaciones en este dispositivo),
+│                             # group-emoji-picker, photo-picker, profile-photo-card (Mi cuenta → "Tu foto")
 ├── lib/                      # trpc, supabase (ÚNICO que importa Supabase), auth, auth-errors (en español),
 │                             # email-link (links de los mails), use-captcha (Turnstile), format, optimistic,
 │                             # use-prefetch, use-exchange-rate, use-confirm, use-go-back, offline-cache,
 │                             # theme, use-sign-out, categories (ícono y color de cada categoría), use-debounced-value,
 │                             # screen-transitions (View Transitions entre pantallas), zod-config (Zod sin eval, por la CSP),
-│                             # calculator (las cuentas de <CalculatorInput>), push (notificaciones en el dispositivo)
+│                             # calculator (las cuentas de <CalculatorInput>), push (notificaciones en el dispositivo),
+│                             # photo (recortar y achicar una foto antes de subirla), use-photo-input
 └── test/                     # setup.ts, render.tsx (renderWithApi), fake-turnstile.tsx (captcha de mentira)
 e2e/                          # Playwright
 ```

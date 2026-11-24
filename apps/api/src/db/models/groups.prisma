@@ -2,6 +2,7 @@ model Group {
   id           String    @id @default(cuid())
   name         String
   emoji        String? // shown instead of the initial (one emoji, see groupEmoji in src/schemas.ts)
+  photoKey     String? // its photo (lib/photos.ts), shown before the emoji or the initial
   baseCurrency Currency
   inviteCode   String    @unique
   createdById  String // Supabase auth user id

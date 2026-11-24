@@ -71,13 +71,19 @@ Proyecto de **Kachingga**, una organización de amigos (repo: `github.com/kachin
 - **Cambiar el email** (desde Mi cuenta): cada uno el suyo. Se confirma **desde el email actual y desde el nuevo** (un link en cada uno); recién con los dos cambia. Quien entra con Google puede cambiarlo y sigue entrando con Google.
 - **Borrar mi cuenta** (desde Mi cuenta): cualquiera puede borrar la suya, y solo la suya. **No lo saca de sus grupos:** su participante queda **sin cuenta** (como "Juan", que no usa la app), con su nombre, sus gastos, sus pagos y sus saldos tal cual; nada de los grupos se borra. **Sus deudas quedan en el grupo, a su nombre** (cualquiera puede registrar después un pago suyo). Antes de confirmar se le muestran sus saldos pendientes en cada grupo: avisa, no bloquea.
   - **Antes de borrarla tiene que volver a identificarse:** con su contraseña o, si entra con Google, volviendo a entrar con Google (sin mails ni magic link). Una sesión abierta no alcanza (un celu prestado, un token robado): **la API lo comprueba** y solo borra si la sesión se inició así hace 5 minutos o menos.
-  - Se borra lo que sin cuenta no sirve: su **alias** (el de la cuenta y los de cada grupo), sus **filtros guardados**, sus **notificaciones**, los **dispositivos** donde activó las notificaciones y los grupos que había silenciado (ver "Notificaciones").
+  - Se borra lo que sin cuenta no sirve: su **alias** (el de la cuenta y los de cada grupo), su **foto**, sus **filtros guardados**, sus **notificaciones**, los **dispositivos** donde activó las notificaciones y los grupos que había silenciado (ver "Notificaciones").
   - La cuenta de Supabase se borra con **borrado lógico** (soft delete): no se puede volver a entrar con ella. No se puede deshacer.
   - Si era el único con cuenta en un grupo, el grupo queda sin nadie que lo vea. Se acepta (no se borra nada).
 
 ### Grupos
 - Un grupo tiene **nombre** y **moneda base** (ver Multimoneda). Quien lo crea queda como participante con el nombre que elija.
 - **Emoji del grupo** (opcional): se muestra en vez de la inicial. Uno solo; cualquier miembro lo pone, lo cambia o lo saca (como el nombre). En un grupo archivado no se puede cambiar.
+
+### Fotos
+- **Foto de perfil:** cada uno pone, cambia o saca **la suya** (desde Mi cuenta), y se ve en todos sus grupos. **Nadie le pone foto a otro**, y los participantes **sin cuenta no tienen foto** (siguen con su inicial): sería subir la foto de alguien que no aceptó nada. Al borrar la cuenta, se borra.
+- **Foto del grupo:** cualquier miembro la pone, la cambia o la saca (como el nombre o el emoji); en un grupo archivado no se puede. Se muestra antes que el emoji o la inicial.
+- **Quién las ve:** la foto de una persona, los miembros de los grupos donde está; la de un grupo, sus miembros. La app las muestra con links que vencen a los pocos días.
+- Antes de subirla, la app la **recorta cuadrada y la achica** (256 px una de perfil, 512 una de grupo), y la API **le saca todos los metadatos** (como la ubicación GPS de una foto del celu). Solo imágenes JPEG de hasta 300 KB.
 - **Solo ven un grupo los usuarios que son participantes de ese grupo.** Para cualquier otro, el grupo "no existe" (no se revela que existe).
 - Todos los miembros tienen los mismos permisos: no hay admin. Cualquiera puede cargar, editar o borrar cualquier gasto del grupo.
 - **Dentro del grupo todo es público para sus miembros:** todos ven todos los gastos (los cargue y los pague quien sea), todos los pagos y los saldos de todos. Lo único personal son los **filtros guardados** y las **notificaciones** de cada uno.

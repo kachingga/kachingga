@@ -25,11 +25,11 @@ describe('alias de la cuenta', () => {
 
   test('starts empty, can be set and cleared', async () => {
     const { yo } = await group()
-    expect(await yo.profile.get()).toEqual({ paymentAlias: null })
+    expect(await yo.profile.get()).toEqual({ paymentAlias: null, photoUrl: null })
     await yo.profile.update({ paymentAlias: 'galo.mp' })
-    expect(await yo.profile.get()).toEqual({ paymentAlias: 'galo.mp' })
+    expect(await yo.profile.get()).toEqual({ paymentAlias: 'galo.mp', photoUrl: null })
     await yo.profile.update({ paymentAlias: null })
-    expect(await yo.profile.get()).toEqual({ paymentAlias: null })
+    expect(await yo.profile.get()).toEqual({ paymentAlias: null, photoUrl: null })
   })
 
   test('shows up in every group of that person', async () => {
@@ -51,7 +51,7 @@ describe('alias por grupo', () => {
 
     await yo.participants.setPaymentAlias({ participantId: me, paymentAlias: 'galo.viajes' })
     expect(await aliasOf('Yo')).toMatchObject({ paymentAlias: 'galo.viajes', paymentAliasSource: 'group' })
-    expect(await yo.profile.get()).toEqual({ paymentAlias: 'galo.mp' }) // la cuenta no cambia
+    expect(await yo.profile.get()).toEqual({ paymentAlias: 'galo.mp', photoUrl: null }) // la cuenta no cambia
 
     await yo.participants.setPaymentAlias({ participantId: me, paymentAlias: null })
     expect(await aliasOf('Yo')).toMatchObject({ paymentAlias: 'galo.mp', paymentAliasSource: 'account' })

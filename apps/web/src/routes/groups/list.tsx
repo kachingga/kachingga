@@ -213,6 +213,7 @@ export function GroupList() {
                     id={group.id}
                     name={group.name}
                     emoji={group.emoji}
+                    photoUrl={group.photoUrl}
                     className="size-14 rounded-lg text-2xl ring-0"
                   />
                   <ChevronRight

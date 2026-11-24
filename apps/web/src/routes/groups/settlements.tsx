@@ -17,6 +17,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { NativeSelect } from '@/components/ui/native-select';
 import { ListScreenSkeleton, RowsSkeleton } from '@/components/skeletons';
+import { photoOf } from '@/lib/photo';
 import { useTRPC } from '@/lib/trpc';
 import { buildSettlement, byDateDesc, isTemp } from '@/lib/optimistic';
 import { useConfirm } from '@/lib/use-confirm';
@@ -331,8 +332,18 @@ function SettlementsBody({ groupId, group }: { groupId: string; group: GroupData
               className={`flex items-center gap-3 rounded-lg border bg-card p-4 shadow-sticker ${isTemp(s.id) ? 'pop-in opacity-60' : ''}`}
             >
               <div aria-hidden className="flex shrink-0 items-center -space-x-2">
-                <Avatar id={s.from.id} name={s.from.name} className="size-8 text-xs" />
-                <Avatar id={s.to.id} name={s.to.name} className="size-8 text-xs" />
+                <Avatar
+                  id={s.from.id}
+                  name={s.from.name}
+                  photoUrl={photoOf(group, s.from.id)}
+                  className="size-8 text-xs"
+                />
+                <Avatar
+                  id={s.to.id}
+                  name={s.to.name}
+                  photoUrl={photoOf(group, s.to.id)}
+                  className="size-8 text-xs"
+                />
               </div>
               <div className="min-w-0 flex-1">
                 <p className="text-sm font-semibold">
