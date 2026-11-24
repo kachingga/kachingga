@@ -88,6 +88,10 @@ const calls: Record<string, () => Promise<unknown>> = {
   'profile.get': () => member.profile.get(),
   'profile.update': () => member.profile.update({ paymentAlias: 'miembro.mp' }),
   'rates.get': () => member.rates.get({ currency: 'USD' }),
+  // The owner's expenses and payments the member is in
+  'notifications.list': () => member.notifications.list(),
+  'notifications.unreadCount': () => member.notifications.unreadCount(),
+  'notifications.markAllRead': () => member.notifications.markAllRead(),
 }
 
 const exempt: Record<string, string> = {

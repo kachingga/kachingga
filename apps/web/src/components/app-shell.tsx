@@ -1,11 +1,13 @@
 import { useId, type ReactNode } from 'react';
 import { Link, NavLink } from 'react-router';
+import { useQuery } from '@tanstack/react-query';
 import { cn } from 'cn';
-import { LogOut, Moon, Sun, UserRound, Users } from 'lucide-react';
+import { Bell, LogOut, Moon, Sun, UserRound, Users } from 'lucide-react';
 
 import { AnimatedLayout } from '@/components/animated-layout';
 import { Button } from '@/components/ui/button';
 import { setTheme, useTheme } from '@/lib/theme';
+import { useTRPC } from '@/lib/trpc';
 import { useSignOut } from '@/lib/use-sign-out';
 
 /**
@@ -73,6 +75,32 @@ export function ThemeToggle() {
   );
 }
 
+/** Unread "Novedades": asked every minute while the app is open, and when it comes back to the front. */
+function useUnreadCount() {
+  const trpc = useTRPC();
+  const unread = useQuery(
+    trpc.notifications.unreadCount.queryOptions(undefined, { refetchInterval: 60_000 }),
+  );
+  return unread.data ?? 0;
+}
+
+const unreadLabel = (count: number) => (count === 0 ? 'Novedades' : `Novedades: ${count} sin leer`);
+
+function UnreadBadge({ count, className }: { count: number; className?: string }) {
+  if (count === 0) return null;
+  return (
+    <span
+      aria-hidden
+      className={cn(
+        'grid h-5 min-w-5 place-items-center rounded-full bg-highlight px-1 text-[11px] font-bold text-highlight-foreground tabular',
+        className,
+      )}
+    >
+      {count > 9 ? '9+' : count}
+    </span>
+  );
+}
+
 function NavItem({ to, icon, children }: { to: string; icon: ReactNode; children: ReactNode }) {
   return (
     <NavLink
@@ -96,6 +124,7 @@ function NavItem({ to, icon, children }: { to: string; icon: ReactNode; children
  */
 export function AppShell() {
   const signOut = useSignOut();
+  const unread = useUnreadCount();
   return (
     <div className="min-h-dvh lg:grid lg:grid-cols-[240px_1fr]">
       <aside className="sticky top-0 hidden h-dvh flex-col border-r bg-sidebar px-5 py-8 lg:flex">
@@ -104,6 +133,11 @@ export function AppShell() {
         <nav aria-label="Principal" className="mt-12 flex flex-col gap-2 text-sm font-semibold">
           <NavItem to="/grupos" icon={<Users className="size-5" />}>
             Mis grupos
+          </NavItem>
+          <NavItem to="/novedades" icon={<Bell className="size-5" />}>
+            Novedades
+            {unread > 0 && <span className="sr-only">: {unread} sin leer</span>}
+            <UnreadBadge count={unread} className="ml-auto" />
           </NavItem>
           <NavItem to="/cuenta" icon={<UserRound className="size-5" />}>
             Mi cuenta
@@ -129,6 +163,14 @@ export function AppShell() {
         <header className="sticky top-0 z-20 flex items-center justify-between border-b bg-background/95 px-5 max-xs:px-4 pt-[calc(env(safe-area-inset-top)+0.75rem)] pb-3 backdrop-blur [view-transition-name:app-header] lg:hidden">
           <Logo className="text-xl" />
           <div className="flex items-center gap-2">
+            <Link
+              to="/novedades"
+              aria-label={unreadLabel(unread)}
+              className="tap-area relative grid size-9 place-items-center rounded-full text-muted-foreground hover:bg-muted"
+            >
+              <Bell className="size-[18px]" />
+              <UnreadBadge count={unread} className="absolute -top-1 -right-1" />
+            </Link>
             <Link
               to="/cuenta"
               aria-label="Mi cuenta"

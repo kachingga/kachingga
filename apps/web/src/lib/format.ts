@@ -149,6 +149,22 @@ export function formatDate(date: Date | string): string {
   return new Intl.DateTimeFormat(getLocale(), { timeZone: 'UTC' }).format(new Date(date));
 }
 
+/**
+ * How long ago something happened, in the browser's language ("hace 5 minutos", "ayer"); a week or
+ * more, its date. For instants (a change in "Novedades"), not calendar days.
+ */
+export function formatTimeAgo(date: Date | string, now: Date = new Date()): string {
+  const seconds = Math.round((new Date(date).getTime() - now.getTime()) / 1000);
+  const rtf = new Intl.RelativeTimeFormat(getLocale(), { numeric: 'auto' });
+  if (seconds > -60) return rtf.format(0, 'second');
+  if (seconds > -3600) return rtf.format(Math.round(seconds / 60), 'minute');
+  if (seconds > -86400) return rtf.format(Math.round(seconds / 3600), 'hour');
+  if (seconds > -7 * 86400) return rtf.format(Math.round(seconds / 86400), 'day');
+  return new Intl.DateTimeFormat(getLocale(), { day: 'numeric', month: 'short' }).format(
+    new Date(date),
+  );
+}
+
 export const splitTypeLabels: Record<'EQUAL' | 'AMOUNT' | 'PERCENTAGE', string> = {
   EQUAL: 'partes iguales',
   AMOUNT: 'por monto',

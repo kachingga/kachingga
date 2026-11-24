@@ -1,0 +1,30 @@
+enum NotificationKind {
+  EXPENSE_CREATED
+  EXPENSE_UPDATED
+  EXPENSE_DELETED
+  SETTLEMENT_CREATED
+  SETTLEMENT_DELETED
+}
+
+// "Román agregó «Cena»": a change to an expense or a payment, for one person involved in it (with an
+// account) who didn't make it. What the app shows in "Novedades". One row per recipient; a newer
+// change to the same expense or payment they haven't read yet replaces theirs (lib/notifications.ts),
+// and each user keeps only their latest MAX_NOTIFICATIONS_PER_USER.
+model Notification {
+  id           String           @id @default(cuid())
+  userId       String // the recipient: Supabase auth user id
+  groupId      String
+  actorId      String? // participant who made the change (null if that participant was removed later)
+  kind         NotificationKind
+  expenseId    String?
+  settlementId String?
+  createdAt    DateTime         @default(now()) // when the (latest) change happened
+  readAt       DateTime?
+
+  group      Group        @relation(fields: [groupId], references: [id])
+  actor      Participant? @relation(fields: [actorId], references: [id], onDelete: SetNull)
+  expense    Expense?     @relation(fields: [expenseId], references: [id])
+  settlement Settlement?  @relation(fields: [settlementId], references: [id])
+
+  @@index([userId, createdAt])
+}
