@@ -203,3 +203,42 @@ export function distributeCents(total: number, weights: number[]): number[] {
   }
   return floors
 }
+
+// "Novedades" (root CLAUDE.md → "Notificaciones"): what each one says and where it leads, the same in
+// the app's list and in the notification on the device.
+type NotificationPerson = { name: string; isMe: boolean }
+export type NotificationView = {
+  kind: 'EXPENSE_CREATED' | 'EXPENSE_UPDATED' | 'EXPENSE_DELETED' | 'SETTLEMENT_CREATED' | 'SETTLEMENT_DELETED'
+  group: { id: string }
+  actor: { name: string } | null
+  expense: { id: string; description: string; deletedAt: Date | null } | null
+  settlement: { from: NotificationPerson; to: NotificationPerson } | null
+}
+
+/** "Román agregó «Cena»", "Ana registró un pago: Beto → vos". */
+export function notificationText(n: NotificationView): string {
+  const who = n.actor?.name ?? 'Alguien'
+  const expense = `«${n.expense?.description ?? 'un gasto'}»`
+  const name = (p: NotificationPerson) => (p.isMe ? 'vos' : p.name)
+  const payment = n.settlement ? `: ${name(n.settlement.from)} → ${name(n.settlement.to)}` : ''
+  switch (n.kind) {
+    case 'EXPENSE_CREATED':
+      return `${who} agregó ${expense}`
+    case 'EXPENSE_UPDATED':
+      return `${who} editó ${expense}`
+    case 'EXPENSE_DELETED':
+      return `${who} borró ${expense}`
+    case 'SETTLEMENT_CREATED':
+      return `${who} registró un pago${payment}`
+    case 'SETTLEMENT_DELETED':
+      return `${who} borró un pago${payment}`
+  }
+}
+
+/** Where it leads: the expense (if it's still there), else its group; a payment, the group's payments. */
+export function notificationPath(n: NotificationView): string {
+  const group = `/grupos/${n.group.id}`
+  if (n.settlement) return `${group}/pagos`
+  if (n.expense && !n.expense.deletedAt) return `${group}/gastos/${n.expense.id}`
+  return group
+}

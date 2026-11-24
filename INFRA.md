@@ -62,6 +62,7 @@ Mismas variables en los dos entornos, con los valores de su base (staging = `app
 | `SENTRY_DSN` | DSN del proyecto `kachingga-api` de Sentry (Settings → Client Keys). Sin él no se reporta nada (local, tests, CI) |
 | `SENTRY_ENVIRONMENT` | `production` o `staging` |
 | `MAX_DB_MB` | Tamaño de la base (MB, `pg_database_size`) a partir del cual la API deja de crear cosas (editar y borrar siguen andando) y lo avisa a Sentry: `docs/claude/api/seguridad.md` → "Límites contra abuso". **Prod: `400`. Staging: `80`.** Suman 480 de los 500 MB de la org ("Plan de Supabase"); el aviso del backup (350 MB de prod) salta antes. Vacía = sin guardia (local, tests, CI) |
+| `VAPID_PUBLIC_KEY` / `VAPID_PRIVATE_KEY` | Claves de las **notificaciones en el dispositivo** (Web Push): la API firma cada notificación con la privada y los navegadores se suscriben con la pública (la pública no es secreta: la web la pide con `notifications.pushConfig`). **La privada es un secreto.** Un par distinto por entorno, generado una vez con `bunx web-push generate-vapid-keys` (desde `apps/api`); no se rotan sin motivo: con un par nuevo, los dispositivos suscriptos dejan de recibir hasta que cada uno las vuelva a activar. Vacías = sin notificaciones en el dispositivo (local, tests, CI; "Novedades" en la app anda igual). Si se filtra la privada: par nuevo y avisar que hay que reactivarlas. `docs/claude/web/notificaciones.md` |
 | _(v2)_ `LLM_API_KEY` | API key del proveedor del agente |
 
 ### Railway — servicio `web` (`apps/web`)

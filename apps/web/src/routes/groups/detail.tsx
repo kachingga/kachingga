@@ -16,6 +16,7 @@ import {
   ReceiptText,
 } from 'lucide-react';
 import { cn } from 'cn';
+import { toast } from 'sonner';
 
 import { ArchivedNotice } from '@/components/archived-notice';
 import { ErrorState } from '@/components/error-state';
@@ -393,6 +394,24 @@ export function GroupDetail() {
     }),
   );
 
+  // "Silenciar": only when the API sends notifications to the devices at all.
+  const pushConfig = useQuery(
+    trpc.notifications.pushConfig.queryOptions(undefined, { staleTime: Infinity }),
+  );
+  const setMuted = useMutation(
+    trpc.notifications.setGroupMuted.mutationOptions({
+      onSuccess: ({ muted }) => {
+        void queryClient.invalidateQueries(trpc.groups.get.queryFilter({ groupId: groupId! }));
+        toast.success(
+          muted
+            ? 'No te van a llegar notificaciones de este grupo. Las seguís viendo en Novedades.'
+            : 'Te van a llegar las notificaciones de este grupo.',
+        );
+      },
+      onError: (err) => toast.error(err.message),
+    }),
+  );
+
   if (group.isPending) {
     return <GroupSkeleton balances={showBalances} />;
   }
@@ -538,6 +557,18 @@ export function GroupDetail() {
                     {g.inviteCode}
                   </span>
                 </Button>
+                {pushConfig.data?.publicKey && (
+                  <Button
+                    onClick={() => {
+                      setMuted.mutate({ groupId: groupId!, muted: !g.notificationsMuted });
+                      setShowMenu(false);
+                    }}
+                    variant="ghost"
+                    className="h-auto min-h-11 w-full justify-start rounded-xl px-3 py-2 font-normal"
+                  >
+                    {g.notificationsMuted ? 'Activar notificaciones' : 'Silenciar notificaciones'}
+                  </Button>
+                )}
                 {!g.archivedAt && (
                   <Button
                     onClick={() => {

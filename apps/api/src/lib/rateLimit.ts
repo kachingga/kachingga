@@ -74,6 +74,7 @@ export const CREATING_PROCEDURES: ReadonlySet<string> = new Set([
   'expenses.create',
   'settlements.create',
   'savedFilters.create',
+  'notifications.subscribeDevice',
 ])
 export const USER_CREATION_RULE: Rule = { limit: 200, windowMs: DAY }
 

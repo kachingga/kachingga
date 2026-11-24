@@ -3,45 +3,19 @@ import { Link, useNavigate } from 'react-router';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import type { inferRouterOutputs } from '@trpc/server';
 import type { AppRouter } from '@kachingga/api';
+import { notificationPath, notificationText } from '@kachingga/api/schemas';
 import { Bell, HandCoins } from 'lucide-react';
 import { cn } from 'cn';
 
 import { ErrorState } from '@/components/error-state';
 import { CategoryIcon, EmptyState, Page, PageHeader } from '@/components/kit';
+import { PushDeviceCard } from '@/components/push-device-card';
 import { ExpenseListSkeleton } from '@/components/skeletons';
 import { formatCents, formatTimeAgo } from '@/lib/format';
 import { useOnline } from '@/lib/offline-cache';
 import { useTRPC } from '@/lib/trpc';
 
 type Notification = inferRouterOutputs<AppRouter>['notifications']['list'][number];
-
-/** "Román agregó «Cena»", "Ana registró un pago: Beto → vos". */
-function notificationText(n: Notification): string {
-  const who = n.actor?.name ?? 'Alguien';
-  const expense = `«${n.expense?.description ?? 'un gasto'}»`;
-  const name = (p: { name: string; isMe: boolean }) => (p.isMe ? 'vos' : p.name);
-  const payment = n.settlement ? `${name(n.settlement.from)} → ${name(n.settlement.to)}` : '';
-  switch (n.kind) {
-    case 'EXPENSE_CREATED':
-      return `${who} agregó ${expense}`;
-    case 'EXPENSE_UPDATED':
-      return `${who} editó ${expense}`;
-    case 'EXPENSE_DELETED':
-      return `${who} borró ${expense}`;
-    case 'SETTLEMENT_CREATED':
-      return `${who} registró un pago: ${payment}`;
-    case 'SETTLEMENT_DELETED':
-      return `${who} borró un pago: ${payment}`;
-  }
-}
-
-/** Where tapping it goes: the expense (if it's still there), else the group; a payment, its payments. */
-function notificationLink(n: Notification): string {
-  const group = `/grupos/${n.group.id}`;
-  if (n.settlement) return `${group}/pagos`;
-  if (n.expense && !n.expense.deletedAt) return `${group}/gastos/${n.expense.id}`;
-  return group;
-}
 
 function NotificationRow({
   notification: n,
@@ -55,7 +29,7 @@ function NotificationRow({
   return (
     <li className="border-b last:border-0">
       <Link
-        to={notificationLink(n)}
+        to={notificationPath(n)}
         className="flex items-center gap-3 p-4 transition-colors max-xs:p-3 hover:bg-muted/60 focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-ring"
       >
         {/* The unread dot goes on the icon: on a phone the text needs all the width it can get. */}
@@ -127,6 +101,8 @@ export function Notifications() {
   return (
     <Page>
       <PageHeader title="Novedades" back={{ onClick: () => navigate(-1), label: 'Volver' }} />
+
+      <PushDeviceCard prompt />
 
       {list.isPending && <ExpenseListSkeleton />}
 

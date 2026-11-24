@@ -77,6 +77,7 @@ const attacks: Record<string, () => Promise<unknown>> = {
   'categories.archive': () => outsider.categories.archive({ categoryId: category.id }),
   'categories.unarchive': () => outsider.categories.unarchive({ categoryId: category.id }),
   'categories.suggest': () => outsider.categories.suggest({ groupId: group.id, description: 'Secreto' }),
+  'notifications.setGroupMuted': () => outsider.notifications.setGroupMuted({ groupId: group.id, muted: true }),
 }
 
 // Procedures that don't take a group (or reach it only through the invite code, on purpose).
@@ -94,6 +95,10 @@ const notGroupScoped: Record<string, string> = {
   'notifications.list': "only the caller's, of groups they're in (notifications.test.ts)",
   'notifications.unreadCount': "only the caller's, of groups they're in (notifications.test.ts)",
   'notifications.markAllRead': "only the caller's",
+  'notifications.pushConfig': 'the public key browsers subscribe with',
+  'notifications.deviceStatus': "only the caller's devices (push.test.ts)",
+  'notifications.subscribeDevice': "the caller's own device (push.test.ts)",
+  'notifications.unsubscribeDevice': "only the caller's devices (push.test.ts)",
 }
 
 describe('authorization: non-members', () => {
@@ -193,6 +198,9 @@ const writableWhenArchived: Record<string, string> = {
   'savedFilters.create': 'personal way of reading the expenses, not group data',
   'savedFilters.delete': 'personal way of reading the expenses, not group data',
   'notifications.markAllRead': "the caller's own read marks, not group data",
+  'notifications.subscribeDevice': "the caller's device, not group data",
+  'notifications.unsubscribeDevice': "the caller's device, not group data",
+  'notifications.setGroupMuted': 'personal setting, not group data (push.test.ts)',
 }
 
 describe('archived group: read-only', () => {

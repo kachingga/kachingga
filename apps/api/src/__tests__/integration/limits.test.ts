@@ -439,6 +439,11 @@ describe('per-user limits', () => {
           }),
         'settlements.create': pay,
         'savedFilters.create': () => busy.savedFilters.create({ groupId: own.id, name: 'Míos', filters: {} }),
+        'notifications.subscribeDevice': () =>
+          busy.notifications.subscribeDevice({
+            endpoint: 'https://fcm.googleapis.com/fcm/send/limits',
+            keys: { p256dh: 'p'.repeat(87), auth: 'a'.repeat(22) },
+          }),
       }
       expect(Object.keys(attempts).sort()).toEqual([...CREATING_PROCEDURES].sort())
       for (const attempt of Object.values(attempts)) await expect(attempt()).rejects.toThrow(CREATION_LIMIT_MESSAGE)

@@ -71,7 +71,7 @@ Proyecto de **Kachingga**, una organización de amigos (repo: `github.com/kachin
 - **Cambiar el email** (desde Mi cuenta): cada uno el suyo. Se confirma **desde el email actual y desde el nuevo** (un link en cada uno); recién con los dos cambia. Quien entra con Google puede cambiarlo y sigue entrando con Google.
 - **Borrar mi cuenta** (desde Mi cuenta): cualquiera puede borrar la suya, y solo la suya. **No lo saca de sus grupos:** su participante queda **sin cuenta** (como "Juan", que no usa la app), con su nombre, sus gastos, sus pagos y sus saldos tal cual; nada de los grupos se borra. **Sus deudas quedan en el grupo, a su nombre** (cualquiera puede registrar después un pago suyo). Antes de confirmar se le muestran sus saldos pendientes en cada grupo: avisa, no bloquea.
   - **Antes de borrarla tiene que volver a identificarse:** con su contraseña o, si entra con Google, volviendo a entrar con Google (sin mails ni magic link). Una sesión abierta no alcanza (un celu prestado, un token robado): **la API lo comprueba** y solo borra si la sesión se inició así hace 5 minutos o menos.
-  - Se borra lo que sin cuenta no sirve: su **alias** (el de la cuenta y los de cada grupo), sus **filtros guardados** y sus **novedades** (ver "Notificaciones").
+  - Se borra lo que sin cuenta no sirve: su **alias** (el de la cuenta y los de cada grupo), sus **filtros guardados**, sus **novedades**, los **dispositivos** donde activó las notificaciones y los grupos que había silenciado (ver "Notificaciones").
   - La cuenta de Supabase se borra con **borrado lógico** (soft delete): no se puede volver a entrar con ella. No se puede deshacer.
   - Si era el único con cuenta en un grupo, el grupo queda sin nadie que lo vea. Se acepta (no se borra nada).
 
@@ -184,6 +184,10 @@ Proyecto de **Kachingga**, una organización de amigos (repo: `github.com/kachin
 - **En la app ("Novedades"):** una campanita con cuántas hay sin leer y la lista, de la más nueva a la más vieja: quién, qué, en qué grupo, cuándo y el monto ("Román agregó «Cena» · Bariloche · hace 5 minutos · $45.000"). **Abrirla las marca como leídas.** Tocar una lleva al gasto (al grupo, si se borró) o a los pagos del grupo. No se apagan.
 - Un cambio nuevo sobre el mismo gasto o pago **reemplaza** al que todavía no leíste, así no se llena de "editó" (si lo agregaron y lo editaron antes de que lo vieras, sigue diciendo "agregó", con el gasto como quedó).
 - Son **personales**: cada uno ve solo las suyas. Se guardan **las últimas 50** de cada persona; las más viejas se borran.
+- **En el dispositivo** (como cualquier app, aunque Kachingga esté cerrada): cada uno las **activa en cada dispositivo** desde Mi cuenta (el navegador pide permiso) y las puede desactivar ahí mismo. En iPhone y iPad solo llegan con la app **instalada en la pantalla de inicio**. Dicen el grupo, quién hizo qué y el monto ("Bariloche: Román agregó «Cena» · $45.000"); tocarla abre el gasto, o Novedades si hay varias.
+  - **Silenciar un grupo** (menú del grupo): sus notificaciones no le llegan a ningún dispositivo de esa persona; en Novedades siguen apareciendo.
+  - **Para que no molesten:** varias seguidas del mismo grupo llegan como una ("… (y 2 más)"), como mucho una por minuto por persona y grupo, y si ya las leyó en la app no le llegan.
+  - Al **cerrar sesión**, ese dispositivo deja de recibirlas (otra cuenta que entre ahí las activa de nuevo). Cada persona, **hasta 10 dispositivos** (al sumar uno más, se cae el más viejo).
 
 ### Decisiones de producto tomadas
 - **Sin roles ni permisos finos dentro de un grupo** (cualquier miembro carga, edita o borra cualquier gasto, como en Splitwise). Se revisó al abrirla a cualquiera (#44) y queda así: a un grupo solo entran las personas que se pasan el código entre ellas.
