@@ -71,6 +71,16 @@ describe('security headers', () => {
     ]);
   });
 
+  it('profile and group photos: images from their storage (PHOTOS_ORIGIN), nothing else from there', () => {
+    const csp = contentSecurityPolicy({
+      ...env,
+      PHOTOS_ORIGIN: 'https://0123abcd.r2.cloudflarestorage.com',
+    }).split('; ');
+    expect(csp).toContain("img-src 'self' data: https://0123abcd.r2.cloudflarestorage.com");
+    expect(csp.filter((d) => d.includes('r2.cloudflarestorage.com'))).toHaveLength(1);
+    expect(contentSecurityPolicy(env)).toContain("img-src 'self' data:;");
+  });
+
   it('without those variables (local, or Sentry off) it only connects to its own origin', () => {
     expect(contentSecurityPolicy({ VITE_API_URL: '' })).toContain("connect-src 'self';");
     expect(contentSecurityPolicy({ ...env, VITE_SENTRY_DSN: '' })).not.toContain('sentry.io');

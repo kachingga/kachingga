@@ -5,7 +5,9 @@
 import { afterAll, describe, expect, test } from 'bun:test'
 import crypto from 'node:crypto'
 import webpush from 'web-push'
+import { configurePhotos } from '../../lib/photos'
 import { configurePush } from '../../lib/push'
+import { fakeJpegBase64 } from '../jpegFixture'
 import { appRouter } from '../../trpc/router'
 import { setupTestApi, stubBlueRate } from './setup'
 
@@ -48,6 +50,11 @@ const category = await owner.categories.create({ groupId, name: 'Nafta', icon: '
 const vapid = webpush.generateVAPIDKeys()
 configurePush({ VAPID_PUBLIC_KEY: vapid.publicKey, VAPID_PRIVATE_KEY: vapid.privateKey }, () => ({ queue: () => {} }))
 afterAll(() => configurePush({}))
+// Photos on (a fake storage), the owner with theirs: the links never carry their account id
+configurePhotos({}, { put: async () => {}, remove: async () => {}, sign: (key) => `https://fotos.test/${key}?firma=x` })
+afterAll(() => configurePhotos({}))
+await owner.photos.setMine({ photo: fakeJpegBase64() })
+await owner.photos.setGroup({ groupId, photo: fakeJpegBase64() })
 const ecdh = crypto.createECDH('prime256v1')
 ecdh.generateKeys()
 const device = {
@@ -113,6 +120,11 @@ const calls: Record<string, () => Promise<unknown>> = {
   'notifications.subscribeDevice': () => member.notifications.subscribeDevice(device),
   'notifications.unsubscribeDevice': () => member.notifications.unsubscribeDevice({ endpoint: device.endpoint }),
   'notifications.setGroupMuted': () => member.notifications.setGroupMuted({ groupId, muted: true }),
+  'photos.config': () => member.photos.config(),
+  'photos.setMine': () => member.photos.setMine({ photo: fakeJpegBase64() }),
+  'photos.removeMine': () => member.photos.removeMine(),
+  'photos.setGroup': () => member.photos.setGroup({ groupId, photo: fakeJpegBase64() }),
+  'photos.removeGroup': () => member.photos.removeGroup({ groupId }),
 }
 
 const exempt: Record<string, string> = {

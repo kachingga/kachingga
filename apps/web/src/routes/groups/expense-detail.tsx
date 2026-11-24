@@ -8,6 +8,7 @@ import { ErrorState } from '@/components/error-state';
 import { Avatar, Card, CategoryIcon, Money, SectionTitle } from '@/components/kit';
 import { Button } from '@/components/ui/button';
 import { ExpenseDetailSkeleton } from '@/components/skeletons';
+import { photoOf } from '@/lib/photo';
 import { useTRPC } from '@/lib/trpc';
 import { useGoBack } from '@/lib/use-go-back';
 import { useConfirm } from '@/lib/use-confirm';
@@ -151,7 +152,12 @@ export function ExpenseDetail() {
           </p>
         )}
         <p className="mt-4 inline-flex items-center gap-2 rounded-full bg-muted py-1.5 pr-3 pl-1.5 text-sm">
-          <Avatar id={e.paidBy.id} name={e.paidBy.name} className="size-6 text-xs ring-0" />
+          <Avatar
+            id={e.paidBy.id}
+            name={e.paidBy.name}
+            photoUrl={photoOf(group.data, e.paidBy.id)}
+            className="size-6 text-xs ring-0"
+          />
           Pagó {e.paidBy.name}
         </p>
       </Card>
@@ -163,7 +169,11 @@ export function ExpenseDetail() {
         <ul className="mt-3 divide-y">
           {e.splits.map((split) => (
             <li key={split.participantId} className="flex items-center gap-3 py-2.5">
-              <Avatar id={split.participantId} name={split.participant.name} />
+              <Avatar
+                id={split.participantId}
+                name={split.participant.name}
+                photoUrl={photoOf(group.data, split.participantId)}
+              />
               <span className="flex-1 font-medium">{split.participant.name}</span>
               <span className="font-semibold tabular">
                 {formatCents(split.amountCents, e.currency)}

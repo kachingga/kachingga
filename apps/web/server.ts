@@ -50,16 +50,17 @@ const originOf = (url: string | undefined) => {
 /**
  * What the page may load and where it may connect: only this origin, plus the API, Supabase (login)
  * and Sentry of this environment (from the same variables the build reads; Railway gives them to the
- * server too) and Turnstile. Styles allow 'unsafe-inline' (the splash in index.html, and toasts and
+ * server too), Turnstile, and the photos' storage (PHOTOS_ORIGIN: Cloudflare R2, only images). Styles allow 'unsafe-inline' (the splash in index.html, and toasts and
  * dialogs inject theirs); scripts don't, nor eval. Details: docs/claude/web/servidor-y-headers.md.
  */
 export function contentSecurityPolicy(env: NodeJS.ProcessEnv) {
   const connect = [env.VITE_API_URL, env.VITE_SUPABASE_URL, env.VITE_SENTRY_DSN].flatMap(originOf);
+  const photos = originOf(env.PHOTOS_ORIGIN);
   return [
     "default-src 'self'",
     `script-src 'self' ${TURNSTILE}`,
     "style-src 'self' 'unsafe-inline'",
-    "img-src 'self' data:",
+    ["img-src 'self' data:", ...photos].join(' '),
     // Vite inlines the smallest font files (subsets of the app's fonts) as data: URLs.
     "font-src 'self' data:",
     ["connect-src 'self'", ...connect].join(' '),

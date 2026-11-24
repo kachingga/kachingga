@@ -1,6 +1,7 @@
 import { TRPCError } from '@trpc/server'
 import { z } from 'zod'
 import { prisma } from '../../db'
+import { deletePhoto, photoUrl } from '../../lib/photos'
 import { signedInRecently } from '../../lib/session'
 import { getSupabase } from '../../lib/supabase'
 import { paymentAlias } from '../../schemas'
@@ -10,7 +11,7 @@ export const profileRouter = router({
   // The logged-in user's settings. Today: the alias/CVU used in every group (unless a group overrides it).
   get: protectedProcedure.query(async ({ ctx }) => {
     const profile = await prisma.userProfile.findUnique({ where: { userId: ctx.user.id } })
-    return { paymentAlias: profile?.paymentAlias ?? null }
+    return { paymentAlias: profile?.paymentAlias ?? null, photoUrl: photoUrl(profile?.photoKey) }
   }),
 
   update: protectedProcedure.input(z.object({ paymentAlias })).mutation(async ({ ctx, input }) => {
@@ -24,8 +25,8 @@ export const profileRouter = router({
 
   // Deletes the caller's account (no input: only ever the caller's). Their participants stay in
   // every group without account (name, expenses, payments and balances untouched); what is only
-  // theirs goes (account alias, group aliases and mutes, saved filters, their notifications and
-  // devices). `createdById` fields stay as history.
+  // theirs goes (account alias and photo, group aliases and mutes, saved filters, their
+  // notifications and devices). `createdById` fields stay as history.
   // DB first, then Supabase: a deleted account is never still linked to a group, and the DB part
   // is idempotent, so retrying after a Supabase failure just finishes the job.
   // Only right after signing in again (password or Google, `lib/session.ts`): a session left open
@@ -35,6 +36,7 @@ export const profileRouter = router({
       throw new TRPCError({ code: 'FORBIDDEN', message: 'Para borrar tu cuenta, primero confirmá que sos vos.' })
     }
     const userId = ctx.user.id
+    const photo = (await prisma.userProfile.findUnique({ where: { userId }, select: { photoKey: true } }))?.photoKey
     await prisma.$transaction([
       prisma.participant.updateMany({ where: { userId }, data: { userId: null, paymentAlias: null, notificationsMuted: false } }),
       prisma.userProfile.deleteMany({ where: { userId } }),
@@ -42,6 +44,7 @@ export const profileRouter = router({
       prisma.notification.deleteMany({ where: { userId } }),
       prisma.pushSubscription.deleteMany({ where: { userId } }),
     ])
+    await deletePhoto(photo)
     // Soft delete: they can't sign in again and their tokens stop working. Irreversible.
     const { error } = await getSupabase().auth.admin.deleteUser(userId, true)
     if (error) {

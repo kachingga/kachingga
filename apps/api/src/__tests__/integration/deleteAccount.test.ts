@@ -1,5 +1,7 @@
 // Borrar mi cuenta: la persona se desvincula de sus grupos, no se borra de ellos (#104).
-import { beforeEach, describe, expect, mock, test } from 'bun:test'
+import { afterAll, beforeEach, describe, expect, mock, test } from 'bun:test'
+import { configurePhotos } from '../../lib/photos'
+import { fakeJpegBase64 } from '../jpegFixture'
 import { setupTestApi } from './setup'
 
 // Supabase's admin API, faked (no network): set up before setupTestApi imports the router.
@@ -8,6 +10,14 @@ mock.module('../../lib/supabase', () => ({ getSupabase: () => ({ auth: { admin: 
 
 const { caller, signedInCaller, anonymous, prisma } = await setupTestApi()
 beforeEach(() => deleteUser.mockClear())
+
+// The photo storage, faked: what gets deleted from it
+const removedPhotos: string[] = []
+configurePhotos(
+  {},
+  { put: async () => {}, remove: async (key) => void removedPhotos.push(key), sign: (key) => `https://fotos.test/${key}` },
+)
+afterAll(() => configurePhotos({}))
 
 const day = (d: string) => new Date(`2026-11-${d}T12:00:00Z`)
 let n = 0
@@ -118,8 +128,9 @@ describe('profile.deleteAccount', () => {
   test('unlinks me from every group: I stay as a participant without account, with my expenses and balances', async () => {
     const { anaId, ana, beto, viaje, depto, anaV, groupView } = await scenario()
     const before = { viaje: await groupView(viaje.id), depto: await groupView(depto.id) }
-    // Beto's "Cena", which she's in; a device and Viaje muted
+    // Beto's "Cena", which she's in; a device, Viaje muted and her photo
     expect(await ana.notifications.list()).toHaveLength(1)
+    const photoKey = new URL((await ana.photos.setMine({ photo: fakeJpegBase64() })).photoUrl!).pathname.slice(1)
     await prisma.pushSubscription.create({
       data: { userId: anaId, endpoint: `https://fcm.googleapis.com/fcm/send/${anaId}`, p256dh: 'k', auth: 'a' },
     })
@@ -154,6 +165,9 @@ describe('profile.deleteAccount', () => {
     expect(await prisma.savedFilter.count({ where: { userId: anaId } })).toBe(0)
     expect(await prisma.notification.count({ where: { userId: anaId } })).toBe(0)
     expect(await prisma.pushSubscription.count({ where: { userId: anaId } })).toBe(0)
+    // Her photo, from the storage too (she no longer shows with it in her groups)
+    expect(removedPhotos).toContain(photoKey)
+    expect((await beto.groups.get({ groupId: viaje.id })).participants.find((p) => p.id === anaV)?.photoUrl).toBeNull()
     // Her mute of Viaje doesn't stay on the participant (whoever claims it starts without it)
     expect(await prisma.participant.findUnique({ where: { id: anaV } })).toMatchObject({ notificationsMuted: false })
 
@@ -170,7 +184,7 @@ describe('profile.deleteAccount', () => {
     const { ana, beto, viaje, betoV } = await scenario()
     await ana.profile.deleteAccount()
 
-    expect(await beto.profile.get()).toEqual({ paymentAlias: 'beto.mp' })
+    expect(await beto.profile.get()).toEqual({ paymentAlias: 'beto.mp', photoUrl: null })
     const me = (await beto.groups.get({ groupId: viaje.id })).participants.find((p) => p.id === betoV)
     expect(me).toMatchObject({ hasAccount: true, isMe: true, paymentAlias: 'beto.viajes', paymentAliasSource: 'group' })
     expect((await beto.savedFilters.list({ groupId: viaje.id })).map((f) => f.name)).toEqual(['De Beto'])
@@ -192,7 +206,7 @@ describe('profile.deleteAccount', () => {
     expect(deleteUser).toHaveBeenCalledWith(betoId, true)
     // Ana is still herself, everywhere
     expect((await ana.groups.list()).map((g) => g.name).sort()).toEqual(['Depto', 'Viaje'])
-    expect(await ana.profile.get()).toEqual({ paymentAlias: 'ana.mp' })
+    expect(await ana.profile.get()).toEqual({ paymentAlias: 'ana.mp', photoUrl: null })
     expect(await ana.savedFilters.list({ groupId: viaje.id })).toHaveLength(1)
   })
 

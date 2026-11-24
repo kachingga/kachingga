@@ -1,4 +1,4 @@
-import type { ComponentProps, ReactNode } from 'react';
+import { useState, type ComponentProps, type ReactNode } from 'react';
 import { Link } from 'react-router';
 import { cn } from 'cn';
 import { ArrowLeft, Shapes, type LucideIcon } from 'lucide-react';
@@ -58,20 +58,25 @@ export function CategoryIcon({
 
 /**
  * Initial of a person or group in its own color: one of the 12 category colors, picked from its
- * `id` (the same person always has the same color). Theme tokens, never fixed colors. A group with
- * an emoji shows it instead of the initial.
+ * `id` (the same person always has the same color). Theme tokens, never fixed colors. With a photo
+ * (a person's or a group's) it shows it, and the initial if it can't load (offline, an expired link);
+ * a group with an emoji shows it instead of the initial.
  */
 export function Avatar({
   id,
   name,
   emoji,
+  photoUrl,
   className,
 }: {
   id: string;
   name: string;
   emoji?: string | null;
+  photoUrl?: string | null;
   className?: string;
 }) {
+  const [failed, setFailed] = useState<string | null>(null);
+  const showPhoto = Boolean(photoUrl) && failed !== photoUrl;
   return (
     <span
       aria-hidden
@@ -81,7 +86,16 @@ export function Avatar({
         className,
       )}
     >
-      {emoji || name.trim().slice(0, 1).toUpperCase()}
+      {showPhoto ? (
+        <img
+          src={photoUrl!}
+          alt=""
+          className="size-full rounded-[inherit] object-cover"
+          onError={() => setFailed(photoUrl!)}
+        />
+      ) : (
+        emoji || name.trim().slice(0, 1).toUpperCase()
+      )}
     </span>
   );
 }
@@ -91,14 +105,20 @@ export function AvatarStack({
   people,
   className,
 }: {
-  people: { id: string; name: string }[];
+  people: { id: string; name: string; photoUrl?: string | null }[];
   className?: string;
 }) {
   const extra = people.length - 5;
   return (
     <div aria-hidden className={cn('flex items-center -space-x-2', className)}>
       {people.slice(0, 5).map((p) => (
-        <Avatar key={p.id} id={p.id} name={p.name} className="size-8 text-xs" />
+        <Avatar
+          key={p.id}
+          id={p.id}
+          name={p.name}
+          photoUrl={p.photoUrl}
+          className="size-8 text-xs"
+        />
       ))}
       {extra > 0 && (
         <span className="grid size-8 place-items-center rounded-full bg-muted text-xs font-semibold text-muted-foreground ring-2 ring-card">

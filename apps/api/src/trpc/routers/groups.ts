@@ -8,6 +8,7 @@ import { myBalancesByGroup } from '../../lib/aggregates'
 import { defaultCategoryRows } from '../../lib/categories'
 import { generateInviteCode, INVITE_CODE_LENGTH } from '../../lib/inviteCode'
 import { resolvePaymentAliases } from '../../lib/paymentAlias'
+import { photoUrl, profilePhotoKeys } from '../../lib/photos'
 import { assertCanCreateGroup, assertRoomForParticipant } from '../../lib/quotas'
 import { groupEmoji, groupInput, id, participantName } from '../../schemas'
 import { protectedProcedure, router } from '../init'
@@ -41,6 +42,7 @@ export const groupsRouter = router({
       },
       select: {
         ...groupSelect,
+        photoKey: true,
         _count: { select: { participants: true } },
         participants: { select: { id: true, name: true, userId: true }, orderBy: { createdAt: 'asc' } },
       },
@@ -50,13 +52,15 @@ export const groupsRouter = router({
       ctx.user.id,
       groups.map((g) => g.id),
     )
-    return groups.map(({ participants, ...group }) => {
+    const photos = await profilePhotoKeys(groups.flatMap((g) => g.participants.map((p) => p.userId)))
+    return groups.map(({ participants, photoKey, ...group }) => {
       const me = participants.find((p) => p.userId === ctx.user.id)!
       const mine = balances.get(group.id) ?? new Map<Currency, number>()
       const base = group.baseCurrency
       return {
         ...group,
-        participants: participants.map(({ id, name }) => ({ id, name })),
+        photoUrl: photoUrl(photoKey),
+        participants: participants.map(({ id, name, userId }) => ({ id, name, photoUrl: photoUrl(photos.get(userId)) })),
         myName: me.name,
         myBalanceCents: mine.get(base) ?? 0,
         // Base first, then the others alphabetically (like computeBalances)
@@ -75,12 +79,14 @@ export const groupsRouter = router({
       orderBy: { createdAt: 'asc' },
     })
     const aliases = await resolvePaymentAliases(participants)
+    const photos = await profilePhotoKeys(participants.map((p) => p.userId))
     const group = me.group
     return {
       // The fields of groupSelect
       id: group.id,
       name: group.name,
       emoji: group.emoji,
+      photoUrl: photoUrl(group.photoKey),
       baseCurrency: group.baseCurrency,
       inviteCode: group.inviteCode,
       createdAt: group.createdAt,
@@ -93,6 +99,8 @@ export const groupsRouter = router({
         name: p.name,
         hasAccount: p.userId !== null,
         isMe: p.id === me.id,
+        // Their account's photo (people without account have none)
+        photoUrl: photoUrl(photos.get(p.userId)),
         // Alias/CVU to pay this person in this group ('group' = set for this group, 'account' = from their account)
         ...aliases.get(p.id)!,
       })),

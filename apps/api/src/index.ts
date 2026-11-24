@@ -5,6 +5,7 @@ import { getConnInfo } from 'hono/bun'
 import { cors } from 'hono/cors'
 import { appRouter } from './trpc/router'
 import { initMonitoring, reportError, reportTrpcError } from './lib/monitoring'
+import { configurePhotos } from './lib/photos'
 import { configurePush } from './lib/push'
 import { clientIp, RATE_LIMIT_MESSAGE, RateLimiter } from './lib/rateLimit'
 import { prisma } from './db'
@@ -13,6 +14,8 @@ import { createContext } from './trpc/context'
 initMonitoring()
 // Notifications on the devices, with the VAPID keys (never in tests, even with keys in a local .env)
 if (process.env.NODE_ENV !== 'test') configurePush()
+// Profile and group photos, with the R2 variables (same: never in tests)
+if (process.env.NODE_ENV !== 'test') configurePhotos()
 
 const app = new Hono()
 

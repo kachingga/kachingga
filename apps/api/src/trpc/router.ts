@@ -6,6 +6,7 @@ import { groupsRouter } from './routers/groups'
 import { healthRouter } from './routers/health'
 import { notificationsRouter } from './routers/notifications'
 import { participantsRouter } from './routers/participants'
+import { photosRouter } from './routers/photos'
 import { profileRouter } from './routers/profile'
 import { ratesRouter } from './routers/rates'
 import { savedFiltersRouter } from './routers/savedFilters'
@@ -23,6 +24,7 @@ export const appRouter = router({
   savedFilters: savedFiltersRouter,
   rates: ratesRouter,
   notifications: notificationsRouter,
+  photos: photosRouter,
 })
 
 export type AppRouter = typeof appRouter

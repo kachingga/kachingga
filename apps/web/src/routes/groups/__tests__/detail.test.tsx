@@ -1,10 +1,15 @@
 import { act, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 
 import { apiError, neverResolves, renderWithApi } from '@/test/render';
 import { GroupDetail } from '@/routes/groups/detail';
 
+// jsdom has no canvas: what the browser would upload
+vi.mock('@/lib/photo', async (original) => ({
+  ...(await original<typeof import('@/lib/photo')>()),
+  photoToJpeg: vi.fn(async () => 'BASE64JPEG'),
+}));
 const fixGroup = {
   id: 'g1',
   name: 'Viaje a Floripa',
@@ -467,6 +472,53 @@ describe('GroupDetail', () => {
       await screen.findByText(/No se cambió el emoji: El grupo está archivado/),
     ).toBeInTheDocument();
     await waitFor(() => expect(header).not.toHaveTextContent('🍕'));
+  });
+
+  it("the group's photo: any member puts it from the menu, and takes it away", async () => {
+    const user = userEvent.setup();
+    let photoUrl: string | null = null;
+    const setGroup = vi.fn(() => ({ photoUrl: (photoUrl = 'https://fotos.test/viaje.jpg') }));
+    const removeGroup = vi.fn(() => ({ photoUrl: (photoUrl = null) }));
+    renderWithApi(<GroupDetail />, {
+      'groups.get': () => ({ ...fixGroup, photoUrl }),
+      'balances.get': () => fixBalances,
+      'expenses.list': () => fixExpenses,
+      'photos.config': () => ({ enabled: true }),
+      'photos.setGroup': setGroup,
+      'photos.removeGroup': removeGroup,
+    });
+    const heading = await screen.findByRole('heading', { name: 'Viaje a Floripa' });
+    const header = heading.parentElement!.parentElement!;
+    await user.click(screen.getByRole('button', { name: 'Opciones del grupo' }));
+    await user.click(await screen.findByRole('button', { name: 'Ponerle una foto' }));
+    await user.upload(
+      screen.getByTestId('photo-input'),
+      new File(['x'], 'viaje.jpg', { type: 'image/jpeg' }),
+    );
+    await waitFor(() =>
+      expect(setGroup).toHaveBeenCalledWith({ groupId: undefined, photo: 'BASE64JPEG' }),
+    );
+    await waitFor(() =>
+      expect(header.querySelector('img')).toHaveAttribute('src', 'https://fotos.test/viaje.jpg'),
+    );
+
+    await user.click(screen.getByRole('button', { name: 'Opciones del grupo' }));
+    await user.click(await screen.findByRole('button', { name: 'Sacar la foto' }));
+    await waitFor(() => expect(removeGroup).toHaveBeenCalledWith({ groupId: undefined }));
+    await waitFor(() => expect(header.querySelector('img')).toBeNull());
+  });
+
+  it('without photos on in the API, the menu offers none', async () => {
+    const user = userEvent.setup();
+    renderWithApi(<GroupDetail />, {
+      'groups.get': () => fixGroup,
+      'balances.get': () => fixBalances,
+      'expenses.list': () => fixExpenses,
+      'photos.config': () => ({ enabled: false }),
+    });
+    await user.click(await screen.findByRole('button', { name: 'Opciones del grupo' }));
+    expect(screen.getByRole('link', { name: 'Participantes' })).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /foto/ })).not.toBeInTheDocument();
   });
 
   it('renames the group', async () => {

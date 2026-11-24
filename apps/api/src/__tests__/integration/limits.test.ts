@@ -340,7 +340,7 @@ describe('per-user limits', () => {
     const [perMinute] = USER_WRITE_RULES
     for (let i = 0; i < perMinute!.limit; i++) await flooder.profile.update({ paymentAlias: null })
     await expect(flooder.profile.update({ paymentAlias: null })).rejects.toThrow('Demasiados pedidos')
-    expect(await flooder.profile.get()).toEqual({ paymentAlias: null })
+    expect(await flooder.profile.get()).toEqual({ paymentAlias: null, photoUrl: null })
     await caller(`other-lim-${n}`, ip).groups.join({ inviteCode: group.inviteCode, name: 'Otra' })
   })
 

@@ -3,5 +3,7 @@ model UserProfile {
   userId       String   @id
   // Alias/CVU to get paid, used in every group unless the group overrides it (Participant.paymentAlias)
   paymentAlias String?
+  // Their photo, in every group (lib/photos.ts: the object's key in the photo storage, never a URL)
+  photoKey     String?
   updatedAt    DateTime @updatedAt
 }

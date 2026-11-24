@@ -169,7 +169,7 @@ export function Participants() {
                 </form>
               ) : (
                 <div className="flex items-start gap-3">
-                  <Avatar id={p.id} name={p.name} />
+                  <Avatar id={p.id} name={p.name} photoUrl={p.photoUrl} />
                   <div className="min-w-0 flex-1">
                     <p className="font-medium">
                       {p.name}

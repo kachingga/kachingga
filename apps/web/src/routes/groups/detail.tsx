@@ -36,6 +36,8 @@ import { BalancesSkeleton, ExpenseListSkeleton, GroupSkeleton } from '@/componen
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Skeleton } from '@/components/ui/skeleton';
+import { GROUP_PHOTO_SIDE, photoOf } from '@/lib/photo';
+import { usePhotoInput } from '@/lib/use-photo-input';
 import { copyText, shareInviteCode } from '@/lib/share';
 import { useTRPC } from '@/lib/trpc';
 import { prefetchOn, usePrefetch } from '@/lib/use-prefetch';
@@ -229,7 +231,11 @@ function BalanceSection({ group, balances }: { group: GroupData; balances: Balan
             <ul className="mt-3 divide-y">
               {bals.map((b) => (
                 <li key={b.participantId} className="flex items-center gap-3 py-2.5">
-                  <Avatar id={b.participantId} name={participantName(group, b.participantId)} />
+                  <Avatar
+                    id={b.participantId}
+                    name={participantName(group, b.participantId)}
+                    photoUrl={photoOf(group, b.participantId)}
+                  />
                   <span className="flex-1 font-semibold">
                     {participantName(group, b.participantId)}
                   </span>
@@ -409,6 +415,35 @@ export function GroupDetail() {
     }),
   );
 
+  // The group's photo: uploading takes a moment, so a toast says so (same id: it becomes the result).
+  const photosConfig = useQuery(
+    trpc.photos.config.queryOptions(undefined, { staleTime: Infinity }),
+  );
+  const photoChanged = (photoUrl: string | null) => {
+    queryClient.setQueryData(groupKey, (old) => old && { ...old, photoUrl });
+    void queryClient.invalidateQueries(trpc.groups.pathFilter());
+  };
+  const setGroupPhoto = useMutation(
+    trpc.photos.setGroup.mutationOptions({
+      onMutate: () => void toast.loading('Subiendo la foto…', { id: 'group-photo' }),
+      onSuccess: ({ photoUrl }) => {
+        photoChanged(photoUrl);
+        toast.success('Listo: el grupo tiene foto.', { id: 'group-photo' });
+      },
+      onError: (err) => toast.error(`No se subió la foto: ${err.message}`, { id: 'group-photo' }),
+    }),
+  );
+  const removeGroupPhoto = useMutation(
+    trpc.photos.removeGroup.mutationOptions({
+      onSuccess: () => photoChanged(null),
+      onError: (err) => toast.error(`No se sacó la foto: ${err.message}`),
+    }),
+  );
+  const groupPhoto = usePhotoInput({
+    side: GROUP_PHOTO_SIDE,
+    onPhoto: (photo) => setGroupPhoto.mutate({ groupId: groupId!, photo }),
+  });
+
   const setArchived = useMutation(
     trpc.groups.setArchived.mutationOptions({
       onSuccess: () => void queryClient.invalidateQueries(trpc.groups.pathFilter()),
@@ -462,8 +497,8 @@ export function GroupDetail() {
 
   return (
     <Page wide>
-      {/* Header (above the rest so its menu isn't covered by the cards below) */}
-      <div className="rise relative z-30">
+      {/* Header (above the rest so its menu isn't covered by the cards below nor by "Agregar gasto") */}
+      <div className="rise relative z-40">
         <Link
           to="/grupos"
           className="tap-area relative inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground"
@@ -506,6 +541,7 @@ export function GroupDetail() {
                 id={g.id}
                 name={g.name}
                 emoji={g.emoji}
+                photoUrl={g.photoUrl}
                 className="size-14 rounded-lg text-2xl ring-0"
               />
               <div className="min-w-0">
@@ -595,6 +631,30 @@ export function GroupDetail() {
                     {g.notificationsMuted ? 'Activar notificaciones' : 'Silenciar notificaciones'}
                   </Button>
                 )}
+                {photosConfig.data?.enabled && !g.archivedAt && (
+                  <Button
+                    onClick={() => {
+                      groupPhoto.open();
+                      setShowMenu(false);
+                    }}
+                    variant="ghost"
+                    className="h-auto min-h-11 w-full justify-start rounded-xl px-3 py-2 font-normal"
+                  >
+                    {g.photoUrl ? 'Cambiar la foto' : 'Ponerle una foto'}
+                  </Button>
+                )}
+                {photosConfig.data?.enabled && !g.archivedAt && g.photoUrl && (
+                  <Button
+                    onClick={() => {
+                      removeGroupPhoto.mutate({ groupId: groupId! });
+                      setShowMenu(false);
+                    }}
+                    variant="ghost"
+                    className="h-auto min-h-11 w-full justify-start rounded-xl px-3 py-2 font-normal"
+                  >
+                    Sacar la foto
+                  </Button>
+                )}
                 {!g.archivedAt && (
                   <Button
                     onClick={() => {
@@ -653,6 +713,8 @@ export function GroupDetail() {
           </div>
         </div>
       </div>
+
+      {groupPhoto.input}
 
       {choosingEmoji && !g.archivedAt && (
         <Card className="rise">

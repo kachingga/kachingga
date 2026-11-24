@@ -11,6 +11,7 @@ import { LogoMark } from '@/components/app-shell';
 import { ErrorState } from '@/components/error-state';
 import { Card, Field, Page, PageHeader, SectionTitle } from '@/components/kit';
 import { MailSent } from '@/components/mail-sent';
+import { ProfilePhotoCard } from '@/components/profile-photo-card';
 import { PushDeviceCard } from '@/components/push-device-card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -204,6 +205,8 @@ export function Account() {
       <PageHeader title="Mi cuenta" back={{ onClick: () => navigate(-1), label: 'Volver' }} />
 
       <div className="space-y-6">
+        <ProfilePhotoCard />
+
         <EmailCard />
 
         <Card>
