@@ -11,6 +11,7 @@ import { LogoMark } from '@/components/app-shell';
 import { ErrorState } from '@/components/error-state';
 import { Card, Field, Page, PageHeader, SectionTitle } from '@/components/kit';
 import { MailSent } from '@/components/mail-sent';
+import { PushDeviceCard } from '@/components/push-device-card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useTRPC } from '@/lib/trpc';
@@ -251,6 +252,8 @@ export function Account() {
             Se usa en todos tus grupos para recibir transferencias.
           </p>
         </Card>
+
+        <PushDeviceCard />
 
         <PalettePicker />
 

@@ -1,6 +1,7 @@
 import type { NotificationKind } from '../db/generated/prisma/enums'
 import { prisma } from '../db'
 import { reportError } from './monitoring'
+import { queuePushes } from './push'
 
 // What each user keeps in "Novedades": the latest ones, older ones are deleted. Bounds the table
 // (Supabase Free: 500 MB) whatever the number of changes.
@@ -56,6 +57,7 @@ export async function notifyInvolved(groupId: string, actor: { id: string; userI
           ) AS "ranked" WHERE "n" > ${MAX_NOTIFICATIONS_PER_USER}
         )`,
     ])
+    queuePushes(userIds, groupId)
   } catch (error) {
     reportError(error, { feature: 'notifications' })
   }

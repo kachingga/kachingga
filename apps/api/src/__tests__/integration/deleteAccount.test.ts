@@ -118,8 +118,12 @@ describe('profile.deleteAccount', () => {
   test('unlinks me from every group: I stay as a participant without account, with my expenses and balances', async () => {
     const { anaId, ana, beto, viaje, depto, anaV, groupView } = await scenario()
     const before = { viaje: await groupView(viaje.id), depto: await groupView(depto.id) }
-    // Beto's "Cena", which she's in
+    // Beto's "Cena", which she's in; a device and Viaje muted
     expect(await ana.notifications.list()).toHaveLength(1)
+    await prisma.pushSubscription.create({
+      data: { userId: anaId, endpoint: `https://fcm.googleapis.com/fcm/send/${anaId}`, p256dh: 'k', auth: 'a' },
+    })
+    await ana.notifications.setGroupMuted({ groupId: viaje.id, muted: true })
 
     expect(await ana.profile.deleteAccount()).toEqual({ ok: true })
 
@@ -149,6 +153,9 @@ describe('profile.deleteAccount', () => {
     expect(await prisma.participant.findUnique({ where: { id: anaV } })).toMatchObject({ userId: null, paymentAlias: null })
     expect(await prisma.savedFilter.count({ where: { userId: anaId } })).toBe(0)
     expect(await prisma.notification.count({ where: { userId: anaId } })).toBe(0)
+    expect(await prisma.pushSubscription.count({ where: { userId: anaId } })).toBe(0)
+    // Her mute of Viaje doesn't stay on the participant (whoever claims it starts without it)
+    expect(await prisma.participant.findUnique({ where: { id: anaV } })).toMatchObject({ notificationsMuted: false })
 
     // Who created things stays as history
     expect(await prisma.group.findUnique({ where: { id: viaje.id } })).toMatchObject({ createdById: anaId })

@@ -1,35 +1,25 @@
-import type { Prisma } from '../../db/generated/prisma/client'
+import { TRPCError } from '@trpc/server'
+import { z } from 'zod'
 import { prisma } from '../../db'
+import { requireMembership } from '../../lib/access'
 import { MAX_NOTIFICATIONS_PER_USER } from '../../lib/notifications'
+import { mine, notificationSelect, toNotificationView } from '../../lib/notificationView'
+import { isPushServiceUrl, MAX_DEVICES_PER_USER, pushPublicKey } from '../../lib/push'
+import { id } from '../../schemas'
 import { protectedProcedure, router } from '../init'
 
-// Only the caller's, and only of groups they're still in.
-const mine = (userId: string) => ({ userId, group: { participants: { some: { userId } } } }) satisfies Prisma.NotificationWhereInput
-
-const person = { select: { id: true, name: true } } as const
-
-// Never `userId` (an account id) of anyone. The group comes with the caller's participant in it, to
-// say "vos" in a payment.
-const notificationSelect = (userId: string) =>
-  ({
-    id: true,
-    kind: true,
-    createdAt: true,
-    readAt: true,
-    group: { select: { id: true, name: true, participants: { where: { userId }, select: { id: true } } } },
-    actor: person,
-    expense: {
-      select: {
-        id: true,
-        description: true,
-        amountCents: true,
-        currency: true,
-        deletedAt: true,
-        category: { select: { icon: true, color: true } },
-      },
-    },
-    settlement: { select: { id: true, amountCents: true, currency: true, deletedAt: true, from: person, to: person } },
-  }) satisfies Prisma.NotificationSelect
+// What the browser gives (PushSubscription.toJSON()): its push service's URL and the keys to encrypt for it.
+const endpoint = z.string().max(1000)
+const key = (min: number, max: number) =>
+  z
+    .string()
+    .min(min)
+    .max(max)
+    .regex(/^[A-Za-z0-9+/_-]+={0,2}$/)
+const deviceInput = z.object({
+  endpoint: endpoint.refine(isPushServiceUrl, 'Este navegador no puede recibir notificaciones'),
+  keys: z.object({ p256dh: key(80, 100), auth: key(16, 30) }),
+})
 
 export const notificationsRouter = router({
   // The caller's "Novedades", newest first (all they have: at most MAX_NOTIFICATIONS_PER_USER).
@@ -41,21 +31,58 @@ export const notificationsRouter = router({
       orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
       take: MAX_NOTIFICATIONS_PER_USER,
     })
-    return notifications.map(({ group: { participants, ...group }, settlement, ...n }) => {
-      const me = participants[0]?.id
-      return {
-        ...n,
-        group,
-        settlement: settlement && {
-          ...settlement,
-          from: { ...settlement.from, isMe: settlement.from.id === me },
-          to: { ...settlement.to, isMe: settlement.to.id === me },
-        },
-      }
-    })
+    return notifications.map(toNotificationView)
   }),
 
   unreadCount: protectedProcedure.query(({ ctx }) => prisma.notification.count({ where: { ...mine(ctx.user.id), readAt: null } })),
+
+  // The key browsers subscribe with; null = notifications on the devices are off (no VAPID keys).
+  pushConfig: protectedProcedure.query(() => ({ publicKey: pushPublicKey() })),
+
+  // Whether this browser (its endpoint) gets the caller's notifications. The browser may still have
+  // a subscription the API dropped (the push service rotated it): then it's off.
+  deviceStatus: protectedProcedure.input(z.object({ endpoint })).query(async ({ ctx, input }) => {
+    const device = await prisma.pushSubscription.findFirst({
+      where: { endpoint: input.endpoint, userId: ctx.user.id },
+      select: { id: true },
+    })
+    return { subscribed: device !== null }
+  }),
+
+  // Turns them on in this browser. The same browser is one row: another account on it takes it over
+  // (whoever turns them on last gets them). Each person keeps their latest MAX_DEVICES_PER_USER.
+  subscribeDevice: protectedProcedure.input(deviceInput).mutation(async ({ ctx, input }) => {
+    if (!pushPublicKey()) throw new TRPCError({ code: 'BAD_REQUEST', message: 'Las notificaciones no están disponibles por ahora.' })
+    const userId = ctx.user.id
+    const data = { userId, p256dh: input.keys.p256dh, auth: input.keys.auth, createdAt: new Date() }
+    await prisma.pushSubscription.upsert({
+      where: { endpoint: input.endpoint },
+      create: { endpoint: input.endpoint, ...data },
+      update: data,
+    })
+    const older = await prisma.pushSubscription.findMany({
+      where: { userId },
+      orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
+      skip: MAX_DEVICES_PER_USER,
+      select: { id: true },
+    })
+    if (older.length > 0) await prisma.pushSubscription.deleteMany({ where: { id: { in: older.map((d) => d.id) } } })
+    return { ok: true }
+  }),
+
+  // Turns them off in this browser (only if it's the caller's).
+  unsubscribeDevice: protectedProcedure.input(z.object({ endpoint })).mutation(async ({ ctx, input }) => {
+    await prisma.pushSubscription.deleteMany({ where: { endpoint: input.endpoint, userId: ctx.user.id } })
+    return { ok: true }
+  }),
+
+  // "Silenciar": this group's notifications don't reach the caller's devices ("Novedades" still
+  // shows them). Personal: works on an archived group.
+  setGroupMuted: protectedProcedure.input(z.object({ groupId: id, muted: z.boolean() })).mutation(async ({ ctx, input }) => {
+    const me = await requireMembership(input.groupId, ctx.user.id)
+    await prisma.participant.update({ where: { id: me.id }, data: { notificationsMuted: input.muted } })
+    return { muted: input.muted }
+  }),
 
   // Opening "Novedades" marks everything as read.
   markAllRead: protectedProcedure.mutation(async ({ ctx }) => {

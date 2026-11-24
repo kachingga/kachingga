@@ -42,6 +42,8 @@ export default defineConfig({
         globIgnores: ['**/apple-splash-*.png'],
         navigateFallback: '/index.html',
         cleanupOutdatedCaches: true,
+        // Notifications on the device: the push and notificationclick handlers (public/push-sw.js)
+        importScripts: ['push-sw.js'],
       },
     }),
     uploadSourceMaps &&

@@ -363,6 +363,47 @@ describe('GroupDetail', () => {
     await waitFor(() => expect(calls).toEqual([{ groupId: undefined, archived: true }]));
   });
 
+  it('mutes and unmutes its notifications (only when the API sends them to the devices)', async () => {
+    const user = userEvent.setup();
+    const calls: unknown[] = [];
+    let muted = false;
+    renderWithApi(<GroupDetail />, {
+      'groups.get': () => ({ ...fixGroup, notificationsMuted: muted }),
+      'balances.get': () => fixBalances,
+      'expenses.list': () => fixExpenses,
+      'notifications.pushConfig': () => ({ publicKey: 'B' + 'A'.repeat(86) }),
+      'notifications.setGroupMuted': (input) => {
+        calls.push(input);
+        muted = (input as { muted: boolean }).muted;
+        return { muted };
+      },
+    });
+    await user.click(await screen.findByRole('button', { name: 'Opciones del grupo' }));
+    await user.click(await screen.findByRole('button', { name: 'Silenciar notificaciones' }));
+    await waitFor(() => expect(calls).toEqual([{ groupId: undefined, muted: true }]));
+    expect(
+      await screen.findByText(/No te van a llegar notificaciones de este grupo/),
+    ).toBeInTheDocument();
+
+    await user.click(screen.getByRole('button', { name: 'Opciones del grupo' }));
+    await user.click(await screen.findByRole('button', { name: 'Activar notificaciones' }));
+    await waitFor(() => expect(calls).toHaveLength(2));
+    expect(calls[1]).toEqual({ groupId: undefined, muted: false });
+  });
+
+  it('without notifications on the devices, the menu has no "Silenciar"', async () => {
+    const user = userEvent.setup();
+    renderWithApi(<GroupDetail />, {
+      'groups.get': () => fixGroup,
+      'balances.get': () => fixBalances,
+      'expenses.list': () => fixExpenses,
+      'notifications.pushConfig': () => ({ publicKey: null }),
+    });
+    await user.click(await screen.findByRole('button', { name: 'Opciones del grupo' }));
+    expect(screen.getByRole('link', { name: 'Participantes' })).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /notificaciones/ })).not.toBeInTheDocument();
+  });
+
   it('renames the group', async () => {
     const user = userEvent.setup();
     const calls: unknown[] = [];

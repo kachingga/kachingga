@@ -28,3 +28,18 @@ model Notification {
 
   @@index([userId, createdAt])
 }
+
+// A device (browser) where someone turned on notifications: where to send the pushes for their
+// "Novedades" (lib/push.ts). `endpoint` is the browser's push service URL (only known ones, see
+// isPushServiceUrl); `p256dh` and `auth` encrypt the message so only that browser can read it.
+// The same browser is one row: subscribing again (or another account on it) takes it over.
+model PushSubscription {
+  id        String   @id @default(cuid())
+  userId    String // Supabase auth user id
+  endpoint  String   @unique
+  p256dh    String
+  auth      String
+  createdAt DateTime @default(now()) // also when it was last subscribed again
+
+  @@index([userId])
+}

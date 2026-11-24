@@ -24,8 +24,8 @@ export const profileRouter = router({
 
   // Deletes the caller's account (no input: only ever the caller's). Their participants stay in
   // every group without account (name, expenses, payments and balances untouched); what is only
-  // theirs goes (account alias, group aliases, saved filters, their "Novedades"). `createdById` fields
-  // stay as history.
+  // theirs goes (account alias, group aliases and mutes, saved filters, their "Novedades" and
+  // devices). `createdById` fields stay as history.
   // DB first, then Supabase: a deleted account is never still linked to a group, and the DB part
   // is idempotent, so retrying after a Supabase failure just finishes the job.
   // Only right after signing in again (password or Google, `lib/session.ts`): a session left open
@@ -36,10 +36,11 @@ export const profileRouter = router({
     }
     const userId = ctx.user.id
     await prisma.$transaction([
-      prisma.participant.updateMany({ where: { userId }, data: { userId: null, paymentAlias: null } }),
+      prisma.participant.updateMany({ where: { userId }, data: { userId: null, paymentAlias: null, notificationsMuted: false } }),
       prisma.userProfile.deleteMany({ where: { userId } }),
       prisma.savedFilter.deleteMany({ where: { userId } }),
       prisma.notification.deleteMany({ where: { userId } }),
+      prisma.pushSubscription.deleteMany({ where: { userId } }),
     ])
     // Soft delete: they can't sign in again and their tokens stop working. Irreversible.
     const { error } = await getSupabase().auth.admin.deleteUser(userId, true)

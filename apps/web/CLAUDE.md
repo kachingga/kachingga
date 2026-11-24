@@ -19,6 +19,7 @@
 | Tests (`renderWithApi`, setup, E2E) | `docs/claude/web/testing.md` |
 | Errores inesperados y Sentry (`src/lib/monitoring.ts`, `RouteError`, los `onError` de `api-provider.tsx`) | `docs/claude/repo/monitoreo.md` |
 | `server.ts`, los headers de seguridad y la CSP, o sumar algo de otro dominio (script, iframe, imagen, fuente, conexión) | `docs/claude/web/servidor-y-headers.md` |
+| Notificaciones en el dispositivo (`public/push-sw.js`, `src/lib/push.ts`, `PushDeviceCard`, el cierre de sesión) | `docs/claude/web/notificaciones.md` |
 
 ## Reglas que valen siempre
 
@@ -104,13 +105,14 @@ src/
 │                             # offline-banner, category-picker, category-editor,
 │                             # mail-sent ("Revisá tu mail" / "Reenviar mail"),
 │                             # email-link-choice (link de un mail con la sesión abierta: seguir o quedarse),
-│                             # password-input (contraseña con botón para verla, al lado: no adentro, por 1Password)
+│                             # password-input (contraseña con botón para verla, al lado: no adentro, por 1Password),
+│                             # push-device-card (activar / desactivar las notificaciones en este dispositivo)
 ├── lib/                      # trpc, supabase (ÚNICO que importa Supabase), auth, auth-errors (en español),
 │                             # email-link (links de los mails), use-captcha (Turnstile), format, optimistic,
 │                             # use-prefetch, use-exchange-rate, use-confirm, use-go-back, offline-cache,
 │                             # theme, use-sign-out, categories (ícono y color de cada categoría), use-debounced-value,
 │                             # screen-transitions (View Transitions entre pantallas), zod-config (Zod sin eval, por la CSP),
-│                             # calculator (las cuentas de <CalculatorInput>)
+│                             # calculator (las cuentas de <CalculatorInput>), push (notificaciones en el dispositivo)
 └── test/                     # setup.ts, render.tsx (renderWithApi), fake-turnstile.tsx (captcha de mentira)
 e2e/                          # Playwright
 ```
@@ -119,7 +121,8 @@ e2e/                          # Playwright
 
 - **TypeScript `~6.0.3`** y React **19.3.0 exacto**: con `node_modules` compartido, versiones distintas rompen todo (ver `docs/claude/repo/tooling.md`).
 - `tsconfig.app.json` sin `baseUrl` (TS 6 lo rechaza); el alias `@/` está en `paths`, en `vite.config.ts` y en `tsconfig.json` (para el CLI de shadcn).
-- **El service worker (PWA) guarda solo los archivos de la app, nunca datos de la API.** Los íconos salen de `public/logo.svg`: no agregar PNGs a mano.
+- **El service worker (PWA) guarda solo los archivos de la app, nunca datos de la API.** Los íconos salen de `public/logo.svg`: no agregar PNGs a mano. Las notificaciones las muestra `public/push-sw.js` (lo importa el service worker): **cada push muestra una**, y solo abre rutas de la app.
+- **Al terminar la sesión, este navegador deja de recibir notificaciones** (`syncPushWithSession`, `useSignOut`): nunca le llegan a otra cuenta en el mismo dispositivo.
 - La web typechequea archivos de la API (vía `AppRouter`): si la API importa algo que acá no resuelve, se rompe el typecheck de la web.
 - Deploy: servicio `web` en Railway (settings en `DEPLOY.md`): buildea con Vite y `server.ts` sirve `dist` (rutas → `index.html`, cache largo en `/assets/*`) con los headers de seguridad y la CSP (`docs/claude/web/servidor-y-headers.md`). Las `VITE_*` se leen **al buildear** (y `server.ts` lee las de la API, Supabase y Sentry al arrancar, para la CSP): cambiarlas en Railway requiere un deploy nuevo. La API de cada entorno tiene que permitir la URL de su web en `CORS_ORIGINS`. Ver `DEPLOY.md`.
 

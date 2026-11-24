@@ -84,6 +84,8 @@ export const groupsRouter = router({
       createdAt: group.createdAt,
       archivedAt: group.archivedAt,
       myParticipantId: me.id,
+      // Mine: this group's notifications don't reach my devices ("Silenciar")
+      notificationsMuted: me.notificationsMuted,
       participants: participants.map((p) => ({
         id: p.id,
         name: p.name,

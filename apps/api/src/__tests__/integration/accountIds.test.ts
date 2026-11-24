@@ -2,7 +2,10 @@
 // `createdById` of someone else (any member can rename anyone, edit any expense…). Every procedure is
 // called by a member on things another member created; a new procedure fails the first test until
 // it's added to `calls` (or to `exempt`, with the reason).
-import { describe, expect, test } from 'bun:test'
+import { afterAll, describe, expect, test } from 'bun:test'
+import crypto from 'node:crypto'
+import webpush from 'web-push'
+import { configurePush } from '../../lib/push'
 import { appRouter } from '../../trpc/router'
 import { setupTestApi, stubBlueRate } from './setup'
 
@@ -40,6 +43,18 @@ const settlementInput = {
 }
 await owner.settlements.create(settlementInput)
 const category = await owner.categories.create({ groupId, name: 'Nafta', icon: 'fuel', color: 'teal' })
+
+// Notifications on the devices on (nothing is sent: a fake batcher), with a browser to subscribe
+const vapid = webpush.generateVAPIDKeys()
+configurePush({ VAPID_PUBLIC_KEY: vapid.publicKey, VAPID_PRIVATE_KEY: vapid.privateKey }, () => ({ queue: () => {} }))
+afterAll(() => configurePush({}))
+const ecdh = crypto.createECDH('prime256v1')
+ecdh.generateKeys()
+const device = {
+  endpoint: 'https://fcm.googleapis.com/fcm/send/account-ids',
+  keys: { p256dh: ecdh.getPublicKey('base64url'), auth: crypto.randomBytes(16).toString('base64url') },
+}
+await owner.notifications.subscribeDevice(device)
 
 const inviteCode = async () => (await member.groups.get({ groupId })).inviteCode
 
@@ -92,6 +107,11 @@ const calls: Record<string, () => Promise<unknown>> = {
   'notifications.list': () => member.notifications.list(),
   'notifications.unreadCount': () => member.notifications.unreadCount(),
   'notifications.markAllRead': () => member.notifications.markAllRead(),
+  'notifications.pushConfig': () => member.notifications.pushConfig(),
+  'notifications.deviceStatus': () => member.notifications.deviceStatus({ endpoint: device.endpoint }),
+  'notifications.subscribeDevice': () => member.notifications.subscribeDevice(device),
+  'notifications.unsubscribeDevice': () => member.notifications.unsubscribeDevice({ endpoint: device.endpoint }),
+  'notifications.setGroupMuted': () => member.notifications.setGroupMuted({ groupId, muted: true }),
 }
 
 const exempt: Record<string, string> = {

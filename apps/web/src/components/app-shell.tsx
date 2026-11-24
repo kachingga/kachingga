@@ -6,6 +6,7 @@ import { Bell, LogOut, Moon, Sun, UserRound, Users } from 'lucide-react';
 
 import { AnimatedLayout } from '@/components/animated-layout';
 import { Button } from '@/components/ui/button';
+import { useAppBadge, useServiceWorkerMessages } from '@/lib/push';
 import { setTheme, useTheme } from '@/lib/theme';
 import { useTRPC } from '@/lib/trpc';
 import { useSignOut } from '@/lib/use-sign-out';
@@ -125,6 +126,8 @@ function NavItem({ to, icon, children }: { to: string; icon: ReactNode; children
 export function AppShell() {
   const signOut = useSignOut();
   const unread = useUnreadCount();
+  useAppBadge(unread);
+  useServiceWorkerMessages();
   return (
     <div className="min-h-dvh lg:grid lg:grid-cols-[240px_1fr]">
       <aside className="sticky top-0 hidden h-dvh flex-col border-r bg-sidebar px-5 py-8 lg:flex">
