@@ -9,7 +9,7 @@ import { defaultCategoryRows } from '../../lib/categories'
 import { generateInviteCode, INVITE_CODE_LENGTH } from '../../lib/inviteCode'
 import { resolvePaymentAliases } from '../../lib/paymentAlias'
 import { assertCanCreateGroup, assertRoomForParticipant } from '../../lib/quotas'
-import { groupInput, id, participantName } from '../../schemas'
+import { groupEmoji, groupInput, id, participantName } from '../../schemas'
 import { protectedProcedure, router } from '../init'
 
 const groupId = z.object({ groupId: id })
@@ -18,6 +18,7 @@ const groupId = z.object({ groupId: id })
 const groupSelect = {
   id: true,
   name: true,
+  emoji: true,
   baseCurrency: true,
   inviteCode: true,
   createdAt: true,
@@ -79,6 +80,7 @@ export const groupsRouter = router({
       // The fields of groupSelect
       id: group.id,
       name: group.name,
+      emoji: group.emoji,
       baseCurrency: group.baseCurrency,
       inviteCode: group.inviteCode,
       createdAt: group.createdAt,
@@ -115,6 +117,12 @@ export const groupsRouter = router({
   rename: protectedProcedure.input(groupId.extend({ name: groupInput.shape.name })).mutation(async ({ ctx, input }) => {
     await requireActiveGroup(input.groupId, ctx.user.id)
     return prisma.group.update({ where: { id: input.groupId }, data: { name: input.name }, select: groupSelect })
+  }),
+
+  // The group's emoji, instead of its initial: any member (no admins), like renaming it.
+  setEmoji: protectedProcedure.input(groupId.extend({ emoji: groupEmoji })).mutation(async ({ ctx, input }) => {
+    await requireActiveGroup(input.groupId, ctx.user.id)
+    return prisma.group.update({ where: { id: input.groupId }, data: { emoji: input.emoji }, select: groupSelect })
   }),
 
   setArchived: protectedProcedure.input(groupId.extend({ archived: z.boolean() })).mutation(async ({ ctx, input }) => {

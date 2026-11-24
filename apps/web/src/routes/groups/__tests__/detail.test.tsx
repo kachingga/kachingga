@@ -2,7 +2,7 @@ import { act, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it } from 'vitest';
 
-import { neverResolves, renderWithApi } from '@/test/render';
+import { apiError, neverResolves, renderWithApi } from '@/test/render';
 import { GroupDetail } from '@/routes/groups/detail';
 
 const fixGroup = {
@@ -402,6 +402,71 @@ describe('GroupDetail', () => {
     await user.click(await screen.findByRole('button', { name: 'Opciones del grupo' }));
     expect(screen.getByRole('link', { name: 'Participantes' })).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: /notificaciones/ })).not.toBeInTheDocument();
+  });
+
+  it('puts an emoji on the group: a usual one, another one typed, or none', async () => {
+    const user = userEvent.setup();
+    const calls: unknown[] = [];
+    let emoji: string | null = null;
+    renderWithApi(<GroupDetail />, {
+      'groups.get': () => ({ ...fixGroup, emoji }),
+      'balances.get': () => fixBalances,
+      'expenses.list': () => fixExpenses,
+      'groups.setEmoji': (input) => {
+        calls.push(input);
+        emoji = (input as { emoji: string | null }).emoji;
+        return { ...fixGroup, emoji };
+      },
+    });
+    await user.click(await screen.findByRole('button', { name: 'Opciones del grupo' }));
+    await user.click(screen.getByRole('button', { name: 'Ponerle un emoji' }));
+    await user.click(screen.getByRole('button', { name: 'Elegir 🏖️' }));
+    await waitFor(() => expect(calls).toEqual([{ groupId: undefined, emoji: '🏖️' }]));
+    // The header shows it instead of the initial, and the picker closes
+    await waitFor(() => expect(screen.queryByText('Emoji del grupo')).not.toBeInTheDocument());
+
+    await user.click(screen.getByRole('button', { name: 'Opciones del grupo' }));
+    await user.click(await screen.findByRole('button', { name: 'Cambiar el emoji' }));
+    // Not an emoji: says so, nothing is saved
+    await user.type(screen.getByLabelText('Otro'), 'hola');
+    await user.click(screen.getByRole('button', { name: 'Usar' }));
+    expect(screen.getByText('Escribí un solo emoji.')).toBeInTheDocument();
+    expect(calls).toHaveLength(1);
+    await user.clear(screen.getByLabelText('Otro'));
+    await user.type(screen.getByLabelText('Otro'), '🦩');
+    await user.click(screen.getByRole('button', { name: 'Usar' }));
+    await waitFor(() => expect(calls[1]).toEqual({ groupId: undefined, emoji: '🦩' }));
+
+    await user.click(screen.getByRole('button', { name: 'Opciones del grupo' }));
+    await user.click(await screen.findByRole('button', { name: 'Cambiar el emoji' }));
+    await user.click(screen.getByRole('button', { name: 'Quitar el emoji' }));
+    await waitFor(() => expect(calls[2]).toEqual({ groupId: undefined, emoji: null }));
+  });
+
+  it('the new emoji shows right away; if saving fails, it goes back and says so', async () => {
+    const user = userEvent.setup();
+    let fail = false;
+    renderWithApi(<GroupDetail />, {
+      'groups.get': () => ({ ...fixGroup, emoji: null }),
+      'balances.get': () => fixBalances,
+      'expenses.list': () => fixExpenses,
+      'groups.setEmoji': async () => {
+        await new Promise((resolve) => setTimeout(resolve, 50));
+        if (fail) throw apiError('El grupo está archivado');
+        return { ...fixGroup, emoji: '🍕' };
+      },
+    });
+    const heading = await screen.findByRole('heading', { name: 'Viaje a Floripa' });
+    const header = heading.parentElement!.parentElement!;
+    fail = true;
+    await user.click(screen.getByRole('button', { name: 'Opciones del grupo' }));
+    await user.click(screen.getByRole('button', { name: 'Ponerle un emoji' }));
+    await user.click(screen.getByRole('button', { name: 'Elegir 🍕' }));
+    expect(header).toHaveTextContent('🍕');
+    expect(
+      await screen.findByText(/No se cambió el emoji: El grupo está archivado/),
+    ).toBeInTheDocument();
+    await waitFor(() => expect(header).not.toHaveTextContent('🍕'));
   });
 
   it('renames the group', async () => {

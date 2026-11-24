@@ -19,6 +19,7 @@ import { cn } from 'cn';
 import { toast } from 'sonner';
 
 import { ArchivedNotice } from '@/components/archived-notice';
+import { GroupEmojiPicker } from '@/components/group-emoji-picker';
 import { ErrorState } from '@/components/error-state';
 import {
   Avatar,
@@ -368,6 +369,7 @@ export function GroupDetail() {
   }, [showMenu]);
   const [renaming, setRenaming] = useState(false);
   const [newName, setNewName] = useState('');
+  const [choosingEmoji, setChoosingEmoji] = useState(false);
 
   const group = useQuery(trpc.groups.get.queryOptions({ groupId: groupId! }));
   const balances = useQuery(trpc.balances.get.queryOptions({ groupId: groupId! }));
@@ -385,6 +387,25 @@ export function GroupDetail() {
         void queryClient.invalidateQueries(trpc.groups.pathFilter());
         setRenaming(false);
       },
+    }),
+  );
+
+  // Optimistic: the header shows the new emoji right away (undone if it fails).
+  const groupKey = trpc.groups.get.queryKey({ groupId: groupId! });
+  const setEmoji = useMutation(
+    trpc.groups.setEmoji.mutationOptions({
+      onMutate: async ({ emoji }) => {
+        setChoosingEmoji(false);
+        await queryClient.cancelQueries({ queryKey: groupKey });
+        const previous = queryClient.getQueryData(groupKey);
+        queryClient.setQueryData(groupKey, (old) => old && { ...old, emoji });
+        return { previous };
+      },
+      onError: (err, _input, context) => {
+        if (context?.previous) queryClient.setQueryData(groupKey, context.previous);
+        toast.error(`No se cambió el emoji: ${err.message}`);
+      },
+      onSettled: () => void queryClient.invalidateQueries(trpc.groups.pathFilter()),
     }),
   );
 
@@ -481,7 +502,12 @@ export function GroupDetail() {
             </form>
           ) : (
             <div className="flex min-w-0 items-center gap-3">
-              <Avatar id={g.id} name={g.name} className="size-14 rounded-lg text-2xl ring-0" />
+              <Avatar
+                id={g.id}
+                name={g.name}
+                emoji={g.emoji}
+                className="size-14 rounded-lg text-2xl ring-0"
+              />
               <div className="min-w-0">
                 <h1 className="line-clamp-2 text-2xl font-bold break-words lg:text-3xl">
                   {g.name}
@@ -572,6 +598,18 @@ export function GroupDetail() {
                 {!g.archivedAt && (
                   <Button
                     onClick={() => {
+                      setChoosingEmoji(true);
+                      setShowMenu(false);
+                    }}
+                    variant="ghost"
+                    className="h-auto min-h-11 w-full justify-start rounded-xl px-3 py-2 font-normal"
+                  >
+                    {g.emoji ? 'Cambiar el emoji' : 'Ponerle un emoji'}
+                  </Button>
+                )}
+                {!g.archivedAt && (
+                  <Button
+                    onClick={() => {
                       setNewName(g.name);
                       setRenaming(true);
                       setShowMenu(false);
@@ -615,6 +653,18 @@ export function GroupDetail() {
           </div>
         </div>
       </div>
+
+      {choosingEmoji && !g.archivedAt && (
+        <Card className="rise">
+          <SectionTitle className="mb-3">Emoji del grupo</SectionTitle>
+          <GroupEmojiPicker
+            current={g.emoji}
+            saving={setEmoji.isPending}
+            onPick={(emoji) => setEmoji.mutate({ groupId: groupId!, emoji })}
+            onCancel={() => setChoosingEmoji(false)}
+          />
+        </Card>
+      )}
 
       {g.archivedAt && <ArchivedNotice groupId={g.id} />}
 

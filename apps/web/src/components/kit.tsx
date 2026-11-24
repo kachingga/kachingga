@@ -58,9 +58,20 @@ export function CategoryIcon({
 
 /**
  * Initial of a person or group in its own color: one of the 12 category colors, picked from its
- * `id` (the same person always has the same color). Theme tokens, never fixed colors.
+ * `id` (the same person always has the same color). Theme tokens, never fixed colors. A group with
+ * an emoji shows it instead of the initial.
  */
-export function Avatar({ id, name, className }: { id: string; name: string; className?: string }) {
+export function Avatar({
+  id,
+  name,
+  emoji,
+  className,
+}: {
+  id: string;
+  name: string;
+  emoji?: string | null;
+  className?: string;
+}) {
   return (
     <span
       aria-hidden
@@ -70,7 +81,7 @@ export function Avatar({ id, name, className }: { id: string; name: string; clas
         className,
       )}
     >
-      {name.trim().slice(0, 1).toUpperCase()}
+      {emoji || name.trim().slice(0, 1).toUpperCase()}
     </span>
   );
 }
