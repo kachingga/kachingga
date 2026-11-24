@@ -1,4 +1,4 @@
-// Notifications on the devices (Web Push): "Novedades" reach the phones and computers where each
+// Notifications on the devices (Web Push): the ones in the app (the bell) reach the phones and computers where each
 // person turned them on (root CLAUDE.md → "Notificaciones"). Off without VAPID keys (local, tests,
 // CI): `configurePush` is called at startup (index.ts), never in tests.
 import webpush from 'web-push'
@@ -140,7 +140,7 @@ const money = (cents: number, currency: string) =>
 
 /**
  * What the device shows: the group as the title, the latest unread one ("Román agregó «Cena» ·
- * $ 45.000,00") and how many more there are in that group (then it opens "Novedades"). `badge`:
+ * $ 45.000,00") and how many more there are in that group (then it opens the notifications screen). `badge`:
  * all the unread ones, for the app icon. `tag`: one notification per group on the device.
  */
 export function pushPayload(n: ReturnType<typeof toNotificationView>, unreadInGroup: number, unreadTotal: number) {
@@ -150,7 +150,7 @@ export function pushPayload(n: ReturnType<typeof toNotificationView>, unreadInGr
   return {
     title: n.group.name,
     body: more > 0 ? `${text} (y ${more} más)` : text,
-    url: more > 0 ? '/novedades' : notificationPath(n),
+    url: more > 0 ? '/notificaciones' : notificationPath(n),
     tag: n.group.id,
     badge: unreadTotal,
   }

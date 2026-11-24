@@ -14,7 +14,7 @@ self.addEventListener('push', (event) => {
   event.waitUntil(
     (async () => {
       await self.registration.showNotification(data.title || 'Kachingga', {
-        body: data.body || 'Tenés novedades',
+        body: data.body || 'Tenés notificaciones nuevas',
         // One per group: the newest replaces the previous one
         tag: data.tag,
         icon: '/pwa-192x192.png',
@@ -32,12 +32,12 @@ self.addEventListener('push', (event) => {
 });
 
 // Tapping it opens what it's about: in the app if it's open (it navigates without reloading), or
-// in a new window. Only paths of the app itself.
+// in a new window. Only paths of the app itself (anything else: the notifications screen).
 self.addEventListener('notificationclick', (event) => {
   event.notification.close();
   const path = event.notification.data && event.notification.data.url;
   const safe = typeof path === 'string' && path.startsWith('/') && !path.startsWith('//');
-  const url = new URL(safe ? path : '/novedades', self.location.origin);
+  const url = new URL(safe ? path : '/notificaciones', self.location.origin);
   event.waitUntil(
     (async () => {
       const windows = await self.clients.matchAll({ type: 'window', includeUncontrolled: true });

@@ -382,7 +382,7 @@ describe('GroupDetail', () => {
     await user.click(await screen.findByRole('button', { name: 'Silenciar notificaciones' }));
     await waitFor(() => expect(calls).toEqual([{ groupId: undefined, muted: true }]));
     expect(
-      await screen.findByText(/No te van a llegar notificaciones de este grupo/),
+      await screen.findByText(/No te van a llegar notificaciones de este grupo al dispositivo/),
     ).toBeInTheDocument();
 
     await user.click(screen.getByRole('button', { name: 'Opciones del grupo' }));

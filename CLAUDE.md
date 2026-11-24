@@ -71,7 +71,7 @@ Proyecto de **Kachingga**, una organización de amigos (repo: `github.com/kachin
 - **Cambiar el email** (desde Mi cuenta): cada uno el suyo. Se confirma **desde el email actual y desde el nuevo** (un link en cada uno); recién con los dos cambia. Quien entra con Google puede cambiarlo y sigue entrando con Google.
 - **Borrar mi cuenta** (desde Mi cuenta): cualquiera puede borrar la suya, y solo la suya. **No lo saca de sus grupos:** su participante queda **sin cuenta** (como "Juan", que no usa la app), con su nombre, sus gastos, sus pagos y sus saldos tal cual; nada de los grupos se borra. **Sus deudas quedan en el grupo, a su nombre** (cualquiera puede registrar después un pago suyo). Antes de confirmar se le muestran sus saldos pendientes en cada grupo: avisa, no bloquea.
   - **Antes de borrarla tiene que volver a identificarse:** con su contraseña o, si entra con Google, volviendo a entrar con Google (sin mails ni magic link). Una sesión abierta no alcanza (un celu prestado, un token robado): **la API lo comprueba** y solo borra si la sesión se inició así hace 5 minutos o menos.
-  - Se borra lo que sin cuenta no sirve: su **alias** (el de la cuenta y los de cada grupo), sus **filtros guardados**, sus **novedades**, los **dispositivos** donde activó las notificaciones y los grupos que había silenciado (ver "Notificaciones").
+  - Se borra lo que sin cuenta no sirve: su **alias** (el de la cuenta y los de cada grupo), sus **filtros guardados**, sus **notificaciones**, los **dispositivos** donde activó las notificaciones y los grupos que había silenciado (ver "Notificaciones").
   - La cuenta de Supabase se borra con **borrado lógico** (soft delete): no se puede volver a entrar con ella. No se puede deshacer.
   - Si era el único con cuenta en un grupo, el grupo queda sin nadie que lo vea. Se acepta (no se borra nada).
 
@@ -79,7 +79,7 @@ Proyecto de **Kachingga**, una organización de amigos (repo: `github.com/kachin
 - Un grupo tiene **nombre** y **moneda base** (ver Multimoneda). Quien lo crea queda como participante con el nombre que elija.
 - **Solo ven un grupo los usuarios que son participantes de ese grupo.** Para cualquier otro, el grupo "no existe" (no se revela que existe).
 - Todos los miembros tienen los mismos permisos: no hay admin. Cualquiera puede cargar, editar o borrar cualquier gasto del grupo.
-- **Dentro del grupo todo es público para sus miembros:** todos ven todos los gastos (los cargue y los pague quien sea), todos los pagos y los saldos de todos. Lo único personal son los **filtros guardados** y las **novedades** de cada uno.
+- **Dentro del grupo todo es público para sus miembros:** todos ven todos los gastos (los cargue y los pague quien sea), todos los pagos y los saldos de todos. Lo único personal son los **filtros guardados** y las **notificaciones** de cada uno.
 - **Código de invitación:** cada grupo tiene un código (8 caracteres, sin letras/números confusibles como 0/O, 1/I/L). Se puede regenerar; el anterior deja de servir.
 - **Archivar:** un grupo archivado se puede ver pero no modificar (ni gastos, ni pagos, ni participantes) hasta desarchivarlo. No aparece en la lista por defecto.
 - **Cupo:** cada usuario puede **crear hasta 50 grupos** (los archivados cuentan). Unirse a grupos de otros no tiene límite.
@@ -181,11 +181,11 @@ Proyecto de **Kachingga**, una organización de amigos (repo: `github.com/kachin
 - Cuando alguien **carga, edita o borra un gasto**, o **registra o borra un pago**, se les avisa a las **personas involucradas que tienen cuenta, menos a quien lo hizo**. Al resto del grupo no le llega nada (igual lo ve en el grupo).
   - **Gasto:** quien pagó y los que están en la división. Al editarlo, los que estaban antes y los que están ahora (al que sacan de la división también le llega).
   - **Pago:** quien pagó y quien recibió.
-- **En la app ("Novedades"):** una campanita con cuántas hay sin leer y la lista, de la más nueva a la más vieja: quién, qué, en qué grupo, cuándo y el monto ("Román agregó «Cena» · Bariloche · hace 5 minutos · $45.000"). **Abrirla las marca como leídas.** Tocar una lleva al gasto (al grupo, si se borró) o a los pagos del grupo. No se apagan.
+- **En la app ("Notificaciones"):** una campanita con cuántas hay sin leer y la lista, de la más nueva a la más vieja: quién, qué, en qué grupo, cuándo y el monto ("Román agregó «Cena» · Bariloche · hace 5 minutos · $45.000"). **Abrirla las marca como leídas.** Tocar una lleva al gasto (al grupo, si se borró) o a los pagos del grupo. No se apagan.
 - Un cambio nuevo sobre el mismo gasto o pago **reemplaza** al que todavía no leíste, así no se llena de "editó" (si lo agregaron y lo editaron antes de que lo vieras, sigue diciendo "agregó", con el gasto como quedó).
 - Son **personales**: cada uno ve solo las suyas. Se guardan **las últimas 50** de cada persona; las más viejas se borran.
-- **En el dispositivo** (como cualquier app, aunque Kachingga esté cerrada): cada uno las **activa en cada dispositivo** desde Mi cuenta (el navegador pide permiso) y las puede desactivar ahí mismo. En iPhone y iPad solo llegan con la app **instalada en la pantalla de inicio**. Dicen el grupo, quién hizo qué y el monto ("Bariloche: Román agregó «Cena» · $45.000"); tocarla abre el gasto, o Novedades si hay varias.
-  - **Silenciar un grupo** (menú del grupo): sus notificaciones no le llegan a ningún dispositivo de esa persona; en Novedades siguen apareciendo.
+- **En el dispositivo** (como cualquier app, aunque Kachingga esté cerrada): cada uno las **activa en cada dispositivo** desde Mi cuenta (el navegador pide permiso) y las puede desactivar ahí mismo. En iPhone y iPad solo llegan con la app **instalada en la pantalla de inicio**. Dicen el grupo, quién hizo qué y el monto ("Bariloche: Román agregó «Cena» · $45.000"); tocarla abre el gasto, o la pantalla de notificaciones si hay varias.
+  - **Silenciar un grupo** (menú del grupo): sus notificaciones no le llegan a ningún dispositivo de esa persona; en la app (la campanita) siguen apareciendo.
   - **Para que no molesten:** varias seguidas del mismo grupo llegan como una ("… (y 2 más)"), como mucho una por minuto por persona y grupo, y si ya las leyó en la app no le llegan.
   - Al **cerrar sesión**, ese dispositivo deja de recibirlas (otra cuenta que entre ahí las activa de nuevo). Cada persona, **hasta 10 dispositivos** (al sumar uno más, se cae el más viejo).
 

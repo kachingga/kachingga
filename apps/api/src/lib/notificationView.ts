@@ -1,6 +1,6 @@
 import type { Prisma } from '../db/generated/prisma/client'
 
-// How a notification is read, for "Novedades" (routers/notifications.ts) and the devices (lib/push.ts).
+// How a notification is read, in the app (routers/notifications.ts) and the devices (lib/push.ts).
 
 // Only the user's, and only of groups they're still in.
 export const mine = (userId: string) => ({ userId, group: { participants: { some: { userId } } } }) satisfies Prisma.NotificationWhereInput

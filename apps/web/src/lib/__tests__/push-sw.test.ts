@@ -66,7 +66,7 @@ describe('push-sw.js', () => {
     });
     expect(sw.self.registration.showNotification).toHaveBeenCalledWith(
       'Kachingga',
-      expect.objectContaining({ body: 'Tenés novedades' }),
+      expect.objectContaining({ body: 'Tenés notificaciones nuevas' }),
     );
   });
 
@@ -88,12 +88,14 @@ describe('push-sw.js', () => {
   it('without the app open, opens it there', async () => {
     const sw = serviceWorker();
     await sw.fire('notificationclick', {
-      notification: { close: vi.fn(), data: { url: '/novedades' } },
+      notification: { close: vi.fn(), data: { url: '/notificaciones' } },
     });
-    expect(sw.self.clients.openWindow).toHaveBeenCalledWith('https://app.kachingga.com/novedades');
+    expect(sw.self.clients.openWindow).toHaveBeenCalledWith(
+      'https://app.kachingga.com/notificaciones',
+    );
   });
 
-  it('only paths of the app: anything else opens "Novedades"', async () => {
+  it('only paths of the app: anything else opens the notifications screen', async () => {
     for (const url of [
       'https://evil.example/x',
       '//evil.example/x',
@@ -103,7 +105,7 @@ describe('push-sw.js', () => {
       const sw = serviceWorker();
       await sw.fire('notificationclick', { notification: { close: vi.fn(), data: { url } } });
       expect(sw.self.clients.openWindow).toHaveBeenCalledWith(
-        'https://app.kachingga.com/novedades',
+        'https://app.kachingga.com/notificaciones',
       );
     }
   });

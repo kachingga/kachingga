@@ -1,4 +1,4 @@
-import { createBrowserRouter, Outlet } from 'react-router';
+import { createBrowserRouter, Navigate, Outlet } from 'react-router';
 
 import { AnimatedLayout } from '@/components/animated-layout';
 import { AppShell } from '@/components/app-shell';
@@ -52,7 +52,9 @@ export const router = createBrowserRouter([
               { path: '/', element: <AfterGoogle /> },
               { path: '/cuenta', element: <Account /> },
               { path: '/cuenta/borrar', element: <DeleteAccount /> },
-              { path: '/novedades', element: <Notifications /> },
+              { path: '/notificaciones', element: <Notifications /> },
+              // Its first name: a notification sent before the rename may still lead here.
+              { path: '/novedades', element: <Navigate to="/notificaciones" replace /> },
               { path: '/grupos', element: <GroupList /> },
               { path: '/grupos/crear', element: <CreateGroup /> },
               { path: '/grupos/unirme', element: <JoinGroup /> },

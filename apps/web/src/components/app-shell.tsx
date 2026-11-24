@@ -76,7 +76,7 @@ export function ThemeToggle() {
   );
 }
 
-/** Unread "Novedades": asked every minute while the app is open, and when it comes back to the front. */
+/** Unread notifications: asked every minute while the app is open, and when it comes back to the front. */
 function useUnreadCount() {
   const trpc = useTRPC();
   const unread = useQuery(
@@ -85,7 +85,8 @@ function useUnreadCount() {
   return unread.data ?? 0;
 }
 
-const unreadLabel = (count: number) => (count === 0 ? 'Novedades' : `Novedades: ${count} sin leer`);
+const unreadLabel = (count: number) =>
+  count === 0 ? 'Notificaciones' : `Notificaciones: ${count} sin leer`;
 
 function UnreadBadge({ count, className }: { count: number; className?: string }) {
   if (count === 0) return null;
@@ -137,8 +138,8 @@ export function AppShell() {
           <NavItem to="/grupos" icon={<Users className="size-5" />}>
             Mis grupos
           </NavItem>
-          <NavItem to="/novedades" icon={<Bell className="size-5" />}>
-            Novedades
+          <NavItem to="/notificaciones" icon={<Bell className="size-5" />}>
+            Notificaciones
             {unread > 0 && <span className="sr-only">: {unread} sin leer</span>}
             <UnreadBadge count={unread} className="ml-auto" />
           </NavItem>
@@ -167,7 +168,7 @@ export function AppShell() {
           <Logo className="text-xl" />
           <div className="flex items-center gap-2">
             <Link
-              to="/novedades"
+              to="/notificaciones"
               aria-label={unreadLabel(unread)}
               className="tap-area relative grid size-9 place-items-center rounded-full text-muted-foreground hover:bg-muted"
             >

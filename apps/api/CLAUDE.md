@@ -78,7 +78,7 @@ src/
 ├── db/                   # schema.prisma (generator + datasource), models/*.prisma (uno por dominio), migrations/,
 │                         # index.ts (`prisma`: PrismaClient con @prisma/adapter-pg), generated/ (gitignoreado)
 ├── lib/                  # access, splits, balances, summary, aggregates (sumas en SQL), rates, exportExpenses, paymentAlias, rateLimit, quotas,
-│                         # notifications (a quién le llega cada novedad), push (notificaciones en el dispositivo)…
+│                         # notifications (a quién le llega cada notificación), push (notificaciones en el dispositivo)…
 └── __tests__/            # bun:test (unit, HTTP, integración con PGlite)
 scripts/                  # new-migration.ts (db:migrate:new), seed.ts (db:seed)
 ```

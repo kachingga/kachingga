@@ -404,7 +404,7 @@ export function GroupDetail() {
         void queryClient.invalidateQueries(trpc.groups.get.queryFilter({ groupId: groupId! }));
         toast.success(
           muted
-            ? 'No te van a llegar notificaciones de este grupo. Las seguís viendo en Novedades.'
+            ? 'No te van a llegar notificaciones de este grupo al dispositivo. En la campanita las seguís viendo.'
             : 'Te van a llegar las notificaciones de este grupo.',
         );
       },

@@ -61,7 +61,9 @@ describe('PushDeviceCard (Mi cuenta)', () => {
       'notifications.pushConfig': pushConfig,
     });
     await waitFor(() => expect(pushConfig).toHaveBeenCalled());
-    expect(screen.queryByText(/Notificaciones|¿Te avisamos/)).not.toBeInTheDocument();
+    expect(
+      screen.queryByText(/Notificaciones en este dispositivo|¿Te avisamos/),
+    ).not.toBeInTheDocument();
     expect(screen.queryByRole('button')).not.toBeInTheDocument();
   });
 
@@ -83,7 +85,7 @@ describe('PushDeviceCard (Mi cuenta)', () => {
     expect(browser.pushManager.subscribe).toHaveBeenCalledWith(
       expect.objectContaining({ userVisibleOnly: true }),
     );
-    expect(await screen.findByText('Activadas en este dispositivo')).toBeInTheDocument();
+    expect(await screen.findByText('Activadas')).toBeInTheDocument();
     expect(localStorage.getItem('kachingga-push-user')).toBe('u1');
   });
 
@@ -109,7 +111,7 @@ describe('PushDeviceCard (Mi cuenta)', () => {
       api({ 'notifications.unsubscribeDevice': unsubscribeDevice }),
     );
 
-    expect(await screen.findByText('Activadas en este dispositivo')).toBeInTheDocument();
+    expect(await screen.findByText('Activadas')).toBeInTheDocument();
     expect(screen.getByText(/Silenciar notificaciones/)).toBeInTheDocument();
     await userEvent.click(screen.getByRole('button', { name: 'Desactivar' }));
 
@@ -155,7 +157,7 @@ describe('PushDeviceCard (Mi cuenta)', () => {
   });
 });
 
-describe('PushDeviceCard prompt (Novedades)', () => {
+describe('PushDeviceCard prompt (notifications screen)', () => {
   it('offers them while they are off here', async () => {
     fakeBrowser();
     renderWithApi(<PushDeviceCard prompt />, api());
@@ -168,7 +170,9 @@ describe('PushDeviceCard prompt (Novedades)', () => {
     const deviceStatus = vi.fn(() => ({ subscribed: true }));
     renderWithApi(<PushDeviceCard prompt />, api({ 'notifications.deviceStatus': deviceStatus }));
     await waitFor(() => expect(deviceStatus).toHaveBeenCalled());
-    expect(screen.queryByText(/Notificaciones|¿Te avisamos/)).not.toBeInTheDocument();
+    expect(
+      screen.queryByText(/Notificaciones en este dispositivo|¿Te avisamos/),
+    ).not.toBeInTheDocument();
     expect(screen.queryByRole('button')).not.toBeInTheDocument();
   });
 });

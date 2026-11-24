@@ -151,7 +151,7 @@ export function formatDate(date: Date | string): string {
 
 /**
  * How long ago something happened, in the browser's language ("hace 5 minutos", "ayer"); a week or
- * more, its date. For instants (a change in "Novedades"), not calendar days.
+ * more, its date. For instants (a notification), not calendar days.
  */
 export function formatTimeAgo(date: Date | string, now: Date = new Date()): string {
   const seconds = Math.round((new Date(date).getTime() - now.getTime()) / 1000);
