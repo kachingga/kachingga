@@ -77,6 +77,7 @@ Proyecto de **Kachingga**, una organización de amigos (repo: `github.com/kachin
 
 ### Grupos
 - Un grupo tiene **nombre** y **moneda base** (ver Multimoneda). Quien lo crea queda como participante con el nombre que elija.
+- **Emoji del grupo** (opcional): se muestra en vez de la inicial. Uno solo; cualquier miembro lo pone, lo cambia o lo saca (como el nombre). En un grupo archivado no se puede cambiar.
 - **Solo ven un grupo los usuarios que son participantes de ese grupo.** Para cualquier otro, el grupo "no existe" (no se revela que existe).
 - Todos los miembros tienen los mismos permisos: no hay admin. Cualquiera puede cargar, editar o borrar cualquier gasto del grupo.
 - **Dentro del grupo todo es público para sus miembros:** todos ven todos los gastos (los cargue y los pague quien sea), todos los pagos y los saldos de todos. Lo único personal son los **filtros guardados** y las **notificaciones** de cada uno.

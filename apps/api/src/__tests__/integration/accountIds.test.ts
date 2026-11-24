@@ -66,6 +66,7 @@ const calls: Record<string, () => Promise<unknown>> = {
   'groups.get': () => member.groups.get({ groupId }),
   'groups.create': () => member.groups.create({ name: 'Otro', baseCurrency: 'ARS', myName: 'Yo' }),
   'groups.rename': () => member.groups.rename({ groupId, name: 'Viaje al sur' }),
+  'groups.setEmoji': () => member.groups.setEmoji({ groupId, emoji: '🏔️' }),
   'groups.setArchived': () => member.groups.setArchived({ groupId, archived: false }),
   'groups.regenerateInviteCode': () => member.groups.regenerateInviteCode({ groupId }),
   'groups.preview': async () => member.groups.preview({ inviteCode: await inviteCode() }),

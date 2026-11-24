@@ -212,6 +212,7 @@ export function GroupList() {
                   <Avatar
                     id={group.id}
                     name={group.name}
+                    emoji={group.emoji}
                     className="size-14 rounded-lg text-2xl ring-0"
                   />
                   <ChevronRight

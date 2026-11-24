@@ -1,6 +1,7 @@
 model Group {
   id           String    @id @default(cuid())
   name         String
+  emoji        String? // shown instead of the initial (one emoji, see groupEmoji in src/schemas.ts)
   baseCurrency Currency
   inviteCode   String    @unique
   createdById  String // Supabase auth user id

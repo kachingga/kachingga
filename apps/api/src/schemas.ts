@@ -168,6 +168,15 @@ export const expenseFilters = z.object({
 })
 
 export const groupInput = z.object({ name, baseCurrency: currency })
+
+/** Exactly one emoji (flags, skin tones and joined ones like 👨‍👩‍👧 count as one). */
+export function isSingleEmoji(value: string): boolean {
+  const graphemes = [...new Intl.Segmenter('es', { granularity: 'grapheme' }).segment(value)]
+  return graphemes.length === 1 && /\p{Extended_Pictographic}|\p{Regional_Indicator}/u.test(value)
+}
+
+// A group's emoji, shown instead of its initial. null = back to the initial.
+export const groupEmoji = z.string().trim().max(32).refine(isSingleEmoji, 'Elegí un solo emoji').nullable()
 export const participantName = name
 
 // Alias (6-20 letters, digits, dots or hyphens) or CVU/CBU (22 digits) to get paid by transfer.

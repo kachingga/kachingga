@@ -8,7 +8,7 @@ Schema en `src/db/models/*.prisma`.
 
 | Modelo | Campos clave |
 |--------|--------------|
-| `Group` | `name`, `baseCurrency`, `inviteCode` (único), `createdById`, `archivedAt` |
+| `Group` | `name`, `emoji?` (uno solo: `groupEmoji` / `isSingleEmoji` en `schemas.ts`), `baseCurrency`, `inviteCode` (único), `createdById`, `archivedAt` |
 | `Participant` | `groupId`, `name`, `userId?` (Supabase; `null` = sin cuenta), `paymentAlias?` (alias propio del grupo), `notificationsMuted` (el que tiene cuenta silenció el grupo: no le llegan sus notificaciones al dispositivo). Único `(groupId, userId)` |
 | `UserProfile` | `userId` (id de Supabase, clave), `paymentAlias?` (alias de la cuenta, para todos los grupos) |
 | `Category` | `groupId`, `name`, `icon` (uno de `categoryIcons`), `color` (uno de `categoryColors`: 12 nombres de la paleta de categorías, `tomato` … `cocoa`, nunca hex; la migración `colores_de_categorias` pasó los nombres viejos a estos), `defaultKey?` (`FOOD`…`OTHER` en las 8 que trae cada grupo; `null` = creada por alguien), `archivedAt?`. Nombre único entre las activas del grupo, sin distinguir mayúsculas: lo chequea la API y lo asegura el índice parcial `Category_active_name_key` (solo en la migración `nombre_de_categoria_unico`: Prisma no lo puede expresar) |
@@ -41,6 +41,7 @@ Todos con `protectedProcedure` salvo `health.ping`. Inputs en `src/schemas.ts`, 
 | `groups.get` | query | Grupo + participantes (`isMe`, `hasAccount`, `paymentAlias`, `paymentAliasSource`: `'group'` / `'account'` / `null`; sin cuenta, siempre `null`) + `myParticipantId` + `notificationsMuted` (si yo lo silencié) |
 | `groups.create` | mutation | Crea grupo + mi participante (`myName`) + sus 8 categorías por defecto |
 | `groups.rename` | mutation | Cambia el nombre |
+| `groups.setEmoji` | mutation | `{ groupId, emoji \| null }`: el emoji del grupo (uno solo, `BAD_REQUEST` "Elegí un solo emoji" si no). Cualquier miembro; grupo archivado = solo lectura. `groups.get` y `groups.list` lo devuelven (`emoji`) |
 | `groups.setArchived` | mutation | Archiva / desarchiva |
 | `groups.regenerateInviteCode` | mutation | Nuevo código |
 | `groups.preview` | query | Por código: nombre, moneda, `unclaimedParticipants`, `alreadyMember` |

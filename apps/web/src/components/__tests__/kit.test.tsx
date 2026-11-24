@@ -50,4 +50,12 @@ describe('kit', () => {
     expect(screen.getByText('Creá uno.')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Crear grupo' })).toBeInTheDocument();
   });
+
+  it('Avatar: a group with an emoji shows it instead of the initial', () => {
+    const { container, rerender } = render(<Avatar id="g1" name="Viaje" emoji="🏖️" />);
+    expect(container).toHaveTextContent('🏖️');
+    expect(container).not.toHaveTextContent('V');
+    rerender(<Avatar id="g1" name="Viaje" emoji={null} />);
+    expect(container).toHaveTextContent('V');
+  });
 });

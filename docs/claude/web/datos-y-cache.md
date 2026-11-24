@@ -15,7 +15,7 @@ Gastos y pagos → `expenses` (todo el path), `balances.get` y `expenses.summary
 
 ## Optimistic updates
 
-Hechos: agregar / editar / borrar gasto, registrar / borrar pago.
+Hechos: agregar / editar / borrar gasto, registrar / borrar pago, y el emoji del grupo (escribe `groups.get` y lo deshace si falla).
 
 Ciclo de una mutation: `onMutate` (antes del pedido; lo que devuelve es el `context`) → pedido → `onSuccess` / `onError(err, input, context)` → `onSettled` (siempre).
 

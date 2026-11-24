@@ -50,6 +50,7 @@ const expenseFields = {
 const attacks: Record<string, () => Promise<unknown>> = {
   'groups.get': () => outsider.groups.get({ groupId: group.id }),
   'groups.rename': () => outsider.groups.rename({ groupId: group.id, name: 'Hackeado' }),
+  'groups.setEmoji': () => outsider.groups.setEmoji({ groupId: group.id, emoji: '🏴‍☠️' }),
   'groups.setArchived': () => outsider.groups.setArchived({ groupId: group.id, archived: true }),
   'groups.regenerateInviteCode': () => outsider.groups.regenerateInviteCode({ groupId: group.id }),
   'participants.add': () => outsider.participants.add({ groupId: group.id, name: 'Intruso' }),
@@ -123,7 +124,7 @@ describe('authorization: non-members', () => {
 
   test("the owner's data is untouched after all the attempts", async () => {
     const g = await owner.groups.get({ groupId: group.id })
-    expect(g).toMatchObject({ name: 'Privado', inviteCode: group.inviteCode, archivedAt: null })
+    expect(g).toMatchObject({ name: 'Privado', emoji: null, inviteCode: group.inviteCode, archivedAt: null })
     expect(g.participants.map((p) => p.name)).toEqual(['Dueño', 'Juan'])
     expect(g.participants.find((p) => p.name === 'Juan')?.paymentAlias).toBeNull()
     expect((await owner.expenses.list({ groupId: group.id })).items.map((e) => e.description)).toEqual(['Secreto'])
@@ -171,6 +172,7 @@ await keeper.groups.setArchived({ groupId: shelved.id, archived: true })
 
 const archivedWrites: Record<string, () => Promise<unknown>> = {
   'groups.rename': () => keeper.groups.rename({ groupId: shelved.id, name: 'Otro' }),
+  'groups.setEmoji': () => keeper.groups.setEmoji({ groupId: shelved.id, emoji: '🍕' }),
   'groups.regenerateInviteCode': () => keeper.groups.regenerateInviteCode({ groupId: shelved.id }),
   'groups.join': () => caller('newcomer-archived').groups.join({ inviteCode: shelved.inviteCode, name: 'Nuevo' }),
   'participants.add': () => keeper.participants.add({ groupId: shelved.id, name: 'Otro' }),
