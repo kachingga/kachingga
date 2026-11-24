@@ -5,7 +5,7 @@
 // - currency != base and exchangeRate != null → converted: 1 unit of `currency` = exchangeRate units of base
 // - currency != base and exchangeRate == null → "native": settled in its own currency, separate balance
 model Expense {
-  id           String          @id @default(cuid())
+  id           String    @id @default(cuid())
   groupId      String
   description  String
   categoryId   String
@@ -16,14 +16,15 @@ model Expense {
   splitType    SplitType
   paidById     String
   createdById  String // Supabase auth user id
-  createdAt    DateTime        @default(now())
-  updatedAt    DateTime        @updatedAt
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
   deletedAt    DateTime? // null = active; set = soft-deleted
 
-  group    Group          @relation(fields: [groupId], references: [id])
-  category Category       @relation(fields: [categoryId], references: [id])
-  paidBy   Participant    @relation(fields: [paidById], references: [id])
-  splits   ExpenseSplit[]
+  group         Group          @relation(fields: [groupId], references: [id])
+  category      Category       @relation(fields: [categoryId], references: [id])
+  paidBy        Participant    @relation(fields: [paidById], references: [id])
+  splits        ExpenseSplit[]
+  notifications Notification[]
 
   @@index([groupId, date])
 }

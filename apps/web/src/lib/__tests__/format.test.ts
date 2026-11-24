@@ -8,6 +8,7 @@ import {
   formatCentsParts,
   formatDate,
   formatPlainAmount,
+  formatTimeAgo,
   monthRange,
   numberSeparators,
   startOfDay,
@@ -122,5 +123,22 @@ describe('formatCentsParts', () => {
     // Together they're exactly formatCents.
     const { whole, fraction } = formatCentsParts(123456789, 'USD');
     expect(whole + fraction).toBe(formatCents(123456789, 'USD'));
+  });
+});
+
+describe('formatTimeAgo', () => {
+  const now = new Date('2026-11-24T18:00:00Z');
+  const ago = (seconds: number) => new Date(now.getTime() - seconds * 1000);
+
+  it('says how long ago, in the browser language', () => {
+    expect(formatTimeAgo(ago(10), now)).toBe('ahora');
+    expect(formatTimeAgo(ago(5 * 60), now)).toBe('hace 5 minutos');
+    expect(formatTimeAgo(ago(3 * 3600), now)).toBe('hace 3 horas');
+    expect(formatTimeAgo(ago(26 * 3600), now)).toBe('ayer');
+    expect(formatTimeAgo(ago(3 * 86400), now)).toBe('hace 3 días');
+  });
+
+  it('a week or more: the date', () => {
+    expect(formatTimeAgo(ago(10 * 86400), now)).toMatch(/^14 nov\.?$/);
   });
 });

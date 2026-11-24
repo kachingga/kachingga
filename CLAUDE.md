@@ -71,7 +71,7 @@ Proyecto de **Kachingga**, una organización de amigos (repo: `github.com/kachin
 - **Cambiar el email** (desde Mi cuenta): cada uno el suyo. Se confirma **desde el email actual y desde el nuevo** (un link en cada uno); recién con los dos cambia. Quien entra con Google puede cambiarlo y sigue entrando con Google.
 - **Borrar mi cuenta** (desde Mi cuenta): cualquiera puede borrar la suya, y solo la suya. **No lo saca de sus grupos:** su participante queda **sin cuenta** (como "Juan", que no usa la app), con su nombre, sus gastos, sus pagos y sus saldos tal cual; nada de los grupos se borra. **Sus deudas quedan en el grupo, a su nombre** (cualquiera puede registrar después un pago suyo). Antes de confirmar se le muestran sus saldos pendientes en cada grupo: avisa, no bloquea.
   - **Antes de borrarla tiene que volver a identificarse:** con su contraseña o, si entra con Google, volviendo a entrar con Google (sin mails ni magic link). Una sesión abierta no alcanza (un celu prestado, un token robado): **la API lo comprueba** y solo borra si la sesión se inició así hace 5 minutos o menos.
-  - Se borra lo que sin cuenta no sirve: su **alias** (el de la cuenta y los de cada grupo) y sus **filtros guardados**.
+  - Se borra lo que sin cuenta no sirve: su **alias** (el de la cuenta y los de cada grupo), sus **filtros guardados** y sus **novedades** (ver "Notificaciones").
   - La cuenta de Supabase se borra con **borrado lógico** (soft delete): no se puede volver a entrar con ella. No se puede deshacer.
   - Si era el único con cuenta en un grupo, el grupo queda sin nadie que lo vea. Se acepta (no se borra nada).
 
@@ -79,7 +79,7 @@ Proyecto de **Kachingga**, una organización de amigos (repo: `github.com/kachin
 - Un grupo tiene **nombre** y **moneda base** (ver Multimoneda). Quien lo crea queda como participante con el nombre que elija.
 - **Solo ven un grupo los usuarios que son participantes de ese grupo.** Para cualquier otro, el grupo "no existe" (no se revela que existe).
 - Todos los miembros tienen los mismos permisos: no hay admin. Cualquiera puede cargar, editar o borrar cualquier gasto del grupo.
-- **Dentro del grupo todo es público para sus miembros:** todos ven todos los gastos (los cargue y los pague quien sea), todos los pagos y los saldos de todos. Lo único personal son los **filtros guardados**.
+- **Dentro del grupo todo es público para sus miembros:** todos ven todos los gastos (los cargue y los pague quien sea), todos los pagos y los saldos de todos. Lo único personal son los **filtros guardados** y las **novedades** de cada uno.
 - **Código de invitación:** cada grupo tiene un código (8 caracteres, sin letras/números confusibles como 0/O, 1/I/L). Se puede regenerar; el anterior deja de servir.
 - **Archivar:** un grupo archivado se puede ver pero no modificar (ni gastos, ni pagos, ni participantes) hasta desarchivarlo. No aparece en la lista por defecto.
 - **Cupo:** cada usuario puede **crear hasta 50 grupos** (los archivados cuentan). Unirse a grupos de otros no tiene límite.
@@ -176,6 +176,15 @@ Proyecto de **Kachingga**, una organización de amigos (repo: `github.com/kachin
 - Cada fila es un gasto, del más viejo al más nuevo: fecha, descripción, categoría, moneda y monto, tipo de cambio (si se convirtió), en qué saldo cuenta y su monto ahí, quién pagó, cómo se dividió, la parte de cada uno y **mi parte** (en la moneda del gasto y en la del saldo).
 - Exporta solo gastos: los pagos manuales no son gastos y no se incluyen.
 - Cualquier miembro puede exportar los gastos de su grupo.
+
+### Notificaciones
+- Cuando alguien **carga, edita o borra un gasto**, o **registra o borra un pago**, se les avisa a las **personas involucradas que tienen cuenta, menos a quien lo hizo**. Al resto del grupo no le llega nada (igual lo ve en el grupo).
+  - **Gasto:** quien pagó y los que están en la división. Al editarlo, los que estaban antes y los que están ahora (al que sacan de la división también le llega).
+  - **Pago:** quien pagó y quien recibió.
+- **En la app ("Novedades"):** una campanita con cuántas hay sin leer y la lista, de la más nueva a la más vieja: quién, qué, en qué grupo, cuándo y el monto ("Román agregó «Cena» · Bariloche · hace 5 minutos · $45.000"). **Abrirla las marca como leídas.** Tocar una lleva al gasto (al grupo, si se borró) o a los pagos del grupo. No se apagan.
+- Un cambio nuevo sobre el mismo gasto o pago **reemplaza** al que todavía no leíste, así no se llena de "editó" (si lo agregaron y lo editaron antes de que lo vieras, sigue diciendo "agregó", con el gasto como quedó).
+- Son **personales**: cada uno ve solo las suyas. Se guardan **las últimas 50** de cada persona; las más viejas se borran.
+
 ### Decisiones de producto tomadas
 - **Sin roles ni permisos finos dentro de un grupo** (cualquier miembro carga, edita o borra cualquier gasto, como en Splitwise). Se revisó al abrirla a cualquiera (#44) y queda así: a un grupo solo entran las personas que se pasan el código entre ellas.
 - **Front: web app mobile-first** (web y API en Railway, con dominio propio: la app en `app.kachingga.com` y la landing en `kachingga.com`), instalable en el celu desde el navegador ("Agregar a inicio"). Sin cuenta de Apple ni stores. **Solo web:** la app nativa (Expo) se sacó del repo el 8/11/2026; si algún día se quiere en las stores, se arranca de cero (`docs/decisiones/costos-y-alternativas.md`).

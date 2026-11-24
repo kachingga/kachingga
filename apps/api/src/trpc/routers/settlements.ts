@@ -3,6 +3,7 @@ import { z } from 'zod'
 import type { Prisma } from '../../db/generated/prisma/client'
 import { prisma } from '../../db'
 import { assertParticipantsInGroup, requireActiveGroup, requireMembership } from '../../lib/access'
+import { notifyInvolved } from '../../lib/notifications'
 import { assertRoomForSettlement } from '../../lib/quotas'
 import { resolveExchangeRate } from '../../lib/rates'
 import { id, settlementInput } from '../../schemas'
@@ -37,12 +38,12 @@ export const settlementsRouter = router({
 
   // Manual "I paid you back" (the payment happened outside the app).
   create: protectedProcedure.input(settlementInput).mutation(async ({ ctx, input }) => {
-    const { group } = await requireActiveGroup(input.groupId, ctx.user.id)
+    const me = await requireActiveGroup(input.groupId, ctx.user.id)
     await assertRoomForSettlement(input.groupId)
     if (input.fromId === input.toId) throw new TRPCError({ code: 'BAD_REQUEST', message: 'Tiene que ser entre dos personas distintas' })
     await assertParticipantsInGroup(input.groupId, [input.fromId, input.toId])
-    const exchangeRate = await resolveExchangeRate({ ...input, baseCurrency: group.baseCurrency })
-    return prisma.settlement.create({
+    const exchangeRate = await resolveExchangeRate({ ...input, baseCurrency: me.group.baseCurrency })
+    const settlement = await prisma.settlement.create({
       data: {
         groupId: input.groupId,
         fromId: input.fromId,
@@ -56,13 +57,22 @@ export const settlementsRouter = router({
       },
       select: settlementSelect,
     })
+    await notifyInvolved(input.groupId, { id: me.id, userId: ctx.user.id }, [input.fromId, input.toId], {
+      kind: 'SETTLEMENT_CREATED',
+      settlementId: settlement.id,
+    })
+    return settlement
   }),
 
   delete: protectedProcedure.input(z.object({ settlementId: id })).mutation(async ({ ctx, input }) => {
     const settlement = await prisma.settlement.findUnique({ where: { id: input.settlementId } })
     if (!settlement || settlement.deletedAt) throw new TRPCError({ code: 'NOT_FOUND', message: 'Pago no encontrado' })
-    await requireActiveGroup(settlement.groupId, ctx.user.id)
+    const me = await requireActiveGroup(settlement.groupId, ctx.user.id)
     await prisma.settlement.update({ where: { id: settlement.id }, data: { deletedAt: new Date() } })
+    await notifyInvolved(settlement.groupId, { id: me.id, userId: ctx.user.id }, [settlement.fromId, settlement.toId], {
+      kind: 'SETTLEMENT_DELETED',
+      settlementId: settlement.id,
+    })
     return { ok: true }
   }),
 })

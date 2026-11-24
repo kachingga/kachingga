@@ -118,6 +118,8 @@ describe('profile.deleteAccount', () => {
   test('unlinks me from every group: I stay as a participant without account, with my expenses and balances', async () => {
     const { anaId, ana, beto, viaje, depto, anaV, groupView } = await scenario()
     const before = { viaje: await groupView(viaje.id), depto: await groupView(depto.id) }
+    // Beto's "Cena", which she's in
+    expect(await ana.notifications.list()).toHaveLength(1)
 
     expect(await ana.profile.deleteAccount()).toEqual({ ok: true })
 
@@ -142,10 +144,11 @@ describe('profile.deleteAccount', () => {
     expect(await prisma.participant.count({ where: { userId: anaId } })).toBe(0)
     expect(await prisma.participant.count({ where: { groupId: { in: [viaje.id, depto.id] } } })).toBe(4)
 
-    // What was only mine is gone: account alias, group alias and saved filters
+    // What was only mine is gone: account alias, group alias, saved filters and "Novedades"
     expect(await prisma.userProfile.findUnique({ where: { userId: anaId } })).toBeNull()
     expect(await prisma.participant.findUnique({ where: { id: anaV } })).toMatchObject({ userId: null, paymentAlias: null })
     expect(await prisma.savedFilter.count({ where: { userId: anaId } })).toBe(0)
+    expect(await prisma.notification.count({ where: { userId: anaId } })).toBe(0)
 
     // Who created things stays as history
     expect(await prisma.group.findUnique({ where: { id: viaje.id } })).toMatchObject({ createdById: anaId })
@@ -165,6 +168,12 @@ describe('profile.deleteAccount', () => {
     expect(me).toMatchObject({ hasAccount: true, isMe: true, paymentAlias: 'beto.viajes', paymentAliasSource: 'group' })
     expect((await beto.savedFilters.list({ groupId: viaje.id })).map((f) => f.name)).toEqual(['De Beto'])
     expect((await beto.groups.list()).map((g) => g.name).sort()).toEqual(['Depto', 'Viaje'])
+    // What she did still shows in Beto's "Novedades", with her name
+    const news = await beto.notifications.list()
+    expect(news.map((n) => [n.kind, n.actor?.name])).toEqual([
+      ['SETTLEMENT_CREATED', 'Anita'],
+      ['EXPENSE_CREATED', 'Ana'],
+    ])
   })
 
   test("nobody can delete someone else's account: there is no user id in the input, it's always the caller", async () => {

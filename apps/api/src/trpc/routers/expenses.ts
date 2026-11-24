@@ -7,6 +7,7 @@ import { assertParticipantsInGroup, requireActiveGroup, requireMembership } from
 import { expenseCategoryTotals } from '../../lib/aggregates'
 import { resolveExpenseCategory } from '../../lib/categories'
 import { CSV_HEADER, csvRows, exportFilename, jsonRow, toExportRows, toJson } from '../../lib/exportExpenses'
+import { notifyInvolved } from '../../lib/notifications'
 import { assertRoomForExpense } from '../../lib/quotas'
 import { resolveExchangeRate } from '../../lib/rates'
 import { resolveSplits } from '../../lib/splits'
@@ -81,10 +82,16 @@ async function prepareExpense(input: z.infer<typeof expenseInput>, baseCurrency:
 }
 
 async function findExpense(expenseId: string, userId: string) {
-  const expense = await prisma.expense.findUnique({ where: { id: expenseId } })
+  const expense = await prisma.expense.findUnique({ where: { id: expenseId }, include: { splits: { select: { participantId: true } } } })
   if (!expense || expense.deletedAt) throw new TRPCError({ code: 'NOT_FOUND', message: 'Gasto no encontrado' })
   return { expense, membership: await requireMembership(expense.groupId, userId) }
 }
+
+// Who's in an expense (for "Novedades"): who paid and everyone in the split.
+const involvedIn = (expense: { paidById: string; splits: { participantId: string }[] }) => [
+  expense.paidById,
+  ...expense.splits.map((s) => s.participantId),
+]
 
 export const expensesRouter = router({
   list: protectedProcedure
@@ -151,30 +158,45 @@ export const expensesRouter = router({
   }),
 
   create: protectedProcedure.input(expenseInput).mutation(async ({ ctx, input }) => {
-    const { group } = await requireActiveGroup(input.groupId, ctx.user.id)
+    const me = await requireActiveGroup(input.groupId, ctx.user.id)
     await assertRoomForExpense(input.groupId)
-    const { data, splits } = await prepareExpense(input, group.baseCurrency)
-    return prisma.expense.create({
+    const { data, splits } = await prepareExpense(input, me.group.baseCurrency)
+    const expense = await prisma.expense.create({
       data: { ...data, groupId: input.groupId, createdById: ctx.user.id, splits: { create: splits } },
       select: expenseSelect,
     })
+    await notifyInvolved(input.groupId, { id: me.id, userId: ctx.user.id }, involvedIn(expense), {
+      kind: 'EXPENSE_CREATED',
+      expenseId: expense.id,
+    })
+    return expense
   }),
 
   update: protectedProcedure.input(expenseInput.omit({ groupId: true }).extend({ expenseId: id })).mutation(async ({ ctx, input }) => {
     const { expense } = await findExpense(input.expenseId, ctx.user.id)
-    const { group } = await requireActiveGroup(expense.groupId, ctx.user.id)
-    const { data, splits } = await prepareExpense({ ...input, groupId: expense.groupId }, group.baseCurrency, expense.categoryId)
-    return prisma.expense.update({
+    const me = await requireActiveGroup(expense.groupId, ctx.user.id)
+    const { data, splits } = await prepareExpense({ ...input, groupId: expense.groupId }, me.group.baseCurrency, expense.categoryId)
+    const updated = await prisma.expense.update({
       where: { id: expense.id },
       data: { ...data, splits: { deleteMany: {}, create: splits } },
       select: expenseSelect,
     })
+    // Whoever was in it before or is in it now: someone taken out of the split hears about it too.
+    await notifyInvolved(expense.groupId, { id: me.id, userId: ctx.user.id }, [...involvedIn(expense), ...involvedIn(updated)], {
+      kind: 'EXPENSE_UPDATED',
+      expenseId: expense.id,
+    })
+    return updated
   }),
 
   delete: protectedProcedure.input(z.object({ expenseId: id })).mutation(async ({ ctx, input }) => {
     const { expense } = await findExpense(input.expenseId, ctx.user.id)
-    await requireActiveGroup(expense.groupId, ctx.user.id)
+    const me = await requireActiveGroup(expense.groupId, ctx.user.id)
     await prisma.expense.update({ where: { id: expense.id }, data: { deletedAt: new Date() } })
+    await notifyInvolved(expense.groupId, { id: me.id, userId: ctx.user.id }, involvedIn(expense), {
+      kind: 'EXPENSE_DELETED',
+      expenseId: expense.id,
+    })
     return { ok: true }
   }),
 })

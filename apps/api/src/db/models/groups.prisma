@@ -7,11 +7,12 @@ model Group {
   createdAt    DateTime  @default(now())
   archivedAt   DateTime? // null = active
 
-  participants Participant[]
-  expenses     Expense[]
-  settlements  Settlement[]
-  savedFilters SavedFilter[]
-  categories   Category[]
+  participants  Participant[]
+  expenses      Expense[]
+  settlements   Settlement[]
+  savedFilters  SavedFilter[]
+  categories    Category[]
+  notifications Notification[]
 }
 
 // A person in a group. May exist without an account (userId = null) until someone
@@ -30,6 +31,7 @@ model Participant {
   splits            ExpenseSplit[]
   settlementsPaid   Settlement[]   @relation("SettlementFrom")
   settlementsGotten Settlement[]   @relation("SettlementTo")
+  notificationsMade Notification[]
 
   @@unique([groupId, userId])
   @@index([groupId])

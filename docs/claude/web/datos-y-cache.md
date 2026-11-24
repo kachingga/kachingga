@@ -11,7 +11,7 @@
 - `expenses.list` es una *infinite query*: en la cache es `{ pages: [{ items, nextCursor }], pageParams }`, no un array.
 
 ### Qué invalidar después de cada mutation
-Gastos y pagos → `expenses` (todo el path), `balances.get` y `expenses.summary`; participantes → `groups.get`; perfil → `profile`.
+Gastos y pagos → `expenses` (todo el path), `balances.get` y `expenses.summary`; participantes → `groups.get`; perfil → `profile`. Las novedades son de lo que hacen **otros**, así que ninguna mutation propia las cambia: la campanita (`notifications.unreadCount`, en `AppShell`) se pide cada minuto con la app abierta (`refetchInterval`) y al volver a la app; abrir "Novedades" la pone en 0 (`setQueryData`) al marcarlas como leídas.
 
 ## Optimistic updates
 

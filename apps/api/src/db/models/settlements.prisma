@@ -13,9 +13,10 @@ model Settlement {
   createdAt    DateTime  @default(now())
   deletedAt    DateTime?
 
-  group Group       @relation(fields: [groupId], references: [id])
-  from  Participant @relation("SettlementFrom", fields: [fromId], references: [id])
-  to    Participant @relation("SettlementTo", fields: [toId], references: [id])
+  group         Group          @relation(fields: [groupId], references: [id])
+  from          Participant    @relation("SettlementFrom", fields: [fromId], references: [id])
+  to            Participant    @relation("SettlementTo", fields: [toId], references: [id])
+  notifications Notification[]
 
   @@index([groupId])
 }

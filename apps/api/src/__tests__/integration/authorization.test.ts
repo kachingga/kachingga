@@ -91,6 +91,9 @@ const notGroupScoped: Record<string, string> = {
   'profile.update': "only the caller's profile",
   'profile.deleteAccount': "only the caller's account (takes no input; tested in deleteAccount.test.ts)",
   'rates.get': 'public exchange rate',
+  'notifications.list': "only the caller's, of groups they're in (notifications.test.ts)",
+  'notifications.unreadCount': "only the caller's, of groups they're in (notifications.test.ts)",
+  'notifications.markAllRead': "only the caller's",
 }
 
 describe('authorization: non-members', () => {
@@ -189,6 +192,7 @@ const writableWhenArchived: Record<string, string> = {
   'profile.deleteAccount': 'the whole account, not group-scoped (unlinks it from archived groups too)',
   'savedFilters.create': 'personal way of reading the expenses, not group data',
   'savedFilters.delete': 'personal way of reading the expenses, not group data',
+  'notifications.markAllRead': "the caller's own read marks, not group data",
 }
 
 describe('archived group: read-only', () => {

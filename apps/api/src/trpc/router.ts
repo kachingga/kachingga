@@ -4,6 +4,7 @@ import { categoriesRouter } from './routers/categories'
 import { expensesRouter } from './routers/expenses'
 import { groupsRouter } from './routers/groups'
 import { healthRouter } from './routers/health'
+import { notificationsRouter } from './routers/notifications'
 import { participantsRouter } from './routers/participants'
 import { profileRouter } from './routers/profile'
 import { ratesRouter } from './routers/rates'
@@ -21,6 +22,7 @@ export const appRouter = router({
   balances: balancesRouter,
   savedFilters: savedFiltersRouter,
   rates: ratesRouter,
+  notifications: notificationsRouter,
 })
 
 export type AppRouter = typeof appRouter
