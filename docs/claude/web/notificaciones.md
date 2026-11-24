@@ -1,13 +1,13 @@
 # Notificaciones en el dispositivo (Web Push) — web
 
-> **Aplica a:** `apps/web/public/push-sw.js` (lo que corre en el service worker), `src/lib/push.ts` (suscribir, desuscribir, la sesión, los mensajes del service worker, el número en el ícono), `src/components/push-device-card.tsx` (Mi cuenta y el aviso de Novedades), lo que usa `AppShell` de ahí, y `workbox.importScripts` en `vite.config.ts`. Del lado de la API: `apps/api/src/lib/push.ts` (`docs/claude/api/contrato.md` y `docs/claude/api/seguridad.md`). **Si cambiás cómo funciona algo de esto, actualizá este archivo en el mismo PR.** Las reglas (a quién le llega, silenciar, una por minuto): `CLAUDE.md` raíz → "Notificaciones".
+> **Aplica a:** `apps/web/public/push-sw.js` (lo que corre en el service worker), `src/lib/push.ts` (suscribir, desuscribir, la sesión, los mensajes del service worker, el número en el ícono), `src/components/push-device-card.tsx` (Mi cuenta y el aviso de la pantalla de notificaciones), lo que usa `AppShell` de ahí, y `workbox.importScripts` en `vite.config.ts`. Del lado de la API: `apps/api/src/lib/push.ts` (`docs/claude/api/contrato.md` y `docs/claude/api/seguridad.md`). **Si cambiás cómo funciona algo de esto, actualizá este archivo en el mismo PR.** Las reglas (a quién le llega, silenciar, una por minuto): `CLAUDE.md` raíz → "Notificaciones".
 
 ## Cómo llega una
 
-1. **Activar** (Mi cuenta, o el aviso de arriba de Novedades): el navegador pide permiso (tiene que salir de un toque), se suscribe con la clave VAPID pública que da `notifications.pushConfig` (`pushManager.subscribe`, `userVisibleOnly: true`) y la web le pasa la suscripción a la API (`notifications.subscribeDevice`: la URL del servicio de push de ese navegador y las claves para cifrarle). Queda anotado qué cuenta la activó (`kachingga-push-user` en `localStorage`).
-2. **Alguien cambia un gasto o un pago:** la API guarda la novedad y la encola (`queuePushes`). Unos segundos después (y como mucho una por minuto por persona y grupo), si no está silenciado y sigue sin leer, le manda a cada dispositivo de esa persona la última novedad no leída del grupo, cifrada, al servicio de push del navegador (Google, Apple, Mozilla o Microsoft), que la entrega aunque la app esté cerrada.
+1. **Activar** (Mi cuenta, o el aviso de arriba de la pantalla de notificaciones): el navegador pide permiso (tiene que salir de un toque), se suscribe con la clave VAPID pública que da `notifications.pushConfig` (`pushManager.subscribe`, `userVisibleOnly: true`) y la web le pasa la suscripción a la API (`notifications.subscribeDevice`: la URL del servicio de push de ese navegador y las claves para cifrarle). Queda anotado qué cuenta la activó (`kachingga-push-user` en `localStorage`).
+2. **Alguien cambia un gasto o un pago:** la API guarda la notificación y la encola (`queuePushes`). Unos segundos después (y como mucho una por minuto por persona y grupo), si no está silenciado y sigue sin leer, le manda a cada dispositivo de esa persona la última notificación no leída del grupo, cifrada, al servicio de push del navegador (Google, Apple, Mozilla o Microsoft), que la entrega aunque la app esté cerrada.
 3. **El service worker** (`push-sw.js`, evento `push`) muestra la notificación (una por grupo: `tag`), pone el número de no leídas en el ícono (`setAppBadge`, donde existe) y le avisa a la app abierta (`kachingga:push`), que vuelve a pedir lo que muestra.
-4. **Tocarla** (`notificationclick`): si la app está abierta, la enfoca y navega sin recargar (`kachingga:navigate` → `useServiceWorkerMessages` en `AppShell`); si no, la abre en esa ruta. Solo rutas de la app (que empiecen con `/`, no `//`); cualquier otra cosa abre `/novedades`.
+4. **Tocarla** (`notificationclick`): si la app está abierta, la enfoca y navega sin recargar (`kachingga:navigate` → `useServiceWorkerMessages` en `AppShell`); si no, la abre en esa ruta. Solo rutas de la app (que empiecen con `/`, no `//`); cualquier otra cosa abre `/notificaciones` (la pantalla de la campanita; `/novedades`, su nombre anterior, redirige ahí).
 
 ## Dónde anda (y dónde no)
 
@@ -18,7 +18,7 @@
 | **Compu** (Chrome, Edge, Firefox, Safari) | Anda con el navegador abierto (aunque sin la pestaña) |
 
 - **El permiso se pide una vez.** Si la persona toca "No permitir", el navegador no deja volver a preguntar: la tarjeta dice que las permita desde la configuración (`denied`). Por eso hay un aviso propio ("¿Te avisamos en este dispositivo?") antes del pedido del sistema.
-- **Cada push muestra una notificación** (incluso si no se puede leer: "Tenés novedades"). Los navegadores le sacan el permiso a un sitio que recibe pushes sin mostrarlas, así que no se usan para actualizar datos en silencio.
+- **Cada push muestra una notificación** (incluso si no se puede leer: "Tenés notificaciones nuevas"). Los navegadores le sacan el permiso a un sitio que recibe pushes sin mostrarlas, así que no se usan para actualizar datos en silencio.
 - **Es por dispositivo** (por navegador): la compu y el celu se activan cada uno.
 - Lo que se ve con el celu bloqueado depende del celu (iOS y Android dejan ocultar el contenido).
 

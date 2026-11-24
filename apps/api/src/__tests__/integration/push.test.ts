@@ -195,7 +195,7 @@ describe('what reaches the devices', () => {
     expect(phone.read(toPhone.init.body)).toEqual({
       title: 'Bariloche',
       body: expect.stringMatching(/^Ana agregó «Cena» · \$\s45\.000,00 \(y 1 más\)$/),
-      url: '/novedades',
+      url: '/notificaciones',
       tag: group.id,
       badge: 2,
     })
@@ -225,7 +225,7 @@ describe('what reaches the devices', () => {
     await beto.notifications.setGroupMuted({ groupId: group.id, muted: true })
     await sendGroupPush(betoId, group.id)
     expect(received).toEqual([])
-    // Still in "Novedades"
+    // Still in the app (the bell)
     expect(await beto.notifications.unreadCount()).toBe(1)
   })
 

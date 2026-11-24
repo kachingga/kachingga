@@ -19,7 +19,7 @@ const MESSAGES = {
 
 /**
  * Notifications on this device: turn them on (asks the browser's permission) or off. `prompt`: the
- * short version at the top of "Novedades", only while they're off here and could be turned on.
+ * short version at the top of the notifications screen, only while they're off here and could be turned on.
  * Hidden when the API has them off (no VAPID keys).
  */
 export function PushDeviceCard({ prompt = false }: { prompt?: boolean }) {
@@ -114,14 +114,14 @@ export function PushDeviceCard({ prompt = false }: { prompt?: boolean }) {
 
   return (
     <Card>
-      <SectionTitle>Notificaciones</SectionTitle>
+      <SectionTitle>Notificaciones en este dispositivo</SectionTitle>
       <p className="mt-1 text-sm text-muted-foreground">
-        Las novedades de los gastos y pagos en los que estás, en este dispositivo. En la app
-        (Novedades) siempre las ves.
+        Te llegan como en cualquier app cuando cambia un gasto o un pago en el que estás. En la
+        campanita de la app siempre las ves.
       </p>
       {support === 'available' ? (
         <div className="mt-4 flex flex-wrap items-center justify-between gap-3">
-          <p className="font-medium">{on ? 'Activadas en este dispositivo' : 'Desactivadas'}</p>
+          <p className="font-medium">{on ? 'Activadas' : 'Desactivadas'}</p>
           {on ? (
             <Button
               variant="outline"

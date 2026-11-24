@@ -24,7 +24,7 @@ model Participant {
   userId             String? // Supabase auth user id
   // Alias/CVU to get paid in this group: overrides the account's (UserProfile) or, without account, is the only one
   paymentAlias       String?
-  // Their notifications of this group don't reach their devices ("Silenciar"); "Novedades" still shows them
+  // Their notifications of this group don't reach their devices ("Silenciar"); the app still shows them
   notificationsMuted Boolean  @default(false)
   createdAt          DateTime @default(now())
 

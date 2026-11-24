@@ -204,7 +204,7 @@ export function distributeCents(total: number, weights: number[]): number[] {
   return floors
 }
 
-// "Novedades" (root CLAUDE.md → "Notificaciones"): what each one says and where it leads, the same in
+// Notifications (root CLAUDE.md → "Notificaciones"): what each one says and where it leads, the same in
 // the app's list and in the notification on the device.
 type NotificationPerson = { name: string; isMe: boolean }
 export type NotificationView = {

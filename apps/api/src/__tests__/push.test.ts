@@ -157,10 +157,10 @@ describe('pushPayload', () => {
     })
   })
 
-  test('more unread in the group: says how many, and opens "Novedades"', () => {
+  test('more unread in the group: says how many, and opens the notifications screen', () => {
     const payload = pushPayload(cena, 3, 3)
     expect(payload.body).toMatch(/\(y 2 más\)$/)
-    expect(payload.url).toBe('/novedades')
+    expect(payload.url).toBe('/notificaciones')
   })
 
   test('a payment says "vos" and goes to the payments; other currencies', () => {

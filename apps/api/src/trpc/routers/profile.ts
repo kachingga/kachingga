@@ -24,7 +24,7 @@ export const profileRouter = router({
 
   // Deletes the caller's account (no input: only ever the caller's). Their participants stay in
   // every group without account (name, expenses, payments and balances untouched); what is only
-  // theirs goes (account alias, group aliases and mutes, saved filters, their "Novedades" and
+  // theirs goes (account alias, group aliases and mutes, saved filters, their notifications and
   // devices). `createdById` fields stay as history.
   // DB first, then Supabase: a deleted account is never still linked to a group, and the DB part
   // is idempotent, so retrying after a Supabase failure just finishes the job.

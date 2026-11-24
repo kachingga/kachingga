@@ -65,16 +65,16 @@ const fixtures = [
 
 afterEach(() => onlineManager.setOnline(true));
 
-describe('Notifications ("Novedades")', () => {
+describe('Notifications (the bell)', () => {
   it('shows a skeleton while loading', () => {
     renderWithApi(<Notifications />, { 'notifications.list': neverResolves });
-    expect(screen.getByRole('heading', { name: 'Novedades' })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Notificaciones' })).toBeInTheDocument();
     expect(screen.getByRole('status', { name: 'Cargando' })).toBeInTheDocument();
   });
 
   it('empty: explains what shows up here', async () => {
     renderWithApi(<Notifications />, { 'notifications.list': () => [] });
-    expect(await screen.findByText('Todavía no hay novedades')).toBeInTheDocument();
+    expect(await screen.findByText('Todavía no hay notificaciones')).toBeInTheDocument();
     expect(screen.getByText(/en el que estás, lo vas a ver acá/)).toBeInTheDocument();
   });
 
@@ -157,15 +157,17 @@ describe('Notifications ("Novedades")', () => {
 describe('the bell (AppShell)', () => {
   it('shows how many are unread', async () => {
     renderWithApi(<AppShell />, { 'notifications.unreadCount': () => 3 });
-    const links = await screen.findAllByRole('link', { name: 'Novedades: 3 sin leer' });
+    const links = await screen.findAllByRole('link', { name: 'Notificaciones: 3 sin leer' });
     // Header (phones) and sidebar (wide screens)
     expect(links).toHaveLength(2);
-    expect(links[0]).toHaveAttribute('href', '/novedades');
+    expect(links[0]).toHaveAttribute('href', '/notificaciones');
   });
 
-  it('without unread ones, just "Novedades"', async () => {
+  it('without unread ones, just "Notificaciones"', async () => {
     renderWithApi(<AppShell />, { 'notifications.unreadCount': () => 0 });
-    await waitFor(() => expect(screen.getAllByRole('link', { name: 'Novedades' })).toHaveLength(2));
+    await waitFor(() =>
+      expect(screen.getAllByRole('link', { name: 'Notificaciones' })).toHaveLength(2),
+    );
     expect(screen.queryByText('9+')).not.toBeInTheDocument();
   });
 

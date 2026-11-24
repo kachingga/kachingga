@@ -76,7 +76,7 @@ function NotificationRow({
 }
 
 /**
- * "Novedades": changes to the expenses and payments I'm in, made by others (root CLAUDE.md →
+ * "Notificaciones" (the bell): changes to the expenses and payments I'm in, made by others (root CLAUDE.md →
  * "Notificaciones"). Opening it marks them all as read; the ones that were unread stay highlighted
  * until leaving.
  */
@@ -100,7 +100,7 @@ export function Notifications() {
 
   return (
     <Page>
-      <PageHeader title="Novedades" back={{ onClick: () => navigate(-1), label: 'Volver' }} />
+      <PageHeader title="Notificaciones" back={{ onClick: () => navigate(-1), label: 'Volver' }} />
 
       <PushDeviceCard prompt />
 
@@ -111,7 +111,7 @@ export function Notifications() {
       {list.isSuccess && list.data.length === 0 && (
         <EmptyState
           icon={Bell}
-          title="Todavía no hay novedades"
+          title="Todavía no hay notificaciones"
           description="Cuando alguien cargue, edite o borre un gasto o un pago en el que estás, lo vas a ver acá."
         />
       )}

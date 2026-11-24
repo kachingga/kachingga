@@ -22,7 +22,7 @@ const deviceInput = z.object({
 })
 
 export const notificationsRouter = router({
-  // The caller's "Novedades", newest first (all they have: at most MAX_NOTIFICATIONS_PER_USER).
+  // The caller's notifications (the bell), newest first (all they have: at most MAX_NOTIFICATIONS_PER_USER).
   list: protectedProcedure.query(async ({ ctx }) => {
     const userId = ctx.user.id
     const notifications = await prisma.notification.findMany({
@@ -76,7 +76,7 @@ export const notificationsRouter = router({
     return { ok: true }
   }),
 
-  // "Silenciar": this group's notifications don't reach the caller's devices ("Novedades" still
+  // "Silenciar": this group's notifications don't reach the caller's devices (the app still
   // shows them). Personal: works on an archived group.
   setGroupMuted: protectedProcedure.input(z.object({ groupId: id, muted: z.boolean() })).mutation(async ({ ctx, input }) => {
     const me = await requireMembership(input.groupId, ctx.user.id)
@@ -84,7 +84,7 @@ export const notificationsRouter = router({
     return { muted: input.muted }
   }),
 
-  // Opening "Novedades" marks everything as read.
+  // Opening the notifications screen marks everything as read.
   markAllRead: protectedProcedure.mutation(async ({ ctx }) => {
     await prisma.notification.updateMany({ where: { userId: ctx.user.id, readAt: null }, data: { readAt: new Date() } })
     return { ok: true }

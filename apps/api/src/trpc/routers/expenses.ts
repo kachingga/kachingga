@@ -87,7 +87,7 @@ async function findExpense(expenseId: string, userId: string) {
   return { expense, membership: await requireMembership(expense.groupId, userId) }
 }
 
-// Who's in an expense (for "Novedades"): who paid and everyone in the split.
+// Who's in an expense (for the notifications): who paid and everyone in the split.
 const involvedIn = (expense: { paidById: string; splits: { participantId: string }[] }) => [
   expense.paidById,
   ...expense.splits.map((s) => s.participantId),

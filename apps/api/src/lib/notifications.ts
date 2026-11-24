@@ -3,7 +3,7 @@ import { prisma } from '../db'
 import { reportError } from './monitoring'
 import { queuePushes } from './push'
 
-// What each user keeps in "Novedades": the latest ones, older ones are deleted. Bounds the table
+// What each user keeps (the bell): the latest ones, older ones are deleted. Bounds the table
 // (Supabase Free: 500 MB) whatever the number of changes.
 export const MAX_NOTIFICATIONS_PER_USER = 50
 

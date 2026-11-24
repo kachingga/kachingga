@@ -1,4 +1,4 @@
-// "Novedades": a change to an expense or a payment reaches the people involved in it (with an
+// Notifications in the app (the bell): a change to an expense or a payment reaches the people involved in it (with an
 // account), except whoever made it (root CLAUDE.md → "Notificaciones").
 import { describe, expect, test } from 'bun:test'
 import { MAX_NOTIFICATIONS_PER_USER } from '../../lib/notifications'
@@ -151,7 +151,7 @@ describe('notifications', () => {
     expect(await ana.notifications.list()).toEqual([])
   })
 
-  test('unread count, and opening "Novedades" marks them all as read (only mine)', async () => {
+  test('unread count, and opening the notifications screen marks them all as read (only mine)', async () => {
     const { ana, beto, cami, ids, expense, payment } = await scenario()
     await ana.expenses.create(expense('Cena', ids.Ana, [ids.Beto, ids.Cami]))
     await ana.expenses.create(expense('Taxi', ids.Ana, [ids.Beto]))
