@@ -81,7 +81,7 @@ export function Avatar({
     <span
       aria-hidden
       className={cn(
-        'grid size-9 shrink-0 place-items-center rounded-full font-display text-sm font-bold ring-2 ring-card',
+        'grid size-9 shrink-0 place-items-center overflow-hidden rounded-full font-display text-sm font-bold ring-2 ring-card',
         CATEGORY_COLORS[colorForId(id)],
         className,
       )}

@@ -1,6 +1,6 @@
 import { afterAll, describe, expect, test } from 'bun:test'
 import { configurePhotos, MAX_PHOTO_BYTES, MAX_PHOTO_SIDE, photoUrl, sanitizeJpeg } from '../lib/photos'
-import { EXIF_WITH_GPS, fakeJpeg } from './jpegFixture'
+import { EXIF_WITH_GPS, fakeJpeg, jpegBlock } from './jpegFixture'
 
 const markers = (bytes: Uint8Array) => {
   const found: number[] = []
@@ -33,6 +33,40 @@ describe('sanitizeJpeg', () => {
 
   test('progressive JPEGs too', () => {
     expect(markers(sanitizeJpeg(fakeJpeg({ frame: 0xc2 })))).toContain(0xc2)
+  })
+
+  test('nothing can hide between blocks: only the ones that draw the image, with exactly one frame', () => {
+    const exif = jpegBlock(0xe1, EXIF_WITH_GPS)
+    const bigFrame = jpegBlock(0xc2, [8, 0x17, 0x70, 0x17, 0x70, 1, 1, 0x11, 0]) // 6000×6000
+    // A marker without a length (a restart) "wrapping" other blocks with a made-up one
+    const hidden = [...exif, ...bigFrame]
+    const wrapped = [0xff, 0xd0, ((hidden.length + 2) >> 8) & 0xff, (hidden.length + 2) & 0xff, ...hidden]
+    for (const beforeFrame of [
+      wrapped,
+      bigFrame, // a second frame
+      [0xff, 0xff, ...jpegBlock(0xdb, Array(65).fill(1))], // fill bytes
+      [0xff, 0x01, 0, 4, 0, 0], // a marker without a length, read as one with
+      jpegBlock(0xcc, [0, 0]), // arithmetic coding
+      jpegBlock(0xf0, [0, 0]), // a JPEG extension
+    ]) {
+      expect(() => sanitizeJpeg(fakeJpeg({ beforeFrame }))).toThrow('Esa imagen no se puede usar')
+    }
+  })
+
+  test('in the image data, only what can be there: no metadata, no frames, nothing unknown', () => {
+    for (const inData of [
+      jpegBlock(0xe1, EXIF_WITH_GPS),
+      jpegBlock(0xc0, [8, 0, 1, 0, 1, 1, 1, 0x11, 0]),
+      [0xff, 0xfe, 0, 2],
+      [0xff, 0x01],
+    ]) {
+      expect(() => sanitizeJpeg(fakeJpeg({ inData }))).toThrow('Esa imagen no se puede usar')
+    }
+    // What a progressive JPEG has between scans, and restarts: fine
+    const ok = sanitizeJpeg(
+      fakeJpeg({ frame: 0xc2, inData: [0xff, 0xd3, 5, ...jpegBlock(0xc4, Array(20).fill(0)), ...jpegBlock(0xda, [1, 1, 0, 0, 63, 0]), 7] }),
+    )
+    expect([...ok.subarray(-2)]).toEqual([0xff, 0xd9])
   })
 
   test.each([

@@ -12,6 +12,13 @@ describe('isSingleEmoji', () => {
   test.each(['', 'a', 'AB', '12', '🍕🍕', '🍕 ', 'hola 🍕', '<script>'])('anything else: %p', (value) => {
     expect(isSingleEmoji(value)).toBe(false)
   })
+
+  test('something long is rejected right away, without going through it', () => {
+    const huge = '🍕'.repeat(500_000)
+    const start = performance.now()
+    expect(isSingleEmoji(huge)).toBe(false)
+    expect(performance.now() - start).toBeLessThan(5)
+  })
 })
 
 let n = 0

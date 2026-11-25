@@ -10,9 +10,20 @@ const block = (marker: number, payload: number[]) => [
   ...payload,
 ]
 
+/** A block with a length: [0xFF, marker, length, payload] (for tests that build their own). */
+export const jpegBlock = block
+
 export const EXIF_WITH_GPS = text('Exif\0\0GPS -34.6037 -58.3816')
 
-export function fakeJpeg({ width = 256, height = 256, frame = 0xc0, end = true, after = [] as number[] } = {}) {
+export function fakeJpeg({
+  width = 256,
+  height = 256,
+  frame = 0xc0,
+  end = true,
+  after = [] as number[],
+  beforeFrame = [] as number[],
+  inData = [] as number[],
+} = {}) {
   return new Uint8Array([
     0xff,
     0xd8,
@@ -20,6 +31,7 @@ export function fakeJpeg({ width = 256, height = 256, frame = 0xc0, end = true, 
     ...block(0xe1, EXIF_WITH_GPS),
     ...block(0xed, text('Photoshop 3.0\0')),
     ...block(0xdb, Array(65).fill(1)),
+    ...beforeFrame,
     ...block(frame, [8, height >> 8, height & 0xff, width >> 8, width & 0xff, 1, 1, 0x11, 0]),
     ...block(0xc4, Array(20).fill(0)),
     ...block(0xfe, text('un comentario')),
@@ -31,6 +43,7 @@ export function fakeJpeg({ width = 256, height = 256, frame = 0xc0, end = true, 
     0xff,
     0x00,
     4,
+    ...inData,
     ...(end ? [0xff, 0xd9] : []),
     ...after,
   ])

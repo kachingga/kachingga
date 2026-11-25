@@ -99,6 +99,8 @@ describe('push-sw.js', () => {
     for (const url of [
       'https://evil.example/x',
       '//evil.example/x',
+      '/\\evil.example/x',
+      '/\t/evil.example/x',
       'javascript:alert(1)',
       undefined,
     ]) {

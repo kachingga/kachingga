@@ -22,12 +22,16 @@ function subscribedBrowser() {
     endpoint: 'https://fcm.googleapis.com/fcm/send/x',
     unsubscribe: vi.fn(async () => true),
   };
-  const registration = { pushManager: { getSubscription: async () => subscription } };
+  const shown = [{ close: vi.fn() }, { close: vi.fn() }];
+  const registration = {
+    pushManager: { getSubscription: async () => subscription },
+    getNotifications: async () => shown,
+  };
   Object.defineProperty(navigator, 'serviceWorker', {
     configurable: true,
     value: { getRegistration: async () => registration },
   });
-  return subscription;
+  return Object.assign(subscription, { shown });
 }
 
 afterEach(() => {
@@ -75,9 +79,15 @@ describe('syncPushWithSession', () => {
     const subscription = subscribedBrowser();
     localStorage.setItem('kachingga-push-user', 'ana');
     syncPushWithSession();
+    const clearAppBadge = vi.fn(async () => {});
+    Object.defineProperty(navigator, 'clearAppBadge', { configurable: true, value: clearAppBadge });
     listeners[0]!('SIGNED_OUT', null);
     await vi.waitFor(() => expect(subscription.unsubscribe).toHaveBeenCalled());
     expect(localStorage.getItem('kachingga-push-user')).toBeNull();
+    // What was still on screen goes too: the notifications and the number on the icon
+    await vi.waitFor(() => expect(clearAppBadge).toHaveBeenCalled());
+    for (const notification of subscription.shown) expect(notification.close).toHaveBeenCalled();
+    Reflect.deleteProperty(navigator, 'clearAppBadge');
   });
 
   it("another account on this browser doesn't get the previous one's", async () => {

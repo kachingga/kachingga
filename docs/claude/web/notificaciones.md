@@ -7,7 +7,7 @@
 1. **Activar** (Mi cuenta, o el aviso de arriba de la pantalla de notificaciones): el navegador pide permiso (tiene que salir de un toque), se suscribe con la clave VAPID pública que da `notifications.pushConfig` (`pushManager.subscribe`, `userVisibleOnly: true`) y la web le pasa la suscripción a la API (`notifications.subscribeDevice`: la URL del servicio de push de ese navegador y las claves para cifrarle). Queda anotado qué cuenta la activó (`kachingga-push-user` en `localStorage`).
 2. **Alguien cambia un gasto o un pago:** la API guarda la notificación y la encola (`queuePushes`). Unos segundos después (y como mucho una por minuto por persona y grupo), si no está silenciado y sigue sin leer, le manda a cada dispositivo de esa persona la última notificación no leída del grupo, cifrada, al servicio de push del navegador (Google, Apple, Mozilla o Microsoft), que la entrega aunque la app esté cerrada.
 3. **El service worker** (`push-sw.js`, evento `push`) muestra la notificación (una por grupo: `tag`), pone el número de no leídas en el ícono (`setAppBadge`, donde existe) y le avisa a la app abierta (`kachingga:push`), que vuelve a pedir lo que muestra.
-4. **Tocarla** (`notificationclick`): si la app está abierta, la enfoca y navega sin recargar (`kachingga:navigate` → `useServiceWorkerMessages` en `AppShell`); si no, la abre en esa ruta. Solo rutas de la app (que empiecen con `/`, no `//`); cualquier otra cosa abre `/notificaciones` (la pantalla de la campanita; `/novedades`, su nombre anterior, redirige ahí).
+4. **Tocarla** (`notificationclick`): si la app está abierta, la enfoca y navega sin recargar (`kachingga:navigate` → `useServiceWorkerMessages` en `AppShell`); si no, la abre en esa ruta. Solo rutas de la app: el link se arma y tiene que quedar en el mismo origen (así `//otro.com` o `/\otro.com` no salen de la app); cualquier otra cosa abre `/notificaciones` (la pantalla de la campanita; `/novedades`, su nombre anterior, redirige ahí).
 
 ## Dónde anda (y dónde no)
 
@@ -24,7 +24,7 @@
 
 ## La sesión
 
-- **Cerrar sesión** (`useSignOut`) desuscribe este navegador en el acto, y `syncPushWithSession()` (`main.tsx`) lo hace cuando la sesión termina por cualquier camino (`SIGNED_OUT`) y cuando hay una sesión de **otra cuenta** que la que las activó. Así otra persona en ese celu nunca ve las notificaciones de la anterior.
+- **Cerrar sesión** (`useSignOut`) desuscribe este navegador en el acto (y cierra las notificaciones que quedaron en el centro de notificaciones y borra el número del ícono: el próximo que use el celu no las ve), y `syncPushWithSession()` (`main.tsx`) lo hace cuando la sesión termina por cualquier camino (`SIGNED_OUT`) y cuando hay una sesión de **otra cuenta** que la que las activó. Así otra persona en ese celu nunca ve las notificaciones de la anterior.
 - Desuscribir es del lado del navegador: el servicio de push deja de conocer esa dirección y la API borra el dispositivo la próxima vez que intenta mandarle algo (404 / 410). Sin conexión puede no llegar a desuscribirse; la sesión igual se cierra.
 - **Mi cuenta muestra "Activadas" solo si las dos partes lo saben:** el navegador tiene una suscripción **y** la API la tiene a nombre de esta cuenta (`notifications.deviceStatus`). Si el navegador cambió la suscripción por su cuenta, aparece como desactivada y se vuelve a activar.
 
