@@ -194,7 +194,9 @@ Proyecto de **Kachingga**, una organización de amigos (repo: `github.com/kachin
 - **En el dispositivo** (como cualquier app, aunque Kachingga esté cerrada): cada uno las **activa en cada dispositivo** desde Mi cuenta (el navegador pide permiso) y las puede desactivar ahí mismo. En iPhone y iPad solo llegan con la app **instalada en la pantalla de inicio**. Dicen el grupo, quién hizo qué y el monto ("Bariloche: Román agregó «Cena» · $45.000"); tocarla abre el gasto, o la pantalla de notificaciones si hay varias.
   - **Silenciar un grupo** (menú del grupo): sus notificaciones no le llegan a ningún dispositivo de esa persona; en la app (la campanita) siguen apareciendo.
   - **Para que no molesten:** varias seguidas del mismo grupo llegan como una ("… (y 2 más)"), como mucho una por minuto por persona y grupo, y si ya las leyó en la app no le llegan.
-  - Al **cerrar sesión**, ese dispositivo deja de recibirlas (otra cuenta que entre ahí las activa de nuevo). Cada persona, **hasta 10 dispositivos** (al sumar uno más, se cae el más viejo).
+  - **Cerrar sesión** (que cierra la sesión en todos lados) las apaga **en todos los dispositivos** de esa persona; se vuelven a activar en cada uno. Mi cuenta dice en cuántos dispositivos están activas y tiene **"Desactivar en todos"**.
+  - Un dispositivo en el que **no se abre la app por 30 días** deja de recibirlas (abrirla con la sesión lo confirma). Así no queda recibiendo uno que otro activó con tu sesión (un celu prestado).
+  - Cada persona, **hasta 10 dispositivos** (al sumar uno más, se cae el más viejo).
 
 ### Decisiones de producto tomadas
 - **Sin roles ni permisos finos dentro de un grupo** (cualquier miembro carga, edita o borra cualquier gasto, como en Splitwise). Se revisó al abrirla a cualquiera (#44) y queda así: a un grupo solo entran las personas que se pasan el código entre ellas.

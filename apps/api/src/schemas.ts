@@ -226,6 +226,12 @@ export type NotificationView = {
   settlement: { from: NotificationPerson; to: NotificationPerson } | null
 }
 
+/**
+ * A device stops getting notifications if the app isn't opened on it (with a session) for this long:
+ * one turned on with someone else's session (a borrowed phone, a stolen token) doesn't last.
+ */
+export const DEVICE_TTL_DAYS = 30
+
 /** "Román agregó «Cena»", "Ana registró un pago: Beto → vos". */
 export function notificationText(n: NotificationView): string {
   const who = n.actor?.name ?? 'Alguien'

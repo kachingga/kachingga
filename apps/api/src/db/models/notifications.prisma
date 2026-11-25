@@ -39,7 +39,7 @@ model PushSubscription {
   endpoint  String   @unique
   p256dh    String
   auth      String
-  createdAt DateTime @default(now()) // also when it was last subscribed again
+  createdAt DateTime @default(now()) // when it was last confirmed (turned on, or the app opened on it): DEVICE_TTL_DAYS
 
   @@index([userId])
 }

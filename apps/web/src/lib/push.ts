@@ -1,8 +1,10 @@
 import { useEffect } from 'react';
 import { useNavigate } from 'react-router';
-import { useQueryClient } from '@tanstack/react-query';
+import { onlineManager, useMutation, useQueryClient } from '@tanstack/react-query';
 
+import { useSession } from '@/lib/auth';
 import { supabase } from '@/lib/supabase';
+import { useTRPC } from '@/lib/trpc';
 
 // Notifications on this device (Web Push): docs/claude/web/notificaciones.md. The handlers that show
 // them live in the service worker (public/push-sw.js); this is the page's side.
@@ -155,6 +157,27 @@ export function useServiceWorkerMessages() {
     navigator.serviceWorker.addEventListener('message', onMessage);
     return () => navigator.serviceWorker.removeEventListener('message', onMessage);
   }, [navigate, queryClient]);
+}
+
+/**
+ * Opening the app with a session confirms this device (if it's this account's): its notifications go
+ * on for another DEVICE_TTL_DAYS. A device nobody opens the app on stops getting them. In `AppShell`.
+ */
+export function useConfirmDevice() {
+  const trpc = useTRPC();
+  const userId = useSession()?.user.id;
+  const { mutate } = useMutation(trpc.notifications.confirmDevice.mutationOptions());
+  useEffect(() => {
+    if (!userId || !onlineManager.isOnline()) return;
+    let owner: string | null = null;
+    try {
+      owner = localStorage.getItem(OWNER_KEY);
+    } catch {
+      // Storage blocked: nothing to confirm
+    }
+    if (owner !== userId) return;
+    void currentEndpoint().then((endpoint) => endpoint && mutate({ endpoint }));
+  }, [userId, mutate]);
 }
 
 /** The unread count on the app icon (installed app, where the browser supports it). */

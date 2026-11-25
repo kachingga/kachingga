@@ -17,7 +17,7 @@ Schema en `src/db/models/*.prisma`.
 | `Settlement` | `fromId`, `toId`, `amountCents`, `currency`, `exchangeRate?`, `date`, `note?`, `createdById`, `deletedAt?` |
 | `SavedFilter` | `groupId`, `userId`, `name`, `filters` (JSON con la forma de `expenseFilters`) |
 | `Notification` | Una notificación para una persona: `userId` (quien la recibe), `groupId`, `actorId?` (participante que hizo el cambio; `null` si después lo quitaron del grupo), `kind` (`EXPENSE_CREATED` / `UPDATED` / `DELETED`, `SETTLEMENT_CREATED` / `DELETED`), `expenseId?` o `settlementId?`, `createdAt` (cuándo fue el último cambio), `readAt?`. No guarda textos ni montos: se leen del gasto o pago (que nunca se borran de verdad) |
-| `PushSubscription` | Un dispositivo (navegador) donde alguien activó las notificaciones: `userId`, `endpoint` (único: la URL del servicio de push de ese navegador, solo de los conocidos), `p256dh` y `auth` (claves para cifrarle el mensaje), `createdAt` (también cuándo se volvió a activar) |
+| `PushSubscription` | Un dispositivo (navegador) donde alguien activó las notificaciones: `userId`, `endpoint` (único: la URL del servicio de push de ese navegador, solo de los conocidos), `p256dh` y `auth` (claves para cifrarle el mensaje), `createdAt` (cuándo se confirmó por última vez: al activarlas o al abrir la app; a los 30 días sin confirmar deja de recibir y se borra) |
 
 - **Plata en centavos enteros** (`amountCents: Int`), nunca `Float`. Límite int4: ~21,4 millones por gasto en su moneda (validado en Zod). Los tipos de cambio sí son `Float`.
 - **Codificación de la moneda** (`Expense` y `Settlement`):
@@ -68,7 +68,9 @@ Todos con `protectedProcedure` salvo `health.ping`. Inputs en `src/schemas.ts`, 
 | `notifications.unreadCount` | query | Sin input: cuántas tengo sin leer (la campanita) |
 | `notifications.markAllRead` | mutation | Sin input: marca como leídas todas las mías (al abrir "Notificaciones"). Anda con grupos archivados (son personales) |
 | `notifications.pushConfig` | query | Sin input: `{ publicKey }`, la clave VAPID pública con la que se suscriben los navegadores; `null` = la API no manda notificaciones al dispositivo (sin `VAPID_*`) |
-| `notifications.deviceStatus` | query | `{ endpoint }` → `{ subscribed }`: si ese navegador recibe **mis** notificaciones (el navegador puede tener una suscripción que la API ya no tiene) |
+| `notifications.deviceStatus` | query | `{ endpoint? }` → `{ subscribed, devices }`: si ese navegador recibe **mis** notificaciones (el navegador puede tener una suscripción que la API ya no tiene, o que venció) y en cuántos dispositivos las tengo activas |
+| `notifications.confirmDevice` | mutation | `{ endpoint }` → `{ subscribed }`: la web lo llama al abrir la app con sesión; ese dispositivo (si es mío y no venció) sigue otros 30 días (`DEVICE_TTL_DAYS`). Nunca crea uno |
+| `notifications.unsubscribeAll` | mutation | Sin input: las apaga en **todos** mis dispositivos ("Desactivar en todos", y al cerrar sesión) |
 | `notifications.subscribeDevice` | mutation | `{ endpoint, keys: { p256dh, auth } }` (lo que da `PushSubscription.toJSON()`): activa las notificaciones en ese navegador. Solo URLs de los servicios de push conocidos (`isPushServiceUrl`) y claves que sirvan (`isValidPushKeys`); si no, `BAD_REQUEST` "Este navegador no puede recibir notificaciones". El mismo navegador es una sola fila: otra cuenta que las activa ahí se la queda. Cada persona guarda sus últimos 10 (`MAX_DEVICES_PER_USER`, se borra el más viejo). Sin `VAPID_*`, `BAD_REQUEST`. Está en `CREATING_PROCEDURES` |
 | `notifications.unsubscribeDevice` | mutation | `{ endpoint }`: las desactiva en ese navegador (solo si es mío) |
 | `notifications.setGroupMuted` | mutation | `{ groupId, muted }` → `{ muted }`: silencia (o no) las notificaciones del grupo en mis dispositivos. Miembro (`requireMembership`); anda en grupos archivados (es personal) |
