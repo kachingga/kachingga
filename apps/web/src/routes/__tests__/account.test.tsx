@@ -2,7 +2,7 @@ import { screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { refreshSession, requestEmailChange } from '@/lib/auth';
+import { refreshSession, requestEmailChange, signOut } from '@/lib/auth';
 import { apiError, neverResolves, renderWithApi } from '@/test/render';
 import { Account } from '@/routes/account';
 
@@ -84,6 +84,26 @@ describe('Account', () => {
 
     await waitFor(() => expect(localStorage.getItem('kachingga-cache:u1')).toBeNull());
     expect(localStorage.getItem('kachingga-cache-user')).toBeNull();
+  });
+
+  it('signing out turns the notifications off on every device too (signing out is everywhere)', async () => {
+    const unsubscribeAll = vi.fn(() => ({ ok: true }));
+    renderWithApi(<Account />, {
+      'profile.get': () => ({ paymentAlias: null }),
+      'notifications.unsubscribeAll': unsubscribeAll,
+    });
+    await userEvent.click(await screen.findByRole('button', { name: 'Cerrar sesión' }));
+    await waitFor(() => expect(unsubscribeAll).toHaveBeenCalled());
+    await waitFor(() => expect(signOut).toHaveBeenCalled());
+  });
+
+  it('without the API answering, it signs out anyway', async () => {
+    renderWithApi(<Account />, {
+      'profile.get': () => ({ paymentAlias: null }),
+      'notifications.unsubscribeAll': () => new Promise(() => {}),
+    });
+    await userEvent.click(await screen.findByRole('button', { name: 'Cerrar sesión' }));
+    await waitFor(() => expect(signOut).toHaveBeenCalled(), { timeout: 4000 });
   });
 
   describe('Cambiar email', () => {

@@ -13,8 +13,24 @@ vi.mock('@/lib/supabase', () => ({
   },
 }));
 
-const { keyToBytes, pushSupport, subscribeHere, SUBSCRIBE_TIMEOUT_MS, syncPushWithSession } =
-  await import('@/lib/push');
+// Whose session is open (useConfirmDevice)
+const session = vi.hoisted(() => ({ current: null as null | { user: { id: string } } }));
+vi.mock('@/lib/auth', () => ({ useSession: () => session.current }));
+
+const {
+  keyToBytes,
+  pushSupport,
+  subscribeHere,
+  SUBSCRIBE_TIMEOUT_MS,
+  syncPushWithSession,
+  useConfirmDevice,
+} = await import('@/lib/push');
+const { renderWithApi } = await import('@/test/render');
+
+function ConfirmDevice() {
+  useConfirmDevice();
+  return null;
+}
 
 /** A browser subscribed to notifications. */
 function subscribedBrowser() {
@@ -132,5 +148,33 @@ describe('subscribeHere', () => {
     vi.stubGlobal('Notification', { requestPermission: async () => 'denied' });
     expect(await subscribeHere('B' + 'A'.repeat(86), 'ana')).toBeNull();
     expect(localStorage.getItem('kachingga-push-user')).toBeNull();
+  });
+});
+
+describe('useConfirmDevice', () => {
+  it("opening the app with this account's session confirms this device", async () => {
+    subscribedBrowser();
+    localStorage.setItem('kachingga-push-user', 'ana');
+    session.current = { user: { id: 'ana' } };
+    const confirmDevice = vi.fn(() => ({ subscribed: true }));
+    renderWithApi(<ConfirmDevice />, { 'notifications.confirmDevice': confirmDevice });
+    await vi.waitFor(() =>
+      expect(confirmDevice).toHaveBeenCalledWith({
+        endpoint: 'https://fcm.googleapis.com/fcm/send/x',
+      }),
+    );
+    session.current = null;
+  });
+
+  it("not with another account's session, nor without one", async () => {
+    subscribedBrowser();
+    localStorage.setItem('kachingga-push-user', 'ana');
+    const confirmDevice = vi.fn(() => ({ subscribed: true }));
+    session.current = { user: { id: 'beto' } };
+    renderWithApi(<ConfirmDevice />, { 'notifications.confirmDevice': confirmDevice });
+    session.current = null;
+    renderWithApi(<ConfirmDevice />, { 'notifications.confirmDevice': confirmDevice });
+    await new Promise((resolve) => setTimeout(resolve, 20));
+    expect(confirmDevice).not.toHaveBeenCalled();
   });
 });

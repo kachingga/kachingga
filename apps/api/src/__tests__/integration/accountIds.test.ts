@@ -119,6 +119,8 @@ const calls: Record<string, () => Promise<unknown>> = {
   'notifications.deviceStatus': () => member.notifications.deviceStatus({ endpoint: device.endpoint }),
   'notifications.subscribeDevice': () => member.notifications.subscribeDevice(device),
   'notifications.unsubscribeDevice': () => member.notifications.unsubscribeDevice({ endpoint: device.endpoint }),
+  'notifications.confirmDevice': () => member.notifications.confirmDevice({ endpoint: device.endpoint }),
+  'notifications.unsubscribeAll': () => member.notifications.unsubscribeAll(),
   'notifications.setGroupMuted': () => member.notifications.setGroupMuted({ groupId, muted: true }),
   'photos.config': () => member.photos.config(),
   'photos.setMine': () => member.photos.setMine({ photo: fakeJpegBase64() }),

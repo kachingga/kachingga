@@ -4,7 +4,7 @@
 import crypto from 'node:crypto'
 import webpush from 'web-push'
 import { prisma } from '../db'
-import { notificationPath, notificationText } from '../schemas'
+import { DEVICE_TTL_DAYS, notificationPath, notificationText } from '../schemas'
 import { reportError } from './monitoring'
 import { mine, notificationSelect, toNotificationView } from './notificationView'
 
@@ -14,6 +14,10 @@ const VAPID_SUBJECT = 'mailto:hola@kachingga.com'
 const PUSH_TTL_SECONDS = 24 * 60 * 60
 // Devices (browsers) per person: the oldest ones go when they subscribe one more.
 export const MAX_DEVICES_PER_USER = 10
+export { DEVICE_TTL_DAYS }
+
+/** Devices confirmed from this moment on are still on. */
+export const deviceCutoff = (now = Date.now()) => new Date(now - DEVICE_TTL_DAYS * 24 * 60 * 60 * 1000)
 
 // A burst of changes ("cargó 5 gastos seguidos") becomes one notification: the first waits this
 // long, and after one is sent the next for the same person and group waits until a minute later.
@@ -217,6 +221,8 @@ export function pushPayload(n: ReturnType<typeof toNotificationView>, unreadInGr
 export async function sendGroupPush(userId: string, groupId: string) {
   if (!state) return
   const { keys } = state
+  // Those not confirmed for DEVICE_TTL_DAYS are gone
+  await prisma.pushSubscription.deleteMany({ where: { userId, createdAt: { lt: deviceCutoff() } } })
   const devices = await prisma.pushSubscription.findMany({
     where: { userId },
     select: { id: true, endpoint: true, p256dh: true, auth: true },

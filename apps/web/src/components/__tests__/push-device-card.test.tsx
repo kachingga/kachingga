@@ -49,7 +49,7 @@ afterEach(() => {
 
 const api = (extra = {}) => ({
   'notifications.pushConfig': () => ({ publicKey: PUBLIC_KEY }),
-  'notifications.deviceStatus': () => ({ subscribed: true }),
+  'notifications.deviceStatus': () => ({ subscribed: true, devices: 1 }),
   ...extra,
 });
 
@@ -128,7 +128,7 @@ describe('PushDeviceCard (Mi cuenta)', () => {
     fakeBrowser({ permission: 'granted', existing: 'https://fcm.googleapis.com/fcm/send/rotated' });
     renderWithApi(
       <PushDeviceCard />,
-      api({ 'notifications.deviceStatus': () => ({ subscribed: false }) }),
+      api({ 'notifications.deviceStatus': () => ({ subscribed: false, devices: 0 }) }),
     );
     expect(await screen.findByText('Desactivadas')).toBeInTheDocument();
   });
@@ -157,6 +157,37 @@ describe('PushDeviceCard (Mi cuenta)', () => {
   });
 });
 
+describe('PushDeviceCard: other devices', () => {
+  it('says on how many others they arrive, and turns them off everywhere', async () => {
+    fakeBrowser({ permission: 'granted', existing: 'https://fcm.googleapis.com/fcm/send/mine' });
+    let devices = 3;
+    const unsubscribeAll = vi.fn(() => {
+      devices = 0;
+      return { ok: true };
+    });
+    renderWithApi(<PushDeviceCard />, {
+      'notifications.pushConfig': () => ({ publicKey: PUBLIC_KEY }),
+      'notifications.deviceStatus': () => ({ subscribed: devices > 0, devices }),
+      'notifications.unsubscribeAll': unsubscribeAll,
+    });
+    expect(await screen.findByText('También te llegan a 2 dispositivos más.')).toBeInTheDocument();
+    await userEvent.click(screen.getByRole('button', { name: 'Desactivar en todos' }));
+    await waitFor(() => expect(unsubscribeAll).toHaveBeenCalled());
+    expect(await screen.findByText('Desactivadas')).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Desactivar en todos' })).not.toBeInTheDocument();
+  });
+
+  it('off here but on somewhere else: says so, with the way to turn them all off', async () => {
+    fakeBrowser();
+    renderWithApi(<PushDeviceCard />, {
+      'notifications.pushConfig': () => ({ publicKey: PUBLIC_KEY }),
+      'notifications.deviceStatus': () => ({ subscribed: false, devices: 1 }),
+    });
+    expect(await screen.findByText('Te llegan a 1 dispositivo.')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Desactivar en todos' })).toBeInTheDocument();
+  });
+});
+
 describe('PushDeviceCard prompt (notifications screen)', () => {
   it('offers them while they are off here', async () => {
     fakeBrowser();
@@ -167,7 +198,7 @@ describe('PushDeviceCard prompt (notifications screen)', () => {
 
   it('nothing once they are on, or blocked', async () => {
     fakeBrowser({ permission: 'granted', existing: 'https://fcm.googleapis.com/fcm/send/mine' });
-    const deviceStatus = vi.fn(() => ({ subscribed: true }));
+    const deviceStatus = vi.fn(() => ({ subscribed: true, devices: 1 }));
     renderWithApi(<PushDeviceCard prompt />, api({ 'notifications.deviceStatus': deviceStatus }));
     await waitFor(() => expect(deviceStatus).toHaveBeenCalled());
     expect(

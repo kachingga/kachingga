@@ -24,8 +24,9 @@
 
 ## La sesión
 
-- **Cerrar sesión** (`useSignOut`) desuscribe este navegador en el acto (y cierra las notificaciones que quedaron en el centro de notificaciones y borra el número del ícono: el próximo que use el celu no las ve), y `syncPushWithSession()` (`main.tsx`) lo hace cuando la sesión termina por cualquier camino (`SIGNED_OUT`) y cuando hay una sesión de **otra cuenta** que la que las activó. Así otra persona en ese celu nunca ve las notificaciones de la anterior.
+- **Cerrar sesión** (`useSignOut`) primero las apaga **en todos los dispositivos** de la cuenta (`notifications.unsubscribeAll`: cerrar sesión en Supabase cierra todas las sesiones; sin conexión, o si la API tarda más de 2 s, cierra igual), y desuscribe este navegador en el acto (y cierra las notificaciones que quedaron en el centro de notificaciones y borra el número del ícono: el próximo que use el celu no las ve), y `syncPushWithSession()` (`main.tsx`) lo hace cuando la sesión termina por cualquier camino (`SIGNED_OUT`) y cuando hay una sesión de **otra cuenta** que la que las activó. Así otra persona en ese celu nunca ve las notificaciones de la anterior.
 - Desuscribir es del lado del navegador: el servicio de push deja de conocer esa dirección y la API borra el dispositivo la próxima vez que intenta mandarle algo (404 / 410). Sin conexión puede no llegar a desuscribirse; la sesión igual se cierra.
+- **Abrir la app con sesión confirma este dispositivo** (`useConfirmDevice` en `AppShell`, si lo activó esta cuenta): sigue recibiendo otros 30 días. Uno en el que nadie abre la app deja de recibirlas solo.
 - **Mi cuenta muestra "Activadas" solo si las dos partes lo saben:** el navegador tiene una suscripción **y** la API la tiene a nombre de esta cuenta (`notifications.deviceStatus`). Si el navegador cambió la suscripción por su cuenta, aparece como desactivada y se vuelve a activar.
 
 ## El service worker
@@ -36,6 +37,6 @@
 
 ## Probarlo
 
-- **Tests:** `src/components/__tests__/push-device-card.test.tsx` (cada estado de la tarjeta, activar y desactivar con un navegador falso), `src/lib/__tests__/push.test.ts` (qué soporta el navegador, la sesión) y `push-sw.test.ts`. Del lado de la API, `apps/api/src/__tests__/integration/push.test.ts` descifra lo que recibiría un navegador.
+- **Tests:** `src/components/__tests__/push-device-card.test.tsx` (cada estado de la tarjeta, activar y desactivar con un navegador falso), `src/lib/__tests__/push.test.tsx` (qué soporta el navegador, la sesión) y `push-sw.test.ts`. Del lado de la API, `apps/api/src/__tests__/integration/push.test.ts` descifra lo que recibiría un navegador.
 - **En local:** generar claves (`bunx web-push generate-vapid-keys` desde `apps/api`) y ponerlas en `apps/api/.env` (`VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY`). El service worker solo existe en el build: `bun run build && bun run preview` (en `localhost` el navegador lo permite sin HTTPS). Desde el celu por la Wi-Fi (`dev:celu`) no anda: hace falta HTTPS, así que en el celu se prueba en **staging**.
 - **Falta probarlo en un iPhone y un Android reales** (instalada, con la app cerrada, tocar la notificación, el número en el ícono).

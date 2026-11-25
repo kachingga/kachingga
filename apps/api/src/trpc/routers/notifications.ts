@@ -4,7 +4,7 @@ import { prisma } from '../../db'
 import { requireMembership } from '../../lib/access'
 import { MAX_NOTIFICATIONS_PER_USER } from '../../lib/notifications'
 import { mine, notificationSelect, toNotificationView } from '../../lib/notificationView'
-import { isPushServiceUrl, isValidPushKeys, MAX_DEVICES_PER_USER, pushPublicKey } from '../../lib/push'
+import { deviceCutoff, isPushServiceUrl, isValidPushKeys, MAX_DEVICES_PER_USER, pushPublicKey } from '../../lib/push'
 import { id } from '../../schemas'
 import { protectedProcedure, router } from '../init'
 
@@ -41,14 +41,26 @@ export const notificationsRouter = router({
   // The key browsers subscribe with; null = notifications on the devices are off (no VAPID keys).
   pushConfig: protectedProcedure.query(() => ({ publicKey: pushPublicKey() })),
 
-  // Whether this browser (its endpoint) gets the caller's notifications. The browser may still have
-  // a subscription the API dropped (the push service rotated it): then it's off.
-  deviceStatus: protectedProcedure.input(z.object({ endpoint })).query(async ({ ctx, input }) => {
-    const device = await prisma.pushSubscription.findFirst({
-      where: { endpoint: input.endpoint, userId: ctx.user.id },
-      select: { id: true },
+  // Whether this browser (its endpoint) gets the caller's notifications, and on how many devices
+  // they're on in total. The browser may still have a subscription the API dropped (the push
+  // service rotated it, or it went unconfirmed for DEVICE_TTL_DAYS): then it's off.
+  deviceStatus: protectedProcedure.input(z.object({ endpoint: endpoint.optional() })).query(async ({ ctx, input }) => {
+    const active = { userId: ctx.user.id, createdAt: { gte: deviceCutoff() } }
+    const [here, devices] = await Promise.all([
+      input.endpoint ? prisma.pushSubscription.count({ where: { ...active, endpoint: input.endpoint } }) : 0,
+      prisma.pushSubscription.count({ where: active }),
+    ])
+    return { subscribed: here > 0, devices }
+  }),
+
+  // This browser is still in use with the caller's session (the app opened): its notifications go on
+  // for another DEVICE_TTL_DAYS. Only an existing one of the caller's: it never creates one.
+  confirmDevice: protectedProcedure.input(z.object({ endpoint })).mutation(async ({ ctx, input }) => {
+    const { count } = await prisma.pushSubscription.updateMany({
+      where: { endpoint: input.endpoint, userId: ctx.user.id, createdAt: { gte: deviceCutoff() } },
+      data: { createdAt: new Date() },
     })
-    return { subscribed: device !== null }
+    return { subscribed: count > 0 }
   }),
 
   // Turns them on in this browser. The same browser is one row: another account on it takes it over
@@ -75,6 +87,12 @@ export const notificationsRouter = router({
   // Turns them off in this browser (only if it's the caller's).
   unsubscribeDevice: protectedProcedure.input(z.object({ endpoint })).mutation(async ({ ctx, input }) => {
     await prisma.pushSubscription.deleteMany({ where: { endpoint: input.endpoint, userId: ctx.user.id } })
+    return { ok: true }
+  }),
+
+  // Off on every device of the caller ("Desactivar en todos", and signing out, which is everywhere).
+  unsubscribeAll: protectedProcedure.mutation(async ({ ctx }) => {
+    await prisma.pushSubscription.deleteMany({ where: { userId: ctx.user.id } })
     return { ok: true }
   }),
 

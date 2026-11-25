@@ -4,7 +4,7 @@ import { afterAll, beforeEach, describe, expect, mock, test } from 'bun:test'
 import crypto from 'node:crypto'
 import ece from 'http_ece'
 import webpush from 'web-push'
-import { configurePush, MAX_DEVICES_PER_USER, MAX_PUSHES_IN_FLIGHT, sendGroupPush } from '../../lib/push'
+import { configurePush, DEVICE_TTL_DAYS, MAX_DEVICES_PER_USER, MAX_PUSHES_IN_FLIGHT, sendGroupPush } from '../../lib/push'
 import { setupTestApi } from './setup'
 
 const { caller, anonymous, prisma } = await setupTestApi()
@@ -85,17 +85,17 @@ describe('subscribing a device', () => {
     const ana = caller('ana-devices')
     const eve = caller('eve-devices')
     const { subscription } = browser()
-    expect(await ana.notifications.deviceStatus({ endpoint: subscription.endpoint })).toEqual({ subscribed: false })
+    expect(await ana.notifications.deviceStatus({ endpoint: subscription.endpoint })).toMatchObject({ subscribed: false })
 
     expect(await ana.notifications.subscribeDevice(subscription)).toEqual({ ok: true })
-    expect(await ana.notifications.deviceStatus({ endpoint: subscription.endpoint })).toEqual({ subscribed: true })
+    expect(await ana.notifications.deviceStatus({ endpoint: subscription.endpoint })).toMatchObject({ subscribed: true })
     // Someone else can't see it nor turn it off
-    expect(await eve.notifications.deviceStatus({ endpoint: subscription.endpoint })).toEqual({ subscribed: false })
+    expect(await eve.notifications.deviceStatus({ endpoint: subscription.endpoint })).toMatchObject({ subscribed: false })
     await eve.notifications.unsubscribeDevice({ endpoint: subscription.endpoint })
-    expect(await ana.notifications.deviceStatus({ endpoint: subscription.endpoint })).toEqual({ subscribed: true })
+    expect(await ana.notifications.deviceStatus({ endpoint: subscription.endpoint })).toMatchObject({ subscribed: true })
 
     await ana.notifications.unsubscribeDevice({ endpoint: subscription.endpoint })
-    expect(await ana.notifications.deviceStatus({ endpoint: subscription.endpoint })).toEqual({ subscribed: false })
+    expect(await ana.notifications.deviceStatus({ endpoint: subscription.endpoint })).toMatchObject({ subscribed: false })
   })
 
   test('the same browser is one device: another account that turns them on there takes it over', async () => {
@@ -104,8 +104,8 @@ describe('subscribing a device', () => {
     const { subscription } = browser()
     await ana.notifications.subscribeDevice(subscription)
     await beto.notifications.subscribeDevice(subscription)
-    expect(await ana.notifications.deviceStatus({ endpoint: subscription.endpoint })).toEqual({ subscribed: false })
-    expect(await beto.notifications.deviceStatus({ endpoint: subscription.endpoint })).toEqual({ subscribed: true })
+    expect(await ana.notifications.deviceStatus({ endpoint: subscription.endpoint })).toMatchObject({ subscribed: false })
+    expect(await beto.notifications.deviceStatus({ endpoint: subscription.endpoint })).toMatchObject({ subscribed: true })
     expect(await prisma.pushSubscription.count({ where: { endpoint: subscription.endpoint } })).toBe(1)
   })
 
@@ -155,8 +155,56 @@ describe('subscribing a device', () => {
     const all = Array.from({ length: MAX_DEVICES_PER_USER + 2 }, () => browser().subscription)
     for (const subscription of all) await me.notifications.subscribeDevice(subscription)
     expect(await prisma.pushSubscription.count({ where: { userId: 'many-devices' } })).toBe(MAX_DEVICES_PER_USER)
-    expect(await me.notifications.deviceStatus({ endpoint: all[0]!.endpoint })).toEqual({ subscribed: false })
-    expect(await me.notifications.deviceStatus({ endpoint: all.at(-1)!.endpoint })).toEqual({ subscribed: true })
+    expect(await me.notifications.deviceStatus({ endpoint: all[0]!.endpoint })).toMatchObject({ subscribed: false })
+    expect(await me.notifications.deviceStatus({ endpoint: all.at(-1)!.endpoint })).toMatchObject({ subscribed: true })
+  })
+})
+
+describe("a device's life", () => {
+  const daysAgo = (days: number) => new Date(Date.now() - days * 24 * 60 * 60 * 1000)
+
+  test(`one not confirmed for ${DEVICE_TTL_DAYS} days stops getting them; opening the app confirms it`, async () => {
+    const { beto, betoId, group, cena } = await scenario()
+    const stale = browser()
+    const fresh = browser()
+    await beto.notifications.subscribeDevice(stale.subscription)
+    await beto.notifications.subscribeDevice(fresh.subscription)
+    await prisma.pushSubscription.updateMany({ where: { userId: betoId }, data: { createdAt: daysAgo(DEVICE_TTL_DAYS + 1) } })
+    // The app opened on one of them: confirmed for another stretch
+    expect(await beto.notifications.confirmDevice({ endpoint: fresh.subscription.endpoint })).toEqual({ subscribed: false })
+    await prisma.pushSubscription.updateMany({
+      where: { endpoint: fresh.subscription.endpoint },
+      data: { createdAt: daysAgo(DEVICE_TTL_DAYS - 1) },
+    })
+    expect(await beto.notifications.confirmDevice({ endpoint: fresh.subscription.endpoint })).toEqual({ subscribed: true })
+    expect(await beto.notifications.deviceStatus({ endpoint: stale.subscription.endpoint })).toEqual({ subscribed: false, devices: 1 })
+
+    await cena()
+    await sendGroupPush(betoId, group.id)
+    expect(received.map((r) => r.url)).toEqual([fresh.subscription.endpoint])
+    // The expired one is gone
+    expect(await prisma.pushSubscription.count({ where: { endpoint: stale.subscription.endpoint } })).toBe(0)
+  })
+
+  test("confirming only works on one's own", async () => {
+    const { beto } = await scenario()
+    const device = browser()
+    await beto.notifications.subscribeDevice(device.subscription)
+    expect(await caller('someone-else-confirm').notifications.confirmDevice({ endpoint: device.subscription.endpoint })).toEqual({
+      subscribed: false,
+    })
+  })
+
+  test('"Desactivar en todos": off on every device of mine, not of anyone else; and how many there are', async () => {
+    const { beto, betoId } = await scenario()
+    const ana = caller('ana-all-devices')
+    for (let i = 0; i < 3; i++) await beto.notifications.subscribeDevice(browser().subscription)
+    await ana.notifications.subscribeDevice(browser().subscription)
+    expect(await beto.notifications.deviceStatus({})).toEqual({ subscribed: false, devices: 3 })
+
+    expect(await beto.notifications.unsubscribeAll()).toEqual({ ok: true })
+    expect(await prisma.pushSubscription.count({ where: { userId: betoId } })).toBe(0)
+    expect(await ana.notifications.deviceStatus({})).toEqual({ subscribed: false, devices: 1 })
   })
 })
 
