@@ -107,10 +107,12 @@ Proyecto de **Kachingga**, una organización de amigos (repo: `github.com/kachin
 - **Categorías: cada grupo tiene las suyas.** Todo grupo arranca con 8 por defecto: Comida, Súper, Transporte, Alojamiento, Salidas, Compras, Servicios y Otros. Cualquier miembro puede **crear** nuevas (ej. "Nafta"), **renombrarlas** y cambiarles **ícono y color** (de una lista fija), y **archivarlas** (no se borran).
   - Un gasto sin categoría elegida va a **"Otros"**.
   - **Categoría automática:** al escribir la descripción de un gasto nuevo, la app **sugiere** una categoría y la deja elegida. **Nunca pisa una que la persona eligió a mano**, y se puede cambiar antes de guardar o después editando el gasto. La calcula la API, en este orden:
-    1. **Historial del grupo:** la categoría del gasto más parecido que ya se cargó (misma descripción sin distinguir mayúsculas, tildes ni signos; si no, el que comparte más palabras, al menos la mitad; a igualdad, el más nuevo). Lo que el grupo ya decidió manda, incluidas sus categorías propias.
-    2. **Palabras clave** de comercios y palabras comunes en Argentina (Coto, Día, Uber, YPF, Rappi, Netflix, Edenor, Airbnb, "cena"…) → una de las 8 por defecto (aunque esté renombrada).
-    3. Si nada coincide, no sugiere nada (queda "Otros").
-    - Solo se sugieren categorías **activas del grupo**; gastos borrados no cuentan. Sin IA (eso sería v2).
+    1. **Historial del grupo:** la categoría del gasto más parecido que ya se cargó (misma descripción sin distinguir mayúsculas, tildes ni signos; si no, el que comparte más palabras, al menos la mitad; a igualdad, el más nuevo). Lo que el grupo ya decidió manda, incluidas sus categorías propias. Así aprende nombres que la app no conoce: si "Parolaccia" se cargó en Comida, la próxima "Parolaccia" sugiere Comida.
+    2. **Lo que decidiste vos en tus otros grupos:** lo mismo, con los gastos de los otros grupos donde estás (solo los tuyos), llevado a la categoría **equivalente de este grupo**: la misma por defecto (aunque esté renombrada) o una propia con el mismo nombre. Si este grupo no tiene una equivalente activa, sigue con el paso 3.
+    3. **Palabras clave** de comercios y palabras comunes en Argentina (Coto, Día, Uber, YPF, Rappi, Netflix, Edenor, Airbnb, "cena"…) → una de las 8 por defecto (aunque esté renombrada).
+    4. Si nada coincide, no sugiere nada (queda "Otros").
+    - **"Otros" no enseña nada** (pasos 1 y 2): es donde queda un gasto cuando nadie elige categoría, así que esos gastos no cuentan como una decisión.
+    - Solo se sugieren categorías **activas del grupo**; gastos borrados y categorías archivadas no cuentan. Sin IA (eso sería v2).
   - Archivada: los gastos que ya la tenían la conservan (y se puede dejar al editarlos), pero no se puede elegir para gastos nuevos. El grupo siempre tiene al menos una activa.
   - El nombre es único entre las activas del grupo (sin distinguir mayúsculas).
   - Un grupo tiene **hasta 50 categorías**, contando las 8 por defecto y las archivadas.

@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'bun:test'
-import { normalizeDescription, suggestDefaultKey, suggestFromHistory } from '../lib/categorySuggestion'
+import { equivalentCategory, normalizeDescription, suggestDefaultKey, suggestFromHistory } from '../lib/categorySuggestion'
 
 describe('normalizeDescription', () => {
   test('lowercase, without accents, punctuation or extra spaces', () => {
@@ -81,5 +81,25 @@ describe('suggestDefaultKey', () => {
   test('nothing matches → null', () => {
     expect(suggestDefaultKey('Varios')).toBeNull()
     expect(suggestDefaultKey('')).toBeNull()
+  })
+})
+
+describe('equivalentCategory', () => {
+  const here = [
+    { id: 'food', name: 'Morfi', defaultKey: 'FOOD' }, // the built-in one, renamed
+    { id: 'super', name: 'Súper', defaultKey: 'GROCERIES' },
+    { id: 'nafta', name: 'Nafta', defaultKey: null },
+  ]
+  test('the same built-in category, even renamed', () => {
+    expect(equivalentCategory({ name: 'Comida', defaultKey: 'FOOD' }, here)).toBe('food')
+  })
+  test('a category of its own: the one with the same name, ignoring case and accents', () => {
+    expect(equivalentCategory({ name: 'NAFTA', defaultKey: null }, here)).toBe('nafta')
+    expect(equivalentCategory({ name: 'super', defaultKey: null }, here)).toBe('super')
+  })
+  test("a built-in one this group doesn't have active: by name; otherwise none", () => {
+    expect(equivalentCategory({ name: 'Nafta', defaultKey: 'TRANSPORT' }, here)).toBe('nafta')
+    expect(equivalentCategory({ name: 'Transporte', defaultKey: 'TRANSPORT' }, here)).toBeNull()
+    expect(equivalentCategory({ name: 'Peajes', defaultKey: null }, here)).toBeNull()
   })
 })
