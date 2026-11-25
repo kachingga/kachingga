@@ -1,7 +1,8 @@
 import type { DefaultCategoryKey } from '../schemas'
 
 // Automatic category for a new expense, from its description (pure; the procedure is
-// `categories.suggest`). First what the group already decided (its history), then keywords of
+// `categories.suggest`). First what the group already decided (its history), then what the person
+// decided in their other groups (mapped to this group's equivalent category), then keywords of
 // common Argentine stores and words, mapped to the built-in categories. No match → no suggestion.
 
 /** Lowercase, without accents, punctuation or extra spaces: "Súper  Día!" → "super dia". */
@@ -42,6 +43,23 @@ export function suggestFromHistory(description: string, history: PastExpense[]):
     if (shared > 0 && score >= 0.5 && (!best || score > best.score)) best = { categoryId: past.categoryId, score }
   }
   return best?.categoryId ?? null
+}
+
+/**
+ * The category of this group equivalent to one of another group (each group has its own): the same
+ * built-in one (even renamed), or one with the same name (ignoring case and accents). Only among
+ * `candidates` (this group's active ones). None → null.
+ */
+export function equivalentCategory(
+  from: { name: string; defaultKey: string | null },
+  candidates: { id: string; name: string; defaultKey: string | null }[],
+): string | null {
+  if (from.defaultKey) {
+    const builtIn = candidates.find((c) => c.defaultKey === from.defaultKey)
+    if (builtIn) return builtIn.id
+  }
+  const name = normalizeDescription(from.name)
+  return candidates.find((c) => normalizeDescription(c.name) === name)?.id ?? null
 }
 
 // Keywords (already normalized) per built-in category. A keyword matches whole words; one that

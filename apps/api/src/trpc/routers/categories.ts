@@ -1,9 +1,10 @@
 import { TRPCError } from '@trpc/server'
 import { z } from 'zod'
+import type { Prisma } from '../../db/generated/prisma/client'
 import { prisma } from '../../db'
 import { requireActiveGroup, requireMembership } from '../../lib/access'
 import { assertCategoryNameFree, withUniqueName } from '../../lib/categories'
-import { suggestDefaultKey, suggestFromHistory } from '../../lib/categorySuggestion'
+import { equivalentCategory, suggestDefaultKey, suggestFromHistory } from '../../lib/categorySuggestion'
 import { assertRoomForCategory } from '../../lib/quotas'
 import { categoryInput, categorySuggestionInput, id } from '../../schemas'
 import { protectedProcedure, router } from '../init'
@@ -50,14 +51,39 @@ export const categoriesRouter = router({
   // else null. Only active categories of the group are ever suggested. Logic: lib/categorySuggestion.
   suggest: protectedProcedure.input(categorySuggestionInput).query(async ({ ctx, input }) => {
     await requireMembership(input.groupId, ctx.user.id)
+    // What someone chose: an active category that isn't "Otros" (where an expense ends up if nobody picks one)
+    const chosen = { archivedAt: null, OR: [{ defaultKey: null }, { defaultKey: { not: 'OTHER' } }] } satisfies Prisma.CategoryWhereInput
+    const newestFirst = [{ date: 'desc' as const }, { createdAt: 'desc' as const }]
     const history = await prisma.expense.findMany({
-      where: { groupId: input.groupId, deletedAt: null, category: { archivedAt: null } },
-      orderBy: [{ date: 'desc' }, { createdAt: 'desc' }],
+      where: { groupId: input.groupId, deletedAt: null, category: chosen },
+      orderBy: newestFirst,
       take: SUGGESTION_HISTORY,
       select: { description: true, categoryId: true },
     })
     const fromHistory = suggestFromHistory(input.description, history)
     if (fromHistory) return { categoryId: fromHistory, source: 'history' as const }
+
+    // What the caller decided in their other groups (only theirs), in this group's equivalent category
+    const elsewhere = await prisma.expense.findMany({
+      where: {
+        groupId: { not: input.groupId },
+        group: { participants: { some: { userId: ctx.user.id } } },
+        deletedAt: null,
+        category: chosen,
+      },
+      orderBy: newestFirst,
+      take: SUGGESTION_HISTORY,
+      select: { description: true, categoryId: true, category: { select: { name: true, defaultKey: true } } },
+    })
+    const fromElsewhere = suggestFromHistory(input.description, elsewhere)
+    if (fromElsewhere) {
+      const candidates = await prisma.category.findMany({
+        where: { groupId: input.groupId, archivedAt: null },
+        select: { id: true, name: true, defaultKey: true },
+      })
+      const equivalent = equivalentCategory(elsewhere.find((e) => e.categoryId === fromElsewhere)!.category, candidates)
+      if (equivalent) return { categoryId: equivalent, source: 'yourGroups' as const }
+    }
 
     const defaultKey = suggestDefaultKey(input.description)
     if (!defaultKey) return null

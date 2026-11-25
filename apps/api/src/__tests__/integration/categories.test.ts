@@ -218,7 +218,7 @@ describe('categories.suggest', () => {
     expect(await suggest(ana, group.id, 'YPF')).toBeNull()
   })
 
-  test("another group's history and categories are never suggested", async () => {
+  test("the history and categories of a group I'm not in are never suggested", async () => {
     const mine = await newGroup()
     const other = await newGroup()
     const nafta = await other.ana.categories.create({ groupId: other.group.id, name: 'Nafta', icon: 'fuel', color: 'teal' })
@@ -226,6 +226,86 @@ describe('categories.suggest', () => {
     expect(await suggest(mine.ana, mine.group.id, 'Cosas raras')).toBeNull()
     const result = await suggest(mine.ana, mine.group.id, 'Coto')
     expect(result!.categoryId).toBe((await named(mine.ana, mine.group.id, 'GROCERIES')).id)
+  })
+
+  // An expense in any of the caller's groups, with that description and category (none = "Otros")
+  async function spend(
+    who: Awaited<ReturnType<typeof newGroup>>['ana'],
+    groupId: string,
+    description: string,
+    categoryId?: string,
+    day = '01',
+  ) {
+    const me = (await who.groups.get({ groupId })).myParticipantId
+    return who.expenses.create({
+      groupId,
+      description,
+      date: new Date(`2026-11-${day}T12:00:00Z`),
+      amountCents: 1000,
+      currency: 'ARS',
+      paidById: me,
+      split: { type: 'EQUAL', participantIds: [me] },
+      ...(categoryId && { categoryId }),
+    })
+  }
+
+  test('"Otros" teaches nothing: it is where an expense ends up when nobody picks', async () => {
+    const { ana, group } = await newGroup()
+    const food = await named(ana, group.id, 'FOOD')
+    await spend(ana, group.id, 'Parolaccia', food.id, '01')
+    await spend(ana, group.id, 'Parolaccia', undefined, '20') // newer, left in "Otros"
+    expect(await suggest(ana, group.id, 'parolaccia')).toEqual({ categoryId: food.id, source: 'history' })
+    // Only ever in "Otros": no suggestion
+    await spend(ana, group.id, 'Kiddo')
+    expect(await suggest(ana, group.id, 'Kiddo')).toBeNull()
+  })
+
+  test("what I chose in my other groups, in this group's equivalent category", async () => {
+    const { ana, group: viaje } = await newGroup()
+    const depto = await ana.groups.create({ name: 'Depto', baseCurrency: 'ARS', myName: 'Ana' })
+    await spend(ana, viaje.id, 'Parolaccia', (await named(ana, viaje.id, 'FOOD')).id)
+    const nafta = await ana.categories.create({ groupId: viaje.id, name: 'Nafta', icon: 'fuel', color: 'teal' })
+    await spend(ana, viaje.id, 'Shell ruta 2', nafta.id)
+
+    // The built-in one, even renamed in this group
+    const deptoFood = await named(ana, depto.id, 'FOOD')
+    await ana.categories.update({ categoryId: deptoFood.id, name: 'Morfi' })
+    expect(await suggest(ana, depto.id, 'Cena parolaccia')).toEqual({ categoryId: deptoFood.id, source: 'yourGroups' })
+    // One of its own: only if this group has one with that name; if not, the keywords as always
+    const transport = await named(ana, depto.id, 'TRANSPORT')
+    expect(await suggest(ana, depto.id, 'Shell ruta 2')).toEqual({ categoryId: transport.id, source: 'keyword' })
+    const deptoNafta = await ana.categories.create({ groupId: depto.id, name: 'nafta', icon: 'fuel', color: 'teal' })
+    expect(await suggest(ana, depto.id, 'Shell ruta 2')).toEqual({ categoryId: deptoNafta.id, source: 'yourGroups' })
+  })
+
+  test('this group comes first, and only my groups count (not deleted expenses, nor archived categories)', async () => {
+    const ctx = await newGroup()
+    const { ana, beto, group: viaje } = ctx
+    const depto = await ana.groups.create({ name: 'Depto', baseCurrency: 'ARS', myName: 'Ana' })
+    await spend(ana, viaje.id, 'Parolaccia', (await named(ana, viaje.id, 'FOOD')).id)
+    // What this group decided wins
+    const outings = await named(ana, depto.id, 'ENTERTAINMENT')
+    await spend(ana, depto.id, 'Parolaccia', outings.id)
+    expect(await suggest(ana, depto.id, 'Parolaccia')).toEqual({ categoryId: outings.id, source: 'history' })
+
+    // Beto is in Viaje too: his own new group learns from it; a stranger's doesn't
+    const bars = await beto.groups.create({ name: 'Bares', baseCurrency: 'ARS', myName: 'Beto' })
+    expect(await suggest(beto, bars.id, 'Parolaccia')).toEqual({
+      categoryId: (await named(beto, bars.id, 'FOOD')).id,
+      source: 'yourGroups',
+    })
+    const stranger = await newGroup()
+    expect(await suggest(stranger.ana, stranger.group.id, 'Parolaccia')).toBeNull()
+
+    // Deleted elsewhere, or in an archived category elsewhere: not learned
+    const kiddo = await spend(ana, viaje.id, 'Kiddo', (await named(ana, viaje.id, 'FOOD')).id)
+    await ana.expenses.delete({ expenseId: kiddo.id })
+    const bares = await ana.categories.create({ groupId: viaje.id, name: 'Bares', icon: 'beer', color: 'grape' })
+    await spend(ana, viaje.id, 'Antares', bares.id)
+    await ana.categories.archive({ categoryId: bares.id })
+    await ana.categories.create({ groupId: depto.id, name: 'Bares', icon: 'beer', color: 'grape' })
+    expect(await suggest(ana, depto.id, 'Kiddo')).toBeNull()
+    expect(await suggest(ana, depto.id, 'Antares')).toBeNull()
   })
 
   test('works on archived groups too (read-only) and validates the description', async () => {
