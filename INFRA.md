@@ -86,12 +86,13 @@ Mismas variables en los dos entornos, con los valores de su base (staging = `app
 
 ### GitHub (secrets)
 
-Los de prod (`BACKUP_*`) están en el **environment `backup`** (Settings → Environments), que solo puede usar `main`: un workflow de otra branch o de un PR no los ve. Los `E2E_*` (base de dev) son secrets del repo.
+Los de prod (`BACKUP_*`, incluida la variable `BACKUP_PUBLIC_KEY`) están en el **environment `backup`** (Settings → Environments), que solo puede usar `main`: un workflow de otra branch o de un PR no los ve. Los `E2E_*` (base de dev) son secrets del repo.
 
 | Secret | Dónde | Descripción |
 |--------|-------|-------------|
 | `BACKUP_DATABASE_URL` | Environment `backup` | `DIRECT_URL` de prod (session pooler, puerto 5432). Lo usa `backup.yml` para el `pg_dump` diario y para medir el tamaño de la base |
-| `BACKUP_PASSPHRASE` | Environment `backup` | Passphrase con la que `backup.yml` cifra cada backup. Copia en `apps/api/.env.prod` y en el gestor de contraseñas de Galo: **sin ella no se pueden abrir los backups** |
+| `BACKUP_PUBLIC_KEY` | Environment `backup` (**variable**, no secret: es pública) | Clave pública de `gpg` con la que `backup.yml` cifra cada backup. **La privada no está en GitHub:** en el gestor de contraseñas de Galo y de otro miembro, con su passphrase (`DEPLOY.md` → "Backups"). Sin la privada no se abren los backups |
+| `BACKUP_PASSPHRASE` | Environment `backup` | La passphrase vieja (cifrado simétrico, hasta el 24/11/2026). Ya no se usa para cifrar; queda (y su copia en `apps/api/.env.prod` y el gestor) para abrir los backups de antes, **hasta fines de febrero de 2027** (duran 90 días). Después, borrarla |
 | `E2E_DATABASE_URL` | Repo | `DATABASE_URL` de **dev** (`stg`, pooler 6543). La usa la API que levanta `e2e.yml` para los recorridos con datos (`docs/claude/web/testing.md`) |
 | `E2E_SUPABASE_URL` | Repo | `SUPABASE_URL` de dev (la API y la web de los E2E) |
 | `E2E_SUPABASE_SECRET_KEY` | Repo | `SUPABASE_SECRET_KEY` de dev: la API de los E2E y los tests, que crean sus cuentas ya confirmadas con la API de admin (`apps/web/e2e/accounts.ts`; nunca llega al navegador). Si se rota la de dev, actualizar este secret también |

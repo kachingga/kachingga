@@ -1,7 +1,9 @@
 # Daily backup of the production database (schemas public + auth), encrypted.
 # The repo is public and anyone signed in to GitHub can download artifacts, so the dump is
 # streamed straight into gpg: nothing unencrypted is ever written, even on the runner.
-# The secrets live in the `backup` environment (only `main` can use it), not in the repo secrets.
+# It's encrypted with a PUBLIC key (BACKUP_PUBLIC_KEY): the private one that opens it is never in
+# GitHub (#143), so nothing here can open a backup.
+# The secret and the key live in the `backup` environment (only `main` can use it), not in the repo.
 # It also checks the size of the prod and staging databases (alert before Supabase Free's limit, shared
 # by both). Restore steps: DEPLOY.md →
 # "Backups"; the size alert: DEPLOY.md → "Monitoreo".
@@ -30,10 +32,10 @@ jobs:
         id: secrets
         env:
           BACKUP_DATABASE_URL: ${{ secrets.BACKUP_DATABASE_URL }}
-          BACKUP_PASSPHRASE: ${{ secrets.BACKUP_PASSPHRASE }}
+          BACKUP_PUBLIC_KEY: ${{ vars.BACKUP_PUBLIC_KEY }}
         run: |
-          if [ -z "$BACKUP_DATABASE_URL" ] || [ -z "$BACKUP_PASSPHRASE" ]; then
-            echo "::error::Faltan los secrets BACKUP_DATABASE_URL y/o BACKUP_PASSPHRASE en el environment 'backup' (DEPLOY.md → Backups)."
+          if [ -z "$BACKUP_DATABASE_URL" ] || [ -z "$BACKUP_PUBLIC_KEY" ]; then
+            echo "::error::Faltan el secret BACKUP_DATABASE_URL y/o la variable BACKUP_PUBLIC_KEY en el environment 'backup' (DEPLOY.md → Backups)."
             exit 1
           fi
 
@@ -41,11 +43,13 @@ jobs:
         id: dump
         env:
           BACKUP_DATABASE_URL: ${{ secrets.BACKUP_DATABASE_URL }}
-          BACKUP_PASSPHRASE: ${{ secrets.BACKUP_PASSPHRASE }}
+          BACKUP_PUBLIC_KEY: ${{ vars.BACKUP_PUBLIC_KEY }}
         run: |
           set -euo pipefail
           name="kachingga-prod-$(date -u +%Y-%m-%d)"
           mkdir -p out
+          # The public key (not secret) as a file: gpg encrypts to it without importing it.
+          printf '%s\n' "$BACKUP_PUBLIC_KEY" > "$RUNNER_TEMP/backup-key.asc"
           # pg_dump 17 can dump older servers. The URL goes in as an env var, never as an argument.
           # Image pinned by digest (postgres:17.11); how to update it: DEPLOY.md → "Backups".
           # Live session data is left out (structure only): it's useless after a restore and
@@ -57,8 +61,7 @@ jobs:
               --exclude-table-data=auth.refresh_tokens --exclude-table-data=auth.sessions \
               --exclude-table-data=auth.one_time_tokens --exclude-table-data=auth.mfa_amr_claims \
               --exclude-table-data=auth.flow_state' \
-            | gpg --batch --yes --pinentry-mode loopback --passphrase-fd 3 \
-                --symmetric --cipher-algo AES256 -o "out/$name.dump.gpg" 3<<<"$BACKUP_PASSPHRASE"
+            | gpg --batch --yes --recipient-file "$RUNNER_TEMP/backup-key.asc" --encrypt -o "out/$name.dump.gpg"
           size=$(stat -c %s "out/$name.dump.gpg")
           echo "Backup: $name.dump.gpg ($size bytes)"
           # An empty or tiny file means the dump didn't really work.

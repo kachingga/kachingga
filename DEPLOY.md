@@ -81,7 +81,9 @@ Nunca usar `prisma migrate reset` ni `prisma db push` contra ninguna base.
 
 **Además mide el tamaño de las bases de prod y de staging** (últimos pasos, después de subir el backup) y falla si pasan los **350 MB** (prod) o los **70 MB** (staging): ver "Monitoreo" → "Tamaño de la base". Ese aviso no frena el backup, y un backup que falla no saltea el aviso.
 
-**Siempre cifrado:** el repo es público y cualquiera logueado en GitHub puede bajar los artifacts. El dump pasa directo a `gpg` (AES256) con `BACKUP_PASSPHRASE`: nunca queda un archivo sin cifrar. **Sin la passphrase los backups no se abren**: está en `apps/api/.env.prod` y tiene que estar también en el gestor de contraseñas de Galo.
+**Siempre cifrado, con una clave pública (#143):** el repo es público y cualquiera logueado en GitHub puede bajar los artifacts. El dump pasa directo a `gpg`, cifrado para la **clave pública** `BACKUP_PUBLIC_KEY`: nunca queda un archivo sin cifrar. **La clave privada que los abre no está en GitHub** (ni en el repo ni en Railway): está en el gestor de contraseñas de Galo y en el de otro miembro del grupo, con su passphrase. Así, ni GitHub ni alguien que consiga sus secrets puede abrir un backup, y **sin la clave privada no se abren**: perderla es perder los backups.
+
+**Los tokens pendientes de `auth.users`** (confirmar el email, recuperar la contraseña, cambiar el email) quedan en el dump: Supabase guarda ahí lo mismo que va en el link del mail (`token_hash`), así que uno vigente serviría para entrar. Se revisó y no vale la pena vaciarlos (#143): solo existen mientras hay un link sin usar (en dev, 0 de 106 cuentas al revisarlo), vencen con el link (1 hora) y el backup solo se abre con la clave privada.
 
 **Sin sesiones vivas:** de `auth.sessions`, `auth.refresh_tokens`, `auth.one_time_tokens`, `auth.mfa_amr_claims` (cuelga de las sesiones) y `auth.flow_state` (el login con Google en curso) se guarda la estructura pero no los datos (`--exclude-table-data`): con un backup filtrado nadie puede usar una sesión. Al restaurar, todos tienen que volver a loguearse.
 
@@ -90,27 +92,36 @@ Nunca usar `prisma migrate reset` ni `prisma db push` contra ninguna base.
 **Setup (una vez):**
 
 1. GitHub → repo → *Settings → Environments → New environment* → `backup`. En *Deployment branches and tags*: *Selected branches and tags* → agregar `main`. Sin reviewers (el cron tiene que correr solo).
-2. Si todavía no hay passphrase (primera vez): `echo "BACKUP_PASSPHRASE=$(openssl rand -base64 32)" >> apps/api/.env.prod` y guardarla en el gestor de contraseñas.
-3. Cargar los dos secrets en el environment sin mostrarlos (desde la raíz del repo):
+2. **El par de claves** (una vez, en la máquina de un miembro; pide una passphrase para la privada):
+
+   ```bash
+   gpg --quick-gen-key 'Kachingga backups <hola@kachingga.com>' rsa4096 encr never
+   gpg --armor --export 'Kachingga backups' | gh variable set BACKUP_PUBLIC_KEY --env backup --repo kachingga/kachingga
+   gpg --armor --export-secret-keys 'Kachingga backups' > kachingga-backups-privada.asc
+   ```
+
+   Guardar `kachingga-backups-privada.asc` y su passphrase en el gestor de contraseñas (como documento adjunto), compartirlos con otro miembro del grupo por el gestor, y **borrar el archivo** (`rm kachingga-backups-privada.asc`). Nunca en el repo, en un `.env` ni en GitHub.
+3. Cargar la URL de la base en el environment sin mostrarla (desde la raíz del repo):
 
    ```bash
    grep '^DIRECT_URL=' apps/api/.env.prod | cut -d= -f2- | tr -d '"' | gh secret set BACKUP_DATABASE_URL --env backup --repo kachingga/kachingga
-   grep '^BACKUP_PASSPHRASE=' apps/api/.env.prod | cut -d= -f2- | tr -d '"' | gh secret set BACKUP_PASSPHRASE --env backup --repo kachingga/kachingga
    ```
 
 4. Correrlo una vez a mano desde `main` (abajo) y comprobar que el run pasa y deja el artifact.
-5. Si quedaron copias en los secrets del repo (de antes del environment), borrarlas: si no, cualquier workflow las sigue pudiendo leer. `gh secret delete BACKUP_DATABASE_URL --repo kachingga/kachingga` y lo mismo con `BACKUP_PASSPHRASE`.
+5. Si quedaron copias en los secrets del repo (de antes del environment), borrarlas: si no, cualquier workflow las sigue pudiendo leer. `gh secret delete BACKUP_DATABASE_URL --repo kachingga/kachingga`.
+
+**Los backups de antes (hasta el 24/11/2026) usan la passphrase vieja** (`BACKUP_PASSPHRASE`, cifrado simétrico): se abren igual con `gpg -d`, que la pide. Duran 90 días, así que esa passphrase tiene que seguir en el gestor (y en `apps/api/.env.prod`) **hasta fines de febrero de 2027**. Recién ahí, borrar el secret (`gh secret delete BACKUP_PASSPHRASE --env backup --repo kachingga/kachingga`) y la línea de `.env.prod`.
 
 **Imagen de Postgres fijada por digest** (`postgres:17@sha256:…` en `backup.yml`): Dependabot no la actualiza. Cada tanto, o si Supabase pasa la base a una versión mayor (el `pg_dump` tiene que ser de la misma versión o más nueva), tomar el digest nuevo con `docker buildx imagetools inspect postgres:17` (la línea `Digest:` de arriba) y actualizarlo junto con la versión del comentario.
 
 **Correrlo a mano:** `gh workflow run backup.yml` (o Actions → "Backup diario de prod" → *Run workflow*).
 
-**Restaurar** (necesita `gpg` y el cliente de Postgres 17: `brew install gnupg libpq`):
+**Restaurar** (necesita `gpg` y el cliente de Postgres 17: `brew install gnupg libpq`, y la clave privada importada una vez: `gpg --import kachingga-backups-privada.asc`, desde el gestor):
 
 ```bash
 gh run list --workflow backup.yml                 # elegir el run
 gh run download <run-id> --dir backup             # baja backup/<nombre>/<nombre>.dump.gpg
-gpg -d -o kachingga.dump backup/*/*.dump.gpg      # pide la passphrase
+gpg -d -o kachingga.dump backup/*/*.dump.gpg      # pide la passphrase de la clave privada
 pg_restore --list kachingga.dump | less           # ver qué tiene
 ```
 
