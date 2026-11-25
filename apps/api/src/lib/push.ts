@@ -1,6 +1,7 @@
 // Notifications on the devices (Web Push): the ones in the app (the bell) reach the phones and computers where each
 // person turned them on (root CLAUDE.md → "Notificaciones"). Off without VAPID keys (local, tests,
 // CI): `configurePush` is called at startup (index.ts), never in tests.
+import crypto from 'node:crypto'
 import webpush from 'web-push'
 import { prisma } from '../db'
 import { notificationPath, notificationText } from '../schemas'
@@ -18,6 +19,36 @@ export const MAX_DEVICES_PER_USER = 10
 // long, and after one is sent the next for the same person and group waits until a minute later.
 export const PUSH_DELAY_MS = 5_000
 export const PUSH_MIN_INTERVAL_MS = 60_000
+
+// How many notifications go out at the same time (the rest wait): a change in a big group reaches
+// up to 24 people with up to 10 devices each.
+export const MAX_PUSHES_IN_FLIGHT = 20
+
+/**
+ * The keys a browser gives to encrypt for it: a P-256 public key (65 bytes, a point of the curve)
+ * and a 16-byte secret, in base64. Anything else couldn't be used to send to it.
+ */
+export function isValidPushKeys(p256dh: string, auth: string): boolean {
+  const key = Buffer.from(p256dh, 'base64')
+  if (key.length !== 65 || key[0] !== 0x04 || Buffer.from(auth, 'base64').length !== 16) return false
+  try {
+    crypto.ECDH.convertKey(key, 'prime256v1')
+    return true
+  } catch {
+    return false
+  }
+}
+
+/** Whether the VAPID private key is the one of that public key (base64url, as web-push makes them). */
+function isVapidPair(publicKey: string, privateKey: string) {
+  try {
+    const ecdh = crypto.createECDH('prime256v1')
+    ecdh.setPrivateKey(Buffer.from(privateKey, 'base64url'))
+    return ecdh.getPublicKey().equals(Buffer.from(publicKey, 'base64url'))
+  } catch {
+    return false
+  }
+}
 
 /**
  * Only the push services of the browsers: Chrome (and Edge on Android, Samsung, Opera…), Firefox,
@@ -121,9 +152,30 @@ export function configurePush(
     state = null
     return false
   }
+  // A pair that doesn't match would get every device rejected (and deleted): better off, and say so.
+  if (!isVapidPair(publicKey, privateKey)) {
+    state = null
+    reportError(new Error('VAPID_PUBLIC_KEY y VAPID_PRIVATE_KEY no son un par: las notificaciones quedan apagadas'), { feature: 'push' })
+    return false
+  }
   const keys = { publicKey, privateKey }
   state = { keys, batcher: makeBatcher((userId, groupId) => sendGroupPush(userId, groupId)) }
   return true
+}
+
+// Up to MAX_PUSHES_IN_FLIGHT sends at the same time; a freed slot goes straight to the next waiting.
+let inFlight = 0
+const waiting: (() => void)[] = []
+async function withPushSlot<T>(send: () => Promise<T>): Promise<T> {
+  if (inFlight < MAX_PUSHES_IN_FLIGHT) inFlight += 1
+  else await new Promise<void>((resolve) => waiting.push(resolve))
+  try {
+    return await send()
+  } finally {
+    const next = waiting.shift()
+    if (next) next()
+    else inFlight -= 1
+  }
 }
 
 /** The key the browsers subscribe with; null = notifications are off. */
@@ -157,13 +209,19 @@ export function pushPayload(n: ReturnType<typeof toNotificationView>, unreadInGr
 }
 
 /**
- * Sends one person's latest unread notification of a group to each of their devices. Nothing if the
- * group is muted for them, or they already read everything. A device the push service doesn't know
- * anymore (404 / 410: unsubscribed, the browser's data cleared, signed out) is deleted.
+ * Sends one person's latest unread notification of a group to each of their devices. Nothing if
+ * they have none, the group is muted for them, or they already read everything. A device that can't
+ * get it is deleted: its keys don't work, or the push service doesn't know it anymore or rejects it
+ * (400 / 403 / 404 / 410: unsubscribed, the browser's data cleared, made with another VAPID key).
  */
 export async function sendGroupPush(userId: string, groupId: string) {
   if (!state) return
   const { keys } = state
+  const devices = await prisma.pushSubscription.findMany({
+    where: { userId },
+    select: { id: true, endpoint: true, p256dh: true, auth: true },
+  })
+  if (devices.length === 0) return
   const me = await prisma.participant.findUnique({ where: { groupId_userId: { groupId, userId } }, select: { notificationsMuted: true } })
   if (!me || me.notificationsMuted) return
   const unread = { ...mine(userId), readAt: null }
@@ -173,38 +231,46 @@ export async function sendGroupPush(userId: string, groupId: string) {
     orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
   })
   if (!latest) return
-  const [unreadInGroup, unreadTotal, devices] = await Promise.all([
+  const [unreadInGroup, unreadTotal] = await Promise.all([
     prisma.notification.count({ where: { ...unread, groupId } }),
     prisma.notification.count({ where: unread }),
-    prisma.pushSubscription.findMany({ where: { userId }, select: { id: true, endpoint: true, p256dh: true, auth: true } }),
   ])
   const payload = JSON.stringify(pushPayload(toNotificationView(latest), unreadInGroup, unreadTotal))
 
+  const forget = (id: string) => prisma.pushSubscription.deleteMany({ where: { id } })
   await Promise.all(
-    devices.map(async (device) => {
-      const request = webpush.generateRequestDetails(
-        { endpoint: device.endpoint, keys: { p256dh: device.p256dh, auth: device.auth } },
-        payload,
-        {
-          vapidDetails: { subject: VAPID_SUBJECT, ...keys },
-          TTL: PUSH_TTL_SECONDS,
-          // An undelivered one is replaced by the next of the same group (cuid: valid as a topic)
-          topic: groupId,
-        },
-      )
-      const response = await fetch(request.endpoint, {
-        method: request.method,
-        headers: Object.fromEntries(Object.entries(request.headers).map(([name, value]) => [name, String(value)])),
-        body: new Uint8Array(request.body),
-        signal: AbortSignal.timeout(10_000),
-      }).catch(() => null) // the network or the push service down: this one is lost, like a phone off
-      if (!response || response.ok) return
-      if (response.status === 404 || response.status === 410) {
-        await prisma.pushSubscription.deleteMany({ where: { id: device.id } })
-      } else if (response.status < 500 && response.status !== 429) {
-        // Our request was wrong (keys, payload): worth knowing
-        reportError(new Error(`Push rejected: ${response.status}`), { feature: 'push' })
-      }
-    }),
+    devices.map((device) =>
+      withPushSlot(async () => {
+        let request: ReturnType<typeof webpush.generateRequestDetails>
+        try {
+          request = webpush.generateRequestDetails(
+            { endpoint: device.endpoint, keys: { p256dh: device.p256dh, auth: device.auth } },
+            payload,
+            {
+              vapidDetails: { subject: VAPID_SUBJECT, ...keys },
+              TTL: PUSH_TTL_SECONDS,
+              // An undelivered one is replaced by the next of the same group (cuid: valid as a topic)
+              topic: groupId,
+            },
+          )
+        } catch {
+          await forget(device.id) // its keys can't be used
+          return
+        }
+        const response = await fetch(request.endpoint, {
+          method: request.method,
+          headers: Object.fromEntries(Object.entries(request.headers).map(([name, value]) => [name, String(value)])),
+          body: request.body ? new Uint8Array(request.body) : undefined,
+          redirect: 'error', // only the push service itself, never wherever it points to
+          signal: AbortSignal.timeout(10_000),
+        }).catch(() => null) // the network or the push service down: this one is lost, like a phone off
+        if (!response || response.ok) return
+        if ([400, 403, 404, 410].includes(response.status)) await forget(device.id)
+        else if (response.status < 500 && response.status !== 429) {
+          // Our request was wrong (the payload, our VAPID key): worth knowing
+          reportError(new Error(`Push rejected: ${response.status}`), { feature: 'push' })
+        }
+      }),
+    ),
   )
 }

@@ -96,6 +96,27 @@ describe('my photo', () => {
   })
 })
 
+describe('changes at the same time', () => {
+  test('several uploads of the group photo at once: one wins, and the storage keeps only that one', async () => {
+    const { ana, beto, groupId } = await scenario()
+    stored.clear()
+    const results = await Promise.allSettled(Array.from({ length: 5 }, (_, i) => (i % 2 ? beto : ana).photos.setGroup({ groupId, photo })))
+    const won = results.filter((r) => r.status === 'fulfilled')
+    expect(won.length).toBeGreaterThanOrEqual(1)
+    for (const r of results) if (r.status === 'rejected') expect(String(r.reason)).toContain('La foto cambió mientras tanto')
+    const current = keyOf((await ana.groups.get({ groupId })).photoUrl)!
+    expect([...stored.keys()]).toEqual([current])
+  })
+
+  test('the same with my own photo', async () => {
+    const { ana } = await scenario()
+    stored.clear()
+    await Promise.allSettled(Array.from({ length: 5 }, () => ana.photos.setMine({ photo })))
+    const current = keyOf((await ana.profile.get()).photoUrl)!
+    expect([...stored.keys()]).toEqual([current])
+  })
+})
+
 describe("the group's photo", () => {
   test('any member sets it; only members (NOT_FOUND for anyone else)', async () => {
     const { ana, beto, groupId } = await scenario()

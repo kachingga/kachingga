@@ -1,8 +1,23 @@
+import { TRPCError } from '@trpc/server'
 import { z } from 'zod'
 import { prisma } from '../../db'
 import { requireActiveGroup } from '../../lib/access'
 import { deletePhoto, MAX_PHOTO_BYTES, photosEnabled, photoUrl, storePhoto } from '../../lib/photos'
 import { id } from '../../schemas'
+
+/**
+ * Points the row from the photo it had (`before`) to `next`, only if it still has `before`: two
+ * changes at the same time can't both win and leave a photo behind in the storage. The one that
+ * loses deletes what it just uploaded and says so; the winner deletes the old one.
+ */
+async function replacePhoto(before: string | null, next: string | null, update: () => Promise<{ count: number }>) {
+  const { count } = await update()
+  if (count === 0) {
+    await deletePhoto(next)
+    throw new TRPCError({ code: 'CONFLICT', message: 'La foto cambió mientras tanto. Probá de nuevo.' })
+  }
+  await deletePhoto(before)
+}
 import { protectedProcedure, router } from '../init'
 
 // A JPEG as base64 (src/lib/photo.ts in the web makes it): its size is checked again once decoded.
@@ -19,22 +34,20 @@ export const photosRouter = router({
 
   // My photo, in all my groups. Only mine: nobody sets someone else's, nor one for someone without account.
   setMine: protectedProcedure.input(z.object({ photo })).mutation(async ({ ctx, input }) => {
+    const userId = ctx.user.id
+    await prisma.userProfile.upsert({ where: { userId }, create: { userId }, update: {} })
+    const before = (await prisma.userProfile.findUniqueOrThrow({ where: { userId }, select: { photoKey: true } })).photoKey
     const key = await storePhoto(input.photo)
-    const before = await prisma.userProfile.findUnique({ where: { userId: ctx.user.id }, select: { photoKey: true } })
-    await prisma.userProfile.upsert({
-      where: { userId: ctx.user.id },
-      create: { userId: ctx.user.id, photoKey: key },
-      update: { photoKey: key },
-    })
-    await deletePhoto(before?.photoKey)
+    await replacePhoto(before, key, () => prisma.userProfile.updateMany({ where: { userId, photoKey: before }, data: { photoKey: key } }))
     return { photoUrl: photoUrl(key) }
   }),
 
   removeMine: protectedProcedure.mutation(async ({ ctx }) => {
-    const before = await prisma.userProfile.findUnique({ where: { userId: ctx.user.id }, select: { photoKey: true } })
-    if (before?.photoKey) {
-      await prisma.userProfile.update({ where: { userId: ctx.user.id }, data: { photoKey: null } })
-      await deletePhoto(before.photoKey)
+    const before = (await prisma.userProfile.findUnique({ where: { userId: ctx.user.id }, select: { photoKey: true } }))?.photoKey
+    if (before) {
+      await replacePhoto(before, null, () =>
+        prisma.userProfile.updateMany({ where: { userId: ctx.user.id, photoKey: before }, data: { photoKey: null } }),
+      )
     }
     return { photoUrl: null }
   }),
@@ -43,16 +56,18 @@ export const photosRouter = router({
   setGroup: protectedProcedure.input(z.object({ groupId: id, photo })).mutation(async ({ ctx, input }) => {
     const { group } = await requireActiveGroup(input.groupId, ctx.user.id)
     const key = await storePhoto(input.photo)
-    await prisma.group.update({ where: { id: group.id }, data: { photoKey: key } })
-    await deletePhoto(group.photoKey)
+    await replacePhoto(group.photoKey, key, () =>
+      prisma.group.updateMany({ where: { id: group.id, photoKey: group.photoKey }, data: { photoKey: key } }),
+    )
     return { photoUrl: photoUrl(key) }
   }),
 
   removeGroup: protectedProcedure.input(z.object({ groupId: id })).mutation(async ({ ctx, input }) => {
     const { group } = await requireActiveGroup(input.groupId, ctx.user.id)
     if (group.photoKey) {
-      await prisma.group.update({ where: { id: group.id }, data: { photoKey: null } })
-      await deletePhoto(group.photoKey)
+      await replacePhoto(group.photoKey, null, () =>
+        prisma.group.updateMany({ where: { id: group.id, photoKey: group.photoKey }, data: { photoKey: null } }),
+      )
     }
     return { photoUrl: null }
   }),

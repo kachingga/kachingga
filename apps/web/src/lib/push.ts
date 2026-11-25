@@ -97,7 +97,11 @@ export async function subscribeHere(
   return subscription.toJSON() as DeviceSubscription;
 }
 
-/** Stops this browser's notifications (the push service drops it; the API forgets it on the next send). */
+/**
+ * Stops this browser's notifications (the push service drops it; the API forgets it on the next
+ * send), and takes away what's still on screen: the ones in the notification center and the number
+ * on the app icon (the next person on this device mustn't see them).
+ */
 export async function unsubscribeHere() {
   try {
     localStorage.removeItem(OWNER_KEY);
@@ -105,6 +109,11 @@ export async function unsubscribeHere() {
     // Nothing saved
   }
   await (await currentSubscription().catch(() => null))?.unsubscribe().catch(() => false);
+  if (!('serviceWorker' in navigator)) return;
+  const registration = await navigator.serviceWorker.getRegistration().catch(() => undefined);
+  const shown = (await registration?.getNotifications?.().catch(() => [])) ?? [];
+  for (const notification of shown) notification.close();
+  if ('clearAppBadge' in navigator) await navigator.clearAppBadge().catch(() => {});
 }
 
 /**

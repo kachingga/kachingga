@@ -36,8 +36,15 @@ self.addEventListener('push', (event) => {
 self.addEventListener('notificationclick', (event) => {
   event.notification.close();
   const path = event.notification.data && event.notification.data.url;
-  const safe = typeof path === 'string' && path.startsWith('/') && !path.startsWith('//');
-  const url = new URL(safe ? path : '/notificaciones', self.location.origin);
+  let url = new URL('/notificaciones', self.location.origin);
+  try {
+    // Only this app: whatever the path turns into (`/\\otro.com` is another site), it has to stay here
+    const target = new URL(typeof path === 'string' ? path : '', self.location.origin);
+    if (typeof path === 'string' && path.startsWith('/') && target.origin === self.location.origin)
+      url = target;
+  } catch {
+    // Not a URL: the notifications screen
+  }
   event.waitUntil(
     (async () => {
       const windows = await self.clients.matchAll({ type: 'window', includeUncontrolled: true });

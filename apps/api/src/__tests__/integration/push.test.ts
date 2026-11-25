@@ -4,7 +4,7 @@ import { afterAll, beforeEach, describe, expect, mock, test } from 'bun:test'
 import crypto from 'node:crypto'
 import ece from 'http_ece'
 import webpush from 'web-push'
-import { configurePush, MAX_DEVICES_PER_USER, sendGroupPush } from '../../lib/push'
+import { configurePush, MAX_DEVICES_PER_USER, MAX_PUSHES_IN_FLIGHT, sendGroupPush } from '../../lib/push'
 import { setupTestApi } from './setup'
 
 const { caller, anonymous, prisma } = await setupTestApi()
@@ -122,6 +122,18 @@ describe('subscribing a device', () => {
       )
     }
     await expect(me.notifications.subscribeDevice({ ...subscription, keys: { ...subscription.keys, p256dh: 'corta' } })).rejects.toThrow()
+    // Keys that look right but can't be used: 80 characters that aren't a key, a point off the curve, a short secret
+    const offCurve = Buffer.alloc(65, 0x41)
+    offCurve[0] = 0x04
+    for (const keys of [
+      { ...subscription.keys, p256dh: 'A'.repeat(80) },
+      { ...subscription.keys, p256dh: offCurve.toString('base64url') },
+      { ...subscription.keys, auth: Buffer.alloc(12).toString('base64url') + 'AAAA' },
+    ]) {
+      await expect(me.notifications.subscribeDevice({ ...subscription, keys })).rejects.toThrow(
+        'Este navegador no puede recibir notificaciones',
+      )
+    }
     await expect(
       me.notifications.subscribeDevice({ ...subscription, keys: { ...subscription.keys, auth: 'no<base64>!!!!!!!' } }),
     ).rejects.toThrow()
@@ -229,19 +241,71 @@ describe('what reaches the devices', () => {
     expect(await beto.notifications.unreadCount()).toBe(1)
   })
 
-  test('a device the push service no longer knows (404 / 410) is deleted; other errors keep it', async () => {
+  test("a device that can't get it is deleted (400 / 403 / 404 / 410); a passing or our own error keeps it", async () => {
     const { beto, betoId, group, cena } = await scenario()
-    const gone = browser()
-    const notFound = browser()
-    const flaky = browser()
-    for (const device of [gone, notFound, flaky]) await beto.notifications.subscribeDevice(device.subscription)
-    answer = (url) =>
-      new Response(null, { status: url === gone.subscription.endpoint ? 410 : url === notFound.subscription.endpoint ? 404 : 503 })
+    const statuses = [410, 404, 403, 400, 503, 429, 401]
+    const devices = statuses.map(() => browser())
+    for (const device of devices) await beto.notifications.subscribeDevice(device.subscription)
+    answer = (url) => new Response(null, { status: statuses[devices.findIndex((d) => d.subscription.endpoint === url)] })
     await cena()
     await sendGroupPush(betoId, group.id)
 
     const left = await prisma.pushSubscription.findMany({ where: { userId: betoId }, select: { endpoint: true } })
-    expect(left.map((d) => d.endpoint)).toEqual([flaky.subscription.endpoint])
+    expect(left.map((d) => d.endpoint).sort()).toEqual(
+      devices
+        .slice(4)
+        .map((d) => d.subscription.endpoint)
+        .sort(),
+    )
+    // Never follows a redirect of the push service
+    expect(received.every((r) => r.init.redirect === 'error')).toBe(true)
+  })
+
+  test('a device whose keys stopped working (saved before they were checked) is deleted', async () => {
+    const { betoId, group, cena } = await scenario()
+    await prisma.pushSubscription.create({
+      data: { userId: betoId, endpoint: 'https://fcm.googleapis.com/fcm/send/rota', p256dh: 'A'.repeat(80), auth: 'A'.repeat(22) },
+    })
+    await cena()
+    await sendGroupPush(betoId, group.id)
+    expect(received).toEqual([])
+    expect(await prisma.pushSubscription.count({ where: { userId: betoId } })).toBe(0)
+  })
+
+  test(`at most ${MAX_PUSHES_IN_FLIGHT} go out at the same time`, async () => {
+    // One after the other: scenario() reads a shared counter
+    const people = [await scenario(), await scenario(), await scenario()]
+    for (const { beto, cena } of people) {
+      for (let i = 0; i < MAX_DEVICES_PER_USER; i++) await beto.notifications.subscribeDevice(browser().subscription)
+      await cena()
+    }
+    let now = 0
+    let most = 0
+    answer = () => new Response(null, { status: 201 })
+    const slow = globalThis.fetch
+    globalThis.fetch = (async (url: string | URL | Request, init?: RequestInit) => {
+      most = Math.max(most, ++now)
+      await new Promise((resolve) => setTimeout(resolve, 5))
+      now -= 1
+      return slow(url, init)
+    }) as typeof fetch
+    try {
+      await Promise.all(people.map(({ betoId, group }) => sendGroupPush(betoId, group.id)))
+    } finally {
+      globalThis.fetch = slow
+    }
+    expect(received).toHaveLength(3 * MAX_DEVICES_PER_USER)
+    expect(most).toBeLessThanOrEqual(MAX_PUSHES_IN_FLIGHT)
+    expect(most).toBeGreaterThan(1)
+  })
+
+  test("VAPID keys that aren't a pair: notifications stay off", () => {
+    const other = webpush.generateVAPIDKeys()
+    try {
+      expect(configurePush({ VAPID_PUBLIC_KEY: vapid.publicKey, VAPID_PRIVATE_KEY: other.privateKey })).toBe(false)
+    } finally {
+      turnOn()
+    }
   })
 
   test('with notifications off, nothing is sent', async () => {

@@ -4,7 +4,7 @@ import { prisma } from '../../db'
 import { requireMembership } from '../../lib/access'
 import { MAX_NOTIFICATIONS_PER_USER } from '../../lib/notifications'
 import { mine, notificationSelect, toNotificationView } from '../../lib/notificationView'
-import { isPushServiceUrl, MAX_DEVICES_PER_USER, pushPublicKey } from '../../lib/push'
+import { isPushServiceUrl, isValidPushKeys, MAX_DEVICES_PER_USER, pushPublicKey } from '../../lib/push'
 import { id } from '../../schemas'
 import { protectedProcedure, router } from '../init'
 
@@ -18,7 +18,9 @@ const key = (min: number, max: number) =>
     .regex(/^[A-Za-z0-9+/_-]+={0,2}$/)
 const deviceInput = z.object({
   endpoint: endpoint.refine(isPushServiceUrl, 'Este navegador no puede recibir notificaciones'),
-  keys: z.object({ p256dh: key(80, 100), auth: key(16, 30) }),
+  keys: z
+    .object({ p256dh: key(80, 100), auth: key(16, 30) })
+    .refine((keys) => isValidPushKeys(keys.p256dh, keys.auth), 'Este navegador no puede recibir notificaciones'),
 })
 
 export const notificationsRouter = router({

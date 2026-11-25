@@ -171,6 +171,8 @@ export const groupInput = z.object({ name, baseCurrency: currency })
 
 /** Exactly one emoji (flags, skin tones and joined ones like 👨‍👩‍👧 count as one). */
 export function isSingleEmoji(value: string): boolean {
+  // An emoji is short: anything longer is not one (and isn't worth segmenting)
+  if (value.length > 32) return false
   const graphemes = [...new Intl.Segmenter('es', { granularity: 'grapheme' }).segment(value)]
   return graphemes.length === 1 && /\p{Extended_Pictographic}|\p{Regional_Indicator}/u.test(value)
 }
