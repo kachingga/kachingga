@@ -11,7 +11,7 @@ Sirve el build de Vite (`apps/web/dist`) en Railway: los archivos que existen, `
 | Header | Valor | Para qué |
 |--------|-------|----------|
 | `Content-Security-Policy-Report-Only` (o `Content-Security-Policy`, ver abajo) | La CSP (abajo) | Qué puede cargar la página y a dónde se puede conectar: si alguien logra meter un script, no corre ni puede mandar datos a otro lado |
-| `Strict-Transport-Security` | `max-age=86400` | Solo HTTPS (el navegador ni intenta HTTP). Arranca en un día: ver "Subir el HSTS" |
+| `Strict-Transport-Security` | `max-age=31536000` | Solo HTTPS (el navegador ni intenta HTTP), por un año: ver "HSTS" |
 | `X-Frame-Options` | `DENY` | Nadie puede mostrar la app adentro de un iframe (clickjacking). Lo mismo que `frame-ancestors 'none'`, para navegadores viejos y mientras la CSP es Report-Only (ahí `frame-ancestors` no aplica) |
 | `X-Content-Type-Options` | `nosniff` | El navegador respeta el `Content-Type` |
 | `Referrer-Policy` | `strict-origin-when-cross-origin` | A otros sitios solo les llega el dominio, nunca la ruta (que puede tener el código de invitación o filtros) |
@@ -58,9 +58,9 @@ Hoy la CSP va como **`Content-Security-Policy-Report-Only`**: el navegador avisa
 
 **Verificado (nov 2026, local con el build de producción y `server.ts`, Chromium y WebKit con el perfil de iPhone):** con la Report-Only y con `CSP_ENFORCE=true`, sin violaciones en login, registro, recuperar y nueva contraseña, el captcha (con la *site key* de prueba de Cloudflare: carga el iframe y llega el token), ir a Google, Mis grupos, Mi cuenta, cerrar sesión, sin conexión y un error mandado a Sentry. Falta probarlo en staging (con la API y el Supabase de verdad: cargar un gasto, exportar, compartir) y en un iPhone de verdad.
 
-## Subir el HSTS
+## HSTS
 
-Arranca en un día (`max-age=86400`) para que un problema con el certificado no deje a nadie afuera mucho tiempo. Cuando lleve unas semanas sin problemas en prod, subirlo a un año (`max-age=31536000`) en `securityHeaders` (`server.ts`) y su test. `includeSubDomains` solo si todos los subdominios de `kachingga.com` son HTTPS (hoy `staging`, `api` y `api-staging` lo son); `preload` no: es difícil de deshacer.
+Arrancó en un día (`max-age=86400`, 10/11/2026) para que un problema con el certificado no dejara a nadie afuera mucho tiempo, y pasó a **un año** (`max-age=31536000`) a las dos semanas sin problemas (#131). La landing (`kachingga.com`, en Lovable) ya manda un año con `includeSubDomains`, que alcanza a todos los subdominios (todos son HTTPS: `app`, `staging`, `api`, `api-staging`); la API manda lo mismo (`docs/claude/api/seguridad.md`). `preload` no: es difícil de deshacer.
 
 ## Tests
 

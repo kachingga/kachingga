@@ -83,8 +83,8 @@ export function securityHeaders(env: NodeJS.ProcessEnv): Record<string, string> 
     env.CSP_ENFORCE === 'true' ? 'Content-Security-Policy' : 'Content-Security-Policy-Report-Only';
   return {
     [csp]: contentSecurityPolicy(env),
-    // A day to start with; raise it once it's been working a while (see the doc).
-    'Strict-Transport-Security': 'max-age=86400',
+    // A year (it started with a day, #131). The landing already sends a year to all of kachingga.com.
+    'Strict-Transport-Security': 'max-age=31536000',
     'X-Frame-Options': 'DENY',
     'X-Content-Type-Options': 'nosniff',
     'Referrer-Policy': 'strict-origin-when-cross-origin',
