@@ -45,18 +45,16 @@ frame-ancestors 'none'; base-uri 'none'; form-action 'self'; object-src 'none'
 
 Un script, iframe, imagen, fuente o API de otro dominio **no anda con la CSP obligatoria hasta sumarlo a `contentSecurityPolicy` en `server.ts`** (y a su test en `server.test.ts`), con un comentario de qué es. Nunca `'unsafe-eval'` ni `'unsafe-inline'` en `script-src`: si una librería lo pide, buscar cómo apagarlo (como Zod) o hablarlo antes.
 
-## Report-Only → obligatoria
+## CSP obligatoria
 
-Hoy la CSP va como **`Content-Security-Policy-Report-Only`**: el navegador avisa en la consola lo que bloquearía, pero no bloquea nada. Así un olvido no rompe la app en el celu de nadie. **No hay endpoint de reportes** (los avisos quedan solo en la consola de cada navegador; Safari además avisa que una Report-Only sin `report-to` "no tiene efecto": es eso, no un error).
+**Desde el 24/11/2026 la CSP es obligatoria en staging y en prod** (`CSP_ENFORCE=true` en el servicio `web` de los dos, #131): el navegador bloquea lo que no está en la política. Sin la variable (o con otro valor) vuelve a **`Content-Security-Policy-Report-Only`**: solo avisa en la consola. Es la forma de volver atrás si algo se rompe (sacar la variable y redeployar). **No hay endpoint de reportes:** lo bloqueado se ve solo en la consola de cada navegador.
 
-**Cómo se pasa a obligatoria:** variable **`CSP_ENFORCE=true`** en el servicio `web` (`INFRA.md`) y redeployar. Sin la variable (o con otro valor) es Report-Only.
+**Cómo se verificó** (sirve para repetirlo al sumar algo externo):
+1. `curl -sI https://<entorno> | grep -i content-security` muestra `Content-Security-Policy:` (sin `-Report-Only`) y en `connect-src` la API, Supabase y Sentry de ese entorno (si faltan, Railway no le pasa esas variables al proceso: cargarlas y redeployar).
+2. **Staging**, con la Report-Only y después obligatoria: una recorrida automática (Playwright) por **60 pantallas** en Chrome y Safari del celu y Chrome de la compu, con y sin sesión: login, registro y "¿Olvidaste tu contraseña?" con el captcha, Mis grupos, un grupo (gastos, saldos, un gasto, el formulario, pagos, participantes, categorías, filtros y exportar), Notificaciones, Mi cuenta, borrar la cuenta (sin borrarla), crear y unirse. **Sin violaciones.** También subir y ver una foto (R2).
+3. **Prod**, obligatoria: login, registro y "¿Olvidaste tu contraseña?" (lo que se ve sin sesión). Nuestra política no bloquea nada. El captcha real de Cloudflare (en staging se usa el de prueba) escribe en la consola avisos de **su propia** CSP, la de adentro de su iframe (`connect-src … challenges.cloudflare.com`, al intentar `data:,`): no son de la nuestra, no se pueden cambiar desde acá y no afectan al captcha.
 
-1. **Staging, con la Report-Only:** `curl -sI https://staging.kachingga.com | grep -i content-security` tiene que mostrar en `connect-src` la API, Supabase y Sentry de staging (si faltan, Railway no le está pasando esas variables al proceso: cargarlas y redeployar). Después abrir `https://staging.kachingga.com` con la consola abierta (en la compu; en el iPhone, Safari → Desarrollo con el Mac) y recorrer: login con email y con **Google**, registro (con el captcha), "¿Olvidaste tu contraseña?", un grupo, cargar un gasto, copiar alias, compartir la invitación, exportar, Mi cuenta, cerrar sesión, y la app instalada sin conexión. No tiene que aparecer ningún `[Report Only] Refused to…` ni `Content Security Policy`. Si aparece algo legítimo, sumarlo a la CSP (arriba).
-2. `CSP_ENFORCE=true` en **staging**, redeployar, repetir el recorrido y usarla unos días.
-3. Recién ahí `CSP_ENFORCE=true` en **prod** y redeployar.
-4. Comprobar: `curl -sI https://app.kachingga.com | grep -i content-security` muestra `Content-Security-Policy:` (sin `-Report-Only`) y el `connect-src` con la API, Supabase y Sentry de ese entorno.
-
-**Verificado (nov 2026, local con el build de producción y `server.ts`, Chromium y WebKit con el perfil de iPhone):** con la Report-Only y con `CSP_ENFORCE=true`, sin violaciones en login, registro, recuperar y nueva contraseña, el captcha (con la *site key* de prueba de Cloudflare: carga el iframe y llega el token), ir a Google, Mis grupos, Mi cuenta, cerrar sesión, sin conexión y un error mandado a Sentry. Falta probarlo en staging (con la API y el Supabase de verdad: cargar un gasto, exportar, compartir) y en un iPhone de verdad.
+Antes de esto se había verificado en local (build de producción con `server.ts`, Chromium y WebKit con el perfil de iPhone): login, registro, recuperar y nueva contraseña, el captcha, ir a Google, Mis grupos, Mi cuenta, cerrar sesión, sin conexión y un error mandado a Sentry. Falta mirarlo en un iPhone de verdad con la consola (Safari → Desarrollo con el Mac).
 
 ## HSTS
 
