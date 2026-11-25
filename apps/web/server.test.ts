@@ -111,7 +111,7 @@ describe('security headers', () => {
       expect(res.status, `${method} ${url}`).toBe(status);
       expect(res.headers, `${method} ${url}`).toMatchObject({
         'Content-Security-Policy-Report-Only': contentSecurityPolicy(env),
-        'Strict-Transport-Security': 'max-age=86400',
+        'Strict-Transport-Security': 'max-age=31536000',
         'X-Frame-Options': 'DENY',
         'X-Content-Type-Options': 'nosniff',
         'Referrer-Policy': 'strict-origin-when-cross-origin',

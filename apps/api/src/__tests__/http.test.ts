@@ -57,6 +57,25 @@ describe('http', () => {
     expect(blocked.headers.get('access-control-allow-origin')).toBeNull()
   })
 
+  test('security headers on every response: HTTPS for a year, no sniffing, no frames, a CSP that loads nothing', async () => {
+    const responses = [
+      await call('/health'),
+      await call('/trpc/groups.list'),
+      await call('/trpc/nope.nada'),
+      await call('/trpc/groups.list', {
+        method: 'OPTIONS',
+        headers: { Origin: 'http://localhost:5173', 'Access-Control-Request-Method': 'GET' },
+      }),
+    ]
+    for (const res of responses) {
+      expect(res.headers.get('strict-transport-security')).toBe('max-age=31536000; includeSubDomains')
+      expect(res.headers.get('x-content-type-options')).toBe('nosniff')
+      expect(res.headers.get('x-frame-options')).toBe('DENY')
+      expect(res.headers.get('content-security-policy')).toBe("default-src 'none'; frame-ancestors 'none'")
+      expect(res.headers.get('cross-origin-resource-policy')).toBe('same-site')
+    }
+  })
+
   test('rate limit: too many invite-code attempts from one IP → 429 TOO_MANY_REQUESTS (even without login)', async () => {
     const attempt = () =>
       call('/trpc/groups.preview?input=' + encodeURIComponent(JSON.stringify({ json: { inviteCode: 'ABCDEFGH' } })), {

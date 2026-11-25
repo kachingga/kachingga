@@ -3,6 +3,7 @@ import { trpcServer } from '@hono/trpc-server'
 import { bodyLimit } from 'hono/body-limit'
 import { getConnInfo } from 'hono/bun'
 import { cors } from 'hono/cors'
+import { secureHeaders } from 'hono/secure-headers'
 import { appRouter } from './trpc/router'
 import { initMonitoring, reportError, reportTrpcError } from './lib/monitoring'
 import { configurePhotos } from './lib/photos'
@@ -18,6 +19,19 @@ if (process.env.NODE_ENV !== 'test') configurePush()
 if (process.env.NODE_ENV !== 'test') configurePhotos()
 
 const app = new Hono()
+
+// Security headers on every response (docs/claude/api/seguridad.md): HTTPS only for a year, no
+// MIME sniffing, never inside a frame, and a CSP that loads nothing (it only answers JSON). Same-site
+// resources: the web (app. / staging.) and the API (api. / api-staging.) are both kachingga.com.
+app.use(
+  '*',
+  secureHeaders({
+    strictTransportSecurity: 'max-age=31536000; includeSubDomains',
+    xFrameOptions: 'DENY',
+    crossOriginResourcePolicy: 'same-site',
+    contentSecurityPolicy: { defaultSrc: ["'none'"], frameAncestors: ["'none'"] },
+  }),
+)
 
 // The web front runs in a browser on another origin, so the browser needs CORS. Native apps are not affected.
 const allowedOrigins = (process.env.CORS_ORIGINS ?? 'http://localhost:5173,http://localhost:4173').split(',').map((o) => o.trim())
